@@ -443,6 +443,8 @@ class CosmeticChangesToolkit:
                 except pywikibot.InvalidTitle:
                     return match.group()
                 if namespace == 0:
+                    # TODO: This logic could be merged with Link.normalize
+
                     # Replace underlines by spaces, also multiple underlines
                     titleWithSection = re.sub('_+', ' ', titleWithSection)
                     # Remove double spaces

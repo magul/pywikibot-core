@@ -1271,13 +1271,16 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
         # element into a list in the format used by old scripts
         result = []
         for template in templates:
-            link = pywikibot.Link(template[0], self.site,
-                                  defaultNamespace=10)
             try:
+                link = pywikibot.Link(template[0], self.site,
+                                      defaultNamespace=10)
                 if link.canonical_title() not in titles:
                     continue
             except pywikibot.Error:
-                # this is a parser function or magic word, not template name
+                # Bug 69384: this exception handling should not be necessary,
+                # however textlib.extract_templates_and_params on en:wp mainpage
+                # returns titles like '#if:{{Main Page banner}}', which are
+                # not valid template names and Link doesnt instantiate them.
                 continue
             args = template[1]
             intkeys = {}
@@ -3900,9 +3903,14 @@ class Link(ComparableMixin):
 
     """
 
+    # The hash/number symbol and vertical pipe symbol are valid in a Link,
+    # but are not valid in a Title.
     illegal_titles_pattern = re.compile(
+        r'''[\x23\x7c]'''
+    )
+    illegal_link_pattern = re.compile(
         # Matching titles will be held as illegal.
-        r'''[\x00-\x1f\x23\x3c\x3e\x5b\x5d\x7b\x7c\x7d\x7f]'''
+        r'''[\x00-\x1f\x3c\x3e\x5b\x5d\x7b\x7d\x7f]'''
         # URL percent encoding sequences interfere with the ability
         # to round-trip titles -- you can't link to them consistently.
         u'|%[0-9A-Fa-f]{2}'
@@ -3925,29 +3933,56 @@ class Link(ComparableMixin):
             contain one (defaults to 0)
         @type defaultNamespace: int
 
+        @exception InvalidTitle: The title is not valid.
         """
         assert source is None or isinstance(source, pywikibot.site.BaseSite), \
             "source parameter should be a Site object"
+
+        if not text:
+            raise pywikibot.InvalidTitle('No title given')
 
         self._text = text
         self._source = source or pywikibot.Site()
         self._defaultns = defaultNamespace
 
-        # preprocess text (these changes aren't site-dependent)
-        # First remove anchor, which is stored unchanged, if there is one
-        if u"|" in self._text:
-            self._text, self._anchor = self._text.split(u"|", 1)
-        else:
-            self._anchor = None
+        # Clean up the name, it can come from anywhere.
 
         # Convert URL-encoded characters to unicode
-        encodings = [self._source.encoding()] + list(self._source.encodings())
+        t = url2unicode(self._text, encodings=self._source)
 
-        self._text = url2unicode(self._text, encodings=encodings)
+        try:
+            # If this is an exception, self._text will have been
+            # set above, but half of the validation will not have
+            # been done.  In that event parse() will recall normalize()
+            # to attempt to raise the appropriate exception.
+            # TODO:
+            # Three of the tests in wikibase_tests fail to raise
+            # the appropriate exception at the 'appropriate' time.
+            self._text = Link.normalize(t)
+            # Ideally the constructor also calls the parse method
+            # which does more validation.
+            # self.parse(normalize=False)
+        except pywikibot.InvalidTitle as e:
+            pywikibot.error('The following exception may be caused by '
+                            'extra validation being done in Link.__init__\n'
+                            'Please notify the pywikibot maintainers of this'
+                            ' backtrace.')
+            pywikibot.exception(e, tb=True)
+            raise e
 
-        # Clean up the name, it can come from anywhere.
+    @staticmethod
+    def normalize(title):
+        """
+        Normalise a title, with basic non-site specific validation.
+
+        @param title: title to normalise
+        @type title: unicode
+        @return: unicode
+
+        @exception InvalidTitle: The title is not valid.
+        """
         # Convert HTML entities to unicode
-        t = html2unicode(self._text)
+        t = html2unicode(title)
 
         # Normalize unicode string to a NFC (composed) format to allow
         # proper string comparisons. According to
@@ -3959,8 +3994,8 @@ class Link(ComparableMixin):
         # This code was adapted from Title.php : secureAndSplit()
         #
         if u'\ufffd' in t:
-            raise pywikibot.Error(
-                "Title contains illegal char (\\uFFFD 'REPLACEMENT CHARACTER')")
+            raise pywikibot.InvalidTitle(
+                "Title contains illegal char \\uFFFD (REPLACEMENT CHARACTER)")
 
         # Replace underscores by spaces
         t = t.replace(u"_", u" ")
@@ -3968,10 +4003,43 @@ class Link(ComparableMixin):
         while u"  " in t:
             t = t.replace(u"  ", u" ")
         # Strip spaces at both ends
+        # TODO: Stripping trailing spaces breaks linktrails
+        #       and may cause the same issue with leading spaces.
         t = t.strip()
         # Remove left-to-right and right-to-left markers.
         t = t.replace(u"\u200e", u"").replace(u"\u200f", u"")
-        self._text = t
+
+        # This is the stage where the old __init__ validation finished.
+
+        # Reject illegal characters.
+        m = Link.illegal_link_pattern.search(t)
+        if m:
+            raise pywikibot.InvalidTitle(
+                u"%s contains illegal char(s) %s"
+                % (repr(t), repr(m.group(0))))
+
+        # Pages with "/./" or "/../" appearing in the URLs will
+        # often be unreachable due to the way web browsers deal
+        # * with 'relative' URLs. Forbid them explicitly.
+
+        if u'.' in t and (
+                t == u'.' or t == u'..'
+                or t.startswith(u"./")
+                or t.startswith(u"../")
+                or u"/./" in t
+                or u"/../" in t
+                or t.endswith(u"/.")
+                or t.endswith(u"/..")
+        ):
+            raise pywikibot.InvalidTitle(
+                "(contains . / combinations): '%s'"
+                % title)
+
+        # Magic tilde sequences? Nu-uh!
+        if u"~~~" in t:
+            raise pywikibot.InvalidTitle("(contains ~~~): '%s'" % title)
+
+        return t
 
     def __repr__(self):
         """Return a more complete string representation."""
@@ -4017,13 +4085,24 @@ class Link(ComparableMixin):
             break
         return (fam.name, code)  # text before : doesn't match any known prefix
 
-    def parse(self):
+    def parse(self, normalize=True):
         """Parse wikitext of the link.
 
         Called internally when accessing attributes.
         """
         self._site = self._source
         self._namespace = self._defaultns
+
+        if normalize:
+            self._text = Link.normalize(self._text)
+
+        # preprocess text (these changes aren't site-dependent)
+        # First remove anchor, which is stored unchanged, if there is one
+        if u"|" in self._text:
+            self._text, self._anchor = self._text.split(u"|", 1)
+        else:
+            self._anchor = None
+
         t = self._text
 
         # This code was adapted from Title.php : secureAndSplit()
@@ -4094,27 +4173,6 @@ not supported by PyWikiBot!"""
         if m:
             raise pywikibot.InvalidTitle(
                 u"%s contains illegal char(s) %s" % (repr(t), repr(m.group(0))))
-
-        # Pages with "/./" or "/../" appearing in the URLs will
-        # often be unreachable due to the way web browsers deal
-        # * with 'relative' URLs. Forbid them explicitly.
-
-        if u'.' in t and (
-                t == u'.' or t == u'..'
-                or t.startswith(u"./")
-                or t.startswith(u"../")
-                or u"/./" in t
-                or u"/../" in t
-                or t.endswith(u"/.")
-                or t.endswith(u"/..")
-        ):
-            raise pywikibot.InvalidTitle(
-                "(contains . / combinations): '%s'"
-                % self._text)
-
-        # Magic tilde sequences? Nu-uh!
-        if u"~~~" in t:
-            raise pywikibot.InvalidTitle("(contains ~~~): '%s'" % self._text)
 
         if self._namespace != -1 and len(t) > 255:
             raise pywikibot.InvalidTitle("(over 255 bytes): '%s'" % t)

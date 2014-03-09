@@ -314,10 +314,6 @@ class TestItemLoad(WikidataTestCase):
         item.get()
         self.assertTrue(item.exists())
 
-    def test_fromPage_invalid_title(self):
-        page = pywikibot.Page(pywikibot.page.Link("[]", self.site))
-        self.assertRaises(pywikibot.InvalidTitle, pywikibot.ItemPage.fromPage, page)
-
     def _test_fromPage_noitem(self, link):
         """Helper function to test a page without an associated item.
 

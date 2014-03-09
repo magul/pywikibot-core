@@ -436,9 +436,9 @@ class BaseSite(ComparableMixin):
             if sysop:
                 sysop = sysop[0].upper() + sysop[1:]
         if user:
-            user = user.replace('_', ' ')
+            user = pywikibot.Link.normalize(user)
         if sysop:
-            sysop = sysop.replace('_', ' ')
+            sysop = pywikibot.Link.normalize(sysop)
         self._username = [user, sysop]
 
         self.use_hard_category_redirects = (
@@ -692,6 +692,14 @@ class BaseSite(ComparableMixin):
 
         if title1 == title2:
             return True
+        try:
+            title1 = pywikibot.Link.normalize(title1)
+            title2 = pywikibot.Link.normalize(title2)
+        except pywikibot.InvalidTitle:
+            return False
+        if title1 == title2:
+            return True
+
         # determine whether titles contain namespace prefixes
         if ":" in title1:
             ns1, name1 = title1.split(":", 1)
