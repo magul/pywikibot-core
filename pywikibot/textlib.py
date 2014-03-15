@@ -1643,6 +1643,99 @@ def reformat_ISBNs(text, match_func):
     return text
 
 
+def split_into_sections(text, strip_titles=True):
+    """Parse some wikitext and return a tuple of sections found.
+
+    Similar to the 'Tools.SplitToSections' function
+    found in AutoWikiBrowser's WikiFunctions.
+
+    @param text: The wikitext to parse
+    @type  text: unicode or string
+    @param strip_titles: Whether to strip spaces
+                        around heading titles
+    @type  strip_titles: bool
+    @return: Each section is a tuple holding:
+          0. level (None for the leading section)
+          1. title (None for the leading section)
+          2. content (can be empty)
+    @rtype: tuple of tuples, or None if an error occurs
+
+    @requires: mwparserfromhell
+    """
+    if not isinstance(mwparserfromhell, Exception):
+        code = mwparserfromhell.parse(text)
+        sections = code.get_sections(flat=True, include_lead=True, include_headings=True)
+        # lead section
+        result = [(None, None, sections.pop(0))]
+        for section in sections:
+            try:
+                heading = section.filter_headings()[0]
+            except IndexError:
+                # a non-lead section must have a heading
+                return
+            section.remove(heading)
+            title = unicode(heading.title)
+            if strip_titles:
+                title = title.strip()
+            result.append((heading.level, title, unicode(section)))
+        return tuple(result)
+
+
+def modified_sections(oldText, newText, raw_only=True,
+                      changed_level=False, changed_spacing=False):
+    """
+    Return a list of section titles that have been changed.
+
+    By default, only changes to the actual section content
+    are taken into account.
+
+    Similar to the 'Summary.ModifiedSection' function
+    found in AutoWikiBrowser's WikiFunctions.
+
+    @param oldText: The starting wikitext
+    @type  oldText: unicode or string
+    @param newText: The final wikitext with edited sections
+    @type  newText: unicode or string
+    @param changed_level: Whether to track changes to heading levels
+    @type  changed_level: bool
+    @param changed_spacing: Whether to track changes
+        to spaces around heading titles
+    @type  changed_spacing: bool
+
+    """
+    sectionsBefore = split_into_sections(oldText,
+                                         strip_titles=not changed_spacing)
+    sectionsAfter = split_into_sections(newText,
+                                        strip_titles=not changed_spacing)
+    if sectionsBefore is None or sectionsAfter is None:
+        return
+    if len(sectionsAfter) != len(sectionsBefore):
+        # number of sections has changed, can't provide the difference
+        return
+    for sections in [sectionsBefore, sectionsAfter]:
+        first_lines = set([section[1].strip() for section in sections[1:]])
+        if len(first_lines) != len(sections[1:]):
+            # there are duplicate headings, can't provide the difference
+            return
+    sectionsChanged = []
+    for i, before in enumerate(sectionsBefore):
+        after = sectionsAfter[i]
+        if i > 0 and before[1].strip() != after[1].strip():
+            # section title has changed, can't provide the difference
+            return
+        if (after[2] != before[2] or (changed_level and after[0] != before[0])
+                or (changed_spacing and after[1] != before[1])):
+            if raw_only:
+                rawtitle = mwparserfromhell.parse(before[1].strip())
+                if rawtitle.strip_code() != before[1].strip():
+                    # section title contains unprintable wikicode, can't provide the difference
+                    return
+            sectionsChanged.append(before[1]
+                                   if before[1] is None
+                                   else before[1].strip())
+    return sectionsChanged
+
+
 # ---------------------------------------
 # Time parsing functionality (Archivebot)
 # ---------------------------------------

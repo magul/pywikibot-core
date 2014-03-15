@@ -96,6 +96,169 @@ class TestSectionFunctions(TestCase):
                                'section header must contain a link')
 
 
+class TestModifiedSectionDetection(TestCase):
+
+    """Test modified_sections()."""
+
+    net = False
+
+    def testSimpleChange(self):
+        oldText = """
+=== Section 1 ===
+Some text
+
+=== Section 2 ===
+Some other text"""
+
+        newText = """
+=== Section 1 ===
+Some modified text
+
+=== Section 2 ===
+Some other text"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         [u'Section 1'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_level=True),
+                         [u'Section 1'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_spacing=True),
+                         [u'Section 1'])
+
+    def testMultipleChange(self):
+        oldText = """
+=== Section 1 ===
+Some text
+
+=== Section 2 ===
+Some other text
+
+=== Section 3 ===
+Something"""
+
+        newText = """
+=== Section 1 ===
+Some modified text
+
+=== Section 2 ===
+Some other text, also modified
+
+=== Section 3 ===
+Something"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         [u'Section 1', u'Section 2'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_level=True),
+                         [u'Section 1', u'Section 2'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_spacing=True),
+                         [u'Section 1', u'Section 2'])
+
+    def testChangedLevel(self):
+        oldText = """
+=== Section 1 ===
+Some text
+
+=== Section 2 ===
+Some other text"""
+
+        newText = """
+=== Section 1 ===
+Some text
+
+==== Section 2 ====
+Some other text"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         [])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_level=True),
+                         [u'Section 2'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_spacing=True),
+                         [])
+
+    def testChangeSpacing(self):
+        oldText = """
+=== Section 1 ===
+Some text
+
+=== Section 2 ===
+Some other text"""
+
+        newText = """
+=== Section 1 ===
+Some text
+
+===  Section 2  ===
+Some other text"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         [])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_level=True),
+                         [])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_spacing=True),
+                         [u'Section 2'])
+
+    def testDuplicateSections(self):
+        oldText = """
+=== Section ===
+Some text
+
+=== Section ===
+Some other text"""
+
+        newText = """
+=== Section ===
+Some text
+
+=== Section ===
+Some modified text"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         None)
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_level=True),
+                         None)
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, changed_spacing=True),
+                         None)
+
+    def testUnprintableSection(self):
+        oldText = """
+=== Section 1 ===
+Some text
+
+=== Section [[2]] ===
+Some other text"""
+
+        newText = """
+=== Section 1 ===
+Some text
+
+=== Section [[2]] ===
+Some other text!"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         None)
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, raw_only=False),
+                         [u'Section [[2]]'])
+
+    def testUnprintableSectionNotEdited(self):
+        oldText = """
+=== Section [[1]] ===
+Some text
+
+=== Section 2 ===
+Some other text"""
+
+        newText = """
+=== Section [[1]] ===
+Some text
+
+=== Section 2 ===
+Some other text!"""
+
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText),
+                         [u'Section 2'])
+        self.assertEqual(pywikibot.textlib.modified_sections(oldText, newText, raw_only=False),
+                         [u'Section 2'])
+
+
 class TestFormatInterwiki(TestCase):
 
     """Test format functions."""

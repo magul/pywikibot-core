@@ -1121,6 +1121,11 @@ class BasePage(UnicodeMixin, ComparableMixin):
         link = self.title(asLink=True)
         if cc or cc is None and config.cosmetic_changes:
             summary = self._cosmetic_changes_hook(summary) or summary
+        if config.modified_section:
+            try:
+                summary = self._modified_section_hook(summary) or summary
+            except:
+                pass
         try:
             done = self.site.editpage(self, summary=summary, minor=minor,
                                       watch=watch, bot=botflag, **kwargs)
@@ -1177,6 +1182,39 @@ class BasePage(UnicodeMixin, ComparableMixin):
             from pywikibot import i18n
             comment += i18n.twtranslate(self.site, 'cosmetic_changes-append')
             return comment
+
+    def _modified_section_hook(self, comment):
+        """Prepend the edit summary with the title of the edited section.
+
+        Prepends if only one section was edited.
+
+        @param comment: The edit summary
+        @type comment: unicode
+        @return: the enhanced summary, or None if it could not be enhanced
+
+        """
+        modified_sections = pywikibot.textlib.modified_sections
+        oldText = self.getOldVersion(self.latestRevision())
+        newText = self.text
+        sectionsChanged = modified_sections(oldText, newText)
+        # if there are only changes in section levels or spacing
+        # around their titles, try to track them
+        if sectionsChanged is not None and len(sectionsChanged) == 0:
+            sectionsChanged = modified_sections(oldText,
+                                                newText,
+                                                changed_level=True)
+        if sectionsChanged is not None and len(sectionsChanged) == 0:
+            sectionsChanged = modified_sections(oldText,
+                                                newText,
+                                                changed_spacing=True)
+        # if multiple sections changed or the only modified section
+        # is the leading one, can't provide section edit summary
+        if sectionsChanged is not None and len(sectionsChanged) == 1:
+            section = sectionsChanged[0]
+            if section is not None and section.strip() != '':
+                comment = u'/* %s */ %s' % (sectionsChanged[0].strip(),
+                                            comment)
+                return comment
 
     @deprecated_args(comment='summary')
     def put(self, newtext, summary=u'', watchArticle=None, minorEdit=True,

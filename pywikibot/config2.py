@@ -773,6 +773,13 @@ cosmetic_changes_disable = {}
 cosmetic_changes_deny_script = ['category_redirect', 'cosmetic_changes',
                                 'newitem', 'touch']
 
+# ############# MODIFIED SECTION SETTINGS ################
+# The bot can automatically detect the edited section (if a single one),
+# and notice it in the edit summary.
+
+# This is an experimental feature; handle with care!
+modified_section = False
+
 # ############# REPLICATION BOT ################
 # You can add replicate_replace to your user_config.py, which has the following
 # format:
