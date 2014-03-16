@@ -1352,6 +1352,31 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         else:
             return self._coords
 
+    def templatedata(self, **kwargs):
+        """Return information about a template.
+
+        The TemplateData extension needs to be installed.
+
+        @see: U{https://www.mediawiki.org/wiki/Extension:TemplateData}
+        @keyword redirects: whether to automatically resolve redirects
+        @return: template data
+        @rtype: dict or None
+        """
+        redirects = kwargs.get('redirects', False)
+        data = self.site.templatedata([self], **kwargs) or {}
+        for page in data.values():
+            if redirects and self.isRedirectPage():
+                expected_page = self.getRedirectTarget()
+            else:
+                expected_page = self
+            expected_title = expected_page.title(withSection=False)
+            if self.site.sametitle(page['title'], expected_title):
+                del page['title']
+                return page
+            pywikibot.warning(
+                u"templatedata: Query on %s returned data on '%s'"
+                % (self.title(withSection=False), page['title']))
+
     def getRedirectTarget(self):
         """Return a Page object for the target this Page redirects to.
 

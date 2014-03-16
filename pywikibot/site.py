@@ -2353,6 +2353,25 @@ class APISite(BaseSite):
                                 coprimary='all')
         self._update_page(page, query, 'loadcoordinfo')
 
+    def templatedata(self, pages, **kwargs):
+        """Return info from the TemplateData extension (if available).
+
+        @param pages: pages to get TemplateData for
+        @type pages: iterable of Page objects
+        @return: a dict with pageids as keys and template data
+            as values; may be empty or None
+        @rtype: dict or None
+
+        @requires: the TemplateData extension must be installed
+            on the site
+        """
+        if self.has_extension('TemplateData'):
+            titles = (page.title(withSection=False) for page in pages)
+            req = api.Request(site=self, action='templatedata',
+                              titles=titles, **kwargs)
+            data = req.submit()
+            return data.get('pages')
+
     def loadpageprops(self, page):
         """Load page props for the given page."""
         title = page.title(withSection=False)

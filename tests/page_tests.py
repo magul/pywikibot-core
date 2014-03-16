@@ -521,6 +521,22 @@ class TestPageObject(DefaultSiteTestCase):
         page_copy.isDisambig()
         self.assertTrue(page_copy.isRedirectPage())
 
+    def testTemplatedata(self):
+        """Test templatedata() method."""
+        site = self.get_site()
+
+        tmp = pywikibot.Page(site, 'Cite web', ns=10)
+        self.assertIsInstance(tmp.templatedata(), dict)
+        self.assertIsInstance(tmp.templatedata(redirects=True), dict)
+
+        tmp = pywikibot.Page(site, 'Citeweb', ns=10)
+        self.assertIsNone(tmp.templatedata())
+        self.assertIsInstance(tmp.templatedata(redirects=True), dict)
+
+        tmp = pywikibot.Page(site, 'NonsensicalTemplateName', ns=10)
+        self.assertIsNone(tmp.templatedata())
+        self.assertIsNone(tmp.templatedata(redirects=True))
+
 
 class TestPageRedirects(TestCase):
 
