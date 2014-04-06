@@ -3,7 +3,7 @@
 """
 Usage:
 
-python coordinate_import.py -lang:en -family:wikipedia -cat:Category:Coordinates_not_on_Wikidata
+python pwb.py coordinate_import -lang:en -family:wikipedia -cat:Category:Coordinates_not_on_Wikidata
 
 This will work on all pages in the category "coordinates not on Wikidata" and will import the coordinates on these pages to Wikidata.
 
@@ -12,7 +12,7 @@ You can look at the [[Special:Nearby]] page on your local Wiki to see if it's po
 
 You can use any typical pagegenerator to provide with a list of pages:
 
-python coordinate_import.py -lang:it -family:wikipedia -transcludes:Infobox_stazione_ferroviaria -namespace:0
+python pwb.py coordinate_import -lang:it -family:wikipedia -transcludes:Infobox_stazione_ferroviaria -namespace:0
 
 &params;
 """
@@ -27,6 +27,7 @@ __version__ = '$Id$'
 import json
 import pywikibot
 from pywikibot import pagegenerators
+from math import floor, log
 
 
 class coordImportRobot:
@@ -71,26 +72,29 @@ class coordImportRobot:
         Starts the robot.
         """
         for page in self.generator:
-            pywikibot.output(u'Working on %s' % page.title())
+            pywikibot.output(u'Processing %s' % page)
             item = pywikibot.ItemPage.fromPage(page)
-
             if item.exists():
-                pywikibot.output(u'Found %s' % item.title())
+                claims = item.get().get('claims').keys()
+                if u'P625' in claims:
+                    pywikibot.output(u'Item %s already contains coordinates (P625)' % item.title())
+                    continue
                 coordinate = page.coordinates(primary_only=True)
+                if not coordinate:
+                    pywikibot.output(u'No GeoData coordinates found for %s' % page)
+                    continue
+                precision = 10 ** (floor(log(coordinate.precision, 10) - log(0.5, 10)))
+                coordinateClaim = pywikibot.Coordinate(lat=coordinate.lat, lon=coordinate.lon, alt=coordinate.alt, precision=precision,
+                                                       globe=coordinate.globe, typ=coordinate.type, name=coordinate.name, dim=None,
+                                                       site=None, entity=coordinate.entity)
+                newclaim = pywikibot.Claim(self.repo, u'P625')
+                newclaim.setTarget(coordinateClaim)
+                pywikibot.output(u'Adding %s, %s to %s' % (coordinate.lat, coordinate.lon, item.title()))
+                item.addClaim(newclaim)
 
-                if coordinate:
-                    claims = item.get().get('claims')
-                    if u'P625' in claims:
-                        pywikibot.output(u'Item %s already contains coordinates (P625)' % item.title())
-                    else:
-                        newclaim = pywikibot.Claim(self.repo, u'P625')
-                        newclaim.setTarget(coordinate)
-                        pywikibot.output(u'Adding %s, %s to %s' % (coordinate.lat, coordinate.lon, item.title()))
-                        item.addClaim(newclaim)
-
-                        source = self.getSource(page.site.language())
-                        if source:
-                            newclaim.addSource(source, bot=True)
+                source = self.getSource(page.site.language())
+                if source:
+                    newclaim.addSource(source, bot=True)
 
 
 def main():
