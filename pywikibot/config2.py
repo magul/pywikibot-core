@@ -728,6 +728,34 @@ use_mwparserfromhell = True
 # Version 4 is only available for Python 3.4
 pickle_protocol = 2
 
+# Cache settings:
+
+# What kind of caching system to use, options are:
+# 'file' - file system based cache (default)
+# 'none' - don't cache anything
+# 'simple' - cache in memory
+# 'memcached' - use memcached, requires extra configuration
+# 'redis' - use redis, requires extra configuration
+cache_type = 'file'
+
+# If your cache is shared, set this to something unique to
+# avoid conflicts.
+cache_prefix = ''
+
+# If your cache type is memcached or redis and not in the
+# default location, set some of these fields
+cache_config = {
+    'memcached': {
+        'servers': None,  # Set this to a list
+    },
+    'redis': {
+        'host': 'localhost',
+        'port': 6379,
+        'password': None,
+    }
+}
+
+
 # End of configuration section
 # ============================
 

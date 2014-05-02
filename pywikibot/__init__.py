@@ -10,6 +10,7 @@ __version__ = '$Id$'
 
 import datetime
 import math
+import os
 import re
 import sys
 import threading
@@ -25,6 +26,7 @@ else:
 # confusion with similarly-named modules in version 1 framework, for users
 # who want to continue using both
 
+from pywikibot import cache
 from pywikibot import config2 as config
 from pywikibot.bot import (
     output, warning, error, critical, debug, stdout, exception,
@@ -578,6 +580,53 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
 
 # alias for backwards-compability
 getSite = pywikibot.tools.redirect_func(Site, old_name='getSite')
+
+_caches = {}
+
+
+def Cache(kind=None, **kargs):
+    """
+    Return a cache object which depends on config settings.
+
+    @param kind type of cache to return
+    @return pywikibot.cache.BaseCache
+    """
+    if not kind:
+        kind = config.cache_type
+
+    # If custom arguments are passed, don't use a cached object...
+    if kind in _caches and not kargs:
+        return _caches[kind]
+    kwargs = config.cache_config.get('kind', {})
+
+    # If the cache supports a prefix, set one
+    if kind in ('memcached', 'redis') and config.cache_prefix:
+        kwargs['key_prefix'] = config.cache_prefix
+
+    if kind == 'file' and not ('cache_dir' in kwargs):
+        kwargs['cache_dir'] = os.path.join(config.base_dir, 'apicache')
+
+    # Set a sane default_timeout, code is set to 5 minutes
+    kwargs['default_timeout'] = 365 * 24 * 60 * 60  # 1 year
+
+    # Allow for some overrides
+    for key, val in kargs.items():
+        kwargs[key] = val
+
+    mapping = {
+        'file': cache.FileSystemCache,
+        'none': cache.NullCache,
+        'simple': cache.SimpleCache,
+        'redis': cache.RedisCache,
+        'memcached': cache.MemcachedCache
+    }
+    if kind not in mapping:
+        raise ValueError("Invalid cache type '%s'." % kind)
+    obj = mapping[kind](**kwargs)
+
+    if not kargs:
+        _caches[kind] = obj
+    return obj
 
 
 from .page import (

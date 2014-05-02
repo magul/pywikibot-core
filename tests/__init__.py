@@ -205,6 +205,9 @@ class TestRequest(CachedRequest):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         super(TestRequest, self).__init__(0, *args, **kwargs)
+        path = os.path.join(os.path.split(__file__)[0], 'apicache')
+        timeout = 365 * 24 * 60 * 60
+        self.cache = pywikibot.Cache(kind='file', cache_dir=path, default_timeout=timeout)
 
     def _expired(self, dt):
         """Never invalidate cached data."""

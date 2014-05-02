@@ -13,11 +13,6 @@ from email.mime.nonmultipart import MIMENonMultipart
 import datetime
 import hashlib
 import json
-import os
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
 import pprint
 import re
 import traceback
@@ -1099,36 +1094,7 @@ class CachedRequest(Request):
         self.expiry = expiry
         self._data = None
         self._cachetime = None
-
-    @staticmethod
-    def _get_cache_dir():
-        """Return the base directory path for cache entries.
-
-        The directory will be created if it does not already exist.
-
-        @return: basestring
-        """
-        path = os.path.join(pywikibot.config2.base_dir, 'apicache')
-        CachedRequest._make_dir(path)
-        return path
-
-    @staticmethod
-    def _make_dir(dir):
-        """Create directory if it does not exist already.
-
-        The directory name (dir) is returned unmodified.
-
-        @param dir: directory path
-        @type dir: basestring
-
-        @return: basestring
-        """
-        try:
-            os.makedirs(dir)
-        except OSError:
-            # directory already exists
-            pass
-        return dir
+        self.cache = pywikibot.Cache()
 
     def _uniquedescriptionstr(self):
         """Return unique description for the cache entry.
@@ -1158,7 +1124,7 @@ class CachedRequest(Request):
         request_key = repr(sorted(list(self._encoded_items().items())))
         return repr(self.site) + user_key + request_key
 
-    def _create_file_name(self):
+    def _cache_key(self):
         """
         Return a unique ascii identifier for the cache entry.
 
@@ -1167,10 +1133,6 @@ class CachedRequest(Request):
         return hashlib.sha256(
             self._uniquedescriptionstr().encode('utf-8')
         ).hexdigest()
-
-    def _cachefile_path(self):
-        return os.path.join(CachedRequest._get_cache_dir(),
-                            self._create_file_name())
 
     def _expired(self, dt):
         return dt + self.expiry < datetime.datetime.now()
@@ -1183,15 +1145,17 @@ class CachedRequest(Request):
         """
         self._add_defaults()
         try:
-            filename = self._cachefile_path()
-            with open(filename, 'rb') as f:
-                uniquedescr, self._data, self._cachetime = pickle.load(f)
+            raw_data = self.cache.get(self._cache_key())
+            if raw_data:
+                uniquedescr, self._data, self._cachetime = raw_data
+            else:
+                return False
             assert(uniquedescr == self._uniquedescriptionstr())
             if self._expired(self._cachetime):
                 self._data = None
                 return False
-            pywikibot.debug(u"%s: cache hit (%s) for API request: %s"
-                            % (self.__class__.__name__, filename, uniquedescr),
+            pywikibot.debug(u"%s: cache hit for API request: %s"
+                            % (self.__class__.__name__, uniquedescr),
                             _logger)
             return True
         except IOError as e:
@@ -1202,10 +1166,9 @@ class CachedRequest(Request):
             return False
 
     def _write_cache(self, data):
-        """Write data to self._cachefile_path()."""
+        """Write data to cache."""
         data = [self._uniquedescriptionstr(), data, datetime.datetime.now()]
-        with open(self._cachefile_path(), 'wb') as f:
-            pickle.dump(data, f, protocol=config.pickle_protocol)
+        self.cache.set(self._cache_key(), data, self.expiry.total_seconds())
 
     def submit(self):
         cached_available = self._load_cache()

@@ -61,20 +61,10 @@ class DryCachedRequestTests(TestCase):
         self.assertFalse(self.req._expired(datetime.datetime.now()))
         self.assertTrue(self.req._expired(datetime.datetime.now() - datetime.timedelta(days=2)))
 
-    def test_get_cache_dir(self):
-        retval = self.req._get_cache_dir()
-        self.assertIn('apicache', retval)
-
     def test_create_file_name(self):
-        self.assertEqual(self.req._create_file_name(), self.req._create_file_name())
-        self.assertEqual(self.req._create_file_name(), self.expreq._create_file_name())
-        self.assertNotEqual(self.req._create_file_name(), self.diffreq._create_file_name())
-
-    def test_cachefile_path(self):
-        self.assertEqual(self.req._cachefile_path(), self.req._cachefile_path())
-        self.assertEqual(self.req._cachefile_path(), self.expreq._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffreq._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffsite._cachefile_path())
+        self.assertEqual(self.req._cache_key(), self.req._cache_key())
+        self.assertEqual(self.req._cache_key(), self.expreq._cache_key())
+        self.assertNotEqual(self.req._cache_key(), self.diffreq._cache_key())
 
 
 class MockCachedRequestKeyTests(TestCase):
@@ -132,35 +122,12 @@ class MockCachedRequestKeyTests(TestCase):
         self.mocksite = MockSite()
         super(MockCachedRequestKeyTests, self).setUp()
 
-    def test_cachefile_path_different_users(self):
-        req = CachedRequest(expiry=1, site=self.mocksite,
-                            action='query', meta='siteinfo')
-        anonpath = req._cachefile_path()
-
-        self.mocksite._userinfo = {'name': u'MyUser'}
-        self.mocksite._loginstatus = 0
-        req = CachedRequest(expiry=1, site=self.mocksite,
-                            action='query', meta='siteinfo')
-        userpath = req._cachefile_path()
-
-        self.assertNotEqual(anonpath, userpath)
-
-        self.mocksite._userinfo = {'name': u'MySysop'}
-        self.mocksite._loginstatus = 1
-        req = CachedRequest(expiry=1, site=self.mocksite,
-                            action='query', meta='siteinfo')
-        sysoppath = req._cachefile_path()
-
-        self.assertNotEqual(anonpath, sysoppath)
-        self.assertNotEqual(userpath, sysoppath)
-
     def test_unicode(self):
         self.mocksite._userinfo = {'name': u'محمد الفلسطيني'}
         self.mocksite._loginstatus = 0
 
         req = CachedRequest(expiry=1, site=self.mocksite,
                             action='query', meta='siteinfo')
-        en_user_path = req._cachefile_path()
 
         self.mocksite._namespaces = {2: [u'مستخدم']}
 
@@ -174,10 +141,6 @@ class MockCachedRequestKeyTests(TestCase):
 
         self.assertEqual(req._uniquedescriptionstr().encode('utf-8'),
                          expect.encode('utf-8'))
-
-        ar_user_path = req._cachefile_path()
-
-        self.assertEqual(en_user_path, ar_user_path)
 
 
 class DryMimeTests(TestCase):
