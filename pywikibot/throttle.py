@@ -39,7 +39,7 @@ class Throttle(object):
                  multiplydelay=True, verbosedelay=False):
         self.lock = threading.RLock()
         self.mysite = str(site)
-        self.ctrlfilename = config.datafilepath('throttle.ctrl')
+        self.ctrlcache = pywikibot.Cache()
         self.mindelay = mindelay
         if self.mindelay is None:
             self.mindelay = config.minthrottle
@@ -77,22 +77,20 @@ class Throttle(object):
             my_pid = pid or 1  # start at 1 if global pid not yet set
             count = 1
             # open throttle.log
-            try:
-                f = open(self.ctrlfilename, 'r')
-            except IOError:
+            lines = self.ctrlcache.get('throttle.ctrl')
+            if lines is None:
                 if not pid:
                     pass
                 else:
-                    raise
+                    raise IOError  # TODO: Find a better error to raise here
             else:
                 now = time.time()
-                for line in f.readlines():
+                for line in lines:
                     # parse line; format is "pid timestamp site"
                     try:
-                        line = line.split(' ')
-                        this_pid = int(line[0])
-                        ptime = int(line[1].split('.')[0])
-                        this_site = line[2].rstrip()
+                        this_pid = line['pid']
+                        ptime = line['time']
+                        this_site = line['site']
                     except (IndexError, ValueError):
                         continue    # Sometimes the file gets corrupted
                                     # ignore that line
@@ -116,14 +114,7 @@ class Throttle(object):
                               'time': self.checktime,
                               'site': mysite})
             processes.sort(key=lambda p: (p['pid'], p['site']))
-            try:
-                f = open(self.ctrlfilename, 'w')
-                for p in processes:
-                    f.write("%(pid)s %(time)s %(site)s\n" % p)
-            except IOError:
-                pass
-            else:
-                f.close()
+            self.ctrlcache.set('throttle.ctrl', processes)
             self.process_multiplicity = count
             if self.verbosedelay:
                 pywikibot.output(u"Found %(count)s %(mysite)s processes "
@@ -195,18 +186,14 @@ class Throttle(object):
         # drop all throttles with this process's pid, regardless of site
         self.checktime = 0
         processes = []
-        try:
-            f = open(self.ctrlfilename, 'r')
-        except IOError:
-            return
-        else:
+        lines = self.ctrlcache.get('throttle.ctrl')
+        if lines is not None:
             now = time.time()
-            for line in f.readlines():
+            for line in lines:
                 try:
-                    line = line.split(' ')
-                    this_pid = int(line[0])
-                    ptime = int(line[1].split('.')[0])
-                    this_site = line[2].rstrip()
+                    this_pid = line['pid']
+                    ptime = line['time']
+                    this_site = line['site']
                 except (IndexError, ValueError):
                     continue    # Sometimes the file gets corrupted
                                 # ignore that line
@@ -216,13 +203,7 @@ class Throttle(object):
                                       'time': ptime,
                                       'site': this_site})
         processes.sort(key=lambda p: p['pid'])
-        try:
-            f = open(self.ctrlfilename, 'w')
-            for p in processes:
-                f.write("%(pid)s %(time)s %(site)s\n" % p)
-        except IOError:
-            return
-        f.close()
+        self.ctrlcache.set('throttle.ctrl', processes)
 
     def __call__(self, requestsize=1, write=False):
         """Block the calling program if the throttle time has not expired.
