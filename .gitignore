@@ -7,6 +7,6 @@ user-*.py
 /*.egg
 data*
 logs*
-*cache*
+*cache/
 .idea
 Pywikipediabot.egg-info/

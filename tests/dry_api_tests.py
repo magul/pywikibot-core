@@ -27,20 +27,10 @@ class DryAPITests(unittest.TestCase):
     def test_expiry_formats(self):
         self.assertEqual(self.req.expiry, CachedRequest(datetime.timedelta(days=1), **self.parms).expiry)
 
-    def test_get_cache_dir(self):
-        retval = self.req._get_cache_dir()
-        self.assertIn('apicache', retval)
-
     def test_create_file_name(self):
-        self.assertEqual(self.req._create_file_name(), self.req._create_file_name())
-        self.assertEqual(self.req._create_file_name(), self.expreq._create_file_name())
-        self.assertNotEqual(self.req._create_file_name(), self.diffreq._create_file_name())
-
-    def test_cachefile_path(self):
-        self.assertEqual(self.req._cachefile_path(), self.req._cachefile_path())
-        self.assertEqual(self.req._cachefile_path(), self.expreq._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffreq._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffsite._cachefile_path())
+        self.assertEqual(self.req._cache_key(), self.req._cache_key())
+        self.assertEqual(self.req._cache_key(), self.expreq._cache_key())
+        self.assertNotEqual(self.req._cache_key(), self.diffreq._cache_key())
 
     def test_expired(self):
         self.assertFalse(self.req._expired(datetime.datetime.now()))

@@ -428,24 +428,10 @@ class CachedRequest(Request):
         self.expiry = expiry
         self._data = None
         self._cachetime = None
+        self.cache = pywikibot.Cache()
 
-    def _get_cache_dir(self):
-        path = os.path.join(pywikibot.config2.base_dir, 'apicache')
-        self._make_dir(path)
-        return path
-
-    def _make_dir(self, dir):
-        try:
-            os.makedirs(dir)
-        except OSError:
-            # directory already exists
-            pass
-
-    def _create_file_name(self):
+    def _cache_key(self):
         return hashlib.sha256(str(self.site) + str(self)).hexdigest()
-
-    def _cachefile_path(self):
-        return os.path.join(self._get_cache_dir(), self._create_file_name())
 
     def _expired(self, dt):
         return dt + self.expiry < datetime.datetime.now()
@@ -453,7 +439,7 @@ class CachedRequest(Request):
     def _load_cache(self):
         """ Returns whether the cache can be used """
         try:
-            sitestr, selfstr, self._data, self._cachetime = pickle.load(open(self._cachefile_path()))
+            sitestr, selfstr, self._data, self._cachetime = self.cache.get(self._cache_key())
             assert(sitestr == str(self.site))
             assert(selfstr == str(self))
             if self._expired(self._cachetime):
@@ -466,7 +452,7 @@ class CachedRequest(Request):
     def _write_cache(self, data):
         """ writes data to self._cachefile_path() """
         data = [str(self.site), str(self), data, datetime.datetime.now()]
-        pickle.dump(data, open(self._cachefile_path(), 'w'))
+        self.cache.set(self._cache_key(), data, self.expiry.total_seconds())
 
     def submit(self):
         cached_available = self._load_cache()
