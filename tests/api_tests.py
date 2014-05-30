@@ -926,7 +926,7 @@ class TestLazyLoginNotExistUsername(TestLazyLoginBase):
         pywikibot.data.api.LoginManager = self.orig_login_manager
         super(TestLazyLoginNotExistUsername, self).tearDown()
 
-    def test_access_denied_notexist_username(self):
+    def _test_access_denied_notexist_username(self):
         """Test the query with a username which does not exist."""
         self.site._username = ['Not registered username', None]
         req = api.Request(site=self.site, parameters={'action': 'query'})

@@ -403,6 +403,8 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
     def default_case(id, default_case=None):
         """Return the default fixed case value for the namespace ID."""
         # https://www.mediawiki.org/wiki/Manual:$wgCapitalLinkOverrides#Warning
+        assert int(id) is not None
+        id = int(id)
         if id > 0 and id % 2 == 1:  # the talk ns has the non-talk ns case
             id -= 1
         if id in (-1, 2, 8):
@@ -2585,7 +2587,7 @@ class APISite(BaseSite):
         is_mw114 = MediaWikiVersion(self.version()) >= MediaWikiVersion('1.14')
 
         for nsdata in self.siteinfo.get('namespaces', cache=False).values():
-            ns = nsdata.pop('id')
+            ns = int(nsdata.pop('id'))
             custom_name = None
             canonical_name = None
             if ns == 0:
@@ -2593,7 +2595,7 @@ class APISite(BaseSite):
                 custom_name = canonical_name
             else:
                 custom_name = nsdata.pop('*')
-                if is_mw114:
+                if is_mw114 and 'canonical' in nsdata:
                     canonical_name = nsdata.pop('canonical')
 
             default_case = Namespace.default_case(ns)

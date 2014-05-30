@@ -1329,6 +1329,8 @@ class Request(MutableMapping):
 
     """
 
+    _FORMAT = 'json'
+
     # To make sure the default value of 'parameters' can be identified.
     _PARAM_DEFAULT = object()
 
@@ -1699,11 +1701,11 @@ class Request(MutableMapping):
                 self._params['rawcontinue'] = ['']
         if "maxlag" not in self._params and config.maxlag:
             self._params["maxlag"] = [str(config.maxlag)]
-        if "format" not in self._params:
-            self._params["format"] = ["json"]
-        elif self._params['format'] != ["json"]:
+        if 'format' not in self._params:
+            self._params["format"] = (self._FORMAT, )
+        elif self._params['format'][0] != self._FORMAT:
             raise TypeError("Query format '%s' cannot be parsed."
-                            % self._params['format'])
+                            % self._params['format'][0])
 
         self.__defaulted = True
 
@@ -1982,6 +1984,19 @@ class Request(MutableMapping):
                             rawdata, _logger)
             if rawdata.startswith(u"unknown_action"):
                 raise APIError(rawdata[:14], rawdata[16:])
+            if self._params['format'][0] == 'xml':
+                try:
+                    from pywikibot.data.xml import xml_to_json
+                    rawdata = xml_to_json(rawdata)
+                except Exception as e:
+                    pywikibot.warning(
+                        "Failed to load XML response from server %s." % self.site)
+                    raise
+            elif self._params['format'] == 'json' and len(config.debug_log):
+                # prettify the json
+                d = json.loads(rawdata)
+                rawdata = json.dumps(d, indent=4)
+
             try:
                 result = json.loads(rawdata)
             except ValueError:

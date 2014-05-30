@@ -73,6 +73,7 @@ from pywikibot.tools import (
     redirect_func,
     ModuleDeprecationWrapper as _ModuleDeprecationWrapper,
     PY2,
+    StringTypes,
     UnicodeMixin,
 )
 from pywikibot.tools.formatter import color_format
@@ -484,13 +485,13 @@ class WbTime(_WbRepresentation):
             self.precision = self.PRECISION['year']
             month = 1
         self.year = long(year)
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.minute = minute
-        self.second = second
-        self.after = after
-        self.before = before
+        self.month = int(month)
+        self.day = int(day)
+        self.hour = int(hour)
+        self.minute = int(minute)
+        self.second = int(second)
+        self.after = int(after)
+        self.before = int(before)
         self.timezone = timezone
         if calendarmodel is None:
             if site is None:
@@ -505,6 +506,9 @@ class WbTime(_WbRepresentation):
                 self.precision = precision
             elif precision in self.PRECISION:
                 self.precision = self.PRECISION[precision]
+            elif (isinstance(precision, StringTypes) and precision.isnumeric() and
+                    int(precision) in self.PRECISION.values()):
+                self.precision = int(precision)
             else:
                 raise ValueError('Invalid precision: "%s"' % precision)
 

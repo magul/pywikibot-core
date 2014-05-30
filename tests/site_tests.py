@@ -2312,7 +2312,7 @@ class TestSiteLoadRevisions(TestCase):
         self.mysite.loadrevisions(self.mainpage, rvdir=True, total=15)
         self.assertEqual(len(self.mainpage._revisions), 15)
         revs = self.mainpage._revisions
-        self.assertTrue(all(139900 <= rev <= 140100 for rev in revs))
+        self.assertTrue(all(139900 <= int(rev) <= 140100 for rev in revs))
 
         # Retrieve oldest revisions; listing based on revid.
         # Raises "loadrevisions: startid > endid with rvdir=True"

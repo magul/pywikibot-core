@@ -88,6 +88,9 @@ oursql ; python_version < '3'
 # core HTML comparison parser in diff module
 beautifulsoup4
 
+# core API XML support
+xmltodict
+
 # scripts/states_redirect.py
 pycountry
 
