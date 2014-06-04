@@ -30,6 +30,7 @@ import logging
 import re
 import unicodedata
 import collections
+import json
 
 import urllib
 
@@ -2454,13 +2455,57 @@ class WikibasePage(Page):
                 return False
         return 'lastrevid' in self._content
 
+
+    def load_content(self, json):
+        def load_multilang_value(json, key):
+            data = {}
+
+            if json[key]:
+                for lang in json[key].keys():
+                    data[lang] = {u'value': json[key][lang], u'language': lang}
+
+            return data
+
+        self._content['labels'] = load_multilang_value(json, 'label')
+        self._content['descriptions'] = load_multilang_value(json, 'description')
+
+        self._content['aliases'] = {}
+        if json['aliases']:
+            for lang in json['aliases'].keys():
+                aliases = list()
+                for alias in json['aliases'][lang]:
+                    aliases.append({u'value': alias, u'language': lang})
+                self._content['aliases'][lang] = aliases
+
     def get(self, force=False, *args):
+        super(WikibasePage, self).get(force=force)
+
+        # fetch the Wikibase page ID
+        props = self.properties()
+
+        self.id = self.title()
+        self._content = {
+            'pageid': self._pageid,
+            'id': self.title(),
+            'lastrevid': self._revid,
+            'ns': self.namespace(),
+        }
+
+        self.lastrevid = self._content['lastrevid']
+
+        rev_json = json.loads(self._revisions[self._revid].text)
+
+        self.load_content(rev_json)
+
+    def old_get(self, force=False, old=False, *args):
         """
         Fetches all page data, and caches it
         force will override caching
         args can be used to specify custom props.
         """
         if force or not hasattr(self, '_content'):
+            if not old:
+                raise Exception
             data = self.repo.loadcontent(self._defined_by(), *args)
             self.id = list(data.keys())[0]
             self._content = data[self.id]
@@ -2612,24 +2657,95 @@ class ItemPage(WikibasePage):
         @return: ItemPage
         """
         repo = page.site.data_repository()
-        if hasattr(page,
-                   '_pageprops') and page.properties().get('wikibase_item'):
-            # If we have already fetched the pageprops for something else,
-            # we already have the id, so use it
-            return cls(repo, page.properties().get('wikibase_item'))
-        i = cls(repo, 'null')
-        del i.id
-        i._site = page.site
-        i._title = page.title()
-        return i
+        return cls(repo, page.properties().get('wikibase_item'))
+
+    def load_content_claims(self, json, type=u'statement'):
+
+        def json_to_content_claims(json):
+            claims = {}
+            for claim in json:
+                content_claim = None
+                content_claim = json_to_content_claim(claim, type)
+
+                property_id = content_claim['mainsnak']['property']
+
+                if property_id not in claims:
+                    claims[property_id] = [content_claim]
+                else:
+                    claims[property_id].append(content_claim)
+            return claims
+
+        def json_to_snaks(json):
+            snaks = {}
+            for snak in json:
+                snak = json_to_snak(snak)
+                property_id = snak[u'property']
+                if property_id not in snaks:
+                    snaks[property_id] = [snak]
+                else:
+                    snaks[property_id].append(snak)
+            return snaks
+
+        def json_to_snak(json):
+            snak_type = json[0]
+            property_id = u'P'+str(json[1])
+            snak = {
+                u'snaktype': snak_type,
+                u'property': property_id
+            }
+            if snak_type not in ['novalue','somevalue']:
+                snak['datavalue'] = {u'type': json[2], u'value': json[3]}
+            return snak
+
+        def json_to_content_claim(json, type=u'statement'):
+            property_id = u'P'+str(json['m'][1])
+
+            if json['rank'] == 2:
+                rank = u'preferred'
+            else:
+                rank = u'normal'
+
+            content_claim = { u'id': json['g'],
+                      u'type': type,
+                      u'rank': rank
+                    }
+
+            content_claim['mainsnak'] = json_to_snak(json['m'])
+            if 'refs' in json:
+                content_claim['references'] = []
+                for source in json['refs']:
+                    content_claim['references'].append({u'hash':'abc',u'snaks':json_to_snaks(source)})
+
+            if 'q' in json:
+                content_claim['qualifiers'] = json_to_snaks(json['q'])
+
+            return content_claim
+
+        self._content['claims'] = json_to_content_claims(json)
+
+    def load_content(self, json):
+        super(ItemPage, self).load_content(json)
+        self._content['sitelinks'] = {}
+        if json['links']:
+            for site in json['links'].keys():
+                self._content['sitelinks'][site] = {u'title': json['links'][site]['name']}
+
+        if json['claims']:
+            self.load_content_claims(json['claims'])
 
     def get(self, force=False, *args):
+        super(ItemPage, self).get(force=force, *args)
+        self._content['type'] = 'item'
+
+        return self.old_get(force=False)
+
+    def old_get(self, force=False, old=False, *args):
         """
         Fetches all page data, and caches it
         force will override caching
         args are the values of props
         """
-        super(ItemPage, self).get(force=force, *args)
+        super(ItemPage, self).old_get(force=force, old=old, *args)
 
         # claims
         self.claims = {}
