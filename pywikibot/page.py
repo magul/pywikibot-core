@@ -2165,6 +2165,7 @@ class FilePage(Page):
             self.site.loadimageinfo(self, history=True)
         return self._file_revisions
 
+    @deprecated('other techniques')
     def getImagePageHtml(self):
         """
         Download the file page, and return the HTML, as a unicode string.
