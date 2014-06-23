@@ -930,12 +930,11 @@ u"Page does not exist, using the first link in page %s."
             targets = i18n.twtranslate(self.mysite, 'solve_disambiguation-unknown-page')
 
         # first check whether user has customized the edit comment
-        if (self.mysite.family.name in config.disambiguation_comment and
-                self.mylang in config.disambiguation_comment[self.mysite.family.name]):
+        if (str(self.mysite) in config.disambiguation_summary):
             try:
                 self.comment = pywikibot.translate(
                     self.mysite,
-                    config.disambiguation_comment[self.mysite.family.name],
+                    config.disambiguation_summary[str(self.mysite)],
                     fallback=True) % (disambPage.title(), targets)
 
             # Backwards compatibility, type error probably caused by too
@@ -943,7 +942,7 @@ u"Page does not exist, using the first link in page %s."
             except TypeError:
                 self.comment = pywikibot.translate(
                     self.mysite,
-                    config.disambiguation_comment[self.mysite.family.name],
+                    config.disambiguation_summary[str(self.mysite)],
                     fallback=True) % disambPage.title()
         elif disambPage.isRedirectPage():
             # when working on redirects, there's another summary message

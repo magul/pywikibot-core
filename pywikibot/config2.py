@@ -11,6 +11,8 @@ __version__ = '$Id$'
 import os
 import sys
 
+_removed_config_vars = ['disambiguation_comment']
+
 # IMPORTANT:
 # Do not change any of the variables in this file. Instead, make
 # a file user-config.py, and overwrite values in there.
@@ -55,7 +57,6 @@ mylang = 'language'
 # sysopnames['myownwiki']['*'] = 'mySingleUsername'
 usernames = {}
 sysopnames = {}
-disambiguation_comment = {}
 
 # The default interface for communicating with the site
 # currently the only defined interface is 'APISite', so don't change this!
@@ -171,7 +172,6 @@ family_files = {}
 def register_family_file(family_name, file_path):
     usernames[family_name] = {}
     sysopnames[family_name] = {}
-    disambiguation_comment[family_name] = {}
     family_files[family_name] = file_path
 
 
@@ -375,13 +375,14 @@ interwiki_contents_on_disk = False
 
 # ############# SOLVE_DISAMBIGUATION SETTINGS ############
 #
-# Set disambiguation_comment[FAMILY][LANG] to a non-empty string to override
-# the default edit comment for the solve_disambiguation bot.
-# Use %s to represent the name of the disambiguation page being treated.
+# You can add disambiguation_comment to your user_config.py to override
+# the default edit comment for the solve_disambiguation bot
+#
 # Example:
 #
-# disambiguation_comment['wikipedia']['en'] = \
+# disambiguation_summary['wikipedia:en'] = \
 #    "Robot-assisted disambiguation ([[WP:DPL|you can help!]]): %s"
+disambiguation_summary = {}
 
 sort_ignore_case = False
 
@@ -685,19 +686,50 @@ _thislevel = 0
 _fns = [os.path.join(_base_dir, "user-config.py")]
 for _filename in _fns:
     _thislevel += 1
-    if os.path.exists(_filename):
-        _filestatus = os.stat(_filename)
-        _filemode = _filestatus[0]
-        _fileuid = _filestatus[4]
-        if sys.platform == 'win32' or _fileuid in [os.getuid(), 0]:
-            if sys.platform == 'win32' or _filemode & 0o02 == 0:
-                exec(compile(open(_filename).read(), _filename, 'exec'))
-            else:
-                print("WARNING: Skipped '%(fn)s': writeable by others."
-                      % {'fn': _filename})
-        else:
-            print("WARNING: Skipped '%(fn)s': owned by someone else."
-                  % {'fn': _filename})
+    if not os.path.exists(_filename):
+        continue
+    _filestatus = os.stat(_filename)
+    _filemode = _filestatus[0]
+    _fileuid = _filestatus[4]
+    if sys.platform != 'win32' and _fileuid not in [os.getuid(), 0]:
+        print("ERROR: Skipped '%s': owned by someone else." % _filename)
+        exit(1)
+    if sys.platform != 'win32' and _filemode & 0o02 != 0:
+        print("WARNING: Skipped '%s': writeable by others." % _filename)
+        exit(1)
+
+    _content = open(_filename).read()
+    _old_config_name = None
+    try:
+        exec(compile(_content, _filename, 'exec'))
+    except (NameError, KeyError) as e:
+        import ast
+        _source = compile(_content, _filename, 'exec', ast.PyCF_ONLY_AST)
+        for _node in ast.walk(_source):
+            if isinstance(_node, ast.Assign):
+                _name = None
+                if isinstance(_node.targets[0], ast.Name):
+                    _name = _node.targets[0].id
+                elif isinstance(_node.targets[0], ast.Subscript):
+                    if isinstance(_node.targets[0].value, ast.Name):
+                        _name = _node.targets[0].value.id
+                    elif isinstance(_node.targets[0].value, ast.Subscript):
+                        _name = _node.targets[0].value.value.id
+
+                if _name in _removed_config_vars:
+                    _old_config_name = _name
+                    break
+        if not _old_config_name:
+            raise
+    else:
+        for _name in _removed_config_vars:
+            if _name in globals():
+                _old_config_name = _name
+                break
+    if _old_config_name:
+        print("ERROR: '%s' is no longer a configuration variable.\n"
+              "Please consult README.config for more information." % _old_config_name)
+        exit(1)
 
 # Test for obsoleted and/or unknown variables.
 for _key, _val in list(globals().items()):
