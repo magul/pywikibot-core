@@ -49,25 +49,13 @@ class TouchBot(pywikibot.Bot):
                 pywikibot.output(u'Page %s%s purged'
                                  % (page.title(asLink=True),
                                     "" if page.purge() else " not"))
-                continue
-            try:
+            else:
                 # get the page, and save it using the unmodified text.
                 # whether or not getting a redirect throws an exception
                 # depends on the variable self.touch_redirects.
                 page.get(get_redirect=self.getOption('redir'))
-                page.save("Pywikibot touch script")
-            except pywikibot.NoPage:
-                pywikibot.error(u"Page %s does not exist."
-                                % page.title(asLink=True))
-            except pywikibot.IsRedirectPage:
-                pywikibot.warning(u"Page %s is a redirect; skipping."
-                                  % page.title(asLink=True))
-            except pywikibot.LockedPage:
-                pywikibot.error(u"Page %s is locked."
-                                % page.title(asLink=True))
-            except pywikibot.PageNotSaved:
-                pywikibot.error(u"Page %s not saved."
-                                % page.title(asLink=True))
+                # Save the page in the background. No need to catch exceptions.
+                page.save("Pywikibot touch script", async=True)
 
 
 def main(*args):
