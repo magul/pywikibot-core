@@ -866,8 +866,6 @@ class TestLazyLoginNotExistUsername(TestLazyLoginBase):
         self.site._username = ['Not registered username', None]
         req = api.Request(site=self.site, action='query')
         self.assertRaises(pywikibot.NoUsername, req.submit)
-        # FIXME: T100965
-        self.assertRaises(api.APIError, req.submit)
 
 
 class TestLazyLoginNoUsername(TestLazyLoginBase):
@@ -887,8 +885,8 @@ class TestLazyLoginNoUsername(TestLazyLoginBase):
 
         req = api.Request(site=self.site, action='query')
         self.assertRaises(pywikibot.NoUsername, req.submit)
-        # FIXME: T100965
-        self.assertRaises(api.APIError, req.submit)
+        # Check the same exception is raised the second invocation (T100965)
+        self.assertRaises(pywikibot.NoUsername, req.submit)
 
 
 class TestBadTokenRecovery(TestCase):
