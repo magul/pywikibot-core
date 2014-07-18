@@ -284,7 +284,7 @@ class CategoryDatabase:
 
 class CategoryAddBot(Bot):
 
-    """A robot to mass-add a category to a list of pages."""
+    """A bot to mass-add a category to a list of pages."""
 
     @deprecated_args(editSummary='comment', dry=None)
     def __init__(self, generator, newcat=None, sort_by_last_name=False,
@@ -387,7 +387,7 @@ class CategoryAddBot(Bot):
                                     error))
 
 
-class CategoryMoveRobot(object):
+class CategoryMoveBot(object):
 
     """Change or remove the category from the pages.
 
@@ -524,9 +524,9 @@ class CategoryMoveRobot(object):
         # doesn't exist but source does), move_items determines if the
         # items (pages/subcategories) of the category could be moved into
         # a new (non existent) category.
-        can_move_page = CategoryMoveRobot.check_move(
+        can_move_page = CategoryMoveBot.check_move(
             'category page', self.oldcat, self.newcat)
-        can_move_talk = CategoryMoveRobot.check_move(
+        can_move_talk = CategoryMoveBot.check_move(
             'category talk page', self.oldtalk, self.newtalk)
         if not self.newcat:  # delete
             move_items = True
@@ -735,7 +735,7 @@ class CategoryMoveRobot(object):
         return var
 
 
-class CategoryRemoveRobot(CategoryMoveRobot):
+class CategoryRemoveBot(CategoryMoveBot):
 
     """Removes the category tag for a given category.
 
@@ -746,16 +746,16 @@ class CategoryRemoveRobot(CategoryMoveRobot):
     tagged for deleting. Does not remove category tags pointing at
     subcategories.
 
-    @deprecated: Using CategoryRemoveRobot is deprecated, use
-        CategoryMoveRobot without newcat param instead.
+    @deprecated: Using CategoryRemoveBot is deprecated, use
+        CategoryMoveBot without newcat param instead.
     """
 
-    @deprecated('CategoryMoveRobot.__init__()')
+    @deprecated('CategoryMoveBot.__init__()')
     def __init__(self, catTitle, batchMode=False, editSummary='',
-                 useSummaryForDeletion=CategoryMoveRobot.DELETION_COMMENT_AUTOMATIC,
+                 useSummaryForDeletion=CategoryMoveBot.DELETION_COMMENT_AUTOMATIC,
                  titleRegex=None, inPlace=False, pagesonly=False):
         """Constructor."""
-        super(CategoryRemoveRobot, self).__init__(
+        super(CategoryRemoveBot, self).__init__(
             oldcat=catTitle,
             batch=batchMode,
             comment=editSummary,
@@ -765,7 +765,7 @@ class CategoryRemoveRobot(CategoryMoveRobot):
             pagesonly=pagesonly)
 
 
-class CategoryListifyRobot:
+class CategoryListifyBot:
 
     """Create a list containing all of the members in a category."""
 
@@ -818,7 +818,7 @@ class CategoryListifyRobot:
             self.list.put(listString, summary=self.editSummary)
 
 
-class CategoryTidyRobot(pywikibot.Bot):
+class CategoryTidyBot(pywikibot.Bot):
 
     """Script to help by moving articles of the category into subcategories.
 
@@ -852,7 +852,7 @@ class CategoryTidyRobot(pywikibot.Bot):
                                             {'oldcat': catTitle,
                                              'newcat': u''})
         self.cat = pywikibot.Category(site, catTitle)
-        super(CategoryTidyRobot, self).__init__(
+        super(CategoryTidyBot, self).__init__(
             generator=pagegenerators.PreloadingGenerator(
                 self.cat.articles(namespaces=namespaces)))
 
@@ -973,7 +973,7 @@ class CategoryTidyRobot(pywikibot.Bot):
 
     def run(self):
         """Start bot."""
-        super(CategoryTidyRobot, self).run()
+        super(CategoryTidyBot, self).run()
         if not self._treat_counter:
             pywikibot.output(u'There are no articles or files in category %s'
                              % self.catTitle)
@@ -985,9 +985,9 @@ class CategoryTidyRobot(pywikibot.Bot):
         self.move_to_category(page, self.cat, self.cat)
 
 
-class CategoryTreeRobot:
+class CategoryTreeBot:
 
-    """Robot to create tree overviews of the category structure.
+    """Bot to create tree overviews of the category structure.
 
     Parameters:
         * catTitle - The category which will be the tree's root.
@@ -1208,15 +1208,15 @@ def main(*args):
         if not fromGiven:
             oldCatTitle = pywikibot.input(u'Please enter the name of the '
                                           u'category that should be removed:')
-        bot = CategoryMoveRobot(oldcat=oldCatTitle,
-                                batch=batchMode,
-                                comment=editSummary,
-                                inplace=inPlace,
-                                delete_oldcat=deleteEmptySourceCat,
-                                title_regex=titleRegex,
-                                history=withHistory,
-                                pagesonly=pagesonly,
-                                deletion_comment=useSummaryForDeletion)
+        bot = CategoryMoveBot(oldcat=oldCatTitle,
+                              batch=batchMode,
+                              comment=editSummary,
+                              inplace=inPlace,
+                              delete_oldcat=deleteEmptySourceCat,
+                              title_regex=titleRegex,
+                              history=withHistory,
+                              pagesonly=pagesonly,
+                              deletion_comment=useSummaryForDeletion)
     elif action == 'move':
         if not fromGiven:
             oldCatTitle = pywikibot.input(
@@ -1225,10 +1225,10 @@ def main(*args):
             newCatTitle = pywikibot.input(
                 u'Please enter the new name of the category:')
         if useSummaryForDeletion:
-            deletion_comment = CategoryMoveRobot.DELETION_COMMENT_SAME_AS_EDIT_COMMENT
+            deletion_comment = CategoryMoveBot.DELETION_COMMENT_SAME_AS_EDIT_COMMENT
         else:
-            deletion_comment = CategoryMoveRobot.DELETION_COMMENT_AUTOMATIC
-        bot = CategoryMoveRobot(oldcat=oldCatTitle,
+            deletion_comment = CategoryMoveBot.DELETION_COMMENT_AUTOMATIC
+        bot = CategoryMoveBot(oldcat=oldCatTitle,
                                 newcat=newCatTitle,
                                 batch=batchMode,
                                 comment=editSummary,
@@ -1244,14 +1244,14 @@ def main(*args):
                                 keep_sortkey=keep_sortkey)
     elif action == 'tidy':
         catTitle = pywikibot.input(u'Which category do you want to tidy up?')
-        bot = CategoryTidyRobot(catTitle, catDB, genFactory.namespaces)
+        bot = CategoryTidyBot(catTitle, catDB, genFactory.namespaces)
     elif action == 'tree':
         catTitle = pywikibot.input(
             u'For which category do you want to create a tree view?')
         filename = pywikibot.input(
             u'Please enter the name of the file where the tree should be saved,'
             u'\nor press enter to simply show the tree:')
-        bot = CategoryTreeRobot(catTitle, catDB, filename, depth)
+        bot = CategoryTreeBot(catTitle, catDB, filename, depth)
     elif action == 'listify':
         if not fromGiven:
             oldCatTitle = pywikibot.input(
@@ -1259,9 +1259,9 @@ def main(*args):
         if not toGiven:
             newCatTitle = pywikibot.input(
                 u'Please enter the name of the list to create:')
-        bot = CategoryListifyRobot(oldCatTitle, newCatTitle, editSummary,
-                                   overwrite, showImages, subCats=True,
-                                   talkPages=talkPages, recurse=recurse)
+        bot = CategoryListifyBot(oldCatTitle, newCatTitle, editSummary,
+                                 overwrite, showImages, subCats=True,
+                                 talkPages=talkPages, recurse=recurse)
 
     if bot:
         pywikibot.Site().login()

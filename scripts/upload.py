@@ -65,7 +65,7 @@ else:
     from urllib import URLopener
 
 
-class UploadRobot:
+class UploadBot:
 
     """Upload bot."""
 
@@ -327,7 +327,7 @@ class UploadRobot:
         else:
             return warn_code in self.ignoreWarning
 
-    @deprecated('UploadRobot.upload_file()')
+    @deprecated('UploadBot.upload_file()')
     def upload_image(self, debug=False):
         """Upload image."""
         self.upload_file(self.url, debug)
@@ -501,11 +501,11 @@ def main(*args):
     else:
         url = [url]
     description = u' '.join(description)
-    bot = UploadRobot(url, description=description, useFilename=useFilename,
-                      keepFilename=keepFilename,
-                      verifyDescription=verifyDescription,
-                      aborts=aborts, ignoreWarning=ignorewarn,
-                      chunk_size=chunk_size)
+    bot = UploadBot(url, description=description, useFilename=useFilename,
+                    keepFilename=keepFilename,
+                    verifyDescription=verifyDescription,
+                    aborts=aborts, ignoreWarning=ignorewarn,
+                    chunk_size=chunk_size)
     bot.run()
 
 if __name__ == "__main__":

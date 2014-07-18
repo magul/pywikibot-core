@@ -83,7 +83,7 @@ def main(*args):
     day = "None"
     mode = "None"
     summary = ""
-    robot = None
+    bot = None
 
     m = ReCheck()
     for line in page.text.split("\n"):
@@ -117,10 +117,10 @@ def main(*args):
             dest = m.result.group(2)
             thisDay = findDay(src, day)
             if mode == "Move" and thisDay != "None":
-                summary = "Robot - Moving category " + src + " to [[:Category:" + dest + "]] per [[WP:CFD|CFD]] at " + \
+                summary = "Bot - Moving category " + src + " to [[:Category:" + dest + "]] per [[WP:CFD|CFD]] at " + \
                           thisDay + "."
             elif mode == "Speedy":
-                summary = "Robot - Speedily moving category " + src + " to [[:Category:" + dest + \
+                summary = "Bot - Speedily moving category " + src + " to [[:Category:" + dest + \
                           "]] per [[WP:CFDS|CFDS]]."
             else:
                 continue
@@ -132,11 +132,11 @@ def main(*args):
             if destpage.isCategoryRedirect():
                 summary = 'CANCELED. Destination is redirect: ' + summary
                 pywikibot.output(summary, toStdout=True)
-                robot = None
+                bot = None
             else:
-                robot = category.CategoryMoveRobot(oldcat=src, newcat=dest, batch=True,
-                                                   comment=summary, inplace=True, move_oldcat=True,
-                                                   delete_oldcat=True, deletion_comment=True)
+                bot = category.CategoryMoveBot(oldcat=src, newcat=dest, batch=True,
+                                               comment=summary, inplace=True, move_oldcat=True,
+                                               delete_oldcat=True, deletion_comment=True)
         elif m.check(deletecat, line):
             src = m.result.group(1)
             # I currently don't see any reason to handle these two cases separately, though
@@ -144,20 +144,19 @@ def main(*args):
             # easier to call delete.py on it.
             thisDay = findDay(src, day)
             if (mode == "Empty" or mode == "Delete") and thisDay != "None":
-                summary = "Robot - Removing category " + src + " per [[WP:CFD|CFD]] at " + thisDay + "."
+                summary = "Bot - Removing category " + src + " per [[WP:CFD|CFD]] at " + thisDay + "."
             else:
                 continue
-            robot = category.CategoryMoveRobot(oldcat=src, batch=True, comment=summary,
-                                                 deletion_comment=True, inplace=True)
+            bot = category.CategoryMoveBot(oldcat=src, batch=True, comment=summary,
+                                           deletion_comment=True, inplace=True)
         else:
             # This line does not fit any of our regular expressions, so ignore it.
             pass
-        if summary != "" and robot is not None:
+        if summary != "" and bot is not None:
             pywikibot.output(summary, toStdout=True)
-            # Run, robot, run!
-            robot.run()
+            bot.run()
         summary = ""
-        robot = None
+        bot = None
 
 
 # This function grabs the wiki source of a category page and attempts to

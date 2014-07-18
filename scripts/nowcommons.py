@@ -360,19 +360,19 @@ class NowCommonsDeleteBot(Bot):
                                     \"\03{lightgreen}%s\03{default}\".'
                                     % (localImagePage.title(withNamespace=False),
                                        commonsImagePage.title(withNamespace=False)))
-                                oImageRobot = image.ImageRobot(
+                                oImageBot = image.ImageBot(
                                     pg.FileLinksGenerator(localImagePage),
                                     localImagePage.title(withNamespace=False),
                                     commonsImagePage.title(withNamespace=False),
                                     '', self.getOption('replacealways'),
                                     self.getOption('replaceloose'))
-                                oImageRobot.run()
+                                oImageBot.run()
                                 # If the image is used with the urlname the
                                 # previous function won't work
                                 if len(list(pywikibot.FilePage(self.site,
                                                                 page.title()).usingPages())) > 0 and \
                                                                 self.getOption('replaceloose'):
-                                    oImageRobot = image.ImageRobot(
+                                    oImageBot = image.ImageBot(
                                         pg.FileLinksGenerator(
                                             localImagePage),
                                         localImagePage.title(
@@ -381,7 +381,7 @@ class NowCommonsDeleteBot(Bot):
                                             withNamespace=False),
                                         '', self.getOption('replacealways'),
                                         self.getOption('replaceloose'))
-                                    oImageRobot.run()
+                                    oImageBot.run()
                                 # refresh because we want the updated list
                                 usingPages = len(list(pywikibot.FilePage(
                                     self.site, page.title()).usingPages()))

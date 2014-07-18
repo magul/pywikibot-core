@@ -407,7 +407,7 @@ class DuplicateReferences(object):
         return text
 
 
-class ReferencesRobot(Bot):
+class ReferencesBot(Bot):
 
     """References bot."""
 
@@ -419,7 +419,7 @@ class ReferencesRobot(Bot):
             'summary': None,
         })
 
-        super(ReferencesRobot, self).__init__(**kwargs)
+        super(ReferencesBot, self).__init__(**kwargs)
         self.generator = generator
         self.site = pywikibot.Site()
         # Check
@@ -843,7 +843,7 @@ def main(*args):
         return
     generator = pagegenerators.PreloadingGenerator(generator, step=50)
     generator = pagegenerators.RedirectFilterPageGenerator(generator)
-    bot = ReferencesRobot(generator, **options)
+    bot = ReferencesBot(generator, **options)
     bot.run()
 
 if __name__ == "__main__":

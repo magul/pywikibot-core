@@ -59,7 +59,7 @@ class CosmeticChangesBot(ExistingPageBot, NoRedirectPageBot):
         """Constructor."""
         self.availableOptions.update({
             'async': False,
-            'summary': u'Robot: Cosmetic changes',
+            'summary': u'Bot: Cosmetic changes',
             'ignore': cosmetic_changes.CANCEL_ALL,
         })
         super(CosmeticChangesBot, self).__init__(**kwargs)

@@ -319,7 +319,7 @@ class XmlDumpReplacePageGenerator(object):
                          compiled regular expression) and replacement
                          text (as a string).
         * exceptions   - A dictionary which defines when to ignore an
-                         occurrence. See docu of the ReplaceRobot
+                         occurrence. See docu of the ReplaceBot
                          constructor below.
     """
 
@@ -402,7 +402,7 @@ class XmlDumpReplacePageGenerator(object):
         return False
 
 
-class ReplaceRobot(Bot):
+class ReplaceBot(Bot):
 
     """A bot that can do text replacements."""
 
@@ -448,9 +448,9 @@ class ReplaceRobot(Bot):
                 exceptionRegexes dictionary in textlib.replaceExcept().
 
         """
-        super(ReplaceRobot, self).__init__(generator=generator,
-                                           always=always,
-                                           **kwargs)
+        super(ReplaceBot, self).__init__(generator=generator,
+                                         always=always,
+                                         **kwargs)
 
         for i, replacement in enumerate(replacements):
             if isinstance(replacement, collections.Sequence):
@@ -953,9 +953,9 @@ LIMIT 200""" % (whereClause, exceptClause)
         return
 
     preloadingGen = pagegenerators.PreloadingGenerator(gen)
-    bot = ReplaceRobot(preloadingGen, replacements, exceptions, acceptall,
-                       allowoverlap, recursive, add_cat, sleep, edit_summary,
-                       site)
+    bot = ReplaceBot(preloadingGen, replacements, exceptions, acceptall,
+                     allowoverlap, recursive, add_cat, sleep, edit_summary,
+                     site)
     site.login()
     bot.run()
 

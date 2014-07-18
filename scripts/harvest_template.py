@@ -38,7 +38,7 @@ from pywikibot import pagegenerators as pg, textlib, WikidataBot
 docuReplacements = {'&params;': pywikibot.pagegenerators.parameterHelp}
 
 
-class HarvestRobot(WikidataBot):
+class HarvestBot(WikidataBot):
 
     """A bot to add Wikidata claims."""
 
@@ -52,7 +52,7 @@ class HarvestRobot(WikidataBot):
             * fields        - A dictionary of fields that are of use to us
 
         """
-        super(HarvestRobot, self).__init__()
+        super(HarvestBot, self).__init__()
         self.generator = pg.PreloadingGenerator(generator)
         self.templateTitle = templateTitle.replace(u'_', u' ')
         # TODO: Make it a list which also includes the redirects to the template
@@ -226,7 +226,7 @@ def main(*args):
         gen.handleArg(u'-transcludes:' + template_title)
         generator = gen.getCombinedGenerator()
 
-    bot = HarvestRobot(generator, template_title, fields)
+    bot = HarvestBot(generator, template_title, fields)
     bot.run()
 
 if __name__ == "__main__":

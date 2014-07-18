@@ -30,7 +30,7 @@ from pywikibot import pagegenerators, WikidataBot
 docuReplacements = {'&params;': pywikibot.pagegenerators.parameterHelp}
 
 
-class IllustrateRobot(WikidataBot):
+class IllustrateBot(WikidataBot):
 
     """A bot to add Wikidata image claims."""
 
@@ -43,7 +43,7 @@ class IllustrateRobot(WikidataBot):
             * wdproperty    - The property to add. Should be of type commonsMedia
 
         """
-        super(IllustrateRobot, self).__init__()
+        super(IllustrateBot, self).__init__()
         self.generator = pagegenerators.PreloadingGenerator(generator)
         self.wdproperty = wdproperty
         self.cacheSources()
@@ -119,7 +119,7 @@ def main(*args):
         pywikibot.output('I need a generator with pages to work on')
         return
 
-    bot = IllustrateRobot(generator, wdproperty)
+    bot = IllustrateBot(generator, wdproperty)
     bot.run()
 
 if __name__ == "__main__":

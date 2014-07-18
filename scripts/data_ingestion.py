@@ -172,12 +172,12 @@ class DataIngestionBot(pywikibot.Bot):
         title = photo.getTitle(self.titlefmt)
         description = photo.getDescription(self.pagefmt)
 
-        bot = upload.UploadRobot(url=photo.URL,
-                                 description=description,
-                                 useFilename=title,
-                                 keepFilename=True,
-                                 verifyDescription=False,
-                                 targetSite=self.site)
+        bot = upload.UploadBot(url=photo.URL,
+                               description=description,
+                               useFilename=title,
+                               keepFilename=True,
+                               verifyDescription=False,
+                               targetSite=self.site)
         bot._contents = photo.downloadPhoto().getvalue()
         bot._retrieved = True
         bot.run()

@@ -365,7 +365,7 @@ class RedirectGenerator:
                 continue
 
 
-class RedirectRobot(Bot):
+class RedirectBot(Bot):
 
     """Redirect bot."""
 
@@ -374,7 +374,7 @@ class RedirectRobot(Bot):
             'number': None,
             'delete': False,
         })
-        super(RedirectRobot, self).__init__(**kwargs)
+        super(RedirectBot, self).__init__(**kwargs)
         self.site = pywikibot.Site()
         self.action = action
         self.generator = generator
@@ -789,7 +789,7 @@ def main(*args):
         pywikibot.Site().login()
         gen = RedirectGenerator(xmlFilename, namespaces, offset, moved_pages,
                                 fullscan, start, until, number, step, pagename)
-        bot = RedirectRobot(action, gen, number=number, **options)
+        bot = RedirectBot(action, gen, number=number, **options)
         bot.run()
 
 if __name__ == '__main__':

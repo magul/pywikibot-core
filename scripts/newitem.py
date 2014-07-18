@@ -34,7 +34,7 @@ from pywikibot import pagegenerators, WikidataBot
 from datetime import timedelta
 
 
-class NewItemRobot(WikidataBot):
+class NewItemBot(WikidataBot):
 
     """A bot to create new items."""
 
@@ -46,7 +46,7 @@ class NewItemRobot(WikidataBot):
             'touch': False,
         })
 
-        super(NewItemRobot, self).__init__(**kwargs)
+        super(NewItemBot, self).__init__(**kwargs)
         self.generator = pagegenerators.PreloadingGenerator(generator)
         self.pageAge = self.getOption('pageage')
         self.lastEdit = self.getOption('lastedit')
@@ -147,7 +147,7 @@ def main(*args):
         pywikibot.showHelp()
         return
 
-    bot = NewItemRobot(generator, **options)
+    bot = NewItemBot(generator, **options)
     bot.run()
 
 if __name__ == "__main__":

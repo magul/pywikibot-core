@@ -75,7 +75,7 @@ class NoTitle(Exception):
         self.offset = offset
 
 
-class PageFromFileRobot(Bot):
+class PageFromFileBot(Bot):
 
     """
     Responsible for writing pages to the wiki.
@@ -97,7 +97,7 @@ class PageFromFileRobot(Bot):
             'redirect': True
         })
 
-        super(PageFromFileRobot, self).__init__(**kwargs)
+        super(PageFromFileBot, self).__init__(**kwargs)
         self.reader = reader
 
     def run(self):
@@ -322,7 +322,7 @@ def main(*args):
         reader = PageFromFileReader(filename, pageStartMarker, pageEndMarker,
                                     titleStartMarker, titleEndMarker, include,
                                     notitle)
-        bot = PageFromFileRobot(reader, **options)
+        bot = PageFromFileBot(reader, **options)
         bot.run()
 
 if __name__ == "__main__":

@@ -320,11 +320,11 @@ def processPhoto(flickr=None, photo_id=u'', flickrreview=False, reviewer=u'',
             # Would be nice to check before I upload if the file is already at Commons
             # Not that important for this program, but maybe for derived programs
             if not skip:
-                bot = upload.UploadRobot(photoUrl,
-                                         description=newPhotoDescription,
-                                         useFilename=newFilename,
-                                         keepFilename=True,
-                                         verifyDescription=False)
+                bot = upload.UploadBot(photoUrl,
+                                       description=newPhotoDescription,
+                                       useFilename=newFilename,
+                                       keepFilename=True,
+                                       verifyDescription=False)
                 bot.upload_image(debug=False)
                 return 1
     else:

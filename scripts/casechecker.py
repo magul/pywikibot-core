@@ -419,7 +419,7 @@ class CaseChecker(object):
                                 if page['ns'] == 14:
                                     import category
                                     dst = self.Page(newTitle)
-                                    bot = category.CategoryMoveRobot(
+                                    bot = category.CategoryMoveBot(
                                         src.title(withNamespace=False),
                                         dst.title(withNamespace=False),
                                         self.autonomous,

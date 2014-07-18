@@ -116,7 +116,7 @@ import pywikibot
 
 from pywikibot import i18n, pagegenerators, xmlreader, Bot
 
-from scripts.replace import ReplaceRobot as ReplaceBot
+from scripts.replace import ReplaceBot
 
 
 def UserEditFilterGenerator(generator, username, timestamp=None, skip=False,
@@ -196,7 +196,7 @@ class XmlDumpTemplatePageGenerator(object):
                 yield page
 
 
-class TemplateRobot(ReplaceBot):
+class TemplateBot(ReplaceBot):
 
     """This bot will replace, remove or subst all occurrences of a template."""
 
@@ -283,7 +283,7 @@ class TemplateRobot(ReplaceBot):
                 replacements.append((templateRegex,
                                      r'{{%s\g<parameters>}}' % new))
 
-        super(TemplateRobot, self).__init__(
+        super(TemplateBot, self).__init__(
             generator, replacements, exceptions,
             always=self.getOption('always'),
             addedCat=self.getOption('addedCat'),
@@ -385,7 +385,7 @@ def main(*args):
 
     preloadingGen = pagegenerators.PreloadingGenerator(gen)
 
-    bot = TemplateRobot(preloadingGen, templates, **options)
+    bot = TemplateBot(preloadingGen, templates, **options)
     bot.run()
 
 if __name__ == "__main__":

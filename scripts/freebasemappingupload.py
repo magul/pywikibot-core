@@ -31,7 +31,7 @@ import sys
 import pywikibot
 
 
-class FreebaseMapperRobot:
+class FreebaseMapperBot:
 
     """Freebase Mapping bot."""
 
@@ -113,7 +113,7 @@ def main(*args):
     for arg in pywikibot.handle_args(args):
         if arg.startswith('-filename'):
             filename = arg[11:]
-    bot = FreebaseMapperRobot(filename)
+    bot = FreebaseMapperBot(filename)
     bot.run()
 
 if __name__ == '__main__':

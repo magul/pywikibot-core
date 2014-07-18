@@ -11,7 +11,7 @@ __version__ = '$Id$'
 
 import os
 
-from scripts.reflinks import XmlDumpPageGenerator, ReferencesRobot, main
+from scripts.reflinks import XmlDumpPageGenerator, ReferencesBot, main
 
 from tests import _data_dir
 from tests.aspects import unittest, TestCase, ScriptMainTestCase
@@ -146,14 +146,14 @@ class TestReferencesBotConstructor(ScriptMainTestCase):
 
     def setUp(self):
         super(TestReferencesBotConstructor, self).setUp()
-        self._original_constructor = ReferencesRobot.__init__
-        self._original_run = ReferencesRobot.run
-        ReferencesRobot.__init__ = dummy_constructor
-        ReferencesRobot.run = lambda self: None
+        self._original_constructor = ReferencesBot.__init__
+        self._original_run = ReferencesBot.run
+        ReferencesBot.__init__ = dummy_constructor
+        ReferencesBot.run = lambda self: None
 
     def tearDown(self):
-        ReferencesRobot.__init__ = self._original_constructor
-        ReferencesRobot.run = self._original_run
+        ReferencesBot.__init__ = self._original_constructor
+        ReferencesBot.run = self._original_run
         super(TestReferencesBotConstructor, self).tearDown()
 
     def test_xml_simple(self):

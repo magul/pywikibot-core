@@ -498,7 +498,7 @@ interwiki_shownew = True
 # https://code.google.com/p/pydot/
 interwiki_graph = False
 
-# Specifies that the robot should process that amount of subjects at a time,
+# Specifies that the bot should process that amount of subjects at a time,
 # only starting to load new pages in the original language when the total
 # falls below that number. Default is to process (at least) 100 subjects at
 # once.
@@ -540,7 +540,7 @@ interwiki_contents_on_disk = False
 # Example:
 #
 # disambiguation_comment['wikipedia']['en'] = \
-#    "Robot-assisted disambiguation ([[WP:DPL|you can help!]]): %s"
+#    "Bot-assisted disambiguation ([[WP:DPL|you can help!]]): %s"
 
 sort_ignore_case = False
 
@@ -551,7 +551,7 @@ upload_to_commons = False
 
 # ############# SETTINGS TO AVOID SERVER OVERLOAD ##############
 
-# Slow down the robot such that it never requests a second page within
+# Slow down the bot such that it never requests a second page within
 # 'minthrottle' seconds. This can be lengthened if the server is slow,
 # but never more than 'maxthrottle' seconds. However - if you are running
 # more than one bot in parallel the times are lengthened.
@@ -561,7 +561,7 @@ upload_to_commons = False
 minthrottle = 0
 maxthrottle = 60
 
-# Slow down the robot such that it never makes a second page edit within
+# Slow down the bot such that it never makes a second page edit within
 # 'put_throttle' seconds.
 put_throttle = 10
 

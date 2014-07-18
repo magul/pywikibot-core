@@ -50,9 +50,9 @@ docuReplacements = {
 }
 
 
-class DeletionRobot(CurrentPageBot):
+class DeletionBot(CurrentPageBot):
 
-    """This robot allows deletion of pages en masse."""
+    """This bot allows deletion of pages en masse."""
 
     def __init__(self, generator, summary, **kwargs):
         """
@@ -66,7 +66,7 @@ class DeletionRobot(CurrentPageBot):
         self.availableOptions.update({
             'undelete': False,
         })
-        super(DeletionRobot, self).__init__(generator=generator, **kwargs)
+        super(DeletionBot, self).__init__(generator=generator, **kwargs)
 
         self.summary = summary
 
@@ -153,7 +153,7 @@ def main(*args):
         if summary is None:
             summary = pywikibot.input(u'Enter a reason for the %sdeletion:'
                                       % ['', 'un'][options.get('undelete', False)])
-        bot = DeletionRobot(generator, summary, **options)
+        bot = DeletionBot(generator, summary, **options)
         bot.run()
     else:
         # Show help text from the top of this file

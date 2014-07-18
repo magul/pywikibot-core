@@ -63,13 +63,13 @@ docuReplacements = {
 }
 
 
-class ProtectionRobot(Bot):
+class ProtectionBot(Bot):
 
     """This bot allows protection of pages en masse."""
 
     def __init__(self, generator, protections, **kwargs):
         """
-        Create a new ProtectionRobot.
+        Create a new ProtectionBot.
 
         @param generator: the page generator
         @type generator: generator
@@ -80,7 +80,7 @@ class ProtectionRobot(Bot):
         self.availableOptions.update({
             'summary': None,
         })
-        super(ProtectionRobot, self).__init__(**kwargs)
+        super(ProtectionBot, self).__init__(**kwargs)
         self.generator = generator
         self.protections = protections
 
@@ -243,7 +243,7 @@ def main(*args):
         if not options.get('summary'):
             options['summary'] = pywikibot.input(
                 u'Enter a reason for the protection change:')
-        bot = ProtectionRobot(generator, combined_protections, **options)
+        bot = ProtectionBot(generator, combined_protections, **options)
         bot.run()
     else:
         # Show help text from the top of this file

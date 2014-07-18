@@ -260,7 +260,7 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
 #                 % {'name': self.username,
 #                    'page': botList[self.site.family.name][self.site.code]})
 #            logger.error(
-# "Please make sure you are allowed to use the robot before actually using it!")
+# "Please make sure you are allowed to use the bot before actually using it!")
 #            return False
         return True
 

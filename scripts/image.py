@@ -49,10 +49,10 @@ import pywikibot
 
 from pywikibot import i18n, pagegenerators, Bot
 
-from scripts.replace import ReplaceRobot as ReplaceBot
+from scripts.replace import ReplaceBot
 
 
-class ImageRobot(ReplaceBot):
+class ImageBot(ReplaceBot):
 
     """This bot will replace or remove all occurrences of an old image."""
 
@@ -165,9 +165,9 @@ class ImageRobot(ReplaceBot):
         else:
             replacements.append((image_regex, ''))
 
-        super(ImageRobot, self).__init__(self.generator, replacements,
-                                         always=self.getOption('always'),
-                                         summary=self.getOption('summary'))
+        super(ImageBot, self).__init__(self.generator, replacements,
+                                       always=self.getOption('always'),
+                                       summary=self.getOption('summary'))
 
 
 def main(*args):
@@ -203,7 +203,7 @@ def main(*args):
         old_imagepage = pywikibot.FilePage(site, old_image)
         gen = pagegenerators.FileLinksGenerator(old_imagepage)
         preloadingGen = pagegenerators.PreloadingGenerator(gen)
-        bot = ImageRobot(preloadingGen, old_image, new_image, **options)
+        bot = ImageBot(preloadingGen, old_image, new_image, **options)
         bot.run()
     else:
         pywikibot.showHelp()

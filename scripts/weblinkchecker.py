@@ -762,7 +762,7 @@ class DeadLinkReportThread(threading.Thread):
                 self.semaphore.release()
 
 
-class WeblinkCheckerRobot:
+class WeblinkCheckerBot:
 
     """
     Bot which will search for dead weblinks.
@@ -905,7 +905,7 @@ def main(*args):
         pageNumber = max(240, config.max_external_links * 2)
         gen = pagegenerators.PreloadingGenerator(gen, step=pageNumber)
         gen = pagegenerators.RedirectFilterPageGenerator(gen)
-        bot = WeblinkCheckerRobot(gen, HTTPignore, day)
+        bot = WeblinkCheckerBot(gen, HTTPignore, day)
         try:
             bot.run()
         finally:

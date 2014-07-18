@@ -156,7 +156,7 @@ parameterHelp = u"""\
 -ref              Work on all pages that link to a certain page.
                   Argument can also be given as "-ref:referredpagetitle".
 
--start            Specifies that the robot should go alphabetically through
+-start            Specifies that the bot should go alphabetically through
                   all pages on the home wiki, starting at the named page.
                   Argument can also be given as "-start:pagetitle".
 

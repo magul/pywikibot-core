@@ -596,7 +596,7 @@ def printWithTimeZone(message):
 
 class checkImagesBot(object):
 
-    """A robot to check recently uploaded files."""
+    """A bot to check recently uploaded files."""
 
     def __init__(self, site, logFulNumber=25000, sendemailActive=False,
                  duplicatesReport=False, logFullError=True):

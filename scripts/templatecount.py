@@ -46,7 +46,7 @@ import pywikibot
 templates = ['ref', 'note', 'ref label', 'note label', 'reflist']
 
 
-class TemplateCountRobot:
+class TemplateCountBot:
 
     """Template count bot."""
 
@@ -136,7 +136,7 @@ def main(*args):
         pywikibot.showHelp('templatecount')
         return
 
-    robot = TemplateCountRobot()
+    bot = TemplateCountBot()
     if not argsList:
         argsList = templates
 
@@ -153,9 +153,9 @@ def main(*args):
             return
 
     if operation == "count":
-        robot.countTemplates(argsList, namespaces)
+        bot.countTemplates(argsList, namespaces)
     elif operation == "list":
-        robot.listTemplates(argsList, namespaces)
+        bot.listTemplates(argsList, namespaces)
 
 if __name__ == "__main__":
     main()

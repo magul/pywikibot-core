@@ -35,7 +35,7 @@ from pywikibot import pagegenerators, WikidataBot
 from pywikibot.exceptions import CoordinateGlobeUnknownException
 
 
-class CoordImportRobot(WikidataBot):
+class CoordImportBot(WikidataBot):
 
     """A bot to import coordinates to Wikidata."""
 
@@ -47,7 +47,7 @@ class CoordImportRobot(WikidataBot):
             * generator    - A generator that yields Page objects.
 
         """
-        super(CoordImportRobot, self).__init__()
+        super(CoordImportBot, self).__init__()
         self.generator = pagegenerators.PreloadingGenerator(generator)
         self.cacheSources()
         self.prop = 'P625'
@@ -125,7 +125,7 @@ def main(*args):
     generator = generator_factory.getCombinedGenerator()
 
     if generator:
-        coordbot = CoordImportRobot(generator)
+        coordbot = CoordImportBot(generator)
         coordbot.run()
     else:
         pywikibot.showHelp()

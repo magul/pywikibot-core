@@ -69,7 +69,7 @@ docuReplacements = {
 }
 
 
-class ClaimRobot(WikidataBot):
+class ClaimBot(WikidataBot):
 
     """A bot to add Wikidata claims."""
 
@@ -83,7 +83,7 @@ class ClaimRobot(WikidataBot):
             * exists_arg   - String specifying how to handle duplicate claims
 
         """
-        super(ClaimRobot, self).__init__(use_from_page=None)
+        super(ClaimBot, self).__init__(use_from_page=None)
         self.generator = generator
         self.claims = claims
         self.exists_arg = exists_arg
@@ -207,7 +207,7 @@ def main(*args):
         pywikibot.showHelp()
         return
 
-    bot = ClaimRobot(generator, claims, exists_arg)
+    bot = ClaimBot(generator, claims, exists_arg)
     bot.run()
 
 if __name__ == "__main__":

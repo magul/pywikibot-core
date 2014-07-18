@@ -33,7 +33,7 @@ __version__ = '$Id$'
 
 import pywikibot
 from pywikibot import i18n, pagegenerators
-from solve_disambiguation import DisambiguationRobot
+from solve_disambiguation import DisambiguationBot
 
 HELP_MSG = """\n
 mispelling.py does not support site {site}.
@@ -45,7 +45,7 @@ with category containing misspelling pages or a template for
 these misspellings.\n"""
 
 
-class MisspellingRobot(DisambiguationRobot):
+class MisspellingBot(DisambiguationBot):
 
     """Spelling bot."""
 
@@ -68,7 +68,7 @@ class MisspellingRobot(DisambiguationRobot):
     }
 
     def __init__(self, always, firstPageTitle, main_only):
-        super(MisspellingRobot, self).__init__(
+        super(MisspellingBot, self).__init__(
             always, [], True, False,
             self.createPageGenerator(firstPageTitle), False, main_only)
 
@@ -100,7 +100,7 @@ class MisspellingRobot(DisambiguationRobot):
         preloadingGen = pagegenerators.PreloadingGenerator(generator)
         return preloadingGen
 
-    # Overrides the DisambiguationRobot method.
+    # Overrides the DisambiguationBot method.
     def findAlternatives(self, disambPage):
         if disambPage.isRedirectPage():
             self.alternatives.append(disambPage.getRedirectTarget().title())
@@ -122,7 +122,7 @@ class MisspellingRobot(DisambiguationRobot):
                         self.alternatives.append(correctSpelling)
                     return True
 
-    # Overrides the DisambiguationRobot method.
+    # Overrides the DisambiguationBot method.
     def setSummaryMessage(self, disambPage, new_targets=[], unlink=False,
                           dn=False):
         # TODO: setSummaryMessage() in solve_disambiguation now has parameters
@@ -158,7 +158,7 @@ def main(*args):
         elif arg == '-main':
             main_only = True
 
-    bot = MisspellingRobot(always, firstPageTitle, main_only)
+    bot = MisspellingBot(always, firstPageTitle, main_only)
     bot.run()
 
 
