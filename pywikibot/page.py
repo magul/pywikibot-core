@@ -178,7 +178,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
     def title(self, underscore=False, withNamespace=True,
               withSection=True, asUrl=False, asLink=False,
               allowInterwiki=True, forceInterwiki=False, textlink=False,
-              as_filename=False, insite=None):
+              as_filename=False, insite=None, label=None):
         """Return the title of this Page, as a Unicode string.
 
         @param underscore: (not used with asLink) if true, replace all ' '
@@ -201,10 +201,12 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         @param insite: (only used if asLink is true) a site object where the
             title is to be shown. default is the current family/lang given by
             -family and -lang option i.e. config.family and config.mylang
+        @param label: (only used if asLink is true) A new label for the link
+            instead of the pure title.
+        @type label: unicode
 
         """
         title = self._link.canonical_title()
-        label = self._link.title
         if withSection and self._link.section:
             section = u"#" + self._link.section
         else:
@@ -233,12 +235,15 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                 title = u':%s' % title
             elif self.namespace() == 0 and not section:
                 withNamespace = True
+            elif label is not None:
+                withNamespace = False
             if withNamespace:
                 return u'[[%s%s]]' % (title, section)
             else:
-                return u'[[%s%s|%s]]' % (title, section, label)
+                return u'[[%s%s|%s]]' % (title, section,
+                                         label or self._link.title)
         if not withNamespace and self.namespace() != 0:
-            title = label + section
+            title = self._link.title + section
         else:
             title += section
         if underscore or asUrl:
@@ -2051,7 +2056,13 @@ class Category(Page):
             raise ValueError(u"'%s' is not in the category namespace!"
                              % title)
 
+    def title(self, label=None, **kwargs):
+        """ Category title. """
+        key = label or self.sortKey
+        return super(Category, self).title(label=key, **kwargs)
+
     @deprecated_args(forceInterwiki=None, textlink=None, noInterwiki=None)
+    @deprecated("Category.title(asLink=True)")
     def aslink(self, sortKey=None):
         """Return a link to place a page in this Category.
 
@@ -2063,13 +2074,7 @@ class Category(Page):
         @type sortKey: (optional) unicode
 
         """
-        key = sortKey or self.sortKey
-        if key is not None:
-            titleWithSortKey = '%s|%s' % (self.title(withSection=False),
-                                          key)
-        else:
-            titleWithSortKey = self.title(withSection=False)
-        return '[[%s]]' % titleWithSortKey
+        return self.title(asLink=True, label=sortKey)
 
     @deprecated_args(startFrom=None, cacheResults=None)
     def subcategories(self, recurse=False, step=None, total=None,
