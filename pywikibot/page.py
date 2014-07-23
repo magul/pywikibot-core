@@ -1270,20 +1270,57 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
 
     @deprecate_arg("nofollow_redirects", None)
     @deprecate_arg("get_redirect", None)
-    def categories(self, withSortKey=False, step=None, total=None,
-                   content=False):
+    @deprecate_arg("withSortKey", "props")
+    def categories(self, from_raw_text=False, step=None, total=None,
+                   content=False, props=False):
         """Iterate categories that the article is in.
 
-        @param withSortKey: if True, include the sort key in each Category.
+        @param from_raw_text: if True, exclude categories from transclusion,
+            preserve their order as they are in wikitext, and set sortKey
+            from wikitext
         @param step: limit each API call to this number of pages
         @param total: iterate no more than this number of pages in total
         @param content: if True, retrieve the content of the current version
             of each category description page (default False)
+        @param props: if True, retrieve
+            sortkey: sort key in each Category
+            timestamp: time when each category was added
+            hidden: whether each category is hidden
         @return: a generator that yields Category objects.
 
         """
-        return self.site.pagecategories(self, withSortKey=withSortKey,
-                                        step=step, total=total, content=content)
+        if props or not from_raw_text:
+            # set total=None to match items with getCategoryLinks properly
+            # set content=False to avoid getting too much content
+            gen = self.site.pagecategories(
+                self,
+                step=step,
+                total=total if not from_raw_text else None,
+                content=content if not from_raw_text else False,
+                props=props
+            )
+            if not from_raw_text:
+                return gen
+
+            cached_categories = {}
+            for cat in gen:
+                cached_categories[cat.title()] = cat
+
+        categoryLinks = pywikibot.textlib.getCategoryLinks(self.text)
+        if total is not None:
+            categoryLinks = categoryLinks[:total]
+        if content:
+            categoryLinks = self.site.preloadpages(categoryLinks)
+
+        def generator():
+            for cat in categoryLinks:
+                if props:
+                    api_cat = cached_categories[cat.title()]
+                    cat._hidden = api_cat._hidden
+                    cat._page_add_ts = api_cat._page_add_ts
+                yield cat
+
+        return generator()
 
     def extlinks(self, step=None, total=None):
         """Iterate all external URLs (not interwiki links) from this page.
@@ -1633,8 +1670,7 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
         # get list of Category objects the article is in and remove possible
         # duplicates
         cats = []
-        for cat in pywikibot.textlib.getCategoryLinks(self.text,
-                                                      site=self.site):
+        for cat in self.categories(from_raw_text=True):
             if cat not in cats:
                 cats.append(cat)
 
@@ -1899,8 +1935,14 @@ class Category(Page):
 
         All parameters are the same as for Page() constructor.
 
+        @param sortKey: sortKey specified in an article. None means no sortKey.
+
         """
+        # sortKey, and _page_add_ts are likely to be removed in future
+        # because they are not properties of a category
         self.sortKey = sortKey
+        self._page_add_ts = None
+        self._hidden = None
         Page.__init__(self, source, title, ns=14)
         if self.namespace() != 14:
             raise ValueError(u"'%s' is not in the category namespace!"

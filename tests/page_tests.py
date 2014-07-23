@@ -356,6 +356,9 @@ class TestPageObject(PywikibotTestCase):
         for t, params in mainpage.templatesWithParams():
             self.assertType(t, pywikibot.Page)
             self.assertType(params, list)
+        # The main page of en.wp does not have any categories!
+        # However this test will not break on en.wp, and
+        # may be useful if run against other wikis.
         for p in mainpage.categories():
             self.assertType(p, pywikibot.Category)
         for p in mainpage.extlinks():
@@ -376,6 +379,60 @@ class TestPageObject(PywikibotTestCase):
         page = page.toggleTalkPage()
         s = repr(page)
         self.assertType(s, str)
+
+
+class TestPageCategories(PywikibotTestCase):
+
+    mainhelp = pywikibot.Page(pywikibot.page.Link("Help:Contents", site))
+
+    def testCategories(self):
+        hidden_cat = pywikibot.Category(
+            site, 'Category:Wikipedia move-protected project pages')
+
+        raw_cats = list(self.mainhelp.categories(from_raw_text=True))
+        for p in raw_cats:
+            self.assertType(p, pywikibot.Category)
+
+        self.assertEquals(len(raw_cats), 2)
+        self.assertIn(pywikibot.Category(site, 'Category:Help'), raw_cats)
+        self.assertNotIn(hidden_cat, raw_cats)
+        self.assertTrue(hasattr(raw_cats[0], 'sortKey'))
+
+        raw_cats = list(self.mainhelp.categories(from_raw_text=True, props=True))
+        for p in raw_cats:
+            self.assertType(p, pywikibot.Category)
+
+        self.assertEquals(len(raw_cats), 2)
+        self.assertIn(pywikibot.Category(site, 'Category:Help'), raw_cats)
+        self.assertNotIn(hidden_cat, raw_cats)
+        self.assertTrue(hasattr(raw_cats[0], 'sortKey'))
+        self.assertTrue(raw_cats[0]._page_add_ts)
+        self.assertTrue(raw_cats[0]._hidden is not None)
+
+        all_cats = list(self.mainhelp.categories(from_raw_text=False, props=False))
+        for p in all_cats:
+            self.assertType(p, pywikibot.Category)
+
+        self.assertEquals(len(all_cats), 4)
+        self.assertIn(pywikibot.Category(site, 'Category:Help'), all_cats)
+        self.assertIn(hidden_cat, all_cats)
+        self.assertTrue(hasattr(all_cats[0], 'sortKey'))
+        self.assertFalse(all_cats[0].sortKey)
+        self.assertFalse(all_cats[0]._page_add_ts)
+        self.assertTrue(all_cats[0]._hidden is None)
+
+        all_cats = list(self.mainhelp.categories(props=True))
+        for p in all_cats:
+            self.assertType(p, pywikibot.Category)
+
+        self.assertEquals(len(all_cats), 4)
+        self.assertIn(pywikibot.Category(site, 'Category:Help'), all_cats)
+        self.assertIn(hidden_cat, all_cats)
+        self.assertTrue(hasattr(all_cats[0], 'sortKey'))
+        self.assertTrue(all_cats[0].sortKey)
+        self.assertTrue(all_cats[0]._page_add_ts)
+        self.assertTrue(all_cats[0]._hidden is not None)
+
 
 # methods that still need tests implemented or expanded:
 

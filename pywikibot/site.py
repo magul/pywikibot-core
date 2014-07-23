@@ -2025,14 +2025,18 @@ class APISite(BaseSite):
                                 g_content=content, **plargs)
         return plgen
 
-    @deprecate_arg("withSortKey", None)  # Sortkey doesn't work with generator
-    def pagecategories(self, page, step=None, total=None, content=False):
+    @deprecate_arg("withSortKey", "props")
+    def pagecategories(self, page, step=None, total=None, content=False,
+                       props=False):
         """Iterate categories to which page belongs.
 
         @param content: if True, load the current content of each iterated page
             (default False); note that this means the contents of the
             category description page, not the pages contained in the category
-
+        @param props: if True, retrieve
+            sortkey: sort key in each Category
+            timestamp: time when each category was added
+            hidden: whether each category is hidden
         """
         clargs = {}
         if hasattr(page, "_pageid"):
@@ -2040,10 +2044,33 @@ class APISite(BaseSite):
         else:
             clargs['titles'] = page.title(
                 withSection=False).encode(self.encoding())
-        clgen = self._generator(api.CategoryPageGenerator,
-                                type_arg="categories", step=step, total=total,
-                                g_content=content, **clargs)
-        return clgen
+
+        if not props:
+            return self._generator(api.CategoryPageGenerator,
+                                   type_arg="categories", step=step,
+                                   total=total, g_content=content,
+                                   **clargs)
+
+        def generator():
+            clgen = self._generator(api.PropertyGenerator,
+                                    type_arg="categories", step=step,
+                                    total=total,
+                                    clprop='sortkey|timestamp|hidden',
+                                    **clargs)
+            for stepdict in clgen:
+                if 'categories' in stepdict:
+                    for catdata in stepdict['categories']:
+                        cat = pywikibot.Category(self, catdata['title'])
+                        cat.sortKey = catdata['sortkeyprefix'] or None
+                        cat._page_add_ts = pywikibot.Timestamp.fromISOformat(
+                            catdata['timestamp'])
+                        cat._hidden = ('hidden' in catdata)
+                        yield cat
+
+        if content:
+            return self.preloadpages(generator())
+        else:
+            return generator()
 
     def pageimages(self, page, step=None, total=None, content=False):
         """Iterate images used (not just linked) on the page.
