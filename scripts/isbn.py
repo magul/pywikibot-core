@@ -24,8 +24,6 @@ Furthermore, the following command line parameters are supported:
                   cosmetic_changes, so that these changes are made on-the-fly
                   to all pages that are modified.
 
--always           Don't prompt you for each replacement.
-
 -prop-isbn-10     Sets ISBN-10 property ID, so it's not tried to be found
                   automatically.
                   The usage is as follows: -prop-isbn-10:propid
@@ -1645,7 +1643,7 @@ def main(*args):
             options[arg[1:len('-prop-isbn-10')]] = arg[len('-prop-isbn-10:'):]
         elif arg.startswith('-prop-isbn-13:'):
             options[arg[1:len('-prop-isbn-13')]] = arg[len('-prop-isbn-13:'):]
-        elif arg.startswith('-') and arg[1:] in ('always', 'to13', 'format'):
+        elif arg.startswith('-') and arg[1:] in ('to13', 'format'):
             options[arg[1:]] = True
         else:
             genFactory.handleArg(arg)

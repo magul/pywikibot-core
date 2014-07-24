@@ -754,6 +754,11 @@ actions_to_block = []
 # Set simulate to True or use -simulate option to block all actions given above.
 simulate = False
 
+# Always put a page or perform a 'write' action instead of asking each time.
+# This should be only switched on via the '-always' command-line argument,
+# on a task-by-task basis.
+always = False
+
 # How many pages should be put to a queue in asynchronous mode.
 # If maxsize is <= 0, the queue size is infinite.
 # Increasing this value will increase memory space but could speed up

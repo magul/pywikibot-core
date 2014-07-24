@@ -10,8 +10,6 @@ Command-line arguments:
 
 &params;
 
--always           Don't prompt to make changes, just do them.
-
 -titlecase        creates a titlecased redirect version of a given page
                   where all words of the title start with an uppercase
                   character and the remaining characters are lowercase.
@@ -106,9 +104,7 @@ def main(*args):
     genFactory = pagegenerators.GeneratorFactory()
 
     for arg in local_args:
-        if arg == '-always':
-            options['always'] = True
-        elif arg == '-titlecase':
+        if arg == '-titlecase':
             options['titlecase'] = True
         else:
             genFactory.handleArg(arg)

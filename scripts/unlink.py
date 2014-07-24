@@ -185,8 +185,6 @@ def main(*args):
                 options['namespaces'].append(int(arg[11:]))
             except ValueError:
                 options['namespaces'].append(arg[11:])
-        elif arg == '-always':
-            options['always'] = True
         else:
             page_title = arg
 

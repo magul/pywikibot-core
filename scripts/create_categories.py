@@ -7,8 +7,6 @@ suffix for creating new categories with a different base.
 
 The following command line parameters are supported:
 
--always         Don't ask, just do the edit.
-
 -overwrite      (not implemented yet).
 
 -parent         The name of the parent category.
@@ -89,16 +87,13 @@ def main(*args):
     """
     parent = None
     basename = None
-    options = {}
 
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
     genFactory = pagegenerators.GeneratorFactory()
 
     for arg in local_args:
-        if arg == '-always':
-            options['always'] = True
-        elif arg.startswith('-parent:'):
+        if arg.startswith('-parent:'):
             parent = arg[len('-parent:'):].strip()
         elif arg.startswith('-basename'):
             basename = arg[len('-basename:'):].strip()
@@ -107,7 +102,7 @@ def main(*args):
 
     generator = genFactory.getCombinedGenerator()
     if generator and parent and basename:
-        bot = CreateCategoriesBot(generator, parent, basename, **options)
+        bot = CreateCategoriesBot(generator, parent, basename)
         bot.run()
         pywikibot.output(u'All done')
     else:

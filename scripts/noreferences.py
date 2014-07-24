@@ -21,8 +21,6 @@ These command line parameters can be used to specify which pages to work on:
                   want to iterate over all categories starting at M, use
                   -start:Category:M.
 
-    -always       Don't prompt you for each replacement.
-
     -quiet        Use this option to get less output
 
 If neither a page title nor a page generator is given, it takes all pages from
@@ -697,8 +695,6 @@ def main(*args):
             else:
                 xmlFilename = arg[5:]
             genFactory.gens.append(XmlDumpNoReferencesPageGenerator(xmlFilename))
-        elif arg == '-always':
-            options['always'] = True
         elif arg == '-quiet':
             options['verbose'] = False
         else:

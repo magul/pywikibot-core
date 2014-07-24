@@ -19,8 +19,6 @@ Furthermore, the following command line parameters are supported:
                   pages. (Will remove the old namespace prefix if any)
                   Argument can also be given as "-prefix:namespace:".
 
--always           Don't prompt to make changes, just do them.
-
 -skipredirects    Skip redirect pages (Warning: increases server load)
 
 -summary          Prompt for a custom summary, bypassing the predefined message
@@ -228,8 +226,6 @@ def main(*args):
             options['noredirect'] = True
         elif arg == '-notalkpage':
             options['movetalkpage'] = False
-        elif arg == '-always':
-            options['always'] = True
         elif arg == '-skipredirects':
             options['skipredirects'] = True
         elif arg.startswith('-from:'):

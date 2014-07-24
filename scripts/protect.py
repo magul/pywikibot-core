@@ -9,8 +9,6 @@ These command line parameters can be used to specify which pages to work on:
 
 Furthermore, the following command line parameters are supported:
 
--always           Don't prompt to protect pages, just do it.
-
 -summary:         Supply a custom edit summary. Tries to generate summary from
                   the page selector. If no summary is supplied or couldn't
                   determine one from the selector it'll ask for one.
@@ -168,9 +166,7 @@ def main(*args):
     if '' in protection_levels:
         protection_levels.add('all')
     for arg in local_args:
-        if arg == '-always':
-            options['always'] = True
-        elif arg.startswith('-summary'):
+        if arg.startswith('-summary'):
             if len(arg) == len('-summary'):
                 # fill dummy value to prevent automatic generation
                 options['summary'] = None

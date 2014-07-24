@@ -719,6 +719,9 @@ def handle_args(args=None, do_help=True):
                    % config.cosmetic_changes)
         elif arg == '-simulate':
             config.simulate = True
+        elif arg == '-always':
+            config.always = True
+            log(u'the always option is enabled')
         #
         #  DEBUG control:
         #
@@ -876,6 +879,9 @@ Global arguments available for all bots:
                   debugging of new code (if given, doesn't do any real
                   changes, but only shows what would have been changed).
 
+-always           Always puts a page or performs a 'write' action
+                  instead of asking each time.
+
 -<config var>:n   You may use all given numeric config variables as option and
                   modify it with command line.
 
@@ -953,7 +959,7 @@ class Bot(object):
     # The values are the default values
     # Extend this in subclasses!
     availableOptions = {
-        'always': False,  # ask for confirmation when putting a page?
+        'always': config.always,  # ask for confirmation when putting a page?
     }
 
     _current_page = None

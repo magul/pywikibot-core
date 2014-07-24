@@ -10,8 +10,6 @@ These command line parameters can be used to specify which pages to work on:
 
 Furthermore, the following command line parameters are supported:
 
--always:          Don't prompt to delete pages, just do it.
-
 -summary:         Supply a custom edit summary.
 
 -undelete:        Actually undelete pages instead of deleting.
@@ -108,9 +106,7 @@ def main(*args):
 
     for arg in local_args:
 
-        if arg == '-always':
-            options['always'] = True
-        elif arg.startswith('-summary'):
+        if arg.startswith('-summary'):
             if len(arg) == len('-summary'):
                 summary = pywikibot.input(u'Enter a reason for the deletion:')
             else:

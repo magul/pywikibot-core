@@ -13,9 +13,6 @@ supported:
 
 &params;
 
--always           Don't prompt you for each replacement. Warning message
-                  has not to be confirmed. ATTENTION: Use this with care!
-
 -summary:XYZ      Set the action summary message for the edit to XYZ,
                   otherwise it uses messages from add_text.py as default.
 
@@ -513,8 +510,6 @@ def main(*args):
                 options['summary'] = arg[9:]
         elif arg.startswith('-checkcurrent'):
             checkcurrent = True
-        elif arg == '-always':
-            options['always'] = True
         else:
             genFactory.handleArg(arg)
 

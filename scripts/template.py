@@ -42,8 +42,6 @@ Command line options:
 -summary:    Lets you pick a custom edit summary.  Use quotes if edit summary
              contains spaces.
 
--always      Don't bother asking to confirm any of the changes, Just Do It.
-
 -category:   Appends the given category to every page that is edited.  This is
              useful when a category is being broken out from a template
              parameter or when templates are being upmerged but more information
@@ -319,8 +317,6 @@ def main(*args):
             options['subst'] = True
         elif arg == '-assubst':
             options['subst'] = options['remove'] = True
-        elif arg == '-always':
-            options['always'] = True
         elif arg.startswith('-xml'):
             if len(arg) == 4:
                 xmlfilename = pywikibot.input(

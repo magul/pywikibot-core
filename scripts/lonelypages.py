@@ -24,8 +24,6 @@ Furthermore, the following command line parameters are supported:
 
 -limit:           Set how many pages check.
 
--always           Always say yes, won't ask
-
 
 --- Examples ---
 python lonelypages.py -enable:User:Bot/CheckBot -always
@@ -220,8 +218,6 @@ def main(*args):
                     u'In which page should the bot save the disambig pages?')
             else:
                 options['disambigPage'] = arg[10:]
-        elif arg == '-always':
-            options['always'] = True
         else:
             genFactory.handleArg(arg)
 

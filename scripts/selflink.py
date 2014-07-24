@@ -6,9 +6,6 @@ This bot searches for selflinks and allows removing them.
 These command line parameters can be used to specify which pages to work on:
 
 &params;
-
--always           Unlink always but don't prompt you for each replacement.
-                  ATTENTION: Use this with care!
 """
 #
 # (C) Pywikibot team, 2006-2014
@@ -187,13 +184,9 @@ def main(*args):
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
     genFactory = GeneratorFactory()
-    botArgs = {}
 
     for arg in local_args:
-        if arg == '-always':
-            botArgs['always'] = True
-        else:
-            genFactory.handleArg(arg)
+        genFactory.handleArg(arg)
 
     gen = genFactory.getCombinedGenerator()
     if not gen:
@@ -201,7 +194,7 @@ def main(*args):
         return
 
     preloadingGen = PreloadingGenerator(gen)
-    bot = SelflinkBot(preloadingGen, **botArgs)
+    bot = SelflinkBot(preloadingGen)
     bot.run()
 
 if __name__ == "__main__":

@@ -9,9 +9,6 @@ The following parameters are supported:
 
 &params;
 
--always           Don't prompt you for each replacement. Warning (see below)
-                  has not to be confirmed. ATTENTION: Use this with care!
-
 -async            Put page on queue to be saved to wiki asynchronously.
 
 -summary:XYZ      Set the summary message text for the edit to XYZ, bypassing
@@ -951,8 +948,6 @@ def main(*args):
     for arg in local_args:
         if arg.startswith('-summary:'):
             options['comment'] = arg[len('-summary:'):]
-        elif arg == '-always':
-            options['always'] = True
         elif arg == '-async':
             options['async'] = True
         elif arg.startswith('-ignore:'):

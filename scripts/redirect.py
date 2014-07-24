@@ -62,8 +62,6 @@ and arguments can be:
 
 -delete        Enables deletion of broken redirects.
 
--always        Don't prompt you for each replacement.
-
 """
 #
 # (C) Daniel Herding, 2004
@@ -772,8 +770,6 @@ def main(*args):
             step = int(arg[6:])
         elif arg.startswith('-page:'):
             pagename = arg[6:]
-        elif arg == '-always':
-            options['always'] = True
         elif arg == '-delete':
             options['delete'] = True
         else:

@@ -1,13 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8  -*-
-"""
-This bot appends some text to all unused images and notifies uploaders.
-
-Parameters:
-
--always     Don't be asked every time.
-
-"""
+"""This bot appends some text to all unused images and notifies uploaders."""
 #
 # (C) Leonardo Gregianin, 2007
 # (C) Filnik, 2008
@@ -113,13 +106,9 @@ def main(*args):
     @param args: command line arguments
     @type args: list of unicode
     """
-    options = {}
+    pywikibot.handle_args(args)
 
-    for arg in pywikibot.handle_args(args):
-        if arg == '-always':
-            options['always'] = True
-
-    bot = UnusedFilesBot(pywikibot.Site(), **options)
+    bot = UnusedFilesBot(pywikibot.Site())
     try:
         bot.run()
     except pywikibot.Error as e:

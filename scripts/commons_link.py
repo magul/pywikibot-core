@@ -127,8 +127,6 @@ def main(*args):
     for arg in local_args:
         if arg in ('pages', 'categories'):
             options['action'] = arg
-        elif arg == '-always':
-            options['always'] = True
         else:
             genFactory.handleArg(arg)
 

@@ -13,7 +13,6 @@ Command line options:
 -summary:  Provide a custom edit summary.  If the summary includes spaces,
            surround it with single quotes, such as:
            -summary:'My edit summary'
--always    Don't prompt to make changes, just do them.
 -loose     Do loose replacements.  This will replace all occurrences of the name
            of the image (and not just explicit image syntax).  This should work
            to catch all instances of the image, including where it is used as a
@@ -186,9 +185,7 @@ def main(*args):
     options = {}
 
     for arg in pywikibot.handle_args(args):
-        if arg == '-always':
-            options['always'] = True
-        elif arg == '-loose':
+        if arg == '-loose':
             options['loose'] = True
         elif arg.startswith('-summary'):
             if len(arg) == len('-summary'):

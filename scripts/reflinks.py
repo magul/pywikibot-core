@@ -804,8 +804,6 @@ def main(*args):
                 namespaces.append(arg[11:])
         elif arg.startswith('-summary:'):
             options['summary'] = arg[9:]
-        elif arg == '-always':
-            options['always'] = True
         elif arg == '-ignorepdf':
             options['ignorepdf'] = True
         elif arg.startswith('-limit:'):

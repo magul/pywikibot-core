@@ -21,8 +21,6 @@ The following parameters are supported:
 
 &params;
 
-    -always        Always commit changes without asking you to accept them
-
     -filter:       Filter the article text through this program, can be
                    given multiple times to filter through multiple programs in
                    the order which they are given
@@ -66,7 +64,6 @@ class PiperBot(ExistingPageBot, NoRedirectPageBot):
                           to work on.
         """
         self.availableOptions.update({
-            'always': False,
             'filters': [],
             'comment': None,
         })
@@ -124,8 +121,6 @@ def main(*args):
         if arg.startswith("-filter:"):
             prog = arg[8:]
             filters.append(prog)
-        elif arg.startswith("-always"):
-            options['always'] = True
         else:
             # check if a standard argument like
             # -start:XYZ or -ref:Asdf was given.
