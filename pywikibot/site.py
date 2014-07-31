@@ -1173,7 +1173,8 @@ class Siteinfo(Container):
         """Return a siteinfo property, caching and not forcing it."""
         return self.get(key, False)  # caches and doesn't force it
 
-    def get(self, key, get_default=True, cache=True, expiry=False):
+    def get(self, key, get_default=True, cache=True, expiry=False,
+            get_general=True):
         """
         Return a siteinfo property.
 
@@ -1213,7 +1214,7 @@ class Siteinfo(Container):
                     raise KeyError(key)
                 elif not Siteinfo._is_expired(cached[1], expiry):
                     return copy.deepcopy(cached[0])
-        preloaded = self._get_general(key, expiry)
+        preloaded = self._get_general(key, expiry) if get_general else None
         if not preloaded:
             preloaded = self._get_siteinfo(key, expiry)[key]
         else:

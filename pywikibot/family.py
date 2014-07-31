@@ -13,6 +13,7 @@ import logging
 import re
 import collections
 import imp
+import operator
 
 if sys.version_info[0] > 2:
     from urllib.parse import urlparse
@@ -21,7 +22,7 @@ else:
 
 import pywikibot
 from pywikibot import config2 as config
-from pywikibot.tools import deprecated, deprecate_arg
+from pywikibot.tools import deprecated, deprecate_arg, threaded_call_each
 from pywikibot.exceptions import UnknownFamily, Error
 
 logger = logging.getLogger("pywiki.wiki.family")
@@ -749,8 +750,11 @@ class Family(object):
         self.obsolete = {}
 
         # Language codes of the largest wikis. They should be roughly sorted
-        # by size.
-        self.languages_by_size = []
+        # by size.  May be overriden by a dynamic property.
+        try:
+            self.languages_by_size = []
+        except AttributeError:
+            pass
 
         # Some languages belong to a group where the possibility is high that
         # equivalent articles have identical titles among the group.
@@ -1219,6 +1223,102 @@ class WikimediaFamily(Family):
             'wikibooks', 'wikidata', 'wikinews', 'wikipedia', 'wikiquote',
             'wikisource', 'wikiversity', 'wiktionary',
         ]
+
+    def wikistats_xml(self, name=None):
+        """ Fetch XML from wikistats for this family. """
+        URL = 'https://wikistats.wmflabs.org/api.php?action=dump&table=%s&format=xml'
+
+        familiesDict = {
+            'anarchopedia': 'anarchopedias',
+            'wikibooks':    'wikibooks',
+            'wikinews':     'wikinews',
+            'wikipedia':    'wikipedias',
+            'wikiquote':    'wikiquotes',
+            'wikisource':   'wikisources',
+            'wikiversity':  'wikiversity',
+            'wikivoyage':   'wikivoyage',
+            'wiktionary':   'wiktionaries',
+        }
+
+        if not name:
+            name = self.name
+
+        if name in familiesDict:
+            name = familiesDict[name]
+
+        # import urllib2
+
+        # return urllib2.urlopen(URL % name)
+
+    def _wikistats_languages_by_size(self):
+        """ Load ordered list of languages by size from wikistats. """
+        from xml.etree import cElementTree
+
+        feed = self.wikistats_xml()
+        tree = cElementTree.parse(feed)
+
+        # This assumes they appear in order of size in the XML dump.
+        new = []
+        for field in tree.findall('row/field'):
+            if field.get('name') == 'prefix':
+                code = field.text
+                if not (code in self.obsolete or code == 'www'):
+                    new.append(code)
+                continue
+
+        self._languages_by_size = new
+        return new
+
+    @property
+    def languages_by_size(self):
+        # @need_version('1.11')
+        if hasattr(self, '_languages_by_size'):
+            return self._languages_by_size
+
+        if len(self.langs) == 1:
+            self._languages_by_size = [self.langs.keys()]
+
+        sites = {}
+        methods = []
+        article_counts = {}
+
+        for code in self.langs:
+            site = pywikibot.Site(code, self.name)
+            sites[site] = site
+            if 'statistics' not in site.siteinfo:
+                methods.append(site.siteinfo.get)
+
+        threaded_call_each(methods, limit=20,
+                           args=['statistics'],
+                           kwargs={'get_general': False})
+
+        print('all requests done the first time')
+
+        methods = []
+        for site in sites:
+            if 'statistics' not in site.siteinfo:
+                methods.append(site.siteinfo.get)
+
+        if methods:
+            threaded_call_each(methods, limit=20,
+                               args=['statistics'],
+                               kwargs={'get_general': False})
+
+        print('all requests done the second time')
+
+        for site in sites:
+            articles = site.siteinfo.get('statistics',
+                                         get_general=False)['articles']
+            article_counts[site.code] = articles
+
+        sorted_codes = [code
+                        for code, articles
+                        in sorted(article_counts.items(),
+                                  key=operator.itemgetter(1),
+                                  reverse=True)]
+
+        self._languages_by_size = sorted_codes
+        return self._languages_by_size
 
     def shared_image_repository(self, code):
         return ('commons', 'commons')

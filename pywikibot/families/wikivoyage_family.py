@@ -16,13 +16,13 @@ class Family(family.WikimediaFamily):
         """Constructor."""
         super(Family, self).__init__()
         self.name = 'wikivoyage'
-        self.languages_by_size = [
+        self._languages = [
             'en', 'de', 'fr', 'it', 'pt', 'nl', 'pl', 'ru', 'es', 'vi', 'sv',
             'zh', 'he', 'ro', 'uk', 'el', 'fa'
         ]
 
         self.langs = dict([(lang, '%s.wikivoyage.org' % lang)
-                           for lang in self.languages_by_size])
+                           for lang in self._languages])
         # Global bot allowed languages on https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
         self.cross_allowed = ['es', 'ru', ]
 

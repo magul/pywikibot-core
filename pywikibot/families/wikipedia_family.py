@@ -16,7 +16,7 @@ class Family(family.WikimediaFamily):
         super(Family, self).__init__()
         self.name = 'wikipedia'
 
-        self.languages_by_size = [
+        self._languages = [
             'en', 'sv', 'nl', 'de', 'fr', 'ru', 'it', 'es', 'vi', 'war', 'ceb',
             'pl', 'ja', 'pt', 'zh', 'uk', 'ca', 'no', 'fa', 'fi', 'id', 'ar',
             'cs', 'ko', 'ms', 'hu', 'ro', 'sr', 'tr', 'min', 'sh', 'kk', 'eo',
@@ -47,7 +47,7 @@ class Family(family.WikimediaFamily):
             'dz', 'ik', 'tum', 'ch',
         ]
 
-        langs = self.languages_by_size + ['test', 'test2']  # Sites we want to edit but not count as real languages
+        langs = self._languages + ['test', 'test2']  # Sites we want to edit but not count as real languages
 
         self.langs = dict([(lang, '%s.wikipedia.org' % lang)
                            for lang in langs])

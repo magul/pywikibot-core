@@ -295,6 +295,27 @@ class ThreadList(list):
                   % (thd, thd.queue.qsize()), ThreadList._logger)
 
 
+def threaded_call_each(gen, args=[], kwargs={}, limit=30, callback=None):
+    """
+    Call each function with the same arguments in separate threads.
+
+    @param gen: iterator consisting of functions
+    @param args: list of arguments to use in each call
+    @param kwargs: dictionary of keyword arguments to use in each call
+    @param limit: number of threads to use
+    @param callback: function to call after completion
+    """
+    thread_list = ThreadList(limit)
+
+    for item in gen:
+        t = threading.Thread(name=id(item),
+                             target=lambda: item(*args, **kwargs))
+        thread_list.append(t)
+
+    if callback:
+        callback()
+
+
 def intersect_generators(genlist):
     """
     Intersect generators listed in genlist.

@@ -16,14 +16,14 @@ class Family(family.WikimediaFamily):
         super(Family, self).__init__()
         self.name = 'wikinews'
 
-        self.languages_by_size = [
+        self._languages = [
             'sr', 'en', 'fr', 'pl', 'de', 'it', 'es', 'pt', 'ru', 'ca', 'zh',
             'sv', 'ja', 'ta', 'el', 'cs', 'ar', 'uk', 'fa', 'fi', 'ro', 'tr',
             'he', 'bg', 'sq', 'no', 'ko', 'eo', 'bs',
         ]
 
         self.langs = dict([(lang, '%s.wikinews.org' % lang)
-                           for lang in self.languages_by_size])
+                           for lang in self._languages])
 
         # Global bot allowed languages on https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
         self.cross_allowed = ['ca', 'cs', 'en', 'fa', 'ko', ]

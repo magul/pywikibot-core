@@ -9,23 +9,13 @@
 __version__ = '$Id$'
 #
 
+import os
 import re
 import codecs
-from xml.etree import cElementTree
-import sys
 
 import pywikibot
-from pywikibot.family import Family
-
-if sys.version_info[0] > 2:
-    from urllib.request import urlopen
-else:
-    from urllib import urlopen
-
-URL = 'https://wikistats.wmflabs.org/api.php?action=dump&table=%s&format=xml'
 
 familiesDict = {
-    'anarchopedia': 'anarchopedias',
     'wikibooks':    'wikibooks',
     'wikinews':     'wikinews',
     'wikipedia':    'wikipedias',
@@ -43,58 +33,51 @@ def update_family(families):
     for family in families or familiesDict.keys():
         pywikibot.output('\nChecking family %s:' % family)
 
-        original = Family.load(family).languages_by_size
-        obsolete = Family.load(family).obsolete
+        original = set(fam._languages)
+        obsolete = set(fam.obsolete.keys() + exceptions)
+        new = set(fam.languages_by_size) - obsolete
 
-        feed = urlopen(URL % familiesDict[family])
-        tree = cElementTree.parse(feed)
-
-        new = []
-        for field in tree.findall('row/field'):
-            if field.get('name') == 'prefix':
-                code = field.text
-                if not (code in obsolete or code in exceptions):
-                    new.append(code)
-                continue
-
-        # put the missing languages to the right place
-        missing = original != new and set(original) - set(new)
+        missing = set(original) - set(new)
         if missing:
             pywikibot.output(u"WARNING: ['%s'] not listed at wikistats."
                              % "', '".join(missing))
-            index = {}
-            for code in missing:
-                index[original.index(code)] = code
-            i = len(index) - 1
-            for key in sorted(index.keys(), reverse=True):
-                new.insert(key - i, index[key])
-                i -= 1
 
         if original == new:
-            pywikibot.output(u'The lists match!')
-        else:
-            pywikibot.output(u"The lists don't match, the new list is:")
-            text = u'        self.languages_by_size = [\r\n'
+            pywikibot.output('The lists match!')
+        elif new - original:
+            pywikibot.output('New languages:')
+            pywikibot.output(new - original)
+
+            pywikibot.output('The new list is:')
+            text = u'        self._languages = [%s' % os.linesep
             line = ' ' * 11
-            for code in new:
+            for code in sorted(new):
                 if len(line) + len(code) <= 76:
                     line += u" '%s'," % code
                 else:
-                    text += u'%s\r\n' % line
+                    text += u'%s%s' % (line, os.linesep)
                     line = ' ' * 11
                     line += u" '%s'," % code
-            text += u'%s\r\n' % line
+            text += u'%s%s' % (line, os.linesep)
+            if missing:
+                text += u'            # codes missing from wikistats:\r\n'
+                text += u'           '
+                for code in sorted(missing):
+                    text += u" '%s'," % code
+                text += os.linesep
             text += u'        ]'
             pywikibot.output(text)
             family_file_name = 'pywikibot/families/%s_family.py' % family
             family_file = codecs.open(family_file_name, 'r', 'utf8')
             family_text = family_file.read()
-            old = re.findall(r'(?msu)^ {8}self.languages_by_size.+?\]',
+            old = re.findall(r'(?msu)^ {8}self._languages.+?\]',
                              family_text)[0]
             family_text = family_text.replace(old, text)
-            family_file = codecs.open(family_file_name, 'w', 'utf8')
-            family_file.write(family_text)
-            family_file.close()
+            #family_file = codecs.open(family_file_name, 'w', 'utf8')
+            #family_file.write(family_text)
+            #family_file.close()
+        else:
+            pywikibot.output('No new languages.')
 
 
 if __name__ == '__main__':

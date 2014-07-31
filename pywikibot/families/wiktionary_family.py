@@ -16,7 +16,7 @@ class Family(family.WikimediaFamily):
         super(Family, self).__init__()
         self.name = 'wiktionary'
 
-        self.languages_by_size = [
+        self._languages = [
             'en', 'mg', 'fr', 'sh', 'zh', 'es', 'lt', 'ru', 'el', 'pl', 'nl',
             'sv', 'ko', 'it', 'de', 'ku', 'tr', 'ta', 'hu', 'fi', 'kn', 'io',
             'vi', 'pt', 'chr', 'no', 'ml', 'id', 'my', 'ja', 'li', 'ro', 'et',
@@ -34,7 +34,7 @@ class Family(family.WikimediaFamily):
         ]
 
         self.langs = dict([(lang, '%s.wiktionary.org' % lang)
-                           for lang in self.languages_by_size])
+                           for lang in self._languages])
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation

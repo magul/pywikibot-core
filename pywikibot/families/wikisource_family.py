@@ -15,17 +15,19 @@ class Family(family.WikimediaFamily):
         super(Family, self).__init__()
         self.name = 'wikisource'
 
-        self.languages_by_size = [
+        self._languages = [
             'fr', 'en', 'de', 'ru', 'it', 'pl', 'zh', 'he', 'es', 'sv', 'pt',
             'cs', 'ca', 'fa', 'hu', 'ar', 'ml', 'ko', 'sl', 'te', 'ro', 'fi',
             'sr', 'vi', 'sa', 'el', 'hr', 'no', 'th', 'bn', 'hy', 'is', 'nl',
             'gu', 'la', 'ja', 'br', 'vec', 'uk', 'eo', 'tr', 'mk', 'yi', 'ta',
             'az', 'id', 'be', 'da', 'li', 'et', 'as', 'mr', 'bg', 'bs', 'sah',
             'kn', 'gl', 'lt', 'cy', 'sk', 'zh-min-nan', 'fo',
+            # codes missing from wikistats:
+            'as', 'mr',
         ]
 
         self.langs = dict([(lang, '%s.wikisource.org' % lang)
-                           for lang in self.languages_by_size])
+                           for lang in self._languages])
         self.langs['-'] = 'wikisource.org'
 
         # Global bot allowed languages on https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
