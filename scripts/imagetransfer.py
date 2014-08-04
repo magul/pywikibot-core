@@ -185,7 +185,7 @@ class ImageTransferBot:
 
             description = i18n.translate(self.targetSite, copy_message,
                                          fallback=True) % (sourceSite, description)
-            description += '\n\n' + str(sourceImagePage.getFileVersionHistoryTable())
+            description += '\n\n' + sourceImagePage.getFileVersionHistoryTable()
             # add interwiki link
             if sourceSite.family == self.targetSite.family:
                 description += "\r\n\r\n" + unicode(sourceImagePage)
@@ -226,7 +226,6 @@ class ImageTransferBot:
     def showImageList(self, imagelist):
         for i in range(len(imagelist)):
             image = imagelist[i]
-            #sourceSite = sourceImagePage.site
             print "-" * 60
             pywikibot.output(u"%s. Found image: %s"
                              % (i, image.title(asLink=True)))

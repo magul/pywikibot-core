@@ -1855,23 +1855,37 @@ class ImagePage(Page):
     def getFileVersionHistory(self):
         """Return the image file's version history.
 
-        @return: An iterator yielding tuples containing (timestamp,
-            username, resolution, filesize, comment).
+        @return: a list of dict
 
         """
         return self.site.loadimageinfo(self, history=True)
 
-    def getFileVersionHistoryTable(self):
-        """Return the version history in the form of a wiki table."""
+    def getFileVersionHistoryTable(self, use_template=True):
+        """Return the version history formatted as wiki text.
+
+        The history may be formatted as a wiki table using English,
+        or using the templates {{filehistory}} and {{filehistory-entry}}
+        which can be translated.
+
+        @param use_template: Use {{filehistory}}
+        @type use_template: bool
+        """
         lines = []
         for info in self.getFileVersionHistory():
-            datetime = info['timestamp']
-            username = info['user']
-            resolution = '%dx%d' % (info['height'], info['width'])
-            size = info['size']
-            comment = info['comment']
-            lines.append(u'| %s || %s || %s || %s || <nowiki>%s</nowiki>'
-                         % (datetime, username, resolution, size, comment))
+            info['resolution'] = u'%(height)d×%(width)d' % info
+            if use_template:
+                lines.append(
+                    u'{{filehistory-entry|date=%(timestamp)s|uploader=%(user)s'
+                    u'|resolution=%(resolution)s|size=%(size)s'
+                    u'|comment=<nowiki>%(comment)s</nowiki>}}'
+                    % info)
+            else:
+                lines.append(u'| %(timestamp)s || %(user)s || %(resolution)s '
+                             u'|| %(size)s || <nowiki>%(comment)s</nowiki>'
+                             % info)
+        if use_template:
+            return '{{filehistory|1=\n' + '\n'.join(lines) + '\n}}\n\n'
+
         return u'{| border="1"\n! date/time || username || resolution || size || edit summary\n|----\n' + \
                u'\n|----\n'.join(lines) + '\n|}'
 
