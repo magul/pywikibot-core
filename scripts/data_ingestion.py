@@ -141,7 +141,10 @@ class DataIngestionBot:
             self._doUpload(photo)
 
 if __name__ == "__main__":
-    reader = CSVReader(open('tests/data/csv_ingestion.csv'), 'url')
+    import os  # Late import because it's not needed for the script itself.
+    abs_file_path = os.path.abspath(os.path.dirname(__file__))
+    data_path = os.path.join(abs_file_path, 'tests/data/csv_ingestion.csv')
+    reader = CSVReader(open(data_path), 'url')
     bot = DataIngestionBot(
         reader,
         "%(name)s - %(set)s.%(_ext)s", ":user:valhallasw/test_template",
