@@ -48,8 +48,8 @@ class NewItemRobot(WikidataBot):
 
         super(NewItemRobot, self).__init__(**kwargs)
         self.generator = pagegenerators.PreloadingGenerator(generator)
-        self.pageAge = self.getOption('pageage')
-        self.lastEdit = self.getOption('lastedit')
+        self.pageAge = self.options['pageage']
+        self.lastEdit = self.options['lastedit']
         self.pageAgeBefore = self.repo.getcurrenttime() - timedelta(days=self.pageAge)
         self.lastEditBefore = self.repo.getcurrenttime() - timedelta(days=self.lastEdit)
         self.treat_missing_item = True
@@ -64,7 +64,7 @@ class NewItemRobot(WikidataBot):
         """Treat page/item."""
         if item and item.exists():
             pywikibot.output(u'%s already has an item: %s.' % (page, item))
-            if self.getOption('touch'):
+            if self.options['touch']:
                 pywikibot.output(u'Doing a null edit on the page.')
                 page.put(page.text)
             return

@@ -225,17 +225,17 @@ class TemplateRobot(ReplaceBot):
         self.templates = templates
 
         # get edit summary message if it's empty
-        if not self.getOption('summary'):
+        if not self.options['summary']:
             comma = self.site.mediawiki_message('comma-separator')
             params = {'list': comma.join(self.templates.keys()),
                       'num': len(self.templates)}
 
             site = self.site
 
-            if self.getOption('remove'):
+            if self.options['remove']:
                 self.options['summary'] = i18n.twntranslate(
                     site, 'template-removing', params)
-            elif self.getOption('subst'):
+            elif self.options['subst']:
                 self.options['summary'] = i18n.twntranslate(
                     site, 'template-substituting', params)
             else:
@@ -265,15 +265,15 @@ class TemplateRobot(ReplaceBot):
                                        r'(?P<parameters>\s*\|.+?|) *}}',
                                        re.DOTALL)
 
-            if self.getOption('subst') and self.getOption('remove'):
+            if self.options['subst'] and self.options['remove']:
                 replacements.append((templateRegex,
                                      r'{{subst:%s\g<parameters>}}' % new))
                 exceptions['inside-tags'] = ['ref', 'gallery']
-            elif self.getOption('subst'):
+            elif self.options['subst']:
                 replacements.append((templateRegex,
                                      r'{{subst:%s\g<parameters>}}' % old))
                 exceptions['inside-tags'] = ['ref', 'gallery']
-            elif self.getOption('remove'):
+            elif self.options['remove']:
                 replacements.append((templateRegex, ''))
             else:
                 template = pywikibot.Page(self.site, new, ns=10)
@@ -287,9 +287,9 @@ class TemplateRobot(ReplaceBot):
 
         super(TemplateRobot, self).__init__(
             generator, replacements, exceptions,
-            always=self.getOption('always'),
-            addedCat=self.getOption('addedCat'),
-            summary=self.getOption('summary'))
+            always=self.options['always'],
+            addedCat=self.options['addedCat'],
+            summary=self.options['summary'])
 
 
 def main(*args):

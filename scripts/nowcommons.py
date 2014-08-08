@@ -275,7 +275,7 @@ class NowCommonsDeleteBot(Bot):
                 break
 
     def getPageGenerator(self):
-        if self.getOption('use_hash'):
+        if self.options['use_hash']:
             gen = self.useHashGenerator()
         else:
             gens = [t.getReferences(follow_redirects=True, namespaces=[6],
@@ -319,7 +319,7 @@ class NowCommonsDeleteBot(Bot):
         comment = i18n.translate(self.site, nowCommonsMessage, fallback=True)
 
         for page in self.getPageGenerator():
-            if self.getOption('use_hash'):
+            if self.options['use_hash']:
                 # Page -> Has the namespace | commons image -> Not
                 images_list = page    # 0 -> local image, 1 -> commons image
                 page = pywikibot.Page(self.site, images_list[0])
@@ -332,18 +332,18 @@ class NowCommonsDeleteBot(Bot):
                     pywikibot.output(u'File is already on Commons.')
                     continue
                 sha1 = localImagePage.latest_file_info.sha1
-                if self.getOption('use_hash'):
+                if self.options['use_hash']:
                     filenameOnCommons = images_list[1]
                 else:
                     filenameOnCommons = self.findFilenameOnCommons(
                         localImagePage)
-                if not filenameOnCommons and not self.getOption('use_hash'):
+                if not filenameOnCommons and not self.options['use_hash']:
                     pywikibot.output(u'NowCommons template not found.')
                     continue
                 commonsImagePage = pywikibot.FilePage(commons, 'Image:%s'
                                                        % filenameOnCommons)
                 if localImagePage.title(withNamespace=False) == \
-                 commonsImagePage.title(withNamespace=False) and self.getOption('use_hash'):
+                 commonsImagePage.title(withNamespace=False) and self.options['use_hash']:
                     pywikibot.output(
                         u'The local and the commons images have the same name')
                 if localImagePage.title(withNamespace=False) != \
@@ -354,7 +354,7 @@ class NowCommonsDeleteBot(Bot):
                             u'\"\03{lightred}%s\03{default}\" is still used in %i pages.'
                             % (localImagePage.title(withNamespace=False),
                                len(usingPages)))
-                        if self.getOption('replace') is True:
+                        if self.options['replace'] is True:
                                 pywikibot.output(
                                     u'Replacing \"\03{lightred}%s\03{default}\" by \
                                     \"\03{lightgreen}%s\03{default}\".'
@@ -364,14 +364,14 @@ class NowCommonsDeleteBot(Bot):
                                     pg.FileLinksGenerator(localImagePage),
                                     localImagePage.title(withNamespace=False),
                                     commonsImagePage.title(withNamespace=False),
-                                    '', self.getOption('replacealways'),
-                                    self.getOption('replaceloose'))
+                                    '', self.options['replacealways'],
+                                    self.options['replaceloose'])
                                 oImageRobot.run()
                                 # If the image is used with the urlname the
                                 # previous function won't work
                                 if len(list(pywikibot.FilePage(self.site,
                                                                 page.title()).usingPages())) > 0 and \
-                                                                self.getOption('replaceloose'):
+                                                                self.options['replaceloose']:
                                     oImageRobot = image.ImageRobot(
                                         pg.FileLinksGenerator(
                                             localImagePage),
@@ -379,13 +379,13 @@ class NowCommonsDeleteBot(Bot):
                                             withNamespace=False, asUrl=True),
                                         commonsImagePage.title(
                                             withNamespace=False),
-                                        '', self.getOption('replacealways'),
-                                        self.getOption('replaceloose'))
+                                        '', self.options['replacealways'],
+                                        self.options['replaceloose'])
                                     oImageRobot.run()
                                 # refresh because we want the updated list
                                 usingPages = len(list(pywikibot.FilePage(
                                     self.site, page.title()).usingPages()))
-                                if usingPages > 0 and self.getOption('use_hash'):
+                                if usingPages > 0 and self.options['use_hash']:
                                     # just an enter
                                     pywikibot.input(
                                         u'There are still %s pages with this \
@@ -400,17 +400,17 @@ class NowCommonsDeleteBot(Bot):
                             u'No page is using \"\03{lightgreen}%s\03{default}\" anymore.'
                             % localImagePage.title(withNamespace=False))
                 commonsText = commonsImagePage.get()
-                if self.getOption('replaceonly') is False:
+                if self.options['replaceonly'] is False:
                     if sha1 == commonsImagePage.latest_file_info.sha1:
                         pywikibot.output(
                             u'The image is identical to the one on Commons.')
-                        if len(localImagePage.getFileVersionHistory()) > 1 and not self.getOption('use_hash'):
+                        if len(localImagePage.getFileVersionHistory()) > 1 and not self.options['use_hash']:
                             pywikibot.output(
                                 u"This image has a version history. Please \
                                 delete it manually after making sure that the \
                                 old versions are not worth keeping.""")
                             continue
-                        if self.getOption('always') is False:
+                        if self.options['always'] is False:
                             pywikibot.output(
                                 u'\n\n>>>> Description on \03{lightpurple}%s\03{default} <<<<\n'
                                 % page.title())

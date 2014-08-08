@@ -76,20 +76,20 @@ class MovePagesBot(MultipleSitesBot):
 
     def moveOne(self, page, newPageTitle):
         try:
-            msg = self.getOption('summary')
+            msg = self.options['summary']
             if not msg:
                 msg = i18n.twtranslate(page.site, 'movepages-moving')
             pywikibot.output(u'Moving page %s to [[%s]]'
                              % (page.title(asLink=True),
                                 newPageTitle))
-            page.move(newPageTitle, reason=msg, movetalkpage=self.getOption('movetalkpage'),
-                      deleteAndMove=self.getOption('noredirect'))
+            page.move(newPageTitle, reason=msg, movetalkpage=self.options['movetalkpage'],
+                      deleteAndMove=self.options['noredirect'])
         except pywikibot.PageRelatedError as error:
             pywikibot.output(error)
 
     def treat(self, page):
         self.current_page = page
-        if self.getOption('skipredirects') and page.isRedirectPage():
+        if self.options['skipredirects'] and page.isRedirectPage():
             pywikibot.output(u'Page %s is a redirect; skipping.' % page.title())
             return
         pagetitle = page.title(withNamespace=False)
@@ -103,10 +103,10 @@ class MovePagesBot(MultipleSitesBot):
             newPageTitle = self.regex.sub(self.replacePattern, pagetitle)
             if not self.noNamespace and namesp:
                 newPageTitle = (u'%s:%s' % (namesp, newPageTitle))
-        if self.getOption('prefix'):
-            newPageTitle = (u'%s%s' % (self.getOption('prefix'), pagetitle))
-        if self.getOption('prefix') or self.appendAll or self.regexAll:
-            if not self.getOption('always'):
+        if self.options['prefix']:
+            newPageTitle = (u'%s%s' % (self.options['prefix'], pagetitle))
+        if self.options['prefix'] or self.appendAll or self.regexAll:
+            if not self.options['always']:
                 choice2 = pywikibot.input_choice(
                     u'Change the page title to "%s"?' % newPageTitle,
                     [('yes', 'y'), ('no', 'n'), ('all', 'a')])

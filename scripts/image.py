@@ -122,7 +122,7 @@ class ImageRobot(ReplaceBot):
         self.old_image = old_image
         self.new_image = new_image
 
-        if not self.getOption('summary'):
+        if not self.options['summary']:
             self.options['summary'] = i18n.translate(
                 self.site, self.msg_replace,
                 (self.old_image, self.new_image) if self.new_image
@@ -147,7 +147,7 @@ class ImageRobot(ReplaceBot):
 
         # Be careful, spaces and _ have been converted to '\ ' and '\_'
         escaped = re.sub('\\\\[_ ]', '[_ ]', escaped)
-        if not self.getOption('loose') or not self.new_image:
+        if not self.options['loose'] or not self.new_image:
             image_regex = re.compile(
                 r'\[\[ *(?:%s)\s*:\s*%s *(?P<parameters>\|[^\n]+|) *\]\]'
                 % ('|'.join(namespace), escaped))
@@ -155,7 +155,7 @@ class ImageRobot(ReplaceBot):
             image_regex = re.compile(r'' + escaped)
 
         if self.new_image:
-            if not self.getOption('loose'):
+            if not self.options['loose']:
                 replacements.append((image_regex,
                                      u'[[%s:%s\\g<parameters>]]'
                                      % (self.site.image_namespace(),
@@ -166,8 +166,8 @@ class ImageRobot(ReplaceBot):
             replacements.append((image_regex, ''))
 
         super(ImageRobot, self).__init__(self.generator, replacements,
-                                         always=self.getOption('always'),
-                                         summary=self.getOption('summary'))
+                                         always=self.options['always'],
+                                         summary=self.options['summary'])
 
 
 def main(*args):

@@ -89,7 +89,7 @@ class SelflinkBot(SingleSiteBot):
 
         # at the beginning of the link, start red color.
         # at the end of the link, reset the color to default
-        if self.getOption('always'):
+        if self.options['always']:
             choice = 'a'
         else:
             pre = page.text[max(0, match.start() - context):match.start()]

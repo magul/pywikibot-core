@@ -73,7 +73,7 @@ class DeletionRobot(MultipleSitesBot, CurrentPageBot):
 
     def treat_page(self):
         """Process one page from the generator."""
-        if self.getOption('undelete'):
+        if self.options['undelete']:
             if self.current_page.exists():
                 pywikibot.output(u'Skipping: {0} already exists.'.format(
                     self.current_page))
@@ -82,8 +82,8 @@ class DeletionRobot(MultipleSitesBot, CurrentPageBot):
         else:
             if self.current_page.exists():
                 self.current_page.delete(self.summary,
-                                         not self.getOption('always'),
-                                         self.getOption('always'))
+                                         not self.options['always'],
+                                         self.options['always'])
             else:
                 pywikibot.output(u'Skipping: {0} does not exist.'.format(
                     self.current_page))

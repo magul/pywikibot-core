@@ -1264,6 +1264,57 @@ def open_webbrowser(page):
     i18n.input('pywikibot-enter-finished-browser')
 
 
+class OptionsDict(dict):
+
+    """Subclass of dict with specific methods for bot options."""
+
+    def __init__(self, available_options):
+        """
+        Set the available options.
+
+        @param available_options: bot options
+        @type available_options: dict
+        """
+        self._available_options = available_options
+
+    def __getitem__(self, option):
+        """
+        Get the current value of an option.
+
+        @param option: key defined in Bot.availableOptions
+        """
+        try:
+            return self.get(option, self._available_options[option])
+        except KeyError:
+            raise pywikibot.Error(u'%s is not a valid bot option.' % option)
+
+    def __setitem__(self, option, value):
+        """
+        Set the value of an option.
+
+        @param option: key defined in Bot.availableOptions
+        @type option: basestring
+        @param value: value of the option
+        @type value: any
+        """
+        if option not in self._available_options:
+            raise KeyError('%r is not a valid option.' % option)
+        super(OptionsDict, self).__setitem__(self, option, value)
+
+    def update(self, **kwargs):
+        """
+        Set the instance options.
+
+        @kwargs: options
+        """
+        for opt in kwargs:
+            try:
+                self[opt] = kwargs[opt]
+            except KeyError:
+                pywikibot.warning(
+                    u'%s is not a valid option. It was ignored.' % opt)
+
+
 class BaseBot(object):
 
     """
@@ -1300,11 +1351,18 @@ class BaseBot(object):
         if 'generator' in kwargs:
             self.generator = kwargs.pop('generator')
 
-        self.setOptions(**kwargs)
+        self._options = OptionsDict(self.availableOptions)
+        self.options.update(**kwargs)
 
         self._treat_counter = 0
         self._save_counter = 0
 
+    @property
+    def options(self):
+        """Hold the options overriden from defaults."""
+        return self._options
+
+    @deprecated("the bot's options property")
     def setOptions(self, **kwargs):
         """
         Set the instance options.
@@ -1312,29 +1370,16 @@ class BaseBot(object):
         @param kwargs: options
         @type kwargs: dict
         """
-        # contains the options overridden from defaults
-        self.options = {}
+        self.options.update(**kwargs)
 
-        validOptions = set(self.availableOptions)
-        receivedOptions = set(kwargs)
-
-        for opt in receivedOptions & validOptions:
-            self.options[opt] = kwargs[opt]
-
-        for opt in receivedOptions - validOptions:
-            pywikibot.warning(u'%s is not a valid option. It was ignored.'
-                              % opt)
-
+    @deprecated("the bot's options property")
     def getOption(self, option):
         """
         Get the current value of an option.
 
         @param option: key defined in Bot.availableOptions
         """
-        try:
-            return self.options.get(option, self.availableOptions[option])
-        except KeyError:
-            raise pywikibot.Error(u'%s is not a valid bot option.' % option)
+        return self.options[option]
 
     @property
     def current_page(self):
@@ -1366,7 +1411,7 @@ class BaseBot(object):
 
     def user_confirm(self, question):
         """Obtain user response if bot option 'always' not enabled."""
-        if self.getOption('always'):
+        if self.options['always']:
             return True
 
         choice = pywikibot.input_choice(question,
@@ -1446,7 +1491,7 @@ class BaseBot(object):
         if not self.user_confirm('Do you want to accept these changes?'):
             return
 
-        if 'async' not in kwargs and self.getOption('always'):
+        if 'async' not in kwargs and self.options['always']:
             kwargs['async'] = True
 
         ignore_save_related_errors = kwargs.pop('ignore_save_related_errors',

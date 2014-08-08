@@ -241,13 +241,13 @@ class FeaturedBot(pywikibot.Bot):
         self.repo = self.site.data_repository()
 
         # if no source site is given, give up
-        if self.getOption('fromlang') is True:
+        if self.options['fromlang'] is True:
             self.options['fromlang'] = False
 
         # setup tasks running
         self.tasks = []
         for task in ('featured', 'good', 'lists', 'former'):
-            if self.getOption(task):
+            if self.options[task]:
                 self.tasks.append(task)
         if not self.tasks:
             self.tasks = ['featured']
@@ -275,10 +275,10 @@ class FeaturedBot(pywikibot.Bot):
 
         generator = _generator()
 
-        if self.getOption('fromall'):
+        if self.options['fromall']:
             return generator
-        elif self.getOption('fromlang'):
-            fromlang = self.getOption('fromlang')
+        elif self.options['fromlang']:
+            fromlang = self.options['fromlang']
             if len(fromlang) == 1 and fromlang[0].find("--") >= 0:
                 start, end = fromlang[0].split("--", 1)
                 if not start:
@@ -311,7 +311,7 @@ class FeaturedBot(pywikibot.Bot):
             return
 
     def readcache(self, task):
-        if self.getOption('count') or self.getOption('nocache') is True:
+        if self.options['count'] or self.options['nocache'] is True:
             return
         self.filename = pywikibot.config.datafilepath("cache", task)
         try:
@@ -324,9 +324,9 @@ class FeaturedBot(pywikibot.Bot):
             pywikibot.output(u'Cache file %s not found.' % self.filename)
 
     def writecache(self):
-        if self.getOption('count'):
+        if self.options['count']:
             return
-        if not self.getOption('nocache') is True:
+        if not self.options['nocache'] is True:
             pywikibot.output(u'Writing %d items to cache file %s.'
                              % (len(self.cache), self.filename))
             with open(self.filename, "wb") as f:
@@ -389,7 +389,7 @@ class FeaturedBot(pywikibot.Bot):
             % (site, len(articles), task))
         while articles:
             p = articles.pop(0)
-            if p.title() < self.getOption('afterpage'):
+            if p.title() < self.options['afterpage']:
                 continue
 
             if u"/" in p.title() and p.namespace() != 0:
@@ -403,7 +403,7 @@ class FeaturedBot(pywikibot.Bot):
             yield p
 
     def findTranslated(self, page, oursite=None):
-        quiet = self.getOption('quiet')
+        quiet = self.options['quiet']
         if not oursite:
             oursite = self.site
         if page.isRedirectPage():
@@ -515,12 +515,12 @@ class FeaturedBot(pywikibot.Bot):
         if tosite.code not in self.cache[fromsite.code]:
             self.cache[fromsite.code][tosite.code] = {}
         cc = self.cache[fromsite.code][tosite.code]
-        if self.getOption('nocache') is True or \
-           fromsite.code in self.getOption('nocache'):
+        if self.options['nocache'] is True or \
+           fromsite.code in self.options['nocache']:
             cc = {}
 
         gen = self.featuredArticles(fromsite, task, cc)
-        if self.getOption('count'):
+        if self.options['count']:
             next(gen, None)
             return  # count only, we are ready here
         gen = PreloadingGenerator(gen)
@@ -556,7 +556,7 @@ class FeaturedBot(pywikibot.Bot):
         m1 = add_tl and re_Link_add.search(text)
         m2 = remove_tl and re_Link_remove.search(text)
         changed = False
-        interactive = self.getOption('interactive')
+        interactive = self.options['interactive']
         if add_tl:
             if m1:
                 pywikibot.output(u"(already added)")
@@ -567,7 +567,7 @@ class FeaturedBot(pywikibot.Bot):
                         u'Connecting %s -> %s. Proceed?'
                         % (source.title(), dest.title()),
                         default=False, automatic_quit=False)):
-                    if self.getOption('side'):
+                    if self.options['side']:
                         # Placing {{Link FA|xx}} right next to
                         # corresponding interwiki
                         text = (text[:m1.end()] +

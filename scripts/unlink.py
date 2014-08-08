@@ -59,7 +59,7 @@ class InteractiveUnlink(InteractiveReplace):
         super(InteractiveUnlink, self).__init__(
             old_link=bot.pageToUnlink, new_link=False, default='u')
         self._always = AlwaysChoice(self, 'unlink all pages', 'a')
-        self._always.always = bot.getOption('always')
+        self._always.always = bot.options['always']
         self.additional_choices = [AlwaysChoice(self, 'unlink all on page', 'p'),
                                    self._always, EditReplacement()]
         self._bot = bot
@@ -90,7 +90,7 @@ class UnlinkBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot):
         self.pageToUnlink = pageToUnlink
 
         self.generator = pageToUnlink.getReferences(
-            namespaces=self.getOption('namespaces'), content=True)
+            namespaces=self.options['namespaces'], content=True)
         self.comment = i18n.twtranslate(self.pageToUnlink.site, 'unlink-unlinking',
                                         {'title': self.pageToUnlink.title()})
 

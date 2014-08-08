@@ -101,11 +101,11 @@ class PiperBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
         text = self.current_page.text
 
         # Munge!
-        for program in self.getOption('filters'):
+        for program in self.options['filters']:
             text = self.pipe(program, text)
 
         # only save if something was changed
-        self.put_current(text, summary=self.getOption('comment'))
+        self.put_current(text, summary=self.options['comment'])
 
 
 def main(*args):

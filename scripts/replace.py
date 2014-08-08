@@ -617,7 +617,7 @@ class ReplaceRobot(Bot):
                 pywikibot.output(u"\n\n>>> \03{lightpurple}%s\03{default} <<<"
                                  % page.title())
                 pywikibot.showDiff(original_text, new_text)
-                if self.getOption('always'):
+                if self.options['always']:
                     break
                 choice = pywikibot.input_choice(
                     u'Do you want to accept these changes?',
@@ -647,7 +647,7 @@ class ReplaceRobot(Bot):
                     page.put_async(new_text, self.generate_summary(applied), callback=self.count_changes)
                 # choice must be 'N'
                 break
-            if self.getOption('always') and new_text != original_text:
+            if self.options['always'] and new_text != original_text:
                 try:
                     page.put(new_text, self.generate_summary(applied), callback=self.count_changes)
                 except pywikibot.EditConflict:

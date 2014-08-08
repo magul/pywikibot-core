@@ -155,15 +155,15 @@ class SandboxBot(Bot):
     def __init__(self, **kwargs):
         """Constructor."""
         super(SandboxBot, self).__init__(**kwargs)
-        if self.getOption('delay') is None:
-            d = min(15, max(5, int(self.getOption('hours') * 60)))
+        if self.options['delay'] is None:
+            d = min(15, max(5, int(self.options['hours'] * 60)))
             self.availableOptions['delay_td'] = datetime.timedelta(minutes=d)
         else:
-            d = max(5, self.getOption('delay'))
+            d = max(5, self.options['delay'])
             self.availableOptions['delay_td'] = datetime.timedelta(minutes=d)
 
         self.site = pywikibot.Site()
-        if not content.get(self.site.code) and not self.getOption('text'):
+        if not content.get(self.site.code) and not self.options['text']:
             pywikibot.error(u'No content is given for pages, exiting.')
             raise RuntimeError
         if not self.generator:
@@ -192,12 +192,12 @@ class SandboxBot(Bot):
                         % sandboxPage.title(asLink=True))
                 try:
                     text = sandboxPage.text
-                    if not self.getOption('text'):
+                    if not self.options['text']:
                         translatedContent = i18n.translate(self.site, content)
                     else:
-                        translatedContent = self.getOption('text')
-                    if self.getOption('summary'):
-                        translatedMsg = self.getOption('summary')
+                        translatedContent = self.options['text']
+                    if self.options['summary']:
+                        translatedMsg = self.options['summary']
                     else:
                         translatedMsg = i18n.twtranslate(
                             self.site, 'clean_sandbox-cleaned')
@@ -218,7 +218,7 @@ class SandboxBot(Bot):
                     else:
                         edit_delta = (datetime.datetime.utcnow() -
                                       sandboxPage.editTime())
-                        delta = self.getOption('delay_td') - edit_delta
+                        delta = self.options['delay_td'] - edit_delta
                         # Is the last edit more than 'delay' minutes ago?
                         if delta <= datetime.timedelta(0):
                             sandboxPage.put(translatedContent, translatedMsg)
@@ -240,17 +240,17 @@ class SandboxBot(Bot):
                     pywikibot.output(
                         u'*** The sandbox is not existent, skipping.')
                     continue
-            if self.getOption('no_repeat'):
+            if self.options['no_repeat']:
                 pywikibot.output(u'\nDone.')
                 return
             elif not wait:
-                if self.getOption('hours') < 1.0:
+                if self.options['hours'] < 1.0:
                     pywikibot.output('\nSleeping %s minutes, now %s'
-                                     % ((self.getOption('hours') * 60), now))
+                                     % ((self.options['hours'] * 60), now))
                 else:
                     pywikibot.output('\nSleeping %s hours, now %s'
-                                     % (self.getOption('hours'), now))
-                time.sleep(self.getOption('hours') * 60 * 60)
+                                     % (self.options['hours'], now))
+                time.sleep(self.options['hours'] * 60 * 60)
 
 
 def main(*args):

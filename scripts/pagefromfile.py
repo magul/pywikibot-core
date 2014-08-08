@@ -112,8 +112,8 @@ class PageFromFileRobot(Bot):
         page = pywikibot.Page(mysite, title)
         self.current_page = page
 
-        if self.getOption('summary'):
-            comment = self.getOption('summary')
+        if self.options['summary']:
+            comment = self.options['summary']
         else:
             comment = i18n.twtranslate(mysite, 'pagefromfile-msg')
 
@@ -128,26 +128,26 @@ class PageFromFileRobot(Bot):
         contents = re.sub('^[\r\n]*', '', contents)
 
         if page.exists():
-            if not self.getOption('redirect') and page.isRedirectPage():
+            if not self.options['redirect'] and page.isRedirectPage():
                 pywikibot.output(u"Page %s is redirect, skipping!" % title)
                 return
             pagecontents = page.get(get_redirect=True)
-            if self.getOption('nocontent') != u'':
-                if pagecontents.find(self.getOption('nocontent')) != -1 or \
-                pagecontents.find(self.getOption('nocontent').lower()) != -1:
-                    pywikibot.output(u'Page has %s so it is skipped' % self.getOption('nocontent'))
+            if self.options['nocontent'] != u'':
+                if pagecontents.find(self.options['nocontent']) != -1 or \
+                pagecontents.find(self.options['nocontent'].lower()) != -1:
+                    pywikibot.output(u'Page has %s so it is skipped' % self.options['nocontent'])
                     return
-            if self.getOption('append') == 'top':
+            if self.options['append'] == 'top':
                 pywikibot.output(u"Page %s already exists, appending on top!"
                                      % title)
                 contents = contents + pagecontents
                 comment = comment_top
-            elif self.getOption('append') == 'bottom':
+            elif self.options['append'] == 'bottom':
                 pywikibot.output(u"Page %s already exists, appending on bottom!"
                                      % title)
                 contents = pagecontents + contents
                 comment = comment_bottom
-            elif self.getOption('force'):
+            elif self.options['force']:
                 pywikibot.output(u"Page %s already exists, ***overwriting!"
                                  % title)
                 comment = comment_force
@@ -155,13 +155,13 @@ class PageFromFileRobot(Bot):
                 pywikibot.output(u"Page %s already exists, not adding!" % title)
                 return
         else:
-            if self.getOption('autosummary'):
+            if self.options['autosummary']:
                 comment = ''
                 config.default_edit_summary = ''
 
         self.userPut(page, page.text, contents,
                      summary=comment,
-                     minor=self.getOption('minor'),
+                     minor=self.options['minor'],
                      show_diff=False,
                      ignore_save_related_errors=True)
 

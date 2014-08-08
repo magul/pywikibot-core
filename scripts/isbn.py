@@ -1492,10 +1492,10 @@ class IsbnBot(Bot):
                     pywikibot.output(e)
 
             new_text = old_text
-            if self.getOption('to13'):
+            if self.options['to13']:
                 new_text = self.isbnR.sub(_isbn10toIsbn13, new_text)
 
-            if self.getOption('format'):
+            if self.options['format']:
                 new_text = self.isbnR.sub(_hyphenateIsbnNumber, new_text)
             try:
                 self.userPut(page, page.text, new_text, summary=self.comment)
@@ -1556,10 +1556,10 @@ class IsbnWikibaseBot(WikidataBot):
 
                 old_isbn = "ISBN " + isbn
 
-                if self.getOption('format'):
+                if self.options['format']:
                     new_isbn = hyphenateIsbnNumbers(old_isbn)
 
-                if self.getOption('to13'):
+                if self.options['to13']:
                     new_isbn = convertIsbn10toIsbn13(old_isbn)
 
                     item.claims[claim.getID()].remove(claim)
@@ -1585,7 +1585,7 @@ class IsbnWikibaseBot(WikidataBot):
                                         new_isbn))
 
         # -format is the only option that has any effect on ISBN13
-        if self.getOption('format') and self.isbn_13_prop_id in item.claims:
+        if self.options['format'] and self.isbn_13_prop_id in item.claims:
             for claim in item.claims[self.isbn_13_prop_id]:
                 isbn = claim.getTarget()
                 try:

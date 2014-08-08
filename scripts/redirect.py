@@ -462,7 +462,7 @@ class RedirectRobot(Bot):
                                 pywikibot.output(u'%s is locked.'
                                                  % redir_page.title())
                                 pass
-                elif self.getOption('delete') and self.user_confirm(
+                elif self.options['delete'] and self.user_confirm(
                         u'Redirect target %s does not exist.\n'
                         u'Do you want to delete %s?'
                         % (targetPage.title(asLink=True),
@@ -559,7 +559,7 @@ class RedirectRobot(Bot):
                                      % redir.title(asLink=True))
                     break
                 else:
-                    if self.getOption('always'):
+                    if self.options['always']:
                         pywikibot.output(
                             u"Skipping: Redirect target %s doesn't exist."
                             % newRedir.title(asLink=True))
@@ -672,7 +672,7 @@ class RedirectRobot(Bot):
             else:
                 self.fix_1_double_redirect(redir_name)
                 count += 1
-            if self.getOption('number') and count >= self.getOption('number'):
+            if self.options['number'] and count >= self.options['number']:
                 break
 
     def run(self):

@@ -71,8 +71,8 @@ class PatrolBot(Bot):
         self.recent_gen = True
         self.user = None
         self.site = pywikibot.Site()
-        if self.getOption('whitelist'):
-            self.whitelist_pagename = self.getOption('whitelist')
+        if self.options['whitelist']:
+            self.whitelist_pagename = self.options['whitelist']
         else:
             local_whitelist_subpage_name = pywikibot.translate(
                 self.site, self.whitelist_subpage_name, fallback=True)
@@ -80,7 +80,7 @@ class PatrolBot(Bot):
                                       self.site.namespace(2),
                                       self.site.username(),
                                       local_whitelist_subpage_name)
-        self.whitelist = self.getOption('whitelist')
+        self.whitelist = self.options['whitelist']
         self.whitelist_ts = 0
         self.whitelist_load_ts = 0
 
@@ -95,7 +95,7 @@ class PatrolBot(Bot):
         """Load most recent watchlist_page for further processing."""
         # Check for a more recent version after versionchecktime in sec.
         if (self.whitelist_load_ts and (time.time() - self.whitelist_load_ts <
-                                        self.getOption('versionchecktime'))):
+                                        self.options['versionchecktime'])):
             if pywikibot.config.verbose_output:
                 pywikibot.output(u'Whitelist not stale yet')
             return
@@ -277,7 +277,7 @@ class PatrolBot(Bot):
         if self.whitelist is None:
             self.load_whitelist()
         if not feed:
-            feed = self.getOption('feed')
+            feed = self.options['feed']
         for page in feed:
             self.treat(page)
 
@@ -302,11 +302,11 @@ class PatrolBot(Bot):
                 self.load_whitelist()
                 self.repeat_start_ts = time.time()
 
-            if pywikibot.config.verbose_output or self.getOption('ask'):
+            if pywikibot.config.verbose_output or self.options['ask']:
                 pywikibot.output(u'User %s has created or modified page %s'
                                  % (username, title))
 
-            if self.getOption('autopatroluserns') and (page['ns'] == 2 or
+            if self.options['autopatroluserns'] and (page['ns'] == 2 or
                                                        page['ns'] == 3):
                 # simple rule to whitelist any user editing their own userspace
                 if title.partition(':')[2].split('/')[0].startswith(username):
@@ -322,7 +322,7 @@ class PatrolBot(Bot):
                                          % (username, title))
                     choice = True
 
-            if self.getOption('ask'):
+            if self.options['ask']:
                 choice = pywikibot.input_yn(
                     u'Do you want to mark page as patrolled?', automatic_quit=False)
 

@@ -89,9 +89,9 @@ class LonelyPagesBot(Bot):
 
         # Take the configurations according to our project
         self.site = pywikibot.Site()
-        if self.getOption('enablePage'):
+        if self.options['enablePage']:
             self.options['enablePage'] = pywikibot.Page(
-                self.site, self.getOption('enablePage'))
+                self.site, self.options['enablePage'])
         self.comment = i18n.twtranslate(
             self.site, 'lonelypages-comment-add-template')
         self.commentdisambig = i18n.twtranslate(
@@ -102,8 +102,8 @@ class LonelyPagesBot(Bot):
             pywikibot.showHelp()
             sys.exit(u'Missing configuration for site %s' % self.site)
         # DisambigPage part
-        if self.getOption('disambigPage') is not None:
-            self.disambigpage = pywikibot.Page(self.site, self.getOption('disambigPage'))
+        if self.options['disambigPage'] is not None:
+            self.disambigpage = pywikibot.Page(self.site, self.options['disambigPage'])
             try:
                 self.disambigtext = self.disambigpage.get()
             except pywikibot.NoPage:
@@ -115,7 +115,7 @@ class LonelyPagesBot(Bot):
                 self.options['disambigPage'] = None
 
     def enable_page(self):
-        enable = self.getOption('enablePage')
+        enable = self.options['enablePage']
         if enable is not None:
             try:
                 getenable = enable.get()
@@ -172,7 +172,7 @@ class LonelyPagesBot(Bot):
                     break
             else:
                 return
-            if page.isDisambig() and self.getOption('disambigPage') is not None:
+            if page.isDisambig() and self.options['disambigPage'] is not None:
                 pywikibot.output(u'%s is a disambig page, report..'
                                  % page.title())
                 if not page.title().lower() in self.disambigtext.lower():

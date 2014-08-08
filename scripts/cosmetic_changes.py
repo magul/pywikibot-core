@@ -70,12 +70,12 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
         """Treat page with the cosmetic toolkit."""
         try:
             ccToolkit = cosmetic_changes.CosmeticChangesToolkit.from_page(
-                self.current_page, False, self.getOption('ignore'))
+                self.current_page, False, self.options['ignore'])
             changedText = ccToolkit.change(self.current_page.get())
             if changedText is not False:
                 self.put_current(new_text=changedText,
-                                 summary=self.getOption('summary'),
-                                 async=self.getOption('async'))
+                                 summary=self.options['summary'],
+                                 async=self.options['async'])
         except pywikibot.LockedPage:
             pywikibot.output("Page %s is locked?!"
                              % self.current_page.title(asLink=True))

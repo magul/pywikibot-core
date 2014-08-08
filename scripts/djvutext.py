@@ -82,7 +82,7 @@ class DjVuTextBot(SingleSiteBot):
         self.generator = self.gen()
 
         # Get edit summary message if it's empty.
-        if not self.getOption('summary'):
+        if not self.options['summary']:
             self.options['summary'] = i18n.twntranslate(
                 self._index.site, 'djvutext-creating')
 
@@ -116,8 +116,8 @@ class DjVuTextBot(SingleSiteBot):
             page.user = page.site.user()
         new_text = page.text
 
-        summary = self.getOption('summary')
-        if page.exists() and not self.getOption('force'):
+        summary = self.options['summary']
+        if page.exists() and not self.options['force']:
             pywikibot.output('Page %s already exists, not adding!' % page)
         else:
             self.userPut(page, old_text, new_text,

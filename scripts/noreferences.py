@@ -507,22 +507,22 @@ class NoReferencesBot(Bot):
         oldTextCleaned = textlib.removeDisabledParts(text)
         if self.referencesR.search(oldTextCleaned) or \
            self.referencesTagR.search(oldTextCleaned):
-            if self.getOption('verbose'):
+            if self.options['verbose']:
                 pywikibot.output(u'No changes necessary: references tag found.')
             return False
         elif self.referencesTemplates:
             templateR = u'{{(' + u'|'.join(self.referencesTemplates) + ')'
             if re.search(templateR, oldTextCleaned, re.IGNORECASE | re.UNICODE):
-                if self.getOption('verbose'):
+                if self.options['verbose']:
                     pywikibot.output(
                         u'No changes necessary: references template found.')
                 return False
         if not self.refR.search(oldTextCleaned):
-            if self.getOption('verbose'):
+            if self.options['verbose']:
                 pywikibot.output(u'No changes necessary: no ref tags found.')
             return False
         else:
-            if self.getOption('verbose'):
+            if self.options['verbose']:
                 pywikibot.output(u'Found ref without references.')
             return True
 

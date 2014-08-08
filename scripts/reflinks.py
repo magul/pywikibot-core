@@ -431,10 +431,10 @@ class ReferencesRobot(Bot):
                 break
         if code:
             manual += '/%s' % code
-        if self.getOption('summary') is None:
+        if self.options['summary'] is None:
             self.msg = i18n.twtranslate(self.site, 'reflinks-msg', locals())
         else:
-            self.msg = self.getOption('summary')
+            self.msg = self.options['summary']
         self.stopPage = pywikibot.Page(self.site,
                                        i18n.translate(self.site, stopPage))
 
@@ -561,7 +561,7 @@ class ReferencesRobot(Bot):
                         contentType = headers.getheader('Content-Type')
                     if contentType and not self.MIME.search(contentType):
                         if ref.link.lower().endswith('.pdf') and \
-                           not self.getOption('ignorepdf'):
+                           not self.options['ignorepdf']:
                             # If file has a PDF suffix
                             self.getPDFTitle(ref, f)
                         else:
@@ -767,8 +767,8 @@ class ReferencesRobot(Bot):
             else:
                 editedpages += 1
 
-            if self.getOption('limit') and editedpages >= self.getOption('limit'):
-                pywikibot.output('Edited %s pages, stopping.' % self.getOption('limit'))
+            if self.options['limit'] and editedpages >= self.options['limit']:
+                pywikibot.output('Edited %s pages, stopping.' % self.options['limit'])
                 return
 
             if editedpages % 20 == 0:

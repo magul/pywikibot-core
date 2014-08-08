@@ -53,7 +53,7 @@ class CategoryRedirectBot(pywikibot.Bot):
             'delay': 7,  # cool down delay in days
         })
         super(CategoryRedirectBot, self).__init__(**kwargs)
-        self.cooldown = self.getOption('delay')
+        self.cooldown = self.options['delay']
         self.site = pywikibot.Site()
         self.catprefix = self.site.namespace(14) + ":"
         self.log_text = []
@@ -102,7 +102,7 @@ class CategoryRedirectBot(pywikibot.Bot):
 
     def get_cat_title(self):
         """Specify the category title."""
-        if self.getOption('tiny'):
+        if self.options['tiny']:
             repo = self.site.data_repository()
             dp = pywikibot.ItemPage(repo, self.tiny_cat_redirect_cat)
             try:

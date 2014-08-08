@@ -330,8 +330,8 @@ class CommonscatBot(Bot):
                     textToAdd = u'{{%s|%s}}' % (primaryCommonscat,
                                                 commonscatLink)
                 rv = add_text(page, textToAdd,
-                              self.getOption('summary'),
-                              always=self.getOption('always'))
+                              self.options['summary'],
+                              always=self.options['always'])
                 self.options['always'] = rv[2]
                 return True
         return True
@@ -362,8 +362,8 @@ class CommonscatBot(Bot):
                              page.get())
         else:  # nothing left to do
             return
-        if self.getOption('summary'):
-            comment = self.getOption('summary')
+        if self.options['summary']:
+            comment = self.options['summary']
         else:
             comment = i18n.twtranslate(page.site.code,
                                        'commonscat-msg_change',

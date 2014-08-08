@@ -96,7 +96,7 @@ class ProtectionRobot(SingleSiteBot):
         the protections using this function.
         """
         self.current_page = page
-        if not self.getOption('always'):
+        if not self.options['always']:
             choice = pywikibot.input_choice(
                 u'Do you want to change the protection level of %s?'
                 % page.title(asLink=True, forceInterwiki=True),
@@ -108,7 +108,7 @@ class ProtectionRobot(SingleSiteBot):
         applicable = page.applicable_protections()
         protections = dict(
             prot for prot in self.protections.items() if prot[0] in applicable)
-        page.protect(reason=self.getOption('summary'),
+        page.protect(reason=self.options['summary'],
                      protections=protections)
 
 

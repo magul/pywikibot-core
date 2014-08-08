@@ -58,9 +58,9 @@ class CommonsLinkBot(Bot):
         self.findTemplate3 = re.compile(r'\{\{[Cc]ommons')
 
     def run(self):
-        if not all((self.getOption('action'), self.generator)):
+        if not all((self.options['action'], self.generator)):
             return
-        catmode = (self.getOption('action') == 'categories')
+        catmode = (self.options['action'] == 'categories')
         for page in self.generator:
             try:
                 self.current_page = page
