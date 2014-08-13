@@ -2612,11 +2612,11 @@ class WikibasePage(Page):
     There should be no need to instantiate this directly.
     """
 
-    def __init__(self, site, title=u"", **kwargs):
+    def __init__(self, source, title=u"", **kwargs):
         """ Constructor. """
-        if not isinstance(site, pywikibot.site.DataSite):
-            raise TypeError("site must be a pywikibot.site.DataSite object")
-        Page.__init__(self, site, title, **kwargs)
+        if not isinstance(source, pywikibot.site.DataSite):
+            raise TypeError("source must be a pywikibot.site.DataSite object")
+        Page.__init__(self, source, title, **kwargs)
         self.repo = self.site
         self._isredir = False  # Wikibase pages cannot be a redirect
 
@@ -2867,7 +2867,7 @@ class ItemPage(WikibasePage):
     been looked up, the item is then defined by the qid.
     """
 
-    def __init__(self, site, title=None):
+    def __init__(self, source, title=None):
         """
         Constructor.
 
@@ -2875,7 +2875,7 @@ class ItemPage(WikibasePage):
         @type site: pywikibot.site.DataSite
         @param title: id number of item, "Q###"
         """
-        super(ItemPage, self).__init__(site, title, ns=0)
+        super(ItemPage, self).__init__(source, title, ns=0)
         self.id = title.upper()  # This might cause issues if not ns0?
 
     @classmethod
@@ -3157,9 +3157,9 @@ class PropertyPage(WikibasePage, Property):
         @type source: pywikibot.site.DataSite
         @param title: page name of property, like "Property:P##"
         """
-        WikibasePage.__init__(self, source, title, ns=120)
-        Property.__init__(self, source, title)
+        WikibasePage.__init__(self, source, title=title, ns=120)
         self.id = self.title(withNamespace=False).upper()
+        Property.__init__(self, site=source, id=self.id)
         if not self.id.startswith(u'P'):
             raise ValueError(u"'%s' is not a property page!" % self.title())
 
