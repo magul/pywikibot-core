@@ -169,8 +169,8 @@ def main(*args):
     site = pywikibot.Site()
 
     generator_type = None
-    protection_levels = set(site.protection_levels())
-    protection_types = site.protection_types()
+    protection_levels = site.restrictions['levels']
+    protection_types = site.restrictions['types']
     if '' in protection_levels:
         protection_levels.add('all')
     for arg in local_args:

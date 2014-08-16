@@ -779,7 +779,7 @@ class TestSiteGenerators(DefaultSiteTestCase):
     def test_protectedpages_edit_level(self):
         site = self.get_site()
         levels = set()
-        all_levels = site.protection_levels().difference([''])
+        all_levels = site.restrictions['levels'].difference([''])
         for level in all_levels:
             if list(site.protectedpages(type='edit', level=level, total=1)):
                 levels.add(level)

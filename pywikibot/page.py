@@ -939,7 +939,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
             self.site.loadpageinfo(self)
             return self._applicable_protections
 
-        p_types = set(self.site.protection_types())
+        p_types = self.site.restrictions['types']
         if not self.exists():
             return set(['create']) if 'create' in p_types else set()
         else:

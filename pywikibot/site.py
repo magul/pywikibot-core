@@ -1248,30 +1248,14 @@ class Siteinfo(Container):
     @staticmethod
     def _get_default(key):
         """
-        Return the default value for different properties.
-
-        If the property is 'restrictions' it returns a dictionary with:
-         - 'cascadinglevels': 'sysop'
-         - 'semiprotectedlevels': 'autoconfirmed'
-         - 'levels': '' (everybody), 'autoconfirmed', 'sysop'
-         - 'types': 'create', 'edit', 'move', 'upload'
-        Otherwise it returns L{pywikibot.tools.EMPTY_DEFAULT}.
+        Return the default value.
 
         @param key: The property name
         @type key: str
         @return: The default value
-        @rtype: dict or L{pywikibot.tools.EmptyDefault}
+        @rtype: L{pywikibot.tools.EmptyDefault}
         """
-        if key == 'restrictions':
-            # implemented in b73b5883d486db0e9278ef16733551f28d9e096d
-            return {
-                'cascadinglevels': ['sysop'],
-                'semiprotectedlevels': ['autoconfirmed'],
-                'levels': ['', 'autoconfirmed', 'sysop'],
-                'types': ['create', 'edit', 'move', 'upload']
-            }
-        else:
-            return pywikibot.tools.EMPTY_DEFAULT
+        return pywikibot.tools.EMPTY_DEFAULT
 
     def _post_process(self, prop, data):
         """Do some default handling of data. Directly modifies data."""
@@ -4804,26 +4788,50 @@ class APISite(BaseSite):
         "protect-invalidlevel": "Invalid protection level"
     }
 
+    @deprecated("the 'restrictions' property")
     def protection_types(self):
         """
         Return the protection types available on this site.
 
         @return: protection types available
         @rtype: set of unicode instances
-        @see: L{Siteinfo._get_default()}
         """
-        return set(self.siteinfo.get('restrictions')['types'])
+        return self.restrictions['types']
 
+    @deprecated("the 'restrictions' property")
     def protection_levels(self):
         """
         Return the protection levels available on this site.
 
         @return: protection types available
         @rtype: set of unicode instances
-        @see: L{Siteinfo._get_default()}
         """
-        # implemented in b73b5883d486db0e9278ef16733551f28d9e096d
-        return set(self.siteinfo.get('restrictions')['levels'])
+        return self.restrictions['levels']
+
+    @property
+    def restrictions(self):
+        """
+        Return the page restrictions available on this site.
+
+        Since MediaWiki 1.23, restrictions can be retrieved via the API.
+        For older wikis, the default restrictions are returned.
+
+        @return: available page restrictions
+        @rtype: dict
+        """
+        try:
+            # implemented in b73b5883d486db0e9278ef16733551f28d9e096d
+            restrictions = self.siteinfo['restrictions']
+        except KeyError:
+            restrictions = {
+                'cascadinglevels': ['sysop'],
+                'semiprotectedlevels': ['autoconfirmed'],
+                'levels': ['', 'autoconfirmed', 'sysop'],
+                'types': ['create', 'edit', 'move', 'upload']
+            }
+        restrictions['levels'] = set(restrictions['levels'])
+        restrictions['types'] = set(restrictions['types'])
+        return restrictions
 
     @must_be(group='sysop')
     @deprecate_arg("summary", "reason")
@@ -5709,7 +5717,7 @@ class APISite(BaseSite):
         """
         namespaces = Namespace.resolve(namespace, self.namespaces)
         # always assert that, so we are be sure that type could be 'create'
-        assert 'create' in self.protection_types(), \
+        assert 'create' in self.restrictions['types'], \
             "'create' should be a valid protection type."
         if type == 'create':
             return self._generator(
