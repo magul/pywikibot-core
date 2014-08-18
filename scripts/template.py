@@ -286,7 +286,7 @@ class TemplateRobot(ReplaceBot):
         super(TemplateRobot, self).__init__(
             generator, replacements, exceptions,
             always=self.getOption('always'),
-            addedCat=self.getOption('addedCat'),
+            add_cat=self.getOption('addedCat'),
             summary=self.getOption('summary'))
 
 
