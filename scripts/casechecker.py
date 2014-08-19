@@ -515,7 +515,7 @@ class CaseChecker(object):
                             if i not in self.knownWords and
                             self.romanNumSfxPtrn.match(i) is not None])
 
-        if len(badWords) == 0 or self.Page(title).isImage():
+        if len(badWords) == 0 or self.Page(title).is_filepage():
             return
         count = 0
         ambigBadWords = set()

@@ -229,7 +229,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                     # use this form for sites like commons, where the
                     # code is the same as the family name
                     title = u'%s:%s' % (self.site.code, title)
-            elif textlink and (self.isImage() or self.isCategory()):
+            elif textlink and (self.is_filepage() or self.is_categorypage()):
                 title = u':%s' % title
             elif self.namespace() == 0 and not section:
                 withNamespace = True
@@ -637,7 +637,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         @return: bool
         """
-        if not self.isCategory():
+        if not self.is_categorypage():
             return False
         if not hasattr(self, "_catredirect"):
             catredirs = self.site.category_redirects()
@@ -715,13 +715,21 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                         "%s:%s" % (self.site.namespace(ns + 1),
                                    self.title(withNamespace=False)))
 
-    def isCategory(self):
+    def is_categorypage(self):
         """Return True if the page is a Category, False otherwise."""
         return self.namespace() == 14
 
-    def isImage(self):
-        """Return True if this is an image description page, False otherwise."""
+    @deprecated("is_categorypage")
+    def isCategory(self):
+        return self.is_categorypage()
+
+    def is_filepage(self):
+        """Return True if this is an file description page, False otherwise."""
         return self.namespace() == 6
+
+    @deprecated("is_filepage")
+    def isImage(self):
+        return self.is_filepage()
 
     def isDisambig(self, get_Index=True):
         """Return True if this is a disambiguation page, False otherwise.
@@ -910,7 +918,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             return set(['create']) if 'create' in p_types else set()
         else:
             p_types.remove('create')  # no existing page allows that
-            if not self.isImage():  # only file pages allow upload
+            if not self.is_filepage():  # only file pages allow upload
                 p_types.remove('upload')
             return p_types
 

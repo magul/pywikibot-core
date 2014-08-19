@@ -1368,7 +1368,7 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
 
             # must be behind the page.isRedirectPage() part
             # otherwise a redirect error would be raised
-            elif page.isEmpty() and not page.isCategory():
+            elif page.isEmpty() and not page.is_categorypage():
                 globalvar.remove.append(unicode(page))
                 if not globalvar.quiet:
                     pywikibot.output(u"NOTE: %s is empty. Skipping." % page)
@@ -1453,7 +1453,7 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
                     pywikibot.output(u'File autonomous_problems.dat open or corrupted! Try again with -restore.')
                     sys.exit()
                 iw = ()
-            elif page.isEmpty() and not page.isCategory():
+            elif page.isEmpty() and not page.is_categorypage():
                 globalvar.remove.append(unicode(page))
                 if not globalvar.quiet:
                     pywikibot.output(u"NOTE: %s is empty; ignoring it and its interwiki links"
@@ -1841,7 +1841,7 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
         except pywikibot.NoPage:
             pywikibot.output(u"Not editing %s: page does not exist" % page)
             raise SaveError(u'Page doesn\'t exist')
-        if page.isEmpty() and not page.isCategory():
+        if page.isEmpty() and not page.is_categorypage():
             pywikibot.output(u"Not editing %s: page is empty" % page)
             raise SaveError(u'Page is empty.')
 

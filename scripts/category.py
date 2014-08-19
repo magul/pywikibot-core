@@ -755,8 +755,8 @@ class CategoryListifyRobot:
 
         listString = ""
         for article in setOfArticles:
-            if (not article.isImage() or
-                    self.showImages) and not article.isCategory():
+            if (not article.is_filepage() or
+                    self.showImages) and not article.is_categorypage():
                 if self.talkPages and not article.isTalkPage():
                     listString += "*[[%s]] -- [[%s|talk]]\n" \
                                   % (article.title(),
