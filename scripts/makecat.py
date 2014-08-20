@@ -53,7 +53,7 @@ def isdate(s):
 
 
 def needcheck(pl):
-    if main:
+    if doall:
         if pl.namespace() != 0:
             return False
     if pl in checked:
@@ -64,10 +64,12 @@ def needcheck(pl):
     return True
 
 
-def include(pl, checklinks=True, realinclude=True, linkterm=None):
+def include(pl, workingcat, checklinks=True, realinclude=True, linkterm=None,
+            removeparent=True, parentcats=None,
+            checkforward=True, checkbackward=True):
     cl = checklinks
     if linkterm:
-        actualworkingcat = pywikibot.Category(mysite, workingcat.title(),
+        actualworkingcat = pywikibot.Category(workingcat.site, workingcat.title(),
                                               sortKey=linkterm)
     else:
         actualworkingcat = workingcat
@@ -104,45 +106,45 @@ def include(pl, checklinks=True, realinclude=True, linkterm=None):
                     checked[refPage] = refPage
 
 
-def exclude(pl, real_exclude=True):
+def exclude(pl, excludefile, real_exclude=True):
     if real_exclude:
         excludefile.write('%s\n' % pl.title())
 
 
-def asktoadd(pl):
-    if pl.site != mysite:
-        return
-    if pl.isRedirectPage():
-        pl2 = pl.getRedirectTarget()
-        if needcheck(pl2):
-            tocheck.append(pl2)
-            checked[pl2] = pl2
-        return
+def asktoadd(pl, excludefile, workingcat, removeparent, parentcats=None,
+             checkforward=True, checkbackward=True):
     ctoshow = 500
     pywikibot.output(u'')
     pywikibot.output(u"==%s==" % pl.title())
     while True:
         answer = raw_input("y(es)/n(o)/i(gnore)/(o)ther options? ")
         if answer == 'y':
-            include(pl)
+            include(pl, workingcat, removeparent, parentcats=parentcats,
+                    checkforward=checkforward, checkbackward=checkbackward)
             break
         if answer == 'c':
-            include(pl, realinclude=False)
+            include(pl, workingcat, realinclude=False, removeparent=removeparent,
+                    checkforward=checkforward, checkbackward=checkbackward)
             break
         if answer == 'z':
             if pl.exists():
                 if not pl.isRedirectPage():
                     linkterm = pywikibot.input(
                         u"In what manner should it be alphabetized?")
-                    include(pl, linkterm=linkterm)
+                    include(pl, workingcat, linkterm=linkterm,
+                            removeparent=removeparent, parentcats=parentcats,
+                            checkforward=checkforward,
+                            checkbackward=checkbackward)
                     break
-            include(pl)
+            include(pl, workingcat,
+                    removeparent=removeparent, parentcats=parentcats,
+                    checkforward=checkforward, checkbackward=checkbackward)
             break
         elif answer == 'n':
-            exclude(pl)
+            exclude(pl, excludefile)
             break
         elif answer == 'i':
-            exclude(pl, real_exclude=False)
+            exclude(pl, excludefile, real_exclude=False)
             break
         elif answer == 'o':
             pywikibot.output(u"t: Give the beginning of the text of the page")
@@ -157,18 +159,24 @@ def asktoadd(pl):
             pagetitle = pywikibot.input("Specify page to add:")
             page = pywikibot.Page(pywikibot.Site(), pagetitle)
             if page not in checked.keys():
-                include(page)
+                include(page, workingcat,
+                        removeparent=removeparent, parentcats=parentcats,
+                        checkforward=checkforward, checkbackward=checkbackward)
         elif answer == 'x':
             if pl.exists():
                 if pl.isRedirectPage():
                     pywikibot.output(
                         u"Redirect page. Will be included normally.")
-                    include(pl, realinclude=False)
+                    include(pl, workingcat, realinclude=False,
+                            removeparent=removeparent, parentcats=parentcats,
+                            checkforward=checkforward, checkbackward=checkbackward)
                 else:
-                    include(pl, checklinks=False)
+                    include(pl, workingcat, checklinks=False,
+                            removeparent=removeparent, parentcats=parentcats,
+                            checkforward=checkforward, checkbackward=checkbackward)
             else:
                 pywikibot.output(u"Page does not exist; not added.")
-                exclude(pl, real_exclude=False)
+                exclude(pl, excludefile, real_exclude=False)
             break
         elif answer == 'l':
             pywikibot.output(u"Number of pages still to check: %s"
@@ -186,16 +194,25 @@ def asktoadd(pl):
         else:
             pywikibot.output(u"Not understood.")
 
-try:
-    checked = {}
-    skipdates = False
-    checkforward = True
-    checkbackward = True
+checked = {}
+tocheck = []
+skipdates = False
+doall = True
+excludefile = None
+
+
+def main():
+    global checked, tocheck
+    global skipdates, doall  # only used in needcheck()
+    global excludefile  # only used for exception handling
+
+    workingcatname = ''
     checkbroken = True
     removeparent = True
-    main = True
-    workingcatname = ''
-    tocheck = []
+    checkforward = True
+    checkbackward = True
+    parentcats = None
+
     for arg in pywikibot.handleArgs():
         if arg.startswith('-nodate'):
             skipdates = True
@@ -207,7 +224,7 @@ try:
         elif arg.startswith('-keepparent'):
             removeparent = False
         elif arg.startswith('-all'):
-            main = False
+            doall = False
         elif not workingcatname:
             workingcatname = arg
 
@@ -259,7 +276,9 @@ try:
             checked[pl] = pl
         list = pagegenerators.PreloadingGenerator(list)
         for pl in list:
-            include(pl)
+            include(pl, workingcat,
+                    removeparent=removeparent, parentcats=parentcats,
+                    checkforward=checkforward, checkbackward=checkbackward)
     else:
         pywikibot.output(
             u"Category %s does not exist or is empty. Which page to start with?"
@@ -271,7 +290,9 @@ try:
         pl = pywikibot.Page(mysite, answer)
         tocheck = []
         checked[pl] = pl
-        include(pl)
+        include(pl, workingcat,
+                removeparent=removeparent, parentcats=parentcats,
+                checkforward=checkforward, checkbackward=checkbackward)
     loaded = 0
     while tocheck:
         if loaded == 0:
@@ -280,18 +301,25 @@ try:
             else:
                 loaded = 50
             tocheck = [x for x in pagegenerators.PreloadingGenerator(tocheck[:loaded])]
-        if not checkbroken:
-            if not tocheck[0].exists():
-                pass
+        if not checkbroken and tocheck[0].site == mysite and tocheck[0].exists():
+            if tocheck[0].isRedirectPage():
+                pl2 = tocheck[0].getRedirectTarget()
+                if needcheck(pl2):
+                    tocheck.append(pl2)
+                    checked[pl2] = pl2
             else:
-                asktoadd(tocheck[0])
-        else:
-            asktoadd(tocheck[0])
+                asktoadd(tocheck[0], excludefile, workingcat,
+                         removeparent=removeparent, parentcats=parentcats,
+                         checkforward=checkforward, checkbackward=checkbackward)
+
         tocheck = tocheck[1:]
         loaded -= 1
 
-finally:
+if __name__ == "__main__":
     try:
-        excludefile.close()
-    except:
-        pass
+        main()
+    finally:
+        try:
+            excludefile.close()
+        except:
+            pass
