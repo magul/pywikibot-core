@@ -116,7 +116,7 @@ from pywikibot import Bot
 from pywikibot import config, pagegenerators
 from pywikibot import i18n, textlib
 from pywikibot.tools import (
-    deprecated_args, deprecated, ModuleDeprecationWrapper
+    deprecated_args, deprecated, ModuleDeprecationWrapper, min_len
 )
 
 if sys.version_info[0] > 2:
@@ -927,17 +927,15 @@ class CategoryTidyRobot:
     def run(self):
         cat = pywikibot.Category(self.site, self.catTitle)
 
-        empty = True
-        preloadingGen = pagegenerators.PreloadingGenerator(cat.articles())
-        for article in preloadingGen:
-            empty = False
-            pywikibot.output('')
-            pywikibot.output(u'=' * 67)
-            self.move_to_category(article, cat, cat)
-
-        if empty:
+        gen = min_len(pagegenerators.PreloadingGenerator(cat.articles()))
+        if gen is False:
             pywikibot.output(u'There are no articles or files in category %s'
                              % self.catTitle)
+        else:
+            for article in gen:
+                pywikibot.output('')
+                pywikibot.output(u'=' * 67)
+                self.move_to_category(article, cat, cat)
 
 
 class CategoryTreeRobot:

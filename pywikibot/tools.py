@@ -38,6 +38,40 @@ def empty_iterator():
     yield
 
 
+def min_len(generator, length=1):
+    """
+    Check whether a generator or iterator has a specific minimum length.
+
+    To get the length it has to poll the first 'length' elements. It buffers
+    the elements and those will be yielded by the new generator first. After
+    the buffered elements (which are as many as described by 'length') are
+    yielded it will query the original generator/iterator.
+
+    @param generator: the generator
+    @type generator: generator or iterable
+    @param length: the minimum length (default 1)
+    @type length: positive int (> 0)
+    @return: A new generator, if the old contained at least 'length' elements
+        and False otherwise.
+    @rtype: generator, bool
+    """
+    def gen():
+        for element in buffered:
+            yield element
+        for element in generator:
+            yield element
+
+    if length <= 0:
+        raise TypeError('The length may be only positive')
+    buffered = []
+    for element in generator:
+        buffered.append(element)
+        if length <= len(buffered):
+            return gen()
+    else:
+        return False
+
+
 class UnicodeMixin(object):
 
     """Mixin class to add __str__ method in Python 2 or 3."""

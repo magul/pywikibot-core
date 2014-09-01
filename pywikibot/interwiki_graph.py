@@ -84,10 +84,9 @@ class GraphDrawer:
             node.set_color('green')
             node.set_style('filled,bold')
         # if we found more than one valid page for this language:
-        # TODO: Only iterate through at most 2 elements
-        if len([p for p in self.subject.foundIn.keys()
-                if p.site == page.site and p.exists() and
-                not p.isRedirectPage()]) > 1:          # noqa
+        if pywikibot.tools.min_len((p for p in self.subject.foundIn.keys()
+                                    if p.site == page.site and p.exists() and
+                                    not p.isRedirectPage()), 2) is not False:
             # mark conflict by octagonal node
             node.set_shape('octagon')
         self.graph.add_node(node)
