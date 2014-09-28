@@ -733,6 +733,12 @@ for _key, _val in _glv.items():
     else:
         _uc[_key] = _val
 
+# The family files before any user config changes have been made
+# This is the only variable which is touched by a function, so when a user
+# config calls that function the global (and not the user) value is changed
+# As the user value is unchanged, the old value is overwritten
+_global_family_files = dict(family_files)
+
 # Get the user files
 _thislevel = 0
 if os.environ.get('PYWIKIBOT2_NO_USER_CONFIG', '0') == '1':
@@ -783,10 +789,18 @@ for _key, _val in list(_uc.items()):
               "Configuration variable %(_key)r is defined but unknown.\n"
               "Misspelled?" % locals())
 
+# Handle family_files, which shouldn't be changed directly in the user config
+if _uc['family_files'] != _global_family_files:
+    print("WARNING: 'family_files' has been changed in the user config.\n"
+          "This is not allowed and instead the 'register_families_folder' or "
+          "'register_family_file' functions should be used.")
+
 # Copy the user config settings into globals
 _modified = [_key for _key in _gl
-             if _uc[_key] != globals()[_key] or
-             _key in ('usernames', 'sysopnames', 'disambiguation_comment')]
+             if (_uc[_key] != globals()[_key] or
+                 _key in ('usernames', 'sysopnames',
+                          'disambiguation_comment')) and
+                 _key != 'family_files']
 
 for _key in _modified:
     globals()[_key] = _uc[_key]
