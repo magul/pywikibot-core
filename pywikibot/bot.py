@@ -947,6 +947,49 @@ class Bot(object):
                 pywikibot.output('\nKeyboardInterrupt during %s bot run...' %
                                  self.__class__.__name__)
 
+    def user_page(self, subpage=None, site=None):
+        if not site:
+            if hasattr(self, 'site'):
+                site = self.site
+            else:
+                raise NotImplementedError('Can not load a Bot.user_page. '
+                                          'Property %s.site not set.'
+                                          % self.__class__.__name__)
+
+        if not site.username():
+            raise pywikibot.NoUsername(u'No username for %s' % site)
+
+        page = pywikibot.User(site, site.username())
+        if subpage:
+            page = page.getUserPage(subpage)
+
+        return page
+
+    def set_stop_page_suffix(self, suffix):
+        self.stop_page = self.user_page(suffix)
+        try:
+            self.stop_page_rev_id = self.stop_page.latestRevision()
+        except pywikibot.NoPage:
+            pywikibot.output(u'The stop page %s does not exist'
+                             % self.stop_page.title(asLink=True))
+            raise
+
+    def stop_page_changed(self):
+        """
+        Check the stop page.
+
+        @return: True if the stop page has been modified
+        @rtype: bool
+        """
+        pywikibot.output('\03{lightgreen}Checking stop page...\03{default}')
+        latest_rev_id = self.stop_page.latestRevision()
+        if latest_rev_id != self.stop_page_rev_id:
+            pywikibot.output(
+                u'[[%s]] has been edited : Someone wants us to stop.'
+                % self.stop_page)
+            return True
+        return False
+
 
 class WikidataBot(Bot):
 

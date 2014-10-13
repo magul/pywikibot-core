@@ -77,18 +77,7 @@ localized_msg = ('fr', 'it', 'pl')  # localized message at MediaWiki
 
 
 stopPage = {
-    'fr': u'Utilisateur:DumZiBoT/EditezCettePagePourMeStopper',
-    'da': u'Bruger:DumZiBoT/EditThisPageToStopMe',
-    'de': u'Benutzer:DumZiBoT/EditThisPageToStopMe',
-    'fa': u'کاربر:Amirobot/EditThisPageToStopMe',
-    'it': u'Utente:Marco27Bot/EditThisPageToStopMe',
-    'ko': u'사용자:GrassnBreadRefBot/EditThisPageToStopMe1',
-    'he': u'User:Matanyabot/EditThisPageToStopMe',
-    'hu': u'User:Damibot/EditThisPageToStopMe',
-    'en': u'User:DumZiBoT/EditThisPageToStopMe',
-    'pl': u'Wikipedysta:MastiBot/EditThisPageToStopMe',
-    'ru': u'User:Rubinbot/EditThisPageToStopMe',
-    'zh': u'User:Sz-iwbot',
+    'fr': u'EditezCettePagePourMeStopper',
 }
 
 deadLinkTag = {
@@ -424,8 +413,11 @@ class ReferencesRobot(Bot):
             self.msg = i18n.twtranslate(self.site, 'reflinks-msg', locals())
         else:
             self.msg = self.getOption('summary')
-        self.stopPage = pywikibot.Page(self.site,
-                                       i18n.translate(self.site, stopPage))
+
+        stop_page_suffix = stopPage.get(self.site.code, 'EditThisPageToStopMe')
+        if self.site.username() == 'GrassnBreadRefBot':
+            stop_page_suffix = 'EditThisPageToStopMe1'
+        self.set_stop_page_suffix(stop_page_suffix)
 
         local = i18n.translate(self.site, badtitles)
         if local:
@@ -435,12 +427,6 @@ class ReferencesRobot(Bot):
         self.titleBlackList = re.compile(bad, re.I | re.S | re.X)
         self.norefbot = noreferences.NoReferencesBot(None, verbose=False)
         self.deduplicator = DuplicateReferences()
-        try:
-            self.stopPageRevId = self.stopPage.latestRevision()
-        except pywikibot.NoPage:
-            pywikibot.output(u'The stop page %s does not exist'
-                             % self.stopPage.title(asLink=True))
-            raise
 
         # Regex to grasp content-type meta HTML tag in HTML source
         self.META_CONTENT = re.compile(r'(?i)<meta[^>]*content\-type[^>]*>')
@@ -771,13 +757,7 @@ class ReferencesRobot(Bot):
                 return
 
             if editedpages % 20 == 0:
-                pywikibot.output(
-                    '\03{lightgreen}Checking stop page...\03{default}')
-                actualRev = self.stopPage.latestRevision()
-                if actualRev != self.stopPageRevId:
-                    pywikibot.output(
-                        u'[[%s]] has been edited : Someone wants us to stop.'
-                        % self.stopPage)
+                if self.stop_page_changed():
                     return
 
 
