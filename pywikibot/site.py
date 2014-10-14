@@ -7061,6 +7061,8 @@ class DataSite(APISite):
         data = req.submit()
         claim.snak = data['claim']['id']
         # Update the item
+        if not hasattr(item, 'claims'):
+            item.claims = {}
         if claim.getID() in item.claims:
             item.claims[claim.getID()].append(claim)
         else:

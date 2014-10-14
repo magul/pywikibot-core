@@ -118,8 +118,6 @@ if sys.version_info[0] == 2:
         script_deps['replicate_wiki.py'] = ['argparse']
         dependencies.append('future>=0.15.0')  # provides collections backports
 
-        dependencies += extra_deps['unicode7']  # T102461 workaround
-
     # tools.ip does not have a hard dependency on an IP address module,
     # as it falls back to using regexes if one is not available.
     # The functional backport of py3 ipaddress is acceptable:
