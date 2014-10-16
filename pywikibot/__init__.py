@@ -29,10 +29,10 @@ else:
 from pywikibot import config2 as config
 from pywikibot.bot import (
     output, warning, error, critical, debug, stdout, exception,
-    input, input_choice, inputChoice, handle_args, showHelp, ui, log,
+    input, input_choice, inputChoice, handle_args, show_help, ui, log,
     calledModuleName, Bot, WikidataBot, QuitKeyboardInterrupt,
-    # the following are flagged as deprecated on usage
-    handleArgs,
+    # the following are old names, yet to be flagged as deprecated
+    handleArgs, showHelp,
 )
 from pywikibot.exceptions import (
     Error, InvalidTitle, BadTitle, NoPage, SectionError,
@@ -63,13 +63,13 @@ textlib_methods = (
 )
 
 # pep257 doesn't understand when the first entry is on the next line
-__all__ = ('config', 'ui', 'UnicodeMixin', 'translate',
+__all__ = ('config', 'ui', 'log', 'UnicodeMixin', 'translate',
            'Page', 'FilePage', 'Category', 'Link', 'User',
            'ItemPage', 'PropertyPage', 'Claim', 'TimeStripper',
            'html2unicode', 'url2unicode', 'unicode2html',
            'stdout', 'output', 'warning', 'error', 'critical', 'debug',
            'exception', 'input_choice', 'input', 'inputChoice',
-           'handle_args', 'handleArgs', 'showHelp', 'ui', 'log',
+           'handle_args', 'show_help', 'handleArgs', 'showHelp',
            'calledModuleName', 'Bot', 'WikidataBot',
            'Error', 'InvalidTitle', 'BadTitle', 'NoPage', 'SectionError',
            'SiteDefinitionError', 'NoSuchSite', 'UnknownSite', 'UnknownFamily',

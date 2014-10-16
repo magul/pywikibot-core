@@ -26,6 +26,12 @@ import codecs
 import itertools
 import re
 import time
+
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
+
 import pywikibot
 from pywikibot import date, config, i18n
 from pywikibot.tools import deprecated_args
@@ -40,165 +46,168 @@ if sys.version_info[0] > 2:
 # most of these functions just wrap a Site or Page method that returns
 # a generator
 
-parameterHelp = u"""\
--cat              Work on all pages which are in a specific category.
+parameter_help = OrderedDict([
+('cat', u"""      Work on all pages which are in a specific category.
                   Argument can also be given as "-cat:categoryname" or
                   as "-cat:categoryname|fromtitle" (using # instead of |
-                  is also allowed in this one and the following)
+                  is also allowed in this one and the following)"""),
 
--catr             Like -cat, but also recursively includes pages in
+('catr', u"""     Like -cat, but also recursively includes pages in'
                   subcategories, sub-subcategories etc. of the
                   given category.
                   Argument can also be given as "-catr:categoryname" or
-                  as "-catr:categoryname|fromtitle".
+                  as "-catr:categoryname|fromtitle"."""),
 
--subcats          Work on all subcategories of a specific category.
+('subcats', u"""  Work on all subcategories of a specific category.
                   Argument can also be given as "-subcats:categoryname" or
-                  as "-subcats:categoryname|fromtitle".
+                  as "-subcats:categoryname|fromtitle"."""),
 
--subcatsr         Like -subcats, but also includes sub-subcategories etc. of
+('subcatsr', u""" Like -subcats, but also includes sub-subcategories etc. of
                   the given category.
                   Argument can also be given as "-subcatsr:categoryname" or
-                  as "-subcatsr:categoryname|fromtitle".
+                  as "-subcatsr:categoryname|fromtitle"."""),
 
--uncat            Work on all pages which are not categorised.
+('uncat', u"      Work on all pages which are not categorised."),
 
--uncatcat         Work on all categories which are not categorised.
+('uncatcat', u"   Work on all categories which are not categorised."),
 
--uncatfiles       Work on all files which are not categorised.
+('uncatfiles', u" Work on all files which are not categorised."),
 
--file             Read a list of pages to treat from the named text file.
+('file', u"""     Read a list of pages to treat from the named text file.
                   Page titles in the file must be enclosed with [[brackets]].
-                  Argument can also be given as "-file:filename".
+                  Argument can also be given as "-file:filename"."""),
 
--filelinks        Work on all pages that use a certain image/media file.
-                  Argument can also be given as "-filelinks:filename".
+('filelinks', u"""Work on all pages that use a certain image/media file.
+                  Argument can also be given as "-filelinks:filename"."""),
 
--search           Work on all pages that are found in a MediaWiki search
-                  across all namespaces.
+('search', u"""   Work on all pages that are found in a MediaWiki search
+                  across all namespaces."""),
 
--namespaces       Filter the page generator to only yield pages in the
--namespace        specified namespaces. Separate multiple namespace
--ns               numbers with commas. Example "-ns:0,2,4"
+(('namespaces', 'namespace', 'ns'), u"""
+                  Filter the page generator to only yield pages in the
+                  specified namespaces. Separate multiple namespace
+                  numbers with commas. Example "-ns:0,2,4"
                   If used with -newpages, -namepace/ns must be provided
                   before -newpages.
                   If used with -recentchanges, efficiency is improved if
-                  -namepace/ns is provided before -recentchanges.
+                  -namepace/ns is provided before -recentchanges."""),
 
--interwiki        Work on the given page and all equivalent pages in other
+('interwiki', u"""Work on the given page and all equivalent pages in other
                   languages. This can, for example, be used to fight
                   multi-site spamming.
                   Attention: this will cause the bot to modify
                   pages on several wiki sites, this is not well tested,
-                  so check your edits!
+                  so check your edits!"""),
 
--limit:n          When used with any other argument that specifies a set
-                  of pages, work on no more than n pages in total
+('limit:n', u"""  When used with any other argument that specifies a set
+                  of pages, work on no more than n pages in total"""),
 
--links            Work on all pages that are linked from a certain page.
-                  Argument can also be given as "-links:linkingpagetitle".
+('links', u"""    Work on all pages that are linked from a certain page.
+                  Argument can also be given as "-links:linkingpagetitle"."""),
 
--imagesused       Work on all images that contained on a certain page.
-                  Argument can also be given as "-imagesused:linkingpagetitle".
+('imagesused', u"""Work on all images that contained on a certain page.
+                  Argument can also be given as
+                  "-imagesused:linkingpagetitle"."""),
 
--newimages        Work on the 100 newest images. If given as -newimages:x,
-                  will work on the x newest images.
+('newimages', u"""Work on the 100 newest images. If given as -newimages:x,
+                  will work on the x newest images."""),
 
--newpages         Work on the most recent new pages. If given as -newpages:x,
-                  will work on the x newest pages.
+('newpages', u""" Work on the most recent new pages. If given as -newpages:x,
+                  will work on the x newest pages."""),
 
--recentchanges    Work on the pages with the most recent changes. If
+('recentchanges', u"""Work on the pages with the most recent changes. If
                   given as -recentchanges:x, will work on the x most recently
-                  changed pages.
+                  changed pages."""),
 
--ref              Work on all pages that link to a certain page.
-                  Argument can also be given as "-ref:referredpagetitle".
+('ref', u"""      Work on all pages that link to a certain page.
+                  Argument can also be given as "-ref:referredpagetitle"."""),
 
--start            Specifies that the robot should go alphabetically through
+('start', u"""    Specifies that the robot should go alphabetically through
                   all pages on the home wiki, starting at the named page.
                   Argument can also be given as "-start:pagetitle".
 
                   You can also include a namespace. For example,
                   "-start:Template:!" will make the bot work on all pages
-                  in the template namespace.
+                  in the template namespace."""),
 
--prefixindex      Work on pages commencing with a common prefix.
+('prefixindex', u"Work on pages commencing with a common prefix."),
 
--step:n           When used with any other argument that specifies a set
+('step:n', u"""   When used with any other argument that specifies a set
                   of pages, only retrieve n pages at a time from the wiki
-                  server
+                  server."""),
 
--titleregex       Work on titles that match the given regular expression.
+('titleregex',  u"Work on titles that match the given regular expression."),
 
--transcludes      Work on all pages that use a certain template.
-                  Argument can also be given as "-transcludes:Title".
+('transcludes', u"""Work on all pages that use a certain template.
+                  Argument can also be given as "-transcludes:Title"."""),
 
--unusedfiles      Work on all description pages of images/media files that are
+('unusedfiles', u"""Work on all description pages of images/media files that are
                   not used anywhere.
                   Argument can be given as "-unusedfiles:n" where
-                  n is the maximum number of articles to work on.
+                  n is the maximum number of articles to work on."""),
 
--lonelypages      Work on all articles that are not linked from any other article.
+('lonelypages', u"""Work on all articles that are not linked from any other article.
                   Argument can be given as "-lonelypages:n" where
-                  n is the maximum number of articles to work on.
+                  n is the maximum number of articles to work on."""),
 
--unwatched        Work on all articles that are not watched by anyone.
+('unwatched', u"""Work on all articles that are not watched by anyone.
                   Argument can be given as "-unwatched:n" where
-                  n is the maximum number of articles to work on.
+                  n is the maximum number of articles to work on."""),
 
--usercontribs     Work on all articles that were edited by a certain user :
-                  Example : -usercontribs:DumZiBoT
+('usercontribs', u"""Work on all articles that were edited by a certain user :
+                  Example : -usercontribs:DumZiBoT"""),
 
--weblink          Work on all articles that contain an external link to
-                  a given URL; may be given as "-weblink:url"
+('weblink', u"""  Work on all articles that contain an external link to
+                  a given URL; may be given as "-weblink:url"."""),
 
--withoutinterwiki Work on all pages that don't have interlanguage links.
+('withoutinterwiki', u"""Work on all pages that don't have interlanguage links.
                   Argument can be given as "-withoutinterwiki:n" where
-                  n is some number (??).
+                  n is some number (??)."""),
 
--mysqlquery       Takes a Mysql query string like
+('mysqlquery', u"""Takes a Mysql query string like
                   "SELECT page_namespace, page_title, FROM page
-                  WHERE page_namespace = 0" and works on the resulting pages.
+                  WHERE page_namespace = 0" and works on the resulting pages."""),
 
--wikidataquery    Takes a WikidataQuery query string like claim[31:12280]
-                  and works on the resulting pages.
+('wikidataquery', u"""Takes a WikidataQuery query string like claim[31:12280]
+                  and works on the resulting pages."""),
 
--random           Work on random pages returned by [[Special:Random]].
+('random', u"""   Work on random pages returned by [[Special:Random]].
                   Can also be given as "-random:n" where n is the number
-                  of pages to be returned, otherwise the default is 10 pages.
+                  of pages to be returned, otherwise the default is 10 pages."""),
 
--randomredirect   Work on random redirect pages returned by
+('randomredirect', u"""Work on random redirect pages returned by
                   [[Special:RandomRedirect]]. Can also be given as
                   "-randomredirect:n" where n is the number of pages to be
-                  returned, else 10 pages are returned.
+                  returned, else 10 pages are returned."""),
 
--untagged         Work on image pages that don't have any license template on a
+('untagged', u""" Work on image pages that don't have any license template on a
                   site given in the format "<language>.<project>.org, e.g.
                   "ja.wikipedia.org" or "commons.wikimedia.org".
-                  Using an external Toolserver tool.
+                  Using an external Toolserver tool."""),
 
--google           Work on all pages that are found in a Google search.
+('google', u"""   Work on all pages that are found in a Google search.
                   You need a Google Web API license key. Note that Google
                   doesn't give out license keys anymore. See google_key in
                   config.py for instructions.
-                  Argument can also be given as "-google:searchstring".
+                  Argument can also be given as "-google:searchstring"."""),
 
--yahoo            Work on all pages that are found in a Yahoo search.
+('yahoo', u"""    Work on all pages that are found in a Yahoo search.
                   Depends on python module pYsearch.  See yahoo_appid in
-                  config.py for instructions.
+                  config.py for instructions."""),
 
--page             Work on a single page. Argument can also be given as
-                  "-page:pagetitle".
+('page', u"""     Work on a single page. Argument can also be given as
+                  "-page:pagetitle"."""),
 
--grep             A regular expression that needs to match the article
+('grep', u"""     A regular expression that needs to match the article
                   otherwise the page won't be returned.
                   Multiple -grep:regexpr can be provided and the page will
                   be returned if content is matched by any of the regexpr
                   provided.
                   Case insensitive regular expressions will be used and
-                  dot matches any character, including a newline.
+                  dot matches any character, including a newline."""),
+])
 
-"""
+parameterHelp = pywikibot.bot.build_argument_help_string(parameter_help)
 
 docuReplacements = {'&params;': parameterHelp}
 

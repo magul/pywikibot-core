@@ -22,6 +22,11 @@ import re
 import json
 import datetime
 
+if sys.version_info > (2, 6):
+    from collections import OrderedDict
+else:
+    from ordereddict import OrderedDict
+
 _logger = "bot"
 
 # logging levels
@@ -740,7 +745,41 @@ def handleArgs(*args):
     return handle_args(args)
 
 
-def showHelp(module_name=None):
+PARAM_HELP_INDENT_LEVEL = 15
+
+
+def build_argument_help_string(arg_help,
+                               indent_level=PARAM_HELP_INDENT_LEVEL,
+                               substitutions={}):
+    """
+    Build a single argument help string from a dict of argument help.
+
+    Blank lines are removed from the help strings.
+
+    @param arg_help: args with help string as values
+    @type arg_help: dict
+    @param indent_level: left padding for the help strings
+    @type indent_level: int
+    @param substitutions: text substitutions to apply to each help string
+    @type substitutions: dict
+    @return: all help as a single string ready for output
+    @rtype: unicode
+    """
+    return u'\n\n'.join(
+        [u'\n'.join(
+            list([switches.ljust(indent_level - 2) + u' ' + lines[0]
+                 if len(switches) < indent_level else switches])
+            +
+            [line.rjust(len(line) + (indent_level - 1))
+             for line in lines[0 if len(switches) >= indent_level else 1:]])
+         for switches, lines in
+         [(u'-' + (', -'.join(name) if isinstance(name, tuple) else name),
+           [line.strip() for line in help.split('\n') if line != u''])
+          for name, help in arg_help.items()]
+         ]) % substitutions
+
+
+def show_help(module_name=None):
     """Show help for the Bot."""
     if not module_name:
         module_name = calledModuleName()
@@ -748,79 +787,100 @@ def showHelp(module_name=None):
         try:
             module_name = sys.modules['__main__'].main.__module__
         except NameError:
-            module_name = "no_module"
+            pywikibot.warning(u'show_help: module not detected.')
 
-    globalHelp = u'''
+    global_help = u''
+    if module_name:
+        global_help = module_help(module_name)
+        if not global_help:
+            pywikibot.stdout(u'Sorry, no help available for %s'
+                             % module_name)
+
+    global_help += (global_parameter_help_prefix +
+                    build_argument_help_string(
+                        global_parameter_help,
+                        substitutions={'module_name': module_name}))
+
+    pywikibot.stdout(global_help)  # output to STDOUT
+
+
+global_parameter_help_prefix = u'''
 Global arguments available for all bots:
+\n'''
 
--dir:PATH         Read the bot's configuration data from directory given by
-                  PATH, instead of from the default directory.
+global_parameter_help = OrderedDict([
+('dir:PATH', u""" Read the bot's configuration data from directory given by
+                  PATH, instead of from the default directory."""),
 
--lang:xx          Set the language of the wiki you want to work on, overriding
+('lang:xx', u"""  Set the language of the wiki you want to work on, overriding
                   the configuration in user-config.py. xx should be the
-                  language code.
+                  language code."""),
 
--family:xyz       Set the family of the wiki you want to work on, e.g.
+('family:xyz', u"""Set the family of the wiki you want to work on, e.g.
                   wikipedia, wiktionary, wikitravel, ...
-                  This will override the configuration in user-config.py.
+                  This will override the configuration in user-config.py."""),
 
--user:xyz         Log in as user 'xyz' instead of the default username.
+('user:xyz', u"   Log in as user 'xyz' instead of the default username."),
 
--daemonize:xyz    Immediately return control to the terminal and redirect
+('daemonize:xyz', u"""Immediately return control to the terminal and redirect
                   stdout and stderr to xyz (only use for bots that require
-                  no input from stdin).
+                  no input from stdin)."""),
 
--help             Show this help text.
+('help', u"       Show this help text."),
 
--log              Enable the log file, using the default filename
-                  '%s-bot.log'
-                  Logs will be stored in the logs subdirectory.
+('log[:xyz]', u"""Enable the log file, using the filename "xzy" or the default
+                  '%(module_name)s-bot.log'.
+                  Logs will be stored in the logs subdirectory."""),
 
--log:xyz          Enable the log file, using 'xyz' as the filename.
+('nolog', u"      Disable the log file (if it is enabled by default)."),
 
--nolog            Disable the log file (if it is enabled by default).
-
--maxlag           Sets a new maxlag parameter to a number of seconds. Defer bot
+('maxlag', u"""   Sets a new maxlag parameter to a number of seconds. Defer bot
                   edits during periods of database server lag. Default is set by
-                  config.py
+                  config.py"""),
 
--putthrottle:n    Set the minimum time (in seconds) the bot will wait between
--pt:n             saving pages.
--put_throttle:n
+(('put_throttle:n', 'putthrottle:n', 'pt:n'), u"""
+                  Set the minimum time (in seconds) the bot will wait between
+                  saving pages."""),
 
--debug:item       Enable the log file and include extensive debugging data
--debug            for component "item" (for all components if the second form
-                  is used).
+('debug[:item]', u"""Enable the log file and include extensive debugging data
+                  for component "item" (for all components if the second form
+                  is used)."""),
 
--verbose          Have the bot provide additional console output that may be
--v                useful in debugging.
+(('verbose', 'v'), u"""Have the bot provide additional console output that may be
+                  useful in debugging."""),
 
--cosmeticchanges  Toggles the cosmetic_changes setting made in config.py or
--cc               user_config.py to its inverse and overrules it. All other
-                  settings and restrictions are untouched.
+(('cosmeticchanges', 'cc'), u"""
+                  Toggles the cosmetic_changes setting made in config.py or
+                  user_config.py to its inverse and overrules it. All other
+                  settings and restrictions are untouched."""),
 
--simulate         Disables writing to the server. Useful for testing and
+('simulate', u""" Disables writing to the server. Useful for testing and
                   debugging of new code (if given, doesn't do any real
-                  changes, but only shows what would have been changed).
+                  changes, but only shows what would have been changed)."""),
 
--<config var>:n   You may use all given numeric config variables as option and
-                  modify it with command line.
+('<config var>:n', u"""You may use all given numeric config variables as option and
+                  modify it with command line."""),
+])
 
-''' % module_name
+
+def module_help(module_name):
+    """Extract the docstring from a module."""
+    pywikibot.output('module_help(%s)' % module_name)
     try:
         module = __import__('%s' % module_name)
-        helpText = module.__doc__
+        help_text = module.__doc__
         if sys.version_info[0] < 3:
-            helpText = helpText.decode('utf-8')
+            help_text = help_text.decode('utf-8')
         if hasattr(module, 'docuReplacements'):
             for key, value in module.docuReplacements.items():
-                helpText = helpText.replace(key, value.strip('\n\r'))
-        pywikibot.stdout(helpText)  # output to STDOUT
+                help_text = help_text.replace(key, value.strip('\n\r'))
+
+        return help_text
     except Exception:
-        if module_name:
-            pywikibot.stdout(u'Sorry, no help available for %s' % module_name)
         pywikibot.log('showHelp:', exc_info=True)
-    pywikibot.stdout(globalHelp)
+
+
+showHelp = show_help
 
 
 class QuitKeyboardInterrupt(KeyboardInterrupt):
