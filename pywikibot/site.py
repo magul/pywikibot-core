@@ -334,6 +334,17 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
                % (self.__class__.__name__, self.id, self.custom_name,
                   self.canonical_name, self.aliases, kwargs)
 
+    def add_canonical_prefix(self, title):
+        """Add canonical namespace prefix to the title if not present."""
+        if ':' in title:
+            name = Namespace.normalize_name(title[:title.index(':')])
+            if name is False:
+                return title
+            name = name.lower()
+            if self._contains_lowercase_name(name):
+                return title
+        return u'{0}:{1}'.format(self.canonical_name, title)
+
     @staticmethod
     def builtin_namespaces(use_image_name=False):
         """Return a dict of the builtin namespaces."""
