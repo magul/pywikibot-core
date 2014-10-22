@@ -25,7 +25,7 @@ import time
 
 import pywikibot
 from pywikibot import config, login
-from pywikibot.tools import MediaWikiVersion as LV, deprecated
+from pywikibot.tools import MediaWikiVersion as LV, deprecated, need_version
 from pywikibot.exceptions import Server504Error, FatalServerError, Error
 
 import sys
@@ -622,6 +622,16 @@ class Request(MutableMapping):
                                % type(result),
                                data=result)
             if self.action == 'query':
+                # 1.11 can return userinfo in the outer dict.
+                # http://glossary.reuters.com/api.php?action=query&meta=userinfo&format=json
+                # http://glossary.reuters.com/api.php?action=query&format=json&meta=userinfo|siteinfo
+                if 'userinfo' in result:
+                    if 'query' not in result:
+                        result['query'] = {}
+                    result['query']['userinfo'] = result['userinfo']
+                    del result['userinfo']
+                    pywikibot.debug(u"Fixed old userinfo; result now: %r"
+                                     % result, _logger)
                 if 'userinfo' in result.get('query', ()):
                     if hasattr(self.site, '_userinfo'):
                         self.site._userinfo.update(result['query']['userinfo'])
@@ -799,6 +809,8 @@ class CachedRequest(Request):
             if self._expired(self._cachetime):
                 self._data = None
                 return False
+            pywikibot.debug(u"Cached API request: %r" % self._params, _logger)
+            pywikibot.debug(u"Cached API response: %r" % self._data, _logger)
             return True
         except IOError as e:
             # file not found
@@ -891,6 +903,109 @@ class QueryGenerator(object):
         # self.continuekey is a list
         self.continuekey = self.module.split('|')
 
+    default_module_info = {
+        'siteinfo': {
+            'prefix': 'si'
+        },
+        'userinfo': {
+            'prefix': 'ui'
+        },
+        'allmessages': {
+            'prefix': 'am'
+        },
+        'allusers': {
+            'prefix': 'au'
+        },
+        'allpages': {
+            'prefix': 'ap'
+        },
+        'allimages': {
+            'prefix': 'ai'
+        },
+        'allcategories': {
+            'prefix': 'ac'
+        },
+        'allusers': {
+            'prefix': 'au'
+        },
+        'alllinks': {
+            'prefix': 'al'
+        },
+        'backlinks': {
+            'prefix': 'bl',
+            'parameters': [{'name': 'namespace'}]
+        },
+        'embeddedin': {
+            'prefix': 'ei'
+        },
+        'imageusage': {
+            'prefix': 'iu'
+        },
+        'blocks': {
+            'prefix': 'bk'
+        },
+        'exturlusage': {
+            'prefix': 'eu'
+        },
+        'categorymembers': {
+            'prefix': 'cm'
+        },
+        'deletedrevs': {
+            'prefix': 'dr'
+        },
+        'langbacklinks': {
+            'prefix': 'lbl'
+        },
+        'pageswithprop': {
+            'prefix': 'pwp'
+        },
+        'random': {
+            'prefix': 'rn'
+        },
+        'prefixsearch': {
+            'prefix': 'ps'
+        },
+        'recentchanges': {
+            'prefix': 'rc'
+        },
+        'revisions': {
+            'prefix': 'rv'
+        },
+        'usercontribs': {
+            'prefix': 'uc'
+        },
+        'users': {
+            'prefix': 'us'
+        },
+        'watchlist': {
+            'prefix': 'wl'
+        },
+        'watchlistraw': {
+            'prefix': 'wr'
+        },
+        'info': {
+            'prefix': 'in'
+        },
+        'templates': {
+            'prefix': 'tl'
+        },
+        'links': {
+            'prefix': 'pl'
+        },
+        'langlinks': {
+            'prefix': 'll'
+        },
+        'images': {
+            'prefix': 'im'
+        },
+        'categories': {
+            'prefix': 'cl'
+        },
+        'extlinks': {
+            'prefix': 'el'
+        },
+    }
+
     @property
     def __modules(self):
         """
@@ -913,6 +1028,19 @@ class QueryGenerator(object):
     @property
     def _modules(self):
         """Query api on self.site for paraminfo on self.module."""
+        try:
+            self.get_modules()
+        except NotImplementedError:
+            self.site._modules = self.default_module_info
+
+        _modules = {}
+        for m in self.module.split('|'):
+            _modules[m] = self.__modules[m]
+        return _modules
+
+    @need_version("1.12")
+    def get_modules(self):
+        """Query api on self.site for paraminfo on querymodule=self.module."""
         modules = self.module.split('|')
         if not set(modules) <= set(self.__modules.keys()):
             if LV(self.site.version()) < LV('1.25wmf4'):
@@ -933,10 +1061,6 @@ class QueryGenerator(object):
                 if "missing" in paraminfo:
                     raise Error("Invalid query module name '%s'." % self.module)
                 self.__modules[paraminfo["name"]] = paraminfo
-        _modules = {}
-        for m in modules:
-            _modules[m] = self.__modules[m]
-        return _modules
 
     def set_query_increment(self, value):
         """Set the maximum number of items to be retrieved per API query.
@@ -979,8 +1103,13 @@ class QueryGenerator(object):
                         self.api_limit = int(param["highmax"])
                     else:
                         self.api_limit = int(param["max"])
-                    if self.prefix is None:
+
+                    # This looks rather error prone
+                    # Need to devise ways to break this,
+                    # esp. with mod = 'info'
+                    if self.prefix is None:  # TODO: add mod != 'info' ??
                         self.prefix = self._modules[mod]["prefix"]
+
                     pywikibot.debug(u"%s: Set query_limit to %i."
                                     % (self.__class__.__name__,
                                        self.api_limit),
@@ -1065,8 +1194,7 @@ class QueryGenerator(object):
             if "query" not in self.data:
                 pywikibot.debug(
                     u"%s: stopped iteration because 'query' not found in api response."
-                    % (self.__class__.__name__, self.resultkey),
-                    _logger)
+                    % (self.__class__.__name__), _logger)
                 pywikibot.debug(unicode(self.data), _logger)
                 return
             if self.resultkey in self.data["query"]:
@@ -1181,14 +1309,14 @@ class PageGenerator(QueryGenerator):
             else:
                 params[key] = value
         # get some basic information about every page generated
-        appendParams(kwargs, 'prop', 'info|imageinfo|categoryinfo')
+        appendParams(kwargs, 'prop', 'info|imageinfo')  # |categoryinfo')
         if g_content:
             # retrieve the current revision
             appendParams(kwargs, 'prop', 'revisions')
             appendParams(kwargs, 'rvprop', 'ids|timestamp|flags|comment|user|content')
         if not ('inprop' in kwargs and 'protection' in kwargs['inprop']):
             appendParams(kwargs, 'inprop', 'protection')
-        appendParams(kwargs, 'iiprop', 'timestamp|user|comment|url|size|sha1|metadata')
+        appendParams(kwargs, 'iiprop', 'timestamp|user|comment|url|size|sha1')  # |metadata')
         self.props = kwargs['prop'].split('|')
         QueryGenerator.__init__(self, generator=generator, **kwargs)
         self.resultkey = "pages"  # element to look for in result

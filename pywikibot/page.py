@@ -131,14 +131,6 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
         """Return the Site object for the wiki on which this Page resides."""
         return self._link.site
 
-    def version(self):
-        """Return MediaWiki version number of the page site.
-
-        This is needed to use @need_version() decorator for methods of
-        Page objects.
-        """
-        return self.site.version()
-
     @property
     def image_repository(self):
         """Return the Site object for the image repository."""
@@ -694,7 +686,7 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
 
         @return: bool
         """
-        if self.site.has_extension('Disambiguator'):
+        if self.site.has_extension('Disambiguator'):  # supports 1.21+
             # If the Disambiguator extension is loaded, use it
             return 'disambiguation' in self.properties()
 
@@ -708,6 +700,7 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
                                                   fallback=False)
             except KeyError:
                 distl = None
+
             if distl is None:
                 disambigpages = Page(self.site,
                                      "MediaWiki:Disambiguationspage")
@@ -724,12 +717,15 @@ class Page(pywikibot.UnicodeMixin, ComparableMixin):
                             indexes.add(index[:1].upper() + index[1:])
                         self.site._indextemplates = indexes
                 else:
-                    message = self.site.mediawiki_message(
-                        'disambiguationspage').split(':', 1)[1]
-                    # add the default template(s) for default mw message
-                    # only
-                    disambigs = set([message[:1].upper() +
-                                     message[1:]]) | default
+                    try:
+                        message = self.site.mediawiki_message(
+                            'disambiguationspage').split(':', 1)[1]
+                        # add the default template(s) for default mw message
+                        # only
+                        disambigs = set([message[:1].upper() +
+                                         message[1:]]) | default
+                    except (NotImplementedError, pywikibot.NoPage):
+                        disambigs = default
                 self.site._disambigtemplates = disambigs
             else:
                 # Normalize template capitalization

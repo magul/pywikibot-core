@@ -13,6 +13,7 @@ from pywikibot import config
 import pywikibot.page
 
 from tests.aspects import unittest, TestCase, DefaultSiteTestCase
+from tests.utils import need_version
 
 if sys.version_info[0] > 2:
     basestring = (str, )
@@ -373,9 +374,13 @@ class TestPageObject(DefaultSiteTestCase):
         self.assertIsInstance(mainpage.canBeEdited(), bool)
         self.assertIsInstance(mainpage.botMayEdit(), bool)
         self.assertIsInstance(mainpage.editTime(), pywikibot.Timestamp)
-        self.assertIsInstance(mainpage.previousRevision(), int)
         self.assertIsInstance(mainpage.permalink(), basestring)
-        self.assertIsInstance(mainpage.purge(), bool)
+        # TODO: this one still fails - moving to last so other asserts
+        # are all executed
+        self.assertIsInstance(mainpage.previousRevision(), int)
+
+# requires logged in user:
+#        self.assertIsInstance(mainpage.purge(), bool)
 
     def testIsDisambig(self):
         """
@@ -412,16 +417,20 @@ class TestPageObject(DefaultSiteTestCase):
             if count >= 10:
                 break
 
-    def testLinks(self):
+    @need_version("1.12")
+    def test_interwiki_links_expanded(self):
         mainpage = self.get_mainpage()
-        for p in mainpage.linkedPages():
-            self.assertIsInstance(p, pywikibot.Page)
         iw = list(mainpage.interwiki(expand=True))
         for p in iw:
             self.assertIsInstance(p, pywikibot.Link)
         for p2 in mainpage.interwiki(expand=False):
             self.assertIsInstance(p2, pywikibot.Link)
             self.assertIn(p2, iw)
+
+    def testLinks(self):
+        mainpage = self.get_mainpage()
+        for p in mainpage.linkedPages():
+            self.assertIsInstance(p, pywikibot.Page)
         for p in mainpage.langlinks():
             self.assertIsInstance(p, pywikibot.Link)
         for p in mainpage.imagelinks():

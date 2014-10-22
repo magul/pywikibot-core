@@ -1,4 +1,5 @@
 # -*- coding: utf-8  -*-
+"""Test utils."""
 #
 # (C) Pywikibot team, 2013-2014
 #
@@ -8,8 +9,10 @@ from __future__ import print_function
 __version__ = '$Id$'
 #
 import pywikibot
+from pywikibot.tools import MediaWikiVersion, add_decorated_full_name
+
 from tests import aspects
-from tests import unittest  # flake8: noqa
+from tests import unittest
 
 BaseTestCase = aspects.TestCase
 NoSiteTestCase = aspects.TestCase
@@ -32,6 +35,8 @@ def expectedFailureIf(expect):
 
 
 class DummySiteinfo():
+
+    """Dummy Siteinfo class."""
 
     def __init__(self, cache):
         self._cache = dict((key, (item, False)) for key, item in cache.items())
@@ -68,3 +73,36 @@ class DummySiteinfo():
 
     def get_requested_time(self, key):
         return False
+
+
+def need_version(version):
+    """ Decorator to require a certain MediaWiki version number.
+
+    @param number: the mw version number required
+    @return: a decorator to make sure the requirement is satisfied when
+        the decorated function is called.
+    """
+    def decorator(fn):
+        def callee(self, *args, **kwargs):
+            if hasattr(self, 'version'):
+                version_method = self.version
+            elif hasattr(self, 'site') and hasattr(self.site, 'version'):
+                version_method = self.site.version
+            else:
+                raise ValueError(
+                    "%r does not have a version method or site attribute."
+                    % self)
+            if MediaWikiVersion(version_method()) < MediaWikiVersion(version):
+                raise unittest.SkipTest(
+                    "Depends on functionality not implemented in MediaWiki version < %s"
+                    % version)
+            return fn(self, *args, **kwargs)
+        callee.__name__ = fn.__name__
+        callee.__doc__ = fn.__doc__
+        callee.__module__ = fn.__module__
+        if not hasattr(fn, '__full_name__'):
+            add_decorated_full_name(fn)
+        callee.__full_name__ = fn.__full_name__
+
+        return callee
+    return decorator

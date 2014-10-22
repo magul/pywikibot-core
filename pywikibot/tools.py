@@ -128,6 +128,40 @@ class MediaWikiVersion(Version):
         __cmp__ = _cmp
 
 
+def need_version(version):
+    """ Decorator to require a certain MediaWiki version number.
+
+    @param number: the mw version number required
+    @return: a decorator to make sure the requirement is satisfied when
+        the decorated function is called.
+    """
+    def decorator(fn):
+        def callee(self, *args, **kwargs):
+            if hasattr(self, 'version'):
+                version_method = self.version
+            elif hasattr(self, 'site') and hasattr(self.site, 'version'):
+                version_method = self.site.version
+            else:
+                raise ValueError(
+                    "%r does not have a version method or site attribute."
+                    % self)
+            if MediaWikiVersion(version_method()) < MediaWikiVersion(version):
+                raise NotImplementedError(
+                    u'Method or function "%s"\n'
+                    u"isn't implemented in MediaWiki version < %s"
+                    % (fn.__name__, version))
+            return fn(self, *args, **kwargs)
+        callee.__name__ = fn.__name__
+        callee.__doc__ = fn.__doc__
+        callee.__module__ = fn.__module__
+        if not hasattr(fn, '__full_name__'):
+            add_decorated_full_name(fn)
+        callee.__full_name__ = fn.__full_name__
+
+        return callee
+    return decorator
+
+
 class ThreadedGenerator(threading.Thread):
 
     """Look-ahead generator class.

@@ -29,7 +29,8 @@ import pywikibot
 import pywikibot.family
 from pywikibot.tools import (
     itergroup, deprecated, deprecate_arg, UnicodeMixin, ComparableMixin,
-    redirect_func, add_decorated_full_name, deprecated_args
+    redirect_func, add_decorated_full_name, deprecated_args,
+    need_version,
 )
 from pywikibot.tools import MediaWikiVersion as LV
 from pywikibot.throttle import Throttle
@@ -941,32 +942,6 @@ def must_be(group=None, right=None):
     return decorator
 
 
-def need_version(version):
-    """ Decorator to require a certain MediaWiki version number.
-
-    @param number: the mw version number required
-    @return: a decorator to make sure the requirement is satisfied when
-        the decorated function is called.
-    """
-    def decorator(fn):
-        def callee(self, *args, **kwargs):
-            if LV(self.version()) < LV(version):
-                raise NotImplementedError(
-                    u'Method or function "%s"\n'
-                    u"isn't implemented in MediaWiki version < %s"
-                    % (fn.__name__, version))
-            return fn(self, *args, **kwargs)
-        callee.__name__ = fn.__name__
-        callee.__doc__ = fn.__doc__
-        callee.__module__ = fn.__module__
-        if not hasattr(fn, '__full_name__'):
-            add_decorated_full_name(fn)
-        callee.__full_name__ = fn.__full_name__
-
-        return callee
-    return decorator
-
-
 class Siteinfo(Container):
 
     """
@@ -1727,7 +1702,7 @@ class APISite(BaseSite):
 
     def notifications(self, **kwargs):
         """Yield Notification objects from the Echo extension."""
-        if self.has_extension('Echo'):
+        if self.has_extension('Echo'):  # version 1.22+
             params = dict(site=self, action='query',
                           meta='notifications',
                           notprop='list', notformat='text')
@@ -1745,7 +1720,7 @@ class APISite(BaseSite):
         @return: whether the action was successful
         @rtype: bool
         """
-        if self.has_extension('Echo'):
+        if self.has_extension('Echo'):  # version 1.22+
             # TODO: ensure that the 'echomarkread' action
             # is supported by the site
             req = api.Request(site=self,
@@ -1758,7 +1733,8 @@ class APISite(BaseSite):
             except KeyError:
                 return False
 
-    def mediawiki_messages(self, keys):
+    @need_version("1.12")
+    def real_mediawiki_messages(self, keys, lang=None):
         """Fetch the text of a set of MediaWiki messages.
 
         If keys is '*' or ['*'], all messages will be fetched.
@@ -1766,15 +1742,20 @@ class APISite(BaseSite):
 
         @param keys: MediaWiki messages to fetch
         @type keys: set of str, '*' or ['*']
+        @param lang: Language code
+        @type lang: str
 
         @return: dict
         """
+        if not lang:
+            lang = self.lang
+
         if not all(_key in self._msgcache for _key in keys):
             msg_query = api.QueryGenerator(
                 site=self,
                 meta="allmessages",
                 ammessages='|'.join(keys),
-                amlang=self.lang,
+                amlang=lang,
             )
 
             # Return all messages
@@ -1795,6 +1776,22 @@ class APISite(BaseSite):
                                        % locals())
 
         return dict((_key, self._msgcache[_key]) for _key in keys)
+
+    @staticmethod
+    def default_mediawiki_messages(keys, lang='en'):
+        """Fetch the text of a set of MediaWiki messages from translatewiki."""
+        twn = pywikibot.Site('i18n', 'i18n')
+        return twn.real_mediawiki_messages(keys)
+
+    def mediawiki_messages(self, keys):
+        """Fetch the text of a set of MediaWiki messages.
+
+        For sites < v 1.12, fetch the data from translatewiki.net.
+        """
+        if LV(self.version()) < LV("1.12"):
+            return APISite.default_mediawiki_messages(keys, lang=self.lang)
+        else:
+            return self.real_mediawiki_messages(keys)
 
     def mediawiki_message(self, key):
         """Fetch the text for a MediaWiki message.
@@ -2028,7 +2025,6 @@ class APISite(BaseSite):
             if item['*'] not in self._namespaces[ns]:
                 self._namespaces[ns].aliases.append(item['*'])
 
-    @need_version("1.14")
     @deprecated("has_extension")
     def hasExtension(self, name, unknown=None):
         """ Determine whether extension `name` is loaded.
@@ -2046,8 +2042,7 @@ class APISite(BaseSite):
                             _logger)
         return self.has_extension(name)
 
-    @need_version("1.14")
-    def has_extension(self, name):
+    def has_extension(self, name, unknown=False):
         """ Determine whether extension `name` is loaded.
 
         @param name: The extension to check for, case insenstive
@@ -2055,11 +2050,17 @@ class APISite(BaseSite):
         @return: If the extension is loaded
         @rtype: bool
         """
-        extensions = self.siteinfo['extensions']
+        try:
+            extensions = self.siteinfo.get('extensions')
+        except KeyError:
+            extensions = []
         for ext in extensions:
             if ext['name'].lower() == name.lower():
                 return True
-        return False
+        if isinstance(unknown, Exception):
+            raise unknown
+        else:
+            return unknown
 
     @property
     def siteinfo(self):
@@ -2372,7 +2373,7 @@ class APISite(BaseSite):
                        if hasattr(p, "_pageid") and p._pageid > 0]
             cache = dict((p.title(withSection=False), p) for p in sublist)
 
-            props = "revisions|info|categoryinfo"
+            props = "revisions|info"  # |categoryinfo"
             if templates:
                 props += '|templates'
             if langlinks:
@@ -3100,6 +3101,7 @@ class APISite(BaseSite):
                 p._fromid = link['fromid']
             yield p
 
+    @need_version("1.12")
     def allcategories(self, start="!", prefix="", step=None, total=None,
                       reverse=False, content=False):
         """Iterate categories used (which need not have a Category page).
@@ -3176,7 +3178,7 @@ class APISite(BaseSite):
 
         """
         augen = self._generator(api.ListGenerator, type_arg="allusers",
-                                auprop="editcount|groups|registration",
+                                auprop="editcount|groups",  # |registration",
                                 aufrom=start, step=step, total=total)
         if prefix:
             augen.request["auprefix"] = prefix
@@ -3184,6 +3186,7 @@ class APISite(BaseSite):
             augen.request["augroup"] = group
         return augen
 
+    @need_version("1.13")
     def allimages(self, start="!", prefix="", minsize=None, maxsize=None,
                   reverse=False, sha1=None, sha1base36=None, step=None,
                   total=None, content=False):
@@ -3221,6 +3224,7 @@ class APISite(BaseSite):
             aigen.request["gaisha1base36"] = sha1base36
         return aigen
 
+    @need_version("1.12")
     def blocks(self, starttime=None, endtime=None, reverse=False,
                blockids=None, users=None, step=None, total=None):
         """Iterate all current blocks, in order of creation.
@@ -3643,6 +3647,7 @@ class APISite(BaseSite):
     def randomredirectpage(self):
         return self.randompages(total=1, redirects=True)
 
+    @need_version("1.12")
     def randompages(self, step=None, total=10, namespaces=None,
                     redirects=False, content=False):
         """Iterate a number of random pages.

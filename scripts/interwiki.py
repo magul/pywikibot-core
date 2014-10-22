@@ -2507,7 +2507,7 @@ def main(*args):
     site = pywikibot.Site()
     # ensure that we don't try to change main page
     try:
-        mainpagename = site.mediawiki_message('mainpage')
+        mainpagename = site.siteinfo['mainpage']
         globalvar.skip.add(pywikibot.Page(site, mainpagename))
     except pywikibot.Error:
         pywikibot.output(u'Missing main page name')
