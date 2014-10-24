@@ -109,6 +109,13 @@ class APIError(Error):
         return "%(code)s: %(info)s" % self.__dict__
 
 
+class MediaWikiAPIWarning(UserWarning):
+
+    """MediaWiki API warning."""
+
+    pass
+
+
 class UploadWarning(APIError):
 
     """Upload failed with a warning message (passed as the argument)."""
@@ -1494,7 +1501,8 @@ class Request(MutableMapping):
                 for single_warning in text.splitlines():
                     if (not callable(self._warning_handler) or
                             not self._warning_handler(mod, single_warning)):
-                        pywikibot.warning(u"API warning (%s): %s" % (mod, single_warning))
+                        warn('%s: %s' % (mod, single_warning),
+                             MediaWikiAPIWarning)
 
     def submit(self):
         """Submit a query and parse the response.
