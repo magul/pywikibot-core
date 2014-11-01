@@ -22,11 +22,12 @@ build paths relative to base_dir:
 __version__ = '$Id$'
 #
 
+import collections
+import inspect
 import os
 import sys
-import collections
 # Please keep _imported_modules in sync with the imports above
-_imported_modules = ('os', 'sys', 'collections')
+_imported_modules = ('collections', 'inspect', 'os', 'sys')
 
 # IMPORTANT:
 # Do not change any of the variables in this file. Instead, make
@@ -232,9 +233,29 @@ for arg in sys.argv[1:]:
         break
 family_files = {}
 
+_user_config_frame = None
+
+
+def set_user_config_frame():
+    """Set the frame containing user-config, if called in that context."""
+    global _user_config_frame
+    caller = inspect.currentframe().f_back
+    assert('set_user_config_frame' in caller.f_globals)
+    assert('_user_config_frame' not in caller.f_globals)
+    _user_config_frame = caller
+
 
 def register_family_file(family_name, file_path):
     """Register a single family class file."""
+    # If register_family_file is being run from within user-config,
+    # modify the variables in that frame.
+    if _user_config_frame:
+        _user_config_frame.f_globals['usernames'][family_name] = {}
+        _user_config_frame.f_globals['sysopnames'][family_name] = {}
+        _user_config_frame.f_globals['disambiguation_comment'][family_name] = {}
+        _user_config_frame.f_globals['family_files'][family_name] = file_path
+        return
+
     usernames[family_name] = {}
     sysopnames[family_name] = {}
     disambiguation_comment[family_name] = {}
@@ -779,7 +800,11 @@ for _filename in _fns:
         _fileuid = _filestatus[4]
         if sys.platform == 'win32' or _fileuid in [os.getuid(), 0]:
             if sys.platform == 'win32' or _filemode & 0o02 == 0:
-                exec(compile(open(_filename).read(), _filename, 'exec'), _uc)
+                _user_config = 'set_user_config_frame()\n'
+                _user_config += open(_filename).read()
+                __a = compile(_user_config, _filename, 'exec')
+                exec(__a, _uc)
+                _user_config_frame = None
             else:
                 print("WARNING: Skipped '%(fn)s': writeable by others."
                       % {'fn': _filename})
