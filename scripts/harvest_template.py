@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""
+r"""
 Template harvesting script.
 
 Usage:
@@ -16,12 +16,19 @@ namespace
 
 These command line parameters can be used to specify which pages to work on:
 
+-regex          A regex to catch strings in templates. Works only when the property is string.
+                    Like catching ISBN
+
+-first          Used with -regex. The bot adds only first catches in templates.
+                    If you don't use it it adds all of them.
+
 &params;
 
 Examples:
 
 python harvest_template.py -lang:nl -cat:Sisoridae -template:"Taxobox straalvinnige" -namespace:0 orde P70 familie P71 geslacht P74
 
+python harvest_template.py -lang:en -template:"Infobox book" -namespace:0 isbn P212 -regex:"(\d{3}\-\d\-\d{4}\-\d{4}\-\d)" -first
 """
 #
 # (C) Multichill, Amir, 2013
@@ -33,6 +40,7 @@ __version__ = '$Id$'
 #
 
 import re
+
 import pywikibot
 from pywikibot import pagegenerators as pg, textlib, WikidataBot
 
@@ -43,14 +51,21 @@ class HarvestRobot(WikidataBot):
 
     """A bot to add Wikidata claims."""
 
-    def __init__(self, generator, templateTitle, fields):
+    def __init__(self, generator, templateTitle, fields, regex, regex_type):
         """
         Constructor.
 
-        Arguments:
-            * generator     - A generator that yields Page objects.
-            * templateTitle - The template to work on
-            * fields        - A dictionary of fields that are of use to us
+
+        @param generator: A generator that yields Page objects.
+        @param templateTitle: The template to work on
+        @type templateTitle: unicode
+        @param fields: Fields that are of use to us
+        @type fields: dictionary
+        @param regex: Regex to catch in raw values
+        @type regex: unicode
+        @param regex_type: Method to add regex matches to the item.
+            defult: All of matches, acceptable values: all, first
+        @type regex_type: unicode
 
         """
         super(HarvestRobot, self).__init__()
@@ -60,6 +75,8 @@ class HarvestRobot(WikidataBot):
         self.fields = fields
         self.cacheSources()
         self.templateTitles = self.getTemplateSynonyms(self.templateTitle)
+        self.regex = regex
+        self.regex_type = regex_type
 
     def getTemplateSynonyms(self, title):
         """Fetch redirects of the title, so we can check against them."""
@@ -147,7 +164,9 @@ class HarvestRobot(WikidataBot):
                                 # Try to extract a valid page
                                 match = re.search(pywikibot.link_regex, value)
                                 if not match:
-                                    pywikibot.output(u'%s field %s value %s isnt a wikilink. Skipping' % (claim.getID(), field, value))
+                                    pywikibot.output(
+                                        u'%s field %s value %s isnt a wikilink. Skipping'
+                                        % (claim.getID(), field, value))
                                     continue
 
                                 link_text = match.group(1)
@@ -157,7 +176,19 @@ class HarvestRobot(WikidataBot):
 
                                 claim.setTarget(linked_item)
                             elif claim.type == 'string':
-                                claim.setTarget(value.strip())
+                                if self.regex:
+                                    catch_list = re.findall(self.regex, value.strip())
+                                    if not catch_list:
+                                        pywikibot.output(
+                                            "The regex couldn't catch anything. Skipping")
+                                        continue
+                                    if self.regex_type == 'all':
+                                        for catch in catch_list:
+                                            claim.setTarget(value.strip())
+                                    elif self.regex_type == 'first' and catch_list:
+                                        claim.setTarget(catch_list[0])
+                                else:
+                                    claim.setTarget(value.strip())
                             elif claim.type == 'commonsMedia':
                                 commonssite = pywikibot.Site("commons", "commons")
                                 imagelink = pywikibot.Link(value, source=commonssite, defaultNamespace=6)
@@ -191,7 +222,8 @@ def main(*args):
     """
     commandline_arguments = list()
     template_title = u''
-
+    regex = None
+    regex_type = 'all'
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
     gen = pg.GeneratorFactory()
@@ -203,6 +235,14 @@ def main(*args):
                     u'Please enter the template to work on:')
             else:
                 template_title = arg[10:]
+        elif arg.startswith('-regex'):
+            if len(arg) == 6:
+                regex = pywikibot.input(
+                    u'Please enter the regex:')
+            else:
+                regex = arg[7:]
+        elif arg.startswith('-first'):
+            regex_type = 'first'
         elif gen.handleArg(arg):
             if arg.startswith(u'-transcludes:'):
                 template_title = arg[13:]
@@ -225,7 +265,7 @@ def main(*args):
         gen.handleArg(u'-transcludes:' + template_title)
         generator = gen.getCombinedGenerator()
 
-    bot = HarvestRobot(generator, template_title, fields)
+    bot = HarvestRobot(generator, template_title, fields, regex, regex_type)
     bot.run()
 
 if __name__ == "__main__":
