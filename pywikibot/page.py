@@ -4829,7 +4829,7 @@ class Link(ComparableMixin):
         return link
 
     @classmethod
-    def langlinkUnsafe(cls, lang, title, source):
+    def langlinkUnsafe(cls, lang, title, source, allow_obsolete=False):
         """
         Create a "lang:title" Link linked from source.
 
@@ -4849,12 +4849,22 @@ class Link(ComparableMixin):
             link._site = pywikibot.Site(lang, source.family.interwiki_forward)
         else:
             link._site = pywikibot.Site(lang, source.family.name)
+        if link._site.obsolete and not allow_obsolete:
+            pywikibot.log(
+                u'langlinkUnsafe: Error on %s loading langlink %s:%s'
+                % (link._site, lang, title))
+            raise SiteDefinitionError(
+                u"Links to obsolete sites can not be parsed.")
+
         link._section = None
         link._source = source
 
         link._namespace = 0
 
-        if ':' in title:
+        # If the site is obsolete, namespaces cant be loaded and used.
+        # Return a Link which places the entire title in namespace 0.
+        # FIXME: enable the API on obsolete sites.
+        if ':' in title and not link._site.obsolete:
             ns, t = title.split(':', 1)
             ns = link._site.ns_index(ns.lower())
             if ns:

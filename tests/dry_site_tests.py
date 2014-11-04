@@ -110,7 +110,7 @@ class TestMustBe(DebugOnlyTestCase):
     def setUp(self):
         self.__family = lambda: None
         self.__family.name = 'test'
-        self.__family.langs = {'test', 'test.wikipedia.org'}
+        self.__family.langs = {'test': 'test.wikipedia.org'}
         self.family = self.__family
         self._logged_in_as = None
         super(TestMustBe, self).setUp()

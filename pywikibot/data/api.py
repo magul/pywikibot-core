@@ -31,7 +31,8 @@ import pywikibot
 from pywikibot import config, login
 from pywikibot.tools import MediaWikiVersion, deprecated, itergroup, ip
 from pywikibot.exceptions import (
-    Server504Error, Server414Error, FatalServerError, Error
+    Server504Error, Server414Error, FatalServerError, Error,
+    SiteDefinitionError,
 )
 
 import sys
@@ -2638,9 +2639,15 @@ def update_page(page, pagedict, props=[]):
     if "langlinks" in pagedict:
         links = []
         for ll in pagedict["langlinks"]:
-            link = pywikibot.Link.langlinkUnsafe(ll['lang'],
-                                                 ll['*'],
-                                                 source=page.site)
+            try:
+                link = pywikibot.Link.langlinkUnsafe(ll['lang'],
+                                                     ll['*'],
+                                                     source=page.site)
+            except SiteDefinitionError:
+                pywikibot.warning(
+                    u'Error on %s loading langlink %s:%s'
+                    % (page, ll['lang'], ll['*']))
+                continue
             links.append(link)
 
         if hasattr(page, "_langlinks"):

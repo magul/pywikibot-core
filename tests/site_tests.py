@@ -17,8 +17,10 @@ from datetime import datetime
 import re
 
 import pywikibot
+
 from pywikibot import config
 from pywikibot.comms import http
+from pywikibot.exceptions import SiteDefinitionError
 from pywikibot.tools import MediaWikiVersion
 from pywikibot.data import api
 
@@ -1793,6 +1795,32 @@ class TestWiktionarySite(TestCase):
         self.assertEqual(main_namespace.case, 'case-sensitive')
         user_namespace = site.namespaces[2]
         self.assertEqual(user_namespace.case, 'first-letter')
+
+
+class TestObsoleteWiktionarySite(TestCase):
+
+    """Test Obsolete Site Object."""
+
+    family = 'wiktionary'
+    code = 'za'
+
+    cached = True
+
+    def test_obsolete_flag(self):
+        site = self.get_site()
+
+        self.assertTrue(site.obsolete)
+
+    def test_obsolete_lang_link(self):
+        site = self.get_site()
+
+        self.assertRaises(SiteDefinitionError,
+                          pywikibot.page.Link.langlinkUnsafe,
+                          lang='yo', title='foo', source=site)
+        ll = pywikibot.page.Link.langlinkUnsafe(lang='yo', title='foo',
+                                                source=site,
+                                                allow_obsolete=True)
+        self.assertTrue(ll._site.obsolete)
 
 
 class TestNonEnglishWikipediaSite(TestCase):

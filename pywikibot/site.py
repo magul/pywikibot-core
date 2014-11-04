@@ -54,6 +54,7 @@ from pywikibot.exceptions import (
     LockedNoPage,
     NoPage,
     UnknownSite,
+    SiteDefinitionError,
     UnknownExtension,
     FamilyMaintenanceWarning,
     NoUsername,
@@ -3386,14 +3387,18 @@ class APISite(BaseSite):
                     % (page, pageitem['title']))
             if 'langlinks' not in pageitem:
                 continue
-            for linkdata in pageitem['langlinks']:
-                link = pywikibot.Link.langlinkUnsafe(linkdata['lang'],
-                                                     linkdata['*'],
-                                                     source=self)
-                if link.site.obsolete and not include_obsolete:
+            for ll in pageitem['langlinks']:
+                try:
+                    link = pywikibot.Link.langlinkUnsafe(
+                        ll['lang'], ll['*'],
+                        source=self, allow_obsolete=include_obsolete)
+                except SiteDefinitionError:
+                    pywikibot.warning(
+                        u'Error on %s loading langlink %s:%s'
+                        % (page, ll['lang'], ll['*']))
                     continue
-                else:
-                    yield link
+                assert(not link.site.obsolete or include_obsolete)
+                yield link
 
     def page_extlinks(self, page, step=None, total=None):
         """Iterate all external links on page, yielding URL strings."""
