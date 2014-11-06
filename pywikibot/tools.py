@@ -37,6 +37,21 @@ def empty_iterator():
     yield
 
 
+class ContainsKeyCallbackDefaultDict(collections.defaultdict):
+
+    """Like defaultdict, with more information given to the factory."""
+
+    def __contains__(self, key):
+        if key in self.keys():
+            return True
+        else:
+            return self.__missing__(key)
+
+    def __missing__(self, key):
+        default_factory = self.default_factory
+        return default_factory(self, key)
+
+
 class UnicodeMixin(object):
 
     """Mixin class to add __str__ method in Python 2 or 3."""

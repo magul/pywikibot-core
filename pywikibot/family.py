@@ -21,8 +21,12 @@ else:
 
 import pywikibot
 from pywikibot import config2 as config
-from pywikibot.tools import deprecated, deprecate_arg
-from pywikibot.exceptions import UnknownFamily, Error
+from pywikibot.tools import (
+    deprecated, deprecate_arg,
+    ContainsKeyCallbackDefaultDict,
+)
+from pywikibot.comms.threadedhttp import Http
+from pywikibot.exceptions import Error, UnknownFamily, UnknownSite
 
 logger = logging.getLogger("pywiki.wiki.family")
 
@@ -746,7 +750,8 @@ class Family(object):
         # should they be replaced. If for example the language with code xx:
         # now should get code yy:, add {'xx':'yy'} to obsolete. If all
         # links to language xx: should be removed, add {'xx': None}.
-        self.obsolete = {}
+        if not hasattr(self, 'obsolete'):
+            self.obsolete = {}
 
         # Language codes of the largest wikis. They should be roughly sorted
         # by size.
@@ -1226,6 +1231,125 @@ class WikimediaFamily(Family):
     def protocol(self, code):
         """Return 'https' as the protocol."""
         return 'https'
+
+
+class AutoSubdomainFamily(Family):
+
+    """Family that automatically adds subdomains."""
+
+    def __init__(self):
+        """Constructor."""
+        super(AutoSubdomainFamily, self).__init__()
+        if not self.domain:
+            raise ValueError("%s must set variable 'domain'."
+                             % self.__class__.__name__)
+        self.langs = ContainsKeyCallbackDefaultDict(self.add_key)
+
+        if hasattr(self, 'codes'):
+            self.langs.update(
+                [(code, code + '.' + self.domain)
+                 for code in self.codes])
+        else:
+            self.codes = []
+
+        if not hasattr(self, 'invalid_redirect_target_codes'):
+            self.invalid_redirect_target_codes = []
+
+        self.invalid_codes = []
+
+    def add_key(self, langs, key):
+        """
+        Verify the subdomain exists before adding the key.
+
+        This is a ContainsKeyCallbackDefaultDict callback function.
+        """
+        if key in list(self.obsolete) + self.invalid_codes:
+            return False
+
+        hostname = key + '.' + self.domain
+        uri = self.protocol(key) + '://' + hostname
+        try:
+            h = Http(disable_ssl_certificate_validation=self.ignore_certificate_error(key))
+            r = h.request(uri, method='HEAD')
+        except Exception as e:
+            raise Error('Unknown problem trying to contact %s: %r' % (uri, e))
+
+        if isinstance(r[0], Exception):
+            raise UnknownSite('Could not contact %s: %s' % (uri, r[0]))
+
+        assert(isinstance(r[0], dict))
+        headers = r[0]
+
+        assert('status' in headers)
+
+        if headers['status'] != '200':
+            pywikibot.warning(u'%s: Could not determine the validity of %r;'
+                              u' HTTP status was %s.'
+                              % (self.__class__.__name__, uri,
+                                 headers['status']))
+            self.invalid_codes.append(key)
+            return False
+
+        # threadedhttp adds 'content-location' to the headers if it
+        # automatically redirected to a different location that requested.
+        redirect_host = None
+        if 'content-location' in headers:
+            redirect_host = urlparse(headers['content-location']).netloc
+        if redirect_host and redirect_host != hostname:
+            # If the content-location hostname already exists in the
+            # langs dict, and an obsolete mapping for it, unless it is
+            # a code in invalid_redirect_target_codes.
+
+            # This is used for the Wikia family, to allow en->www
+            # but not allow invalidsite->community
+            redirect_key = [_k for _k, _v in langs.items()
+                            if _v == redirect_host]
+            if redirect_key:
+                redirect_key = redirect_key[0]
+                # TODO: invalid_redirect_target_codes might be unnecessary.
+                # It exists to allow redirects to known some codes, but be
+                # able to exclude redirects to other known codes.
+                # Wikia redirects some subdomains to 'www' (e.g. 'en')
+                # but it also redirects to 'community' from any invalid
+                # subdomain.
+                # Another solution may be to allow threadedhttp to not
+                # automatically redirect.  Then we could distinguish
+                # between the 301 of en.wikia.org -> www
+                # versus the 302 for veryinvalid.wikia.org -> community.
+                if redirect_key in self.invalid_redirect_target_codes:
+                    pywikibot.error(u'%s: %s redirects to %s; '
+                                    u'presuming invalid.'
+                                    % (self.__class__.__name__, uri,
+                                       headers['content-location']))
+                    self.invalid_codes.append(key)
+                    redirect_key = None
+
+            if redirect_key:
+                pywikibot.warning(u'%s: %s redirects to %s; '
+                                  u'mapping obsolete code %s to %s.'
+                                  % (self.__class__.__name__, uri,
+                                     headers['content-location'],
+                                     key, redirect_key))
+
+                self.obsolete[key] = redirect_key
+
+            return False
+
+        langs[key] = hostname
+        pywikibot.warning(u"%s(%s): unknown site code %s added dynamically."
+                          % (self.__class__.__name__, self.name, key))
+        return True
+
+    def __getstate__(self):
+        """ Use a normal dict for langs when pickling. """
+        new = self.__dict__.copy()
+        new['langs'] = dict(new['langs'])
+        return new
+
+    def __setstate__(self, attrs):
+        """ Restore things removed in __getstate__. """
+        self.__dict__.update(attrs)
+        self.langs = ContainsKeyCallbackDefaultDict(self.add_key, self.langs)
 
 
 class AutoFamily(Family):

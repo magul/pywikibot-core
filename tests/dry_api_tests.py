@@ -85,9 +85,8 @@ class MockCachedRequestKeyTests(TestCase):
     def setUp(self):
         class MockFamily(Family):
 
-            @property
-            def name(self):
-                return 'mock'
+            name = 'mock'
+            langs = {'mock': 'mock.mock.mock'}
 
         class MockSite(pywikibot.site.APISite):
 
@@ -105,9 +104,6 @@ class MockCachedRequestKeyTests(TestCase):
 
             def protocol(self):
                 return 'http'
-
-            def languages(self):
-                return ['mock']
 
             def user(self):
                 return self._user
