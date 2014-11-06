@@ -132,6 +132,16 @@ class HttpTestCase(TestCase):
         self.assertEqual(r.response_headers['content-location'],
                          'http://www.gandi.net')
 
+        r = http.fetch(uri='http://fr.lyrics.wikia.com')
+        self.assertEqual(r.status, 200)
+        self.assertEqual(r.response_headers['content-location'],
+                         'http://fr.lyrics.wikia.com/wiki/WikiaParoles')
+
+        r = http.fetch(uri='http://reallyinvalid.wikia.com')
+        self.assertEqual(r.status, 200)
+        self.assertEqual(r.response_headers['content-location'],
+                         'http://community.wikia.com/wiki/Community_Central:Not_a_valid_Wikia')
+
 
 class ThreadedHttpTestCase(TestCase):
 
