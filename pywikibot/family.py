@@ -1352,18 +1352,24 @@ class AutoSubdomainFamily(Family):
         self.langs = ContainsKeyCallbackDefaultDict(self.add_key, self.langs)
 
 
-class AutoFamily(Family):
+class AutoFamily(AutoSubdomainFamily):
 
     """Family that automatically loads the site configuration."""
 
     def __init__(self, name, url, site=None):
         """Constructor."""
-        super(AutoFamily, self).__init__()
         self.name = name
         self.url = urlparse(url)
-        self.langs = {
-            name: self.url.netloc
-        }
+        if self.url.netloc.startswith('*.'):
+            self.domain = self.url.netloc[2:]
+            super(AutoFamily, self).__init__()
+        else:
+            self.domain = self.url.netloc
+            self.langs = {
+                name: self.url.netloc
+            }
+            # Skip AutoSubdomainFamily initialisation
+            Family.__init__(self)
 
     def protocol(self, code):
         """Return the protocol of the URL."""

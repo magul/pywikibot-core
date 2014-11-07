@@ -1645,6 +1645,13 @@ class TestAutoSubdomains(TestCase):
     def test_wikia_invalid(self):
         self.assertRaises(UnknownSite, pywikibot.Site, 'reallyinvalid', 'wikia')
 
+    def test_beta_wmflabs(self):
+        s = pywikibot.Site('en.wikipedia', 'betawmflabs')
+        self.assertEqual(s.family.hostname('en.wikipedia'),
+                         'en.wikipedia.beta.wmflabs.org')
+        self.assertIsInstance(s.namespaces, dict)
+        self.assertEqual(s.siteinfo['sitename'], 'Wikipedia')
+
 
 if __name__ == '__main__':
     try:

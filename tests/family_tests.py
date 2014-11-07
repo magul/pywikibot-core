@@ -7,7 +7,7 @@
 #
 __version__ = '$Id$'
 
-from pywikibot.family import Family
+from pywikibot.family import Family, AutoFamily
 from pywikibot.exceptions import UnknownFamily
 import pywikibot.site
 
@@ -29,7 +29,8 @@ class TestFamily(TestCase):
         for name in pywikibot.config.family_files:
             f = Family.load(name)
             self.assertIsInstance(f.langs, dict)
-            self.assertNotEqual(f.langs, {})
+            if not isinstance(f, AutoFamily) or not f.url.netloc.startswith('*.'):
+                self.assertNotEqual(f.langs, {})
             # There is one inconsistency
             if f.name == 'wikimediachapter' and name == 'wikimedia':
                 continue
