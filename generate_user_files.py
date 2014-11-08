@@ -28,6 +28,21 @@ if console_encoding is None or sys.platform == 'cygwin':
     console_encoding = "iso-8859-1"
 
 
+def create_bash_alias():
+    """Create a bash alias upon user request and if the OS is Linux."""
+    bash_alias = pywikibot.input_yn('Do you want to have a bash alias?', False)
+    if not bash_alias:
+        return
+    bash_alias = pywikibot.input('Enter the alias (Default:pywikibot):').strip() \
+                    or 'pywikibot'
+    with codecs.open('%s/.bashrc' % os.environ['HOME'], 'a', 'utf-8') as f:
+        f.write(u"alias %s='python %s/pwb.py'\n" % (
+            bash_alias, os.path.dirname(os.path.realpath(__file__))))
+    pywikibot.output(
+        "Restart your terminal and use %s instead of python %s/pwb.py"
+        % (bash_alias, os.path.dirname(os.path.realpath(__file__))))
+
+
 def listchoice(clist, message=None, default=None):
     """Ask the user to select one entry from a list of entries."""
     if not message:
@@ -375,3 +390,6 @@ if __name__ == "__main__":
             create_user_fixes()
     elif not copied_fixes:
         pywikibot.output("user-fixes.py already exists in the directory")
+
+    if '/bash' in os.environ.get('SHELL', ''):
+        create_bash_alias()
