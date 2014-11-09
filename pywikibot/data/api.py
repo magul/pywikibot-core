@@ -633,6 +633,34 @@ class Request(MutableMapping):
                                % type(result),
                                data=result)
             if self.action == 'query':
+                has_query = "query" in result
+                if not has_query:
+                    # This happens quite often, but is usually worth noticing.
+                    pywikibot.debug(
+                        u"%s: 'query' missing in api response of action=query."
+                        % self.__class__.__name__, _logger)
+
+                # There are two keys which can occur in the base of the result
+                # for a action=query result.
+                # 1. meta 'userinfo' appeared in v1.11 and only in that version
+                #    does the data optionally appear in the base of the query,
+                #    only if no other query data is in the response.
+                # 2. list 'watchlistraw' added v1.14 is the only remaining
+                #    instance of this issue in the API. (bug 34356)
+                #
+                # This class automatically copies these oddballs into the correct place
+                # in the query result dictionary, in order that tools like QueryGenerator
+                # do not need to look in two places.
+                for key in set(['userinfo', 'watchlistraw']) & set(result):
+                    pywikibot.debug(
+                        "%s: result key '%s' copied into result['query']."
+                        % (self.__class__.__name__, key), _logger)
+                    if has_query and key in result['query']:
+                        pywikibot.error(
+                            "Duplicate key '%s' found in query result." % key)
+                    else:
+                        result.setdefault('query', {})[key] = result[key]
+
                 if 'userinfo' in result.get('query', ()):
                     if hasattr(self.site, '_userinfo'):
                         self.site._userinfo.update(result['query']['userinfo'])
