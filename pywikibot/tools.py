@@ -656,7 +656,65 @@ def deprecated_args(**arg_pairs):
     return decorator
 
 
-def redirect_func(target, source_module=None, target_module=None,
+def py3_parent_qualname(obj):
+    """Return parent qualname."""
+    (normal, sep, local) = obj.__qualname__.partition('.<locals>')
+    if local:
+        return normal
+    else:
+        normal.rsplit('.', 1)[0]
+
+
+def class_qualname(meth):
+    """Return class qualname."""
+    if sys.version_info[0] == 3:
+        if 'decorator' in meth.__qualname__:
+            return None
+        return meth.__qualname__.partition(
+            '.<locals>')[0].rsplit('.', 1)[0]
+    else:
+        if hasattr(meth, 'im_class'):
+            return meth.im_class.__name__
+        else:
+            return None
+
+
+def get_method_class(meth):
+    if sys.version_info[0] == 2:
+        if hasattr(meth, '__self__'):
+            if meth.__self__:
+                return meth.__self__
+        if hasattr(meth, 'im_class'):
+            return meth.im_class
+
+    if inspect.ismethod(meth):
+        for cls in inspect.getmro(meth.__self__.__class__):
+            if cls.__dict__.get(meth.__name__) is meth:
+                return cls
+        meth = meth.__func__
+
+    name = class_qualname(meth)
+
+    if name and inspect.isfunction(meth):
+        if hasattr(meth, '__module__'):
+            module = sys.modules[meth.__module__]
+        else:
+            module = inspect.getmodule(meth)
+
+        cls = getattr(module, name)
+        if isinstance(cls, type):
+            return cls
+
+
+def get_scoped_function_name(obj, func):
+    """Find the name used for a function within an object."""
+    o = [name for name, value in obj.__dict__.items() if value == func]
+    if o:
+        return o[0]
+
+
+def redirect_func(target, cls=None,
+                  source_module=None, target_module=None,
                   old_name=None, class_name=None):
     """
     Return a function which can be used to redirect to 'target'.
@@ -684,30 +742,220 @@ def redirect_func(target, source_module=None, target_module=None,
     @rtype: callable
     """
     def call(*a, **kw):
-        warning(warn_message)
+        target_cls = cls
+        if hasattr(target, '__full_name__'):
+            call.__target_full_name__ = target.__full_name__
+        if not hasattr(call, '__target_full_name__'):
+            if sys.version_info[0] == 3:
+                target_parts = (target.__module__, target.__qualname__)
+            else:
+                if not target_cls:
+                    target_cls = get_method_class(target)
+
+                if target_cls:
+                    target_parts = (target.__module__, target_cls.__name__,
+                                    target.__name__)
+                else:
+                    target_parts = (target.__module__, target.__name__)
+
+            call.__target_full_name__ = '.'.join(target_parts)
+
+        source_name = None
+        if not hasattr(call, '__full_name__'):
+            source_parts = None
+
+            if not target_cls:
+                target_cls = get_method_class(target)
+
+            # Find this inner function within the target class
+            if isinstance(target_cls, type):
+                source_name = get_scoped_function_name(target_cls, call)
+                if source_name:
+                    source_parts = (source_module, target_cls.__name__,
+                                    source_name)
+
+            # Find this inner function within the target module
+            else:
+                module = sys.modules[source_module]
+                source_name = get_scoped_function_name(module, call)
+                if source_name:
+                    source_parts = (source_module, source_name)
+
+            if source_parts:
+                call.__full_name__ = '.'.join(source_parts)
+            else:
+                call.__full_name__ = '<unknown>'
+
+        warning(('{source_name} is DEPRECATED, use {target_name} '
+                 'instead.').format(source_name=call.__full_name__,
+                                    target_name=call.__target_full_name__))
+
+        if target_cls:
+            static_method = False
+            class_method = False
+
+            if sys.version_info[0] == 3:
+                target_cls_obj = object.__getattribute__(target_cls, target.__name__)
+                if hasattr(target_cls_obj, '__func__'):
+                    static_method = target_cls_obj.__func__ == target
+                if (hasattr(target, '__func__') and
+                        hasattr(target_cls_obj, '__func__')):
+                    class_method = target_cls_obj.__func__ == target.__func__
+            else:
+                if hasattr(target, '__self__'):
+                    class_method = target.__self__ is target_cls
+                static_method = inspect.isfunction(target)
+
+            # The args for static and class methods are populated with
+            # the class, which needs to be removed as target is already
+            # bound to a specific object.
+            if static_method or class_method:
+                a = a[1:]
+
         return target(*a, **kw)
-    if target_module is None:
-        target_module = target.__module__
-    if target_module and target_module[-1] != '.':
-        target_module += '.'
-    if source_module is '.':
-        source_module = target_module
-    elif source_module and source_module[-1] != '.':
-        source_module += '.'
-    else:
-        source_module = sys._getframe(1).f_globals['__name__'] + '.'
-    if class_name:
-        target_module += class_name + '.'
-        source_module += class_name + '.'
-    warn_message = ('{source}{old} is DEPRECATED, use {target}{new} '
-                    'instead.').format(new=target.__name__,
-                                       old=old_name or target.__name__,
-                                       target=target_module,
-                                       source=source_module)
+
+    source_module = sys._getframe(1).f_globals['__name__']
+
     return call
 
 
-class ModuleDeprecationWrapper(object):
+class DeprecationWrapper(object):
+
+    """A wrapper to deprecate attributes and items of it."""
+
+    def __init__(self, obj):
+        """
+        Initialise the wrapper.
+
+        @param obj: The object instance
+        @type obj: object
+        """
+        super(DeprecationWrapper, self).__setattr__('_deprecated', {})
+        super(DeprecationWrapper, self).__setattr__('_obj', obj)
+        if hasattr(obj, '__doc__'):
+            super(DeprecationWrapper, self).__setattr__(
+                '__doc__', obj.__doc__)
+
+    def _add_deprecated_name(self, name, replacement=None,
+                             replacement_name=None):
+        """
+        Add the name to the local deprecated names dict.
+
+        @param name: The name of the deprecated class, variable, etc.
+             It may not be already deprecated.
+        @type name: str
+        @param replacement: The replacement value which should be returned
+            instead. If the name is already an attribute of that module this
+            must be None. If None it'll return the attribute of the module.
+        @type replacement: any
+        @param replacement_name: The name of the new replaced value. Required
+            if C{replacement} is not None and it has no __name__ attribute.
+        @type replacement_name: str
+        """
+        if '.' in name:
+            raise ValueError('Deprecated name "{0}" may not contain '
+                             '".".'.format(name))
+        if name in self._deprecated:
+            raise ValueError('Name "{0}" is already deprecated.'.format(name))
+        if replacement is not None and hasattr(self._obj, name):
+            raise ValueError('Object already has an attribute named '
+                             '"{0}".'.format(name))
+        if (replacement and not replacement_name
+                and hasattr(replacement, '__module__')):
+            if hasattr(replacement, '__name__'):
+                replacement_name = replacement.__module__
+                if hasattr(replacement, '__self__'):
+                    replacement_name += '.'
+                    replacement_name += replacement.__self__.__class__.__name__
+                replacement_name += '.' + replacement.__name__
+        if replacement_name is None:
+            raise TypeError('Replacement must have a __name__ attribute '
+                            'or a replacement name must be set '
+                            'specifically.')
+        if isinstance(self._obj, list):
+            name = int(name)
+        self._deprecated[name] = (replacement_name, replacement)
+        if self._obj.__class__.__name__ == 'type':
+            def wrapper(*args, **kwargs):
+                return self._get_deprecated(name)(*args, **kwargs)
+
+            setattr(self, name, wrapper)
+
+    # FIXME: unnecessary, but here to reduce the chance of conflicts.
+    # Remove all instances before merge.
+    _add_deprecated_attr = _add_deprecated_name
+
+    def _get_deprecated(self, attr):
+        """Helper function to issue a warning and return the alternative."""
+        if attr in self._deprecated:
+            if self._deprecated[attr][0]:
+                name = "[object]"
+                if hasattr(self._obj, '__name__'):
+                    name = self._obj.__name__
+                warning(u"{0}.{1} is DEPRECATED, use {2} instead.".format(
+                        name, attr,
+                        self._deprecated[attr][0]))
+                if self._deprecated[attr][1]:
+                    return self._deprecated[attr][1]
+            else:
+                warning(u"{0}.{1} is DEPRECATED.".format(
+                        self._obj.__name__, attr))
+
+    def __setattr__(self, attr, value):
+        """Set the value in the wrapped obj."""
+        setattr(self._obj, attr, value)
+
+    def __getattr__(self, attr):
+        """Return the attribute with a deprecation warning if required."""
+        rv = self._get_deprecated(attr)
+        if rv:
+            return rv
+        return getattr(self._obj, attr)
+
+    def __setitem__(self, key, value):
+        """Set the value in the wrapped obj."""
+        self._obj[key] = value
+
+    def __getitem__(self, key):
+        """Return the item with a deprecation warning if required."""
+        if key in self._deprecated:
+            if self._deprecated[key][0]:
+                warning(u"Accessing this {0} using [{1}] is DEPRECATED, use [{2}] instead.".format(
+                        self._obj.__class__.__name__, repr(key),
+                        repr(self._deprecated[key][0])))
+                if self._deprecated[key][1]:
+                    return self._deprecated[key][1]
+            else:
+                warning(u"Accessing this {0} using[{1}] is DEPRECATED.".format(
+                        self._obj.__name__, repr(key)))
+        rv = self._obj[key]
+        return rv
+
+    def __getattribute__(self, attr):
+        """Wrap the object."""
+        if attr in ['__dict__', '__class__']:
+            return self._obj.__getattribute__(attr)
+        try:
+            retval = object.__getattribute__(self, attr)
+        except AttributeError:
+            if self._obj.__class__.__name__ == 'type':
+                retval = self._obj.__dict__[attr]
+            else:
+                retval = self._obj.__getattribute__(attr)
+        return retval
+
+    def __call__(self, *args, **kwargs):
+        """ Wrap the object. """
+        if self._obj.__class__.__name__ == 'type':
+            rv = self._obj(*args, **kwargs)
+            return rv
+
+    def __contains__(self, key):
+        """ Wrap the object. """
+        return key in self._obj
+
+
+class ModuleDeprecationWrapper(DeprecationWrapper):
 
     """A wrapper for a module to deprecate classes or variables of it."""
 
@@ -723,65 +971,8 @@ class ModuleDeprecationWrapper(object):
         """
         if isinstance(module, basestring):
             module = sys.modules[module]
-        super(ModuleDeprecationWrapper, self).__setattr__('_deprecated', {})
-        super(ModuleDeprecationWrapper, self).__setattr__('_module', module)
-        super(ModuleDeprecationWrapper, self).__setattr__('__doc__', module.__doc__)
+        super(ModuleDeprecationWrapper, self).__init__(module)
         sys.modules[module.__name__] = self
-
-    def _add_deprecated_attr(self, name, replacement=None,
-                             replacement_name=None):
-        """
-        Add the name to the local deprecated names dict.
-
-        @param name: The name of the deprecated class or variable. It may not
-            be already deprecated.
-        @type name: str
-        @param replacement: The replacement value which should be returned
-            instead. If the name is already an attribute of that module this
-            must be None. If None it'll return the attribute of the module.
-        @type replacement: any
-        @param replacement_name: The name of the new replaced value. Required
-            if C{replacement} is not None and it has no __name__ attribute.
-        @type replacement_name: str
-        """
-        if '.' in name:
-            raise ValueError('Deprecated name "{0}" may not contain '
-                             '".".'.format(name))
-        if name in self._deprecated:
-            raise ValueError('Name "{0}" is already deprecated.'.format(name))
-        if replacement is not None and hasattr(self._module, name):
-            raise ValueError('Module has already an attribute named '
-                             '"{0}".'.format(name))
-        if replacement_name is None:
-            if hasattr(replacement, '__name__'):
-                replacement_name = replacement.__module__
-                if hasattr(replacement, '__self__'):
-                    replacement_name += '.'
-                    replacement_name += replacement.__self__.__class__.__name__
-                replacement_name += '.' + replacement.__name__
-            else:
-                raise TypeError('Replacement must have a __name__ attribute '
-                                'or a replacement name must be set '
-                                'specifically.')
-        self._deprecated[name] = (replacement_name, replacement)
-
-    def __setattr__(self, attr, value):
-        """Set a the value of the wrapped module."""
-        setattr(self._module, attr, value)
-
-    def __getattr__(self, attr):
-        """Return the attribute with a deprecation warning if required."""
-        if attr in self._deprecated:
-            if self._deprecated[attr][0]:
-                warning(u"{0}.{1} is DEPRECATED, use {2} instead.".format(
-                        self._module.__name__, attr,
-                        self._deprecated[attr][0]))
-                if self._deprecated[attr][1]:
-                    return self._deprecated[attr][1]
-            else:
-                warning(u"{0}.{1} is DEPRECATED.".format(
-                        self._module.__name__, attr))
-        return getattr(self._module, attr)
 
 
 if __name__ == "__main__":
