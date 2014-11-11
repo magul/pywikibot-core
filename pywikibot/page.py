@@ -1121,8 +1121,12 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         @return: a generator that yields Page objects.
         """
-        return self.site.pagelinks(self, namespaces=namespaces, step=step,
-                                   total=total, content=content)
+        if not hasattr(self, '_links'):
+            self._links = self.site.pagelinks(self, namespaces=namespaces,
+                                              step=step, total=total,
+                                              content=content)
+
+        return self._links
 
     def interwiki(self, expand=True):
         """Iterate interwiki links in the page text, excluding language links.

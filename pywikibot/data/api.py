@@ -1486,6 +1486,17 @@ def update_page(page, pagedict, props=[]):
         else:
             page._langlinks = links
 
+    if "links" in pagedict:
+        pages = []
+        for l in pagedict["links"]:
+            pg = pywikibot.Page(page.site, l['title'], ns=l['ns'])
+            pages.append(pg)
+
+        if hasattr(page, "_links"):
+            page._links.extend(pages)
+        else:
+            page._links = pages
+
     if "coordinates" in pagedict:
         coords = []
         for co in pagedict['coordinates']:
