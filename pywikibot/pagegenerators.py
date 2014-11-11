@@ -259,10 +259,16 @@ class GeneratorFactory(object):
             self._site = pywikibot.Site()
         return self._site
 
-    def getCombinedGenerator(self, gen=None):
+    def getCombinedGenerator(self, gen=None, preload=False):
         """Return the combination of all accumulated generators.
 
         Only call this after all arguments have been parsed.
+
+        @param gen: initial generator to be used the factory compiled list
+        @type gen: generator
+        @param preload: preload the defaults set by Site.preloadpages if
+            True, False to not preload, or dict of props to preload.
+        @type preload: dict of strings mapping to strings, or bool
         """
         if gen:
             self.gens.insert(0, gen)
@@ -301,6 +307,9 @@ class GeneratorFactory(object):
         if self.articlefilter_list:
             return RegexBodyFilterPageGenerator(
                 PreloadingGenerator(dupfiltergen), self.articlefilter_list)
+        elif preload:
+            return PreloadingGenerator(dupfiltergen,
+                                       props=preload)
         else:
             return dupfiltergen
 
@@ -1261,14 +1270,21 @@ def RepeatingGenerator(generator, key_func=lambda x: x, sleep_duration=60,
 
 
 @deprecated_args(pageNumber="step", lookahead=None)
-def PreloadingGenerator(generator, step=50):
+def PreloadingGenerator(generator, step=50, props=None):
     """
     Yield preloaded pages taken from another generator.
 
     @param generator: pages to iterate over
     @param step: how many pages to preload at once
     @type step: int
+    @param props: page props to preload
+    @type props: dict of prop names with either True/False values or
+        string values to specify data to be returned.
+        True to use the defaults of Site.preloadpages.
     """
+    if not isinstance(props, dict):
+        props = {}
+
     # pages may be on more than one site, for example if an interwiki
     # generator is used, so use a separate preloader for each site
     sites = {}
@@ -1280,12 +1296,12 @@ def PreloadingGenerator(generator, step=50):
             # if this site is at the step, process it
             group = sites[site]
             sites[site] = []
-            for i in site.preloadpages(group, step):
+            for i in site.preloadpages(group, step, **props):
                 yield i
     for site in sites:
         if sites[site]:
             # process any leftover sites that never reached the step
-            for i in site.preloadpages(sites[site], step):
+            for i in site.preloadpages(sites[site], step, **props):
                 yield i
 
 

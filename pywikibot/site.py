@@ -2385,8 +2385,7 @@ class APISite(BaseSite):
             page._redirtarget = target
         return page._redirtarget
 
-    def preloadpages(self, pagelist, groupsize=50, templates=False,
-                     langlinks=False):
+    def preloadpages(self, pagelist, groupsize=50, **kwargs):
         """Return a generator to a list of preloaded pages.
 
         Note that [at least in current implementation] pages may be iterated
@@ -2404,19 +2403,34 @@ class APISite(BaseSite):
                        if hasattr(p, "_pageid") and p._pageid > 0]
             cache = dict((p.title(withSection=False), p) for p in sublist)
 
-            props = "revisions|info|categoryinfo"
-            if templates:
-                props += '|templates'
-            if langlinks:
-                props += '|langlinks'
-            rvgen = api.PropertyGenerator(props, site=self)
+            default_props = set(['revisions', 'info', 'categoryinfo'])
+
+            # The default props are omitted if they appear in kwargs as False.
+            props = default_props - set([prop for prop, value in kwargs.items()
+                                         if prop in default_props and value is False])
+            props |= set([prop for prop, value in kwargs.items()
+                          if prop not in default_props and value is not False])
+
+            rvgen = api.PropertyGenerator('|'.join(props), site=self)
             rvgen.set_maximum_items(-1)  # suppress use of "rvlimit" parameter
             if len(pageids) == len(sublist):
                 # only use pageids if all pages have them
                 rvgen.request["pageids"] = "|".join(pageids)
             else:
                 rvgen.request["titles"] = "|".join(list(cache.keys()))
-            rvgen.request[u"rvprop"] = u"ids|flags|timestamp|user|comment|content"
+
+            # Default 'revisions' module props
+            if u"revisions" in props:
+                rvgen.request[u"rvprop"] = u"ids|flags|timestamp|user|comment|content"
+
+            # Add additional module props specified in kwargs
+            module_props = dict([(prop, value) for prop, value in kwargs.items()
+                                 if isinstance(value, basestring)])
+
+            for prop, value in module_props.items():
+                prefix = rvgen._modules[prop]['prefix']
+                rvgen.request[prefix + 'prop'] = value
+
             pywikibot.output(u"Retrieving %s pages from %s."
                              % (len(cache), self))
             for pagedata in rvgen:
