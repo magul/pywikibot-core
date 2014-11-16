@@ -5,7 +5,7 @@ Template harvesting script.
 
 Usage:
 
-python harvest_template.py -transcludes:"..." template_parameter PID [template_parameter PID]
+python harvest_template.py -transcludes:"..." template_parameter PID [template_parameter PID [-qualifier:Q:val -qualifier:Q:val ...]]
 
    or
 
@@ -52,6 +52,15 @@ import pywikibot
 from pywikibot import pagegenerators as pg, textlib, WikidataBot
 
 docuReplacements = {'&params;': pywikibot.pagegenerators.parameterHelp}
+
+
+class SetClaimException(Exception):
+
+    """
+    Exception raised within SetClaim to indicate setting the claim failed.
+
+    Suggested behaviour is to log & continue with the next claim.
+    """
 
 
 class HarvestRobot(WikidataBot):
@@ -126,7 +135,7 @@ class HarvestRobot(WikidataBot):
             raise KeyboardInterrupt
         self.current_page = page
         item.get()
-        if set(self.fields.values()) <= set(item.claims.keys()):
+        if set(x['P'] for x in self.fields.values()) <= set(item.claims.keys()):
             pywikibot.output(u'%s item %s has claims for all properties. Skipping' % (page, item.title()))
             return
 
@@ -151,7 +160,7 @@ class HarvestRobot(WikidataBot):
                     # This field contains something useful for us
                     if field in self.fields:
                         # Check if the property isn't already set
-                        claim = pywikibot.Claim(self.repo, self.fields[field])
+                        claim = pywikibot.Claim(self.repo, self.fields[field]["P"])
                         if claim.getID() in item.get().get('claims'):
                             pywikibot.output(
                                 u'A claim for %s already exists. Skipping'
@@ -160,41 +169,62 @@ class HarvestRobot(WikidataBot):
                             # harvested values with existing claims esp.
                             # without overwriting humans unintentionally.
                         else:
-                            if claim.type == 'wikibase-item':
-                                # Try to extract a valid page
-                                match = re.search(pywikibot.link_regex, value)
-                                if not match:
-                                    pywikibot.output(u'%s field %s value %s isnt a wikilink. Skipping' % (claim.getID(), field, value))
-                                    continue
-
-                                link_text = match.group(1)
-                                linked_item = self._template_link_target(item, link_text)
-                                if not linked_item:
-                                    continue
-
-                                claim.setTarget(linked_item)
-                            elif claim.type == 'string':
-                                claim.setTarget(value.strip())
-                            elif claim.type == 'commonsMedia':
-                                commonssite = pywikibot.Site("commons", "commons")
-                                imagelink = pywikibot.Link(value, source=commonssite, defaultNamespace=6)
-                                image = pywikibot.FilePage(imagelink)
-                                if image.isRedirectPage():
-                                    image = pywikibot.FilePage(image.getRedirectTarget())
-                                if not image.exists():
-                                    pywikibot.output('[[%s]] doesn\'t exist so I can\'t link to it' % (image.title(),))
-                                    continue
-                                claim.setTarget(image)
-                            else:
-                                pywikibot.output("%s is not a supported datatype." % claim.type)
+                            try:
+                                self.setClaimValue(item, field, claim, value)
+                            except SetClaimException as e:
+                                pywikibot.output(e)
                                 continue
-
-                            pywikibot.output('Adding %s --> %s' % (claim.getID(), claim.getTarget()))
+                            pywikibot.output('%s: Adding %s --> %s' % (item.getID(), claim.getID(), claim.getTarget()))
                             item.addClaim(claim)
+
                             # A generator might yield pages from multiple sites
                             source = self.getSource(page.site)
+                            for P, value in self.fields[field]['qualifiers'].items():
+                                qualifier = pywikibot.Claim(self.repo, P, isQualifier=True)
+                                try:
+                                    self.setClaimValue(item, field + " qualifier " + P, qualifier, value)
+                                except SetClaimException as e:
+                                    pywikibot.output(e)
+                                    continue
+                                pywikibot.verbose('   Qualifier: %s --> %s' % (qualifier, value))
+                                claim.addQualifier(qualifier)
+
                             if source:
+                                pywikibot.verbose('   Source: %s' % (source,))
                                 claim.addSource(source, bot=True)
+
+    def setClaimValue(self, item, field, claim, value):
+        if claim.type == 'wikibase-item':
+            # first try if we are dealing with a wikibase item (string starting with Q)
+            if value[0] == "Q":
+                linked_item = pywikibot.ItemPage(self.repo, value)
+                claim.setTarget(linked_item)
+                return
+
+            # Try to extract a valid page
+            match = re.search(pywikibot.link_regex, value)
+            if not match:
+                raise SetClaimException(u'%s field %s value %s isnt a wikilink. Skipping' % (claim.getID(), field, value))
+
+            link_text = match.group(1)
+            linked_item = self._template_link_target(item, link_text)
+            if not linked_item:
+                raise SetClaimException(u'%s field %s value %s target does not exist. Skipping' % (claim.getID(), field, value))
+
+            claim.setTarget(linked_item)
+        elif claim.type == 'string':
+            claim.setTarget(value.strip())
+        elif claim.type == 'commonsMedia':
+            commonssite = pywikibot.Site("commons", "commons")
+            imagelink = pywikibot.Link(value, source=commonssite, defaultNamespace=6)
+            image = pywikibot.FilePage(imagelink)
+            if image.isRedirectPage():
+                image = pywikibot.FilePage(image.getRedirectTarget())
+            if not image.exists():
+                raise SetClaimException('[[%s]] doesn\'t exist so I can\'t link to it' % (image.title(),))
+            claim.setTarget(image)
+        else:
+            raise SetClaimException("%s is not a supported datatype." % claim.type)
 
 
 def main(*args):
@@ -230,12 +260,19 @@ def main(*args):
         pywikibot.error('Please specify either -template or -transcludes argument')
         return
 
-    if len(commandline_arguments) % 2:
-        raise ValueError  # or something.
     fields = dict()
 
-    for i in range(0, len(commandline_arguments), 2):
-        fields[commandline_arguments[i]] = commandline_arguments[i + 1]
+    last = None
+    while commandline_arguments:
+        arg = commandline_arguments.pop(0)
+        if arg.startswith("-qualifier"):
+            Q, val = arg.split(":")[1:]
+            fields[last]['qualifiers'][Q] = val
+        else:
+            field = arg
+            last = field
+            P = commandline_arguments.pop(0)
+            fields[field] = {'P': P, 'qualifiers': {}}
 
     generator = gen.getCombinedGenerator()
     if not generator:
