@@ -79,7 +79,7 @@ class UnusedFilesBot(Bot):
                     u'http://' not in image.text):
                 if template_image in image.text:
                     pywikibot.output(u"%s done already"
-                                     % image.title(asLink=True))
+                                     % image.title(brackets=True))
                     continue
                 self.append_text(image, u"\n\n" + template_image)
                 uploader = image.getFileVersionHistory().pop(0)['user']

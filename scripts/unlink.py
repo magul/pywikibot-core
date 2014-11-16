@@ -155,12 +155,12 @@ class UnlinkBot(Bot):
                 page.save(self.comment)
         except pywikibot.NoPage:
             pywikibot.output(u"Page %s does not exist?!"
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.LockedPage:
-            pywikibot.output(u"Page %s is locked?!" % page.title(asLink=True))
+            pywikibot.output(u"Page %s is locked?!" % page.title(brackets=True))
 
 
 def main(*args):

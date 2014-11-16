@@ -381,7 +381,7 @@ class CaseChecker(object):
                             if 'redirect' in page:
                                 src = self.Page(title)
                                 redir = src.getRedirectTarget()
-                                redirTitle = redir.title(asLink=True,
+                                redirTitle = redir.title(brackets=True,
                                                          textlink=True)
 
                                 if not dst.exists():
@@ -747,7 +747,7 @@ class CaseChecker(object):
         return False
 
     def PutNewPage(self, pageObj, pageTxt, msg):
-        title = pageObj.title(asLink=True, textlink=True)
+        title = pageObj.title(brackets=True, textlink=True)
         coloredMsg = u', '.join([self.ColorCodeWord(m) for m in msg])
         if pageObj.text == pageTxt:
             self.WikiLog(u"* Error: Text replacement failed in %s (%s)"

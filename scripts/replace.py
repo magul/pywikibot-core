@@ -536,17 +536,17 @@ class ReplaceRobot(Bot):
             if self.isTitleExcepted(page.title()):
                 pywikibot.output(
                     u'Skipping %s because the title is on the exceptions list.'
-                    % page.title(asLink=True))
+                    % page.title(brackets=True))
                 continue
             try:
                 # Load the page's text from the wiki
                 original_text = page.get(get_redirect=True)
                 if not page.canBeEdited():
                     pywikibot.output(u"You can't edit page %s"
-                                     % page.title(asLink=True))
+                                     % page.title(brackets=True))
                     continue
             except pywikibot.NoPage:
-                pywikibot.output(u'Page %s not found' % page.title(asLink=True))
+                pywikibot.output(u'Page %s not found' % page.title(brackets=True))
                 continue
             applied = set()
             new_text = original_text
@@ -554,7 +554,7 @@ class ReplaceRobot(Bot):
                 if self.isTextExcepted(new_text):
                     pywikibot.output(u'Skipping %s because it contains text '
                                      u'that is on the exceptions list.'
-                                     % page.title(asLink=True))
+                                     % page.title(brackets=True))
                     break
                 last_text = None
                 while new_text != last_text:
@@ -564,7 +564,7 @@ class ReplaceRobot(Bot):
                         break
                 if new_text == original_text:
                     pywikibot.output(u'No changes were necessary in %s'
-                                     % page.title(asLink=True))
+                                     % page.title(brackets=True))
                     break
                 if hasattr(self, "addedCat"):
                     cats = page.categories(nofollow_redirects=True)

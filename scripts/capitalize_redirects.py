@@ -65,10 +65,10 @@ class CapitalizeBot(Bot):
             page_cap = pywikibot.Page(page.site, page_t.capitalize())
         if page_cap.exists():
             pywikibot.output(u'%s already exists, skipping...\n'
-                             % page_cap.title(asLink=True))
+                             % page_cap.title(brackets=True))
         else:
             pywikibot.output(u'%s doesn\'t exist'
-                             % page_cap.title(asLink=True))
+                             % page_cap.title(brackets=True))
             if not self.getOption('always'):
                 choice = pywikibot.input_choice(
                     u'Do you want to create a redirect?',
@@ -81,7 +81,7 @@ class CapitalizeBot(Bot):
                     'capitalize_redirects-create-redirect',
                     {'to': page_t})
                 page_cap.text = u"#%s %s" % (page.site.redirect(),
-                                             page.title(asLink=True,
+                                             page.title(brackets=True,
                                                         textlink=True))
                 try:
                     page_cap.save(comment)

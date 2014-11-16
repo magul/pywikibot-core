@@ -231,7 +231,7 @@ class ImageTransferBot:
             image = imagelist[i]
             print("-" * 60)
             pywikibot.output(u"%s. Found image: %s"
-                             % (i, image.title(asLink=True)))
+                             % (i, image.title(brackets=True)))
             try:
                 # Show the image description page's contents
                 pywikibot.output(image.get())

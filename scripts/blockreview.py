@@ -110,7 +110,7 @@ Hallo %(admin)s,
                     self.treat(page)
                 else:
                     pywikibot.output(u'Ignoring %s, user namespace required'
-                                     % page.title(asLink=True))
+                                     % page.title(brackets=True))
 
     def treat(self, userPage):
         """Load the given page, does some changes, and saves it."""
@@ -256,10 +256,10 @@ Hallo %(admin)s,
             text = page.get()
         except pywikibot.NoPage:
             pywikibot.output(u"Page %s does not exist; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         else:
             return text
 
@@ -283,7 +283,7 @@ Hallo %(admin)s,
                                   botflag=botflag)
                     except pywikibot.LockedPage:
                         pywikibot.output(u"Page %s is locked; skipping."
-                                         % page.title(asLink=True))
+                                         % page.title(brackets=True))
                     except pywikibot.EditConflict:
                         pywikibot.output(
                             u'Skipping %s because of edit conflict'

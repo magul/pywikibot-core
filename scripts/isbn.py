@@ -1405,10 +1405,10 @@ class IsbnBot(Bot):
                                  % page.title())
         except pywikibot.NoPage:
             pywikibot.output(u"Page %s does not exist"
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
 
     def run(self):
         for page in self.generator:

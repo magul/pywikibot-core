@@ -99,9 +99,9 @@ class BaseRevertBot(object):
         if self.comment:
             comment += ': ' + self.comment
         page = pywikibot.Page(self.site, item['title'])
-        pywikibot.output(u"\n\n>>> \03{lightpurple}%s\03{default} <<<"
-                         % page.title(asLink=True, forceInterwiki=True,
-                                      textlink=True))
+        pywikibot.output(u"\n\n>>> \03{lightpurple}%s\03{default} on "
+                         "\03{lightpurple}%s\03{default} <<<"
+                         % (page.title(brackets=True, textlink=True), page.site))
         if not self.rollback:
             old = page.text
             page.text = rev[3]

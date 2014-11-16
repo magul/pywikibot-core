@@ -919,15 +919,15 @@ class CosmeticChangesBot(Bot):
                              async=self.getOption('async'))
         except pywikibot.NoPage:
             pywikibot.output("Page %s does not exist?!"
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output("Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.LockedPage:
-            pywikibot.output("Page %s is locked?!" % page.title(asLink=True))
+            pywikibot.output("Page %s is locked?!" % page.title(brackets=True))
         except pywikibot.EditConflict:
             pywikibot.output("An edit conflict has occured at %s."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
 
 
 def main(*args):

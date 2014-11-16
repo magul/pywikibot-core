@@ -77,6 +77,14 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
     """
 
+    TITLE_IW_NEVER = False    # never use iw
+    TITLE_IW_REQUIRED = True  # use iw if required (might cause exceptions)
+    TITLE_IW_ALWAYS = 2       # use iw always (might cause exceptions)
+    TITLE_IW_REQ_ATTEMPT = 3  # use iw if required, attempt valid iw, else fake
+    TITLE_IW_ATTEMPT = 4      # use actual iw if possible, fake if not
+    TITLE_IW_REQ_FAKE = 5     # use fake iw if iw is requried
+    TITLE_IW_FAKE = 6         # always use fake iw
+
     def __init__(self, source, title=u"", ns=0):
         """Instantiate a Page object.
 
@@ -177,82 +185,189 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
     @deprecated_args(decode=None, savetitle="asUrl")
     def title(self, underscore=False, withNamespace=True,
               withSection=True, asUrl=False, asLink=False,
-              allowInterwiki=True, forceInterwiki=False, textlink=False,
-              as_filename=False, insite=None):
+              allowInterwiki=None, forceInterwiki=None, textlink=False,
+              as_filename=False, insite=None, brackets=False,
+              link_label=False, interwiki=None):
         """Return the title of this Page, as a Unicode string.
 
-        @param underscore: (not used with asLink) if true, replace all ' '
-            characters with '_'
+        @param underscore: if true, replace all ' ' characters with '_'
         @param withNamespace: if false, omit the namespace prefix. If this
-            option is false and used together with asLink return a labeled
-            link like [[link|label]]
+            option is false and used together with asLink (but not brackets)
+            return a labeled link like [[link|label]]. If brackets is set to
+            True, this will be ignored.
         @param withSection: if false, omit the section
-        @param asUrl: (not used with asLink) if true, quote title as if in an
-            URL
-        @param asLink: if true, return the title in the form of a wikilink
-        @param allowInterwiki: (only used if asLink is true) if true, format
-            the link as an interwiki link if necessary
-        @param forceInterwiki: (only used if asLink is true) if true, always
-            format the link as an interwiki link
-        @param textlink: (only used if asLink is true) if true, place a ':'
-            before Category: and Image: links
-        @param as_filename: (not used with asLink) if true, replace any
-            characters that are unsafe in filenames
-        @param insite: (only used if asLink is true) a site object where the
-            title is to be shown. default is the current family/lang given by
-            -family and -lang option i.e. config.family and config.mylang
-
+        @param asUrl:if true, quote title as if in an URL
+        @param asLink: DEPRECATED: if true, return the title in the form of a
+            wikilink. It sets 'insite', 'brackets' to True and 'interwiki' to
+            TITLE_IW_REQ_FAKE. If 'withNamespace' is True it sets 'link_label'
+            to True.
+        @param allowInterwiki: DEPRECATED: if true, format the link as an
+            interwiki link if necessary.
+        @param forceInterwiki: DEPRECATED: if true, always format the link
+            as an interwiki link. This might result in an invalid prefix.
+        @param textlink: if true, place a ':' before Category:, Image:
+            and File: links
+        @param as_filename: if true, replace any characters that are unsafe in
+            filenames
+        @param insite: (only used if interwiki is not TITLE_IW_NEVER) a site
+            object where the title is to be shown.
+            If set to True it's the current family/lang given by -family and
+            -lang option i.e. config.family and config.mylang. By default
+            (None) it's the page's site.
+        @param brackets: Adds brackets around the title.
+        @param link_label: The link label if asLink or brackets are set to
+            True. May be empty, if True, it's using the page title and with
+            False it doesn't use a link label at all.
+        @type link_label: str or bool
+        @param interwiki: Display link as interwiki link, if required or
+            always or as a fake interwiki (family:code:[[title]]).
+            Possible values:
+                * TITLE_IW_NEVER (False): Never
+                * TITLE_IW_REQUIRED (True): If required
+                * TITLE_IW_ALWAYS: Always
+                * TITLE_IW_REQ_ATTEMPT: If required, use fake if required
+                * TITLE_IW_ATTEMPT: Always; use fake if required
+                * TITLE_IW_REQ_FAKE: Use fake if required
+                * TITLE_IW_FAKE: Always fake
+            Currently the default value is None, which will use
+            forceInterwiki and allowInterwiki instead. If those are changed
+            too (and not 'None') an warning will be issued. The implicit
+            default is 'TITLE_IW_REQUIRED'. Without brackets there is no
+            visible distinction between fake and valid interwiki prefixes.
+        @type interwiki: TITLE_IW_NEVER, TITLE_IW_REQUIRED, TITLE_IW_ALWAYS,
+            TITLE_IW_REQ_ATTEMPT, TITLE_IW_ATTEMPT, TITLE_IW_REQ_FAKE,
+            TITLE_IW_FAKE
         """
-        title = self._link.canonical_title()
-        label = self._link.title
+        assert(not(brackets and asLink))
+        if asLink:
+            pywikibot.warning(u"asLink argument of Page.title is deprecated; "
+                              "use brackets instead.")
+            if insite is None:
+                insite = True
+            brackets = True
+            interwiki = BasePage.TITLE_IW_REQ_FAKE
+            if not withNamespace:
+                # support withNamespace usage; don't issue another warning
+                link_label = True
+        if interwiki is None:
+            if forceInterwiki is None:
+                forceInterwiki = False
+            else:
+                pywikibot.warning(u"forceInterwiki argument of Page.title is "
+                                  "deprecated; use interwiki instead.")
+            if allowInterwiki is None:
+                allowInterwiki = True
+            else:
+                pywikibot.warning(u"allowInterwiki argument of Page.title is "
+                                  "deprecated; use interwiki instead.")
+            if forceInterwiki:
+                if allowInterwiki:
+                    interwiki = BasePage.TITLE_IW_ATTEMPT
+                else:
+                    raise ValueError('A forced interwiki link requires that '
+                                     'it is allowed.')
+            else:
+                interwiki = BasePage.TITLE_IW_REQUIRED if allowInterwiki else BasePage.TITLE_IW_NEVER
+        else:
+            if forceInterwiki is not None:
+                raise ValueError('forceInterwiki may not be set if interwiki is')
+            if allowInterwiki is not None:
+                raise ValueError('allowInterwiki may not be set if interwiki is')
+        del asLink
+        del forceInterwiki
+        del allowInterwiki
+        # end of deprecated parameter conversion
+        if withNamespace:
+            title = self._link.canonical_title()
+        else:
+            title = self._link.title
+        if link_label is True:
+            link_label = self._link.title
         if withSection and self._link.section:
             section = u"#" + self._link.section
         else:
             section = u''
-        if asLink:
-            if insite:
-                target_code = insite.code
-                target_family = insite.family.name
-            else:
-                target_code = config.mylang
-                target_family = config.family
-            if forceInterwiki or \
-               (allowInterwiki and
-                (self.site.family.name != target_family
-                 or self.site.code != target_code)):
-                if self.site.family.name != target_family \
-                   and self.site.family.name != self.site.code:
-                    title = u'%s:%s:%s' % (self.site.family.name,
-                                           self.site.code,
-                                           title)
+        fake_prefix = ''
+        is_interwiki = False
+        if interwiki != BasePage.TITLE_IW_NEVER:
+            if insite is True:
+                insite = pywikibot.Site()
+            elif not insite:
+                insite = self.site
+            if (interwiki in [BasePage.TITLE_IW_ALWAYS, BasePage.TITLE_IW_ATTEMPT] or
+                    (insite != self.site and
+                     interwiki in [BasePage.TITLE_IW_REQUIRED, BasePage.TITLE_IW_REQ_ATTEMPT])):
+                # There is no concatenation further than two families
+                try:
+                    prefixes = insite.interwiki_prefix(self.site)
+                except KeyError as e:
+                    # if there is no direct interwiki prefix, maybe there
+                    # is one into the family? This is cached, so the only
+                    # additional requests are to determine the second
+                    # prefix
+                    for prefix, cached in insite._iw_sites.items():
+                        if cached[1] and cached[0].family == self.site.family:
+                            try:
+                                prefixes = cached[0].interwiki_prefix(self.site)
+                            except KeyError:
+                                # Correct family, but there is no prefix
+                                # within in that family to the code
+                                # Very unlikely (why should both be in the
+                                # same family?)
+                                pass
+                            else:
+                                break
+                    else:
+                        # There was no iw prefix into that family found
+                        if interwiki in [BasePage.TITLE_IW_ATTEMPT, BasePage.TITLE_IW_REQ_ATTEMPT]:
+                            interwiki = BasePage.TITLE_IW_FAKE
+                        else:
+                            raise e
+                    prefix = [prefix]
+                else:
+                    prefix = []
+                if interwiki != BasePage.TITLE_IW_FAKE:
+                    # prefer language code as prefix
+                    if self.site.lang in prefixes:
+                        prefix += [self.site.lang]
+                    else:
+                        prefix += [prefixes[0]]
+                    title = ':'.join(prefix + [title])
+                is_interwiki = True
+            if (interwiki == BasePage.TITLE_IW_FAKE or
+                    self.site != insite and interwiki == BasePage.TITLE_IW_REQ_FAKE):
+                if (self.site.family != insite.family and
+                        self.site.family.name != self.site.code):
+                    fake_prefix = u'%s:%s:' % (self.site.family.name,
+                                               self.site.code)
                 else:
                     # use this form for sites like commons, where the
                     # code is the same as the family name
-                    title = u'%s:%s' % (self.site.code, title)
-            elif textlink and (self.isImage() or self.isCategory()):
-                title = u':%s' % title
-            elif self.namespace() == 0 and not section:
-                withNamespace = True
-            if withNamespace:
-                return u'[[%s%s]]' % (title, section)
-            else:
-                return u'[[%s%s|%s]]' % (title, section, label)
-        if not withNamespace and self.namespace() != 0:
-            title = label + section
-        else:
-            title += section
+                    fake_prefix = u'%s:' % self.site.code
+                is_interwiki = True
+        if (not is_interwiki and textlink and
+                (self.isImage() or self.isCategory())):
+            title = u':%s' % title
+        title += section
+        if link_label is not False and (link_label != title or section):
+            title += '|' + link_label
         if underscore or asUrl:
-            title = title.replace(u' ', u'_')
+            fake_prefix = fake_prefix.replace(' ', '_')
+            title = title.replace(' ', '_')
         if asUrl:
-            encodedTitle = title.encode(self.site.encoding())
-            title = quote_from_bytes(encodedTitle)
+            fake_prefix = quote_from_bytes(
+                fake_prefix.encode(self.site.encoding()))
+            title = quote_from_bytes(title.encode(self.site.encoding()))
         if as_filename:
             # Replace characters that are not possible in file names on some
             # systems.
             # Spaces are possible on most systems, but are bad for URLs.
             for forbidden in ':*?/\\ ':
+                fake_prefix = fake_prefix.replace(forbidden, '_')
                 title = title.replace(forbidden, '_')
-        return title
+        if brackets:
+            title = '[[' + title + ']]'
+        return fake_prefix + title
 
     @remove_last_args(('decode', 'underscore'))
     def section(self):
@@ -266,7 +381,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
     def __unicode__(self):
         """Return a unicode string representation."""
-        return self.title(asLink=True, forceInterwiki=True)
+        return self.title(brackets=True, interwiki=BasePage.TITLE_IW_FAKE)
 
     def __repr__(self):
         """Return a more complete string representation."""
@@ -651,13 +766,13 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                         else:
                             pywikibot.warning(
                                 u"Target %s on %s is not a category"
-                                % (p.title(asLink=True),
-                                   self.title(asLink=True)))
+                                % (p.title(brackets=True),
+                                   self.title(brackets=True)))
                             self._catredirect = False
                     except IndexError:
                         pywikibot.warning(
                             u"No target for category redirect on %s"
-                            % self.title(asLink=True))
+                            % self.title(brackets=True))
                         self._catredirect = False
                     break
             else:
@@ -1034,7 +1149,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
               **kwargs):
         """Helper function for save()."""
         err = None
-        link = self.title(asLink=True)
+        link = self.title(brackets=True)
         if config.cosmetic_changes:
             comment = self._cosmetic_changes_hook(comment) or comment
         try:
@@ -1477,7 +1592,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         """
         if reason is None:
             pywikibot.output(u'Moving %s to [[%s]].'
-                             % (self.title(asLink=True), newtitle))
+                             % (self.title(brackets=True), newtitle))
             reason = pywikibot.input(u'Please enter a reason for the move:')
         # TODO: implement "safe" parameter (Is this necessary ?)
         # TODO: implement "sysop" parameter
@@ -1498,7 +1613,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         """
         if reason is None:
-            pywikibot.output(u'Deleting %s.' % (self.title(asLink=True)))
+            pywikibot.output(u'Deleting %s.' % (self.title(brackets=True)))
             reason = pywikibot.input(u'Please enter a reason for the deletion:')
 
         # If user is a sysop, delete the page
@@ -1506,8 +1621,8 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             answer = u'y'
             if prompt and not hasattr(self.site, '_noDeletePrompt'):
                 answer = pywikibot.input_choice(
-                    u'Do you want to delete %s?' % self.title(
-                        asLink=True, forceInterwiki=True),
+                    u'Do you want to delete %s on %s?' % (self.title(
+                        brackets=True), self.site),
                     [('Yes', 'y'), ('No', 'n'), ('All', 'a')],
                     'n', automatic_quit=False)
                 if answer == 'a':
@@ -1520,9 +1635,9 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                 answer = 'y'
             else:
                 answer = pywikibot.input_choice(
-                    u"Can't delete %s; do you want to mark it "
-                    "for deletion instead?" % self.title(asLink=True,
-                                                         forceInterwiki=True),
+                    u"Can't delete %s on %s ; do you want to mark it "
+                    "for deletion instead?" % (self.title(brackets=True),
+                                               self.site),
                     [('Yes', 'y'), ('No', 'n'), ('All', 'a')],
                     'n', automatic_quit=False)
                 if answer == 'a':
@@ -1668,7 +1783,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         if reason is None:
             pywikibot.output(u'Preparing to protection change of %s.'
-                             % (self.title(asLink=True)))
+                             % (self.title(brackets=True)))
             reason = pywikibot.input(u'Please enter a reason for the action:')
         if unprotect:
             pywikibot.bot.warning(u'"unprotect" argument of protect() is '
@@ -1683,8 +1798,8 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                                   'deprecated')
         if prompt and not hasattr(self.site, '_noProtectPrompt'):
             answer = pywikibot.input_choice(
-                u'Do you want to change the protection level of %s?'
-                % self.title(asLink=True, forceInterwiki=True),
+                u'Do you want to change the protection level of %s on %s?'
+                % (self.title(asLink=True), self.site),
                 [('Yes', 'y'), ('No', 'n'), ('All', 'a')],
                 'n', automatic_quit=False)
             if answer == 'a':
@@ -1732,12 +1847,12 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         if not self.canBeEdited():
             pywikibot.output(u"Can't edit %s, skipping it..."
-                             % self.title(asLink=True))
+                             % self.title(brackets=True))
             return False
 
         if oldCat not in cats:
             pywikibot.error(u'%s is not in category %s!'
-                            % (self.title(asLink=True), oldCat.title()))
+                            % (self.title(brackets=True), oldCat.title()))
             return False
 
         # This prevents the bot from adding newCat if it is already present.
@@ -1770,11 +1885,11 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                 return True
             except pywikibot.PageSaveRelatedError as error:
                 pywikibot.output(u'Page %s not saved: %s'
-                                 % (self.title(asLink=True),
+                                 % (self.title(brackets=True),
                                     error))
             except pywikibot.NoUsername:
                 pywikibot.output(u'Page %s not saved; sysop privileges '
-                                 u'required.' % self.title(asLink=True))
+                                 u'required.' % self.title(brackets=True))
         return False
 
     def isFlowPage(self):
@@ -1811,11 +1926,16 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         """DEPRECATED: use self.title(withSection=False) instead."""
         return self.title(underscore=underscore, withSection=False)
 
-    @deprecated("Page.title(asLink=True)")
+    @deprecated("Page.title(brackets=True)")
     def aslink(self, forceInterwiki=False, textlink=False, noInterwiki=False):
-        """DEPRECATED: use self.title(asLink=True) instead."""
-        return self.title(asLink=True, forceInterwiki=forceInterwiki,
-                          allowInterwiki=not noInterwiki, textlink=textlink)
+        """DEPRECATED: use self.title(brackets=True) instead."""
+        if noInterwiki:
+            iw = BasePage.TITLE_IW_NEVER
+        elif forceInterwiki:
+            iw = BasePage.TITLE_IW_ALWAYS
+        else:
+            iw = BasePage.TITLE_IW_REQUIRED
+        return self.title(brackets=True, interwiki=iw, textlink=textlink)
 
     @deprecated("Page.title(asUrl=True)")
     def urlname(self):

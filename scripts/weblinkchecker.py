@@ -701,14 +701,14 @@ class DeadLinkReportThread(threading.Thread):
                 talkPage = containingPage.toggleTalkPage()
                 pywikibot.output(
                     u'\03{lightaqua}** Reporting dead link on %s...\03{default}'
-                    % talkPage.title(asLink=True))
+                    % talkPage.title(brackets=True))
                 try:
                     content = talkPage.get() + "\n\n"
                     if url in content:
                         pywikibot.output(
                             u'\03{lightaqua}** Dead link seems to have already '
                             u'been reported on %s\03{default}'
-                            % talkPage.title(asLink=True))
+                            % talkPage.title(brackets=True))
                         self.semaphore.release()
                         continue
                 except (pywikibot.NoPage, pywikibot.IsRedirectPage):
@@ -750,7 +750,7 @@ class DeadLinkReportThread(threading.Thread):
                     pywikibot.output(
                         u'\03{lightaqua}** SpamfilterError while trying to '
                         u'change %s: %s\03{default}'
-                        % (talkPage.title(asLink=True), error.url))
+                        % (talkPage.title(brackets=True), error.url))
 
                 self.semaphore.release()
 

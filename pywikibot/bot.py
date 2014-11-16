@@ -993,7 +993,7 @@ class Bot(object):
         """
         if oldtext == newtext:
             pywikibot.output(u'No changes were needed on %s'
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
             return
 
         self.current_page = page

@@ -94,7 +94,7 @@ class NewItemRobot(WikidataBot):
 
         # FIXME: i18n
         summary = (u'Bot: New item with sitelink from %s'
-                   % page.title(asLink=True, insite=self.repo))
+                   % page.title(brackets=True, insite=self.repo))
 
         data = {'sitelinks':
                 {page.site.dbName():

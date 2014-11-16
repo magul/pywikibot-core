@@ -143,7 +143,7 @@ class SelflinkBot(Bot):
             if '<imagemap>' in page.text:
                 pywikibot.output(
                     u'Skipping page %s because it contains an image map.'
-                    % page.title(asLink=True))
+                    % page.title(brackets=True))
                 return
             curpos = 0
             while curpos < len(page.text):
@@ -165,12 +165,12 @@ class SelflinkBot(Bot):
                 page.save(async=True, comment=comment)
         except pywikibot.NoPage:
             pywikibot.output(u"Page %s does not exist."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.LockedPage:
-            pywikibot.output(u"Page %s is locked." % page.title(asLink=True))
+            pywikibot.output(u"Page %s is locked." % page.title(brackets=True))
 
 
 def main(*args):

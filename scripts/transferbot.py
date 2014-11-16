@@ -132,7 +132,7 @@ def main(*args):
     """ % locals())
 
     for page in gen:
-        summary = "Moved page from %s" % page.title(asLink=True)
+        summary = "Moved page from %s" % page.title(brackets=True)
         targetpage = pywikibot.Page(tosite, prefix + page.title())
         edithistpage = pywikibot.Page(tosite, prefix + page.title()
                                       + "/edithistory")
@@ -140,21 +140,21 @@ def main(*args):
         if targetpage.exists() and not overwrite:
             pywikibot.output(
                 u"Skipped %s (target page %s exists)" % (
-                    page.title(asLink=True),
-                    targetpage.title(asLink=True)
+                    page.title(brackets=True),
+                    targetpage.title(brackets=True)
                 )
             )
             continue
 
         pywikibot.output(u"Moving %s to %s..."
-                         % (page.title(asLink=True),
-                            targetpage.title(asLink=True)))
+                         % (page.title(brackets=True),
+                            targetpage.title(brackets=True)))
 
         pywikibot.log("Getting page text.")
         text = page.get(get_redirect=True)
         text += "<noinclude>\n\n<small>This page was moved from %s. It's edit history can be viewed at %s</small></noinclude>" % (
-                page.title(asLink=True, insite=targetpage.site),
-                edithistpage.title(asLink=True, insite=targetpage.site))
+                page.title(brackets=True, insite=targetpage.site),
+                edithistpage.title(brackets=True, insite=targetpage.site))
 
         pywikibot.log("Getting edit history.")
         historytable = page.getVersionHistoryTable()

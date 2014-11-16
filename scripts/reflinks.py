@@ -449,7 +449,7 @@ class ReferencesRobot(Bot):
             self.stopPageRevId = self.stopPage.latestRevision()
         except pywikibot.NoPage:
             pywikibot.output(u'The stop page %s does not exist'
-                             % self.stopPage.title(asLink=True))
+                             % self.stopPage.title(brackets=True))
             raise
 
         # Regex to grasp content-type meta HTML tag in HTML source
@@ -522,14 +522,14 @@ class ReferencesRobot(Bot):
                 new_text = page.get()
                 if not page.canBeEdited():
                     pywikibot.output(u"You can't edit page %s"
-                                      % page.title(asLink=True))
+                                      % page.title(brackets=True))
                     continue
             except pywikibot.NoPage:
-                pywikibot.output(u'Page %s not found' % page.title(asLink=True))
+                pywikibot.output(u'Page %s not found' % page.title(brackets=True))
                 continue
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u'Page %s is a redirect'
-                                 % page.title(asLink=True))
+                                 % page.title(brackets=True))
                 continue
 
             # for each link to change
@@ -614,12 +614,12 @@ class ReferencesRobot(Bot):
                     # in [[fr:Cyanure]]
                     pywikibot.output(
                         u'\03{lightred}Bad link\03{default} : %s in %s'
-                        % (ref.url, page.title(asLink=True)))
+                        % (ref.url, page.title(brackets=True)))
                     continue
                 except HTTPError as e:
                     pywikibot.output(u'HTTP error (%s) for %s on %s'
                                      % (e.code, ref.url,
-                                        page.title(asLink=True)),
+                                        page.title(brackets=True)),
                                      toStdout=True)
                     # 410 Gone, indicates that the resource has been purposely
                     # removed

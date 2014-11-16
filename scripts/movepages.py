@@ -77,7 +77,7 @@ class MovePagesBot(Bot):
             if not msg:
                 msg = i18n.twtranslate(page.site, 'movepages-moving')
             pywikibot.output(u'Moving page %s to [[%s]]'
-                             % (page.title(asLink=True),
+                             % (page.title(brackets=True),
                                 newPageTitle))
             page.move(newPageTitle, reason=msg, movetalkpage=self.getOption('movetalkpage'),
                       deleteAndMove=self.getOption('noredirect'))

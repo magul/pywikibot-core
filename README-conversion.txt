@@ -93,7 +93,7 @@ methods still work, but print a warning message in debug mode):
 - urlname(): replaced by Page.title(asUrl=True)
 - titleWithoutNamespace(): replaced by Page.title(withNamespace=False)
 - sectionFreeTitle(): replaced by Page.title(withSection=False)
-- aslink(): replaced by Page.title(asLink=True)
+- aslink(): replaced by Page.title(brackets=True)
 - encoding(): replaced by Page.site.encoding()
 
 The following methods of the Page object have been obsoleted and no longer

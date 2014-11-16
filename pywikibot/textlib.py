@@ -639,7 +639,8 @@ def interwikiFormat(links, insite=None):
     s = []
     for site in ar:
         try:
-            title = links[site].title(asLink=True, forceInterwiki=True,
+            title = links[site].title(brackets=True,
+                                      interwiki=pywikibot.Page.TITLE_IW_ALWAYS,
                                       insite=insite)
             link = title.replace('[[:', '[[')
             s.append(link)

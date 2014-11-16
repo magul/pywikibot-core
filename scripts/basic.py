@@ -81,7 +81,7 @@ class BasicBot:
         text = 'Test ' + text
 
         if not self.save(text, page, self.summary):
-            pywikibot.output(u'Page %s not saved.' % page.title(asLink=True))
+            pywikibot.output(u'Page %s not saved.' % page.title(brackets=True))
 
     def load(self, page):
         """ Load the text of the given page. """
@@ -90,10 +90,10 @@ class BasicBot:
             text = page.get()
         except pywikibot.NoPage:
             pywikibot.output(u"Page %s does not exist; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Page %s is a redirect; skipping."
-                             % page.title(asLink=True))
+                             % page.title(brackets=True))
         else:
             return text
         return None
@@ -121,7 +121,7 @@ class BasicBot:
                                   minor=minorEdit, botflag=botflag)
                     except pywikibot.LockedPage:
                         pywikibot.output(u"Page %s is locked; skipping."
-                                         % page.title(asLink=True))
+                                         % page.title(brackets=True))
                     except pywikibot.EditConflict:
                         pywikibot.output(
                             u'Skipping %s because of edit conflict'

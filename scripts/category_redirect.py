@@ -223,7 +223,7 @@ class CategoryRedirectBot(pywikibot.Bot):
             except pywikibot.CircularRedirect:
                 target = page
                 self.problems.append(u"# %s is a self-linked redirect"
-                                     % page.title(asLink=True, textlink=True))
+                                     % page.title(brackets=True, textlink=True))
             except RuntimeError:
                 # race condition: someone else removed the redirect while we
                 # were checking for it
@@ -238,17 +238,17 @@ class CategoryRedirectBot(pywikibot.Bot):
                     page.save(comment)
                     self.log_text.append(u"* Added {{tl|%s}} to %s"
                                          % (self.template_list[0],
-                                            page.title(asLink=True,
+                                            page.title(brackets=True,
                                                        textlink=True)))
                 except pywikibot.Error:
                     self.log_text.append(u"* Failed to add {{tl|%s}} to %s"
                                          % (self.template_list[0],
-                                            page.title(asLink=True,
+                                            page.title(brackets=True,
                                                        textlink=True)))
             else:
                 self.problems.append(u"# %s is a hard redirect to %s"
-                                     % (page.title(asLink=True, textlink=True),
-                                        target.title(asLink=True, textlink=True)))
+                                     % (page.title(brackets=True, textlink=True),
+                                        target.title(brackets=True, textlink=True)))
 
     def run(self):
         """Run the bot."""
@@ -314,7 +314,7 @@ class CategoryRedirectBot(pywikibot.Bot):
             cat_title = cat.title(withNamespace=False)
             if "category redirect" in cat_title:
                 self.log_text.append(u"* Ignoring %s"
-                                     % cat.title(asLink=True, textlink=True))
+                                     % cat.title(brackets=True, textlink=True))
                 continue
             if hasattr(cat, "_catinfo"):
                 # skip empty categories that don't return a "categoryinfo" key
@@ -327,9 +327,9 @@ class CategoryRedirectBot(pywikibot.Bot):
                 record[cat_title] = {today: None}
                 try:
                     newredirs.append("*# %s -> %s"
-                                     % (cat.title(asLink=True, textlink=True),
+                                     % (cat.title(brackets=True, textlink=True),
                                         cat.getCategoryRedirectTarget().title(
-                                            asLink=True, textlink=True)))
+                                            brackets=True, textlink=True)))
                 except pywikibot.Error:
                     pass
                 # do a null edit on cat
@@ -352,24 +352,24 @@ class CategoryRedirectBot(pywikibot.Bot):
             try:
                 if not cat.isCategoryRedirect():
                     self.log_text.append(u"* False positive: %s"
-                                         % cat.title(asLink=True,
+                                         % cat.title(brackets=True,
                                                      textlink=True))
                     continue
             except pywikibot.Error:
                 self.log_text.append(u"* Could not load %s; ignoring"
-                                     % cat.title(asLink=True, textlink=True))
+                                     % cat.title(brackets=True, textlink=True))
                 continue
             cat_title = cat.title(withNamespace=False)
             if not self.readyToEdit(cat):
                 counts[cat_title] = None
                 self.log_text.append(u"* Skipping %s; in cooldown period."
-                                     % cat.title(asLink=True, textlink=True))
+                                     % cat.title(brackets=True, textlink=True))
                 continue
             dest = cat.getCategoryRedirectTarget()
             if not dest.exists():
                 self.problems.append("# %s redirects to %s"
-                                     % (cat.title(asLink=True, textlink=True),
-                                        dest.title(asLink=True, textlink=True)))
+                                     % (cat.title(brackets=True, textlink=True),
+                                        dest.title(brackets=True, textlink=True)))
                 # do a null edit on cat to update any special redirect
                 # categories this wiki might maintain
                 try:
@@ -381,7 +381,7 @@ class CategoryRedirectBot(pywikibot.Bot):
                 double = dest.getCategoryRedirectTarget()
                 if double == dest or double == cat:
                     self.log_text.append(u"* Redirect loop from %s"
-                                         % dest.title(asLink=True,
+                                         % dest.title(brackets=True,
                                                       textlink=True))
                     # do a null edit on cat
                     try:
@@ -391,9 +391,9 @@ class CategoryRedirectBot(pywikibot.Bot):
                 else:
                     self.log_text.append(
                         u"* Fixed double-redirect: %s -> %s -> %s"
-                        % (cat.title(asLink=True, textlink=True),
-                           dest.title(asLink=True, textlink=True),
-                           double.title(asLink=True, textlink=True)))
+                        % (cat.title(brackets=True, textlink=True),
+                           dest.title(brackets=True, textlink=True),
+                           double.title(brackets=True, textlink=True)))
                     oldtext = cat.text
                     # remove the old redirect from the old text,
                     # leaving behind any non-redirect text

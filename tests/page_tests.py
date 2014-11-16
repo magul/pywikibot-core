@@ -173,12 +173,8 @@ class TestPageObjectEnglish(TestCase):
         mainpage = self.get_mainpage()
         maintalk = mainpage.toggleTalkPage()
 
-        family_name = (site.family.name + ':'
-                       if pywikibot.config2.family != site.family.name
-                       else u'')
-        self.assertEqual(str(mainpage), u"[[%s%s:%s]]"
-                                        % (family_name, site.code,
-                                           mainpage.title()))
+        self.assertEqual(str(mainpage), u"%s:[[%s]]" % (site.code,
+                                                        mainpage.title()))
         self.assertLess(mainpage, maintalk)
 
     def testHelpTitle(self):
@@ -200,21 +196,21 @@ class TestPageObjectEnglish(TestCase):
                          u"Test page")
         self.assertEqual(p1.title(asUrl=True),
                          ns_name + "%3ATest_page%23Testing")
-        self.assertEqual(p1.title(asLink=True, insite=site),
+        self.assertEqual(p1.title(brackets=True, insite=site),
                          u"[[" + ns_name + u":Test page#Testing]]")
-        self.assertEqual(p1.title(asLink=True, forceInterwiki=True, insite=site),
+        self.assertEqual(p1.title(brackets=True, forceInterwiki=True, insite=site),
                          u"[[en:" + ns_name + u":Test page#Testing]]")
-        self.assertEqual(p1.title(asLink=True, textlink=True, insite=site),
-                         p1.title(asLink=True, textlink=False, insite=site))
-        self.assertEqual(p1.title(asLink=True, withNamespace=False, insite=site),
+        self.assertEqual(p1.title(brackets=True, textlink=True, insite=site),
+                         p1.title(brackets=True, textlink=False, insite=site))
+        self.assertEqual(p1.title(brackets=True, link_label=True, insite=site),
                          u"[[" + ns_name + u":Test page#Testing|Test page]]")
-        self.assertEqual(p1.title(asLink=True, forceInterwiki=True,
-                                  withNamespace=False, insite=site),
+        self.assertEqual(p1.title(brackets=True, forceInterwiki=True,
+                                  link_label=True, insite=site),
                          u"[[en:" + ns_name + ":Test page#Testing|Test page]]")
-        self.assertEqual(p1.title(asLink=True, textlink=True,
-                                  withNamespace=False, insite=site),
-                         p1.title(asLink=True, textlink=False,
-                                  withNamespace=False, insite=site))
+        self.assertEqual(p1.title(brackets=True, textlink=True,
+                                  link_label=True, insite=site),
+                         p1.title(brackets=True, textlink=False,
+                                  link_label=True, insite=site))
 
     def testFileTitle(self):
         """Test title() method options in File namespace."""
@@ -236,21 +232,21 @@ class TestPageObjectEnglish(TestCase):
                          u"Jean-Léon Gérôme 003.jpg")
         self.assertEqual(p2.title(asUrl=True),
                          u"File%3AJean-L%C3%A9on_G%C3%A9r%C3%B4me_003.jpg")
-        self.assertEqual(p2.title(asLink=True, insite=site),
+        self.assertEqual(p2.title(brackets=True, insite=site),
                          u"[[File:Jean-Léon Gérôme 003.jpg]]")
-        self.assertEqual(p2.title(asLink=True, forceInterwiki=True, insite=site),
+        self.assertEqual(p2.title(brackets=True, forceInterwiki=True, insite=site),
                          u"[[en:File:Jean-Léon Gérôme 003.jpg]]")
-        self.assertEqual(p2.title(asLink=True, textlink=True, insite=site),
+        self.assertEqual(p2.title(brackets=True, textlink=True, insite=site),
                          u"[[:File:Jean-Léon Gérôme 003.jpg]]")
         self.assertEqual(p2.title(as_filename=True),
                          u"File_Jean-Léon_Gérôme_003.jpg")
-        self.assertEqual(p2.title(asLink=True, withNamespace=False, insite=site),
+        self.assertEqual(p2.title(brackets=True, link_label=True, insite=site),
                          u"[[File:Jean-Léon Gérôme 003.jpg|Jean-Léon Gérôme 003.jpg]]")
-        self.assertEqual(p2.title(asLink=True, forceInterwiki=True,
-                                  withNamespace=False, insite=site),
+        self.assertEqual(p2.title(brackets=True, forceInterwiki=True,
+                                  link_label=True, insite=site),
                          u"[[en:File:Jean-Léon Gérôme 003.jpg|Jean-Léon Gérôme 003.jpg]]")
-        self.assertEqual(p2.title(asLink=True, textlink=True,
-                                  withNamespace=False, insite=site),
+        self.assertEqual(p2.title(brackets=True, textlink=True,
+                                  link_label=True, insite=site),
                          u"[[:File:Jean-Léon Gérôme 003.jpg|Jean-Léon Gérôme 003.jpg]]")
 
     def test_creation(self):
@@ -327,7 +323,7 @@ class TestPageObject(DefaultSiteTestCase):
                          p2.title(withSection=False))
         self.assertEqual(p2.title(asUrl=True),
                          p2.title(underscore=True))
-        self.assertEqual(p2.title(asLink=True, insite=site),
+        self.assertEqual(p2.title(brackets=True, insite=site),
                          u"[[Test page]]")
         self.assertEqual(p2.title(as_filename=True),
                          p2.title(underscore=True))
@@ -337,21 +333,20 @@ class TestPageObject(DefaultSiteTestCase):
                          p2.title(underscore=True, withSection=False))
         self.assertEqual(p2.title(underscore=True, asUrl=True),
                          p2.title(underscore=True))
-        self.assertEqual(p2.title(underscore=True, asLink=True, insite=site),
-                         p2.title(asLink=True, insite=site))
         self.assertEqual(p2.title(underscore=True, as_filename=True),
                          p2.title(underscore=True))
         self.assertEqual(p2.title(),
                          p2.title(withNamespace=False, withSection=False))
         self.assertEqual(p2.title(asUrl=True),
                          p2.title(withNamespace=False, asUrl=True))
-        self.assertEqual(p2.title(asLink=True, insite=site),
-                         p2.title(withNamespace=False, asLink=True, insite=site))
+        self.assertEqual(p2.title(brackets=True, insite=site),
+                         p2.title(withNamespace=False, brackets=True, insite=site))
         self.assertEqual(p2.title(as_filename=True),
                          p2.title(withNamespace=False, as_filename=True))
-        self.assertEqual(p2.title(withNamespace=False, asLink=True,
-                                  forceInterwiki=True, insite=site),
-                         u"[[" + site.code + u":Test page|Test page]]")
+        self.assertEqual(p2.title(withNamespace=False, brackets=True,
+                                  interwiki=pywikibot.Page.TITLE_IW_FAKE,
+                                  insite=site),
+                         site.code + u":[[Test page]]")
 
     def testSection(self):
         """Test section() method."""

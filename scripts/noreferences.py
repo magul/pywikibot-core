@@ -638,25 +638,25 @@ class NoReferencesBot(Bot):
                 text = page.text
             except pywikibot.NoPage:
                 pywikibot.output(u"Page %s does not exist?!"
-                                 % page.title(asLink=True))
+                                 % page.title(brackets=True))
                 continue
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u"Page %s is a redirect; skipping."
-                                 % page.title(asLink=True))
+                                 % page.title(brackets=True))
                 continue
             except pywikibot.LockedPage:
                 pywikibot.output(u"Page %s is locked?!"
-                                 % page.title(asLink=True))
+                                 % page.title(brackets=True))
                 continue
             if page.isDisambig():
                 pywikibot.output(u"Page %s is a disambig; skipping."
-                                 % page.title(asLink=True))
+                                 % page.title(brackets=True))
                 continue
             if self.site.sitename() == 'wikipedia:en' and \
                page.isIpEdit():
                 pywikibot.output(
                     u"Page %s is edited by IP. Possible vandalized"
-                    % page.title(asLink=True))
+                    % page.title(brackets=True))
                 continue
             if self.lacksReferences(text):
                 newText = self.addReferences(text)

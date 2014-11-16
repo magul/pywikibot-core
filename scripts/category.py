@@ -322,8 +322,8 @@ class CategoryAddBot(Bot):
                 self.current_page = redirTarget
             else:
                 pywikibot.warning(u"Page %s is a redirect to %s; skipping."
-                                  % (page.title(asLink=True),
-                                     redirTarget.title(asLink=True)))
+                                  % (page.title(brackets=True),
+                                     redirTarget.title(brackets=True)))
                 # loading it will throw an error if we don't jump out before
                 return
         else:
@@ -333,11 +333,11 @@ class CategoryAddBot(Bot):
             text = self.current_page.text
         elif self.create:
             pywikibot.output(u"Page %s doesn't exist yet; creating."
-                             % (self.current_page.title(asLink=True)))
+                             % (self.current_page.title(brackets=True)))
             text = ''
         else:
             pywikibot.output(u"Page %s does not exist; skipping."
-                             % self.current_page.title(asLink=True))
+                             % self.current_page.title(brackets=True))
             return
         # store old text, so we don't have reload it every time
         old_text = text
@@ -355,7 +355,7 @@ class CategoryAddBot(Bot):
         else:
             if self.sort:
                 catpl = self.sorted_by_last_name(catpl, self.current_page)
-            pywikibot.output(u'Adding %s' % catpl.title(asLink=True))
+            pywikibot.output(u'Adding %s' % catpl.title(brackets=True))
             cats.append(catpl)
             text = textlib.replaceCategoryLinks(text, cats,
                                                 site=self.current_page.site)
@@ -369,7 +369,7 @@ class CategoryAddBot(Bot):
                              comment=comment, minor=True, botflag=True)
             except pywikibot.PageSaveRelatedError as error:
                 pywikibot.output(u'Page %s not saved: %s'
-                                 % (self.current_page.title(asLink=True),
+                                 % (self.current_page.title(brackets=True),
                                     error))
 
 
@@ -978,7 +978,7 @@ class CategoryTreeRobot:
         result = u'#' * currentDepth
         if currentDepth > 0:
             result += u' '
-        result += cat.title(asLink=True, textlink=True, withNamespace=False)
+        result += cat.title(brackets=True, textlink=True, link_label=True)
         result += ' (%d)' % cat.categoryinfo['pages']
         if currentDepth < self.maxDepth // 2:
             # noisy dots
@@ -988,9 +988,9 @@ class CategoryTreeRobot:
         for cat in self.catDB.getSupercats(cat):
             # create a list of wiki links to the supercategories
             if cat != parent:
-                supercat_names.append(cat.title(asLink=True,
+                supercat_names.append(cat.title(brackets=True,
                                                 textlink=True,
-                                                withNamespace=False))
+                                                link_label=True))
         if supercat_names:
             # print this list, separated with commas, using translations
             # given in also_in_cats

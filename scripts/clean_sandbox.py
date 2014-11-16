@@ -197,11 +197,11 @@ class SandboxBot(Bot):
             for title in titles:
                 sandboxPage = pywikibot.Page(self.site, title)
                 pywikibot.output(u'Preparing to process sandbox page %s'
-                                 % sandboxPage.title(asLink=True))
+                                 % sandboxPage.title(brackets=True))
                 if sandboxPage.isRedirectPage():
                     pywikibot.warning(
                         u'%s is a redirect page, cleaning it anyway'
-                        % sandboxPage.title(asLink=True))
+                        % sandboxPage.title(brackets=True))
                 try:
                     text = sandboxPage.text
                     if not self.getOption('text'):

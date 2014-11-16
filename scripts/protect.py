@@ -92,8 +92,8 @@ class ProtectionRobot(Bot):
             self.current_page = page
             if not self.getOption('always'):
                 choice = pywikibot.input_choice(
-                    u'Do you want to change the protection level of %s?'
-                    % page.title(asLink=True, forceInterwiki=True),
+                    u'Do you want to change the protection level of %s on %s?'
+                    % (page.title(brackets=True), page.site),
                     [('yes', 'y'), ('No', 'n'), ('all', 'a')],
                     'n', automatic_quit=False)
                 if choice == 'n':

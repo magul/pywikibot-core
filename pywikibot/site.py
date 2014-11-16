@@ -4218,7 +4218,7 @@ class APISite(BaseSite):
         if "talkmove-error-code" in result["move"]:
             pywikibot.warning(
                 u"movepage: Talk page %s not moved"
-                % (page.toggleTalkPage().title(asLink=True)))
+                % (page.toggleTalkPage().title(brackets=True)))
         return pywikibot.Page(page, newtitle)
 
     # catalog of rollback errors for use in error messages
@@ -4243,7 +4243,7 @@ class APISite(BaseSite):
         if len(page._revisions) < 2:
             raise Error(
                 u"Rollback of %s aborted; load revision history first."
-                % page.title(asLink=True))
+                % page.title(brackets=True))
         last_rev = page._revisions[page.latestRevision()]
         last_user = last_rev.user
         for rev in sorted(list(page._revisions.keys()), reverse=True):
@@ -4253,7 +4253,7 @@ class APISite(BaseSite):
         else:
             raise Error(
                 u"Rollback of %s aborted; only one user in revision history."
-                % page.title(asLink=True))
+                % page.title(brackets=True))
         token = self.tokens["rollback"]
         self.lock_page(page)
         req = api.Request(site=self, action="rollback",

@@ -70,7 +70,7 @@ replacements = (
      r'.title(asUrl=True, withNamespace=\1)'),
     ('\.titleWithoutNamespace\s*\(\s*\)', '.title(withNamespace=False)'),
     ('\.sectionFreeTitle\s*\(\s*\)', '.title(withSection=False)'),
-    ('\.aslink\s*\(\s*\)', '.title(asLink=True)'),
+    ('\.aslink\s*\(\s*\)', '.title(brackets=True)'),
     # other deprecated methods
     ('(?<!site)\.encoding\s*\(\s*\)', '.site.encoding()'),
     ('\.newimages\s*\(', '.newfiles('),

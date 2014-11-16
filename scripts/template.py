@@ -141,7 +141,7 @@ def UserEditFilterGenerator(generator, username, timestamp=None, skip=False):
         if found and not skip or not found and skip:
             yield page
         else:
-            pywikibot.output(u'Skipping %s' % page.title(asLink=True))
+            pywikibot.output(u'Skipping %s' % page.title(brackets=True))
 
 
 class XmlDumpTemplatePageGenerator:

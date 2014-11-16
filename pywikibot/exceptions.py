@@ -103,7 +103,7 @@ class PageRelatedError(Error):
             raise Error("PageRelatedError is abstract. Can't instantiate it!")
 
         self.page = page
-        self.title = page.title(asLink=True)
+        self.title = page.title(brackets=True)
         self.site = page.site
 
         if '%(' in self.message and ')s' in self.message:

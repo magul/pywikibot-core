@@ -47,7 +47,7 @@ class TouchBot(pywikibot.Bot):
         for page in self.generator:
             if self.getOption('purge'):
                 pywikibot.output(u'Page %s%s purged'
-                                 % (page.title(asLink=True),
+                                 % (page.title(brackets=True),
                                     "" if page.purge() else " not"))
                 continue
             try:
@@ -58,16 +58,16 @@ class TouchBot(pywikibot.Bot):
                 page.save("Pywikibot touch script")
             except pywikibot.NoPage:
                 pywikibot.error(u"Page %s does not exist."
-                                % page.title(asLink=True))
+                                % page.title(brackets=True))
             except pywikibot.IsRedirectPage:
                 pywikibot.warning(u"Page %s is a redirect; skipping."
-                                  % page.title(asLink=True))
+                                  % page.title(brackets=True))
             except pywikibot.LockedPage:
                 pywikibot.error(u"Page %s is locked."
-                                % page.title(asLink=True))
+                                % page.title(brackets=True))
             except pywikibot.PageNotSaved:
                 pywikibot.error(u"Page %s not saved."
-                                % page.title(asLink=True))
+                                % page.title(brackets=True))
 
 
 def main(*args):
