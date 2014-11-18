@@ -193,7 +193,7 @@ class DryMimeTests(TestCase):
             file_content = f.read()
         submsg = Request._generate_MIME_part(
             'file', file_content, ('image', 'png'),
-            {'filename': local_filename})
+            {'filename': local_filename}, 'utf8')
         self.assertEqual(file_content, submsg.get_payload(decode=True))
 
     def test_mime_file_container(self):
@@ -203,7 +203,7 @@ class DryMimeTests(TestCase):
         body = Request._build_mime_request({}, {
             'file': (file_content, ('image', 'png'),
                      {'filename': local_filename})
-        })[1]
+        }, 'utf8')[1]
         self.assertNotEqual(body.find(file_content), -1)
 
 

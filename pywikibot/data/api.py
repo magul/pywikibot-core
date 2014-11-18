@@ -39,7 +39,7 @@ if sys.version_info[0] > 2:
     # unless the fix is not backported to py3.x versions that should
     # instead support PWB.
     basestring = (str, )
-    from urllib.parse import urlencode, unquote
+    from urllib.parse import urlencode, quote_from_bytes, unquote
     unicode = str
 
     from io import BytesIO
@@ -75,7 +75,7 @@ if sys.version_info[0] > 2:
 
     MIMEMultipart = CTEBinaryMIMEMultipart
 else:
-    from urllib import urlencode, unquote
+    from urllib import urlencode, quote as quote_from_bytes, unquote
     from email.mime.multipart import MIMEMultipart
 
 _logger = "data.api"
@@ -803,7 +803,8 @@ class Request(MutableMapping):
         return message == ERR_MSG
 
     @staticmethod
-    def _generate_MIME_part(key, content, keytype=None, headers=None):
+    def _generate_MIME_part(key, content, keytype=None, headers=None,
+                            encoding=None):
         if not keytype:
             try:
                 content.encode("ascii")
@@ -813,7 +814,15 @@ class Request(MutableMapping):
         submsg = MIMENonMultipart(*keytype)
         content_headers = {'name': key}
         if headers:
-            content_headers.update(headers)
+            for header_key, header_value in headers.items():
+                try:
+                    header_value = header_value.encode('ascii')
+                except UnicodeError:
+                    if not encoding:
+                        raise
+                    header_value = header_value.encode(encoding)
+                header_value = quote_from_bytes(header_value)
+                content_headers[header_key] = header_value
         submsg.add_header("Content-disposition", "form-data",
                           **content_headers)
 
@@ -824,7 +833,7 @@ class Request(MutableMapping):
         return submsg
 
     @staticmethod
-    def _build_mime_request(params, mime_params):
+    def _build_mime_request(params, mime_params, encoding):
         """Construct a MIME multipart form post.
 
         @param params: HTTP request params
@@ -837,10 +846,10 @@ class Request(MutableMapping):
         # construct a MIME message containing all API key/values
         container = MIMEMultipart(_subtype='form-data')
         for key, value in params.items():
-            submsg = Request._generate_MIME_part(key, value)
+            submsg = Request._generate_MIME_part(key, value, encoding=encoding)
             container.attach(submsg)
-        for key, value in mime_params.items():
-            submsg = Request._generate_MIME_part(key, *value)
+        for key, val in mime_params.items():
+            submsg = Request._generate_MIME_part(key, *val, encoding=encoding)
             container.attach(submsg)
 
         # strip the headers to get the HTTP message body
@@ -919,7 +928,8 @@ class Request(MutableMapping):
             try:
                 if self.mime:
                     (headers, body) = Request._build_mime_request(
-                        self._encoded_items(), self.mime_params)
+                        self._encoded_items(), self.mime_params,
+                        self.site.encoding())
                     use_get = False  # MIME requests require HTTP POST
                 else:
                     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
