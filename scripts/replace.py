@@ -391,7 +391,7 @@ class ReplaceRobot(Bot):
                         new_text = newest_text
                         newest_text = self.doReplacements(new_text)
                 if hasattr(self, "addedCat"):
-                    cats = page.categories(nofollow_redirects=True)
+                    cats = page.categories(allow_redirect=True)
                     if self.addedCat not in cats:
                         cats.append(self.addedCat)
                         new_text = textlib.replaceCategoryLinks(new_text,

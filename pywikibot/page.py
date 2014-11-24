@@ -49,7 +49,8 @@ from pywikibot.exceptions import (
     SiteDefinitionError
 )
 from pywikibot.tools import (
-    ComparableMixin, deprecated, deprecate_arg, deprecated_args
+    ComparableMixin, deprecated, deprecate_arg, deprecated_args,
+    add_decorated_full_name,
 )
 from pywikibot import textlib
 
@@ -58,6 +59,34 @@ logger = logging.getLogger("pywiki.wiki.page")
 
 # Pre-compile re expressions
 reNamespace = re.compile("^(.+?) *: *(.*)$")
+
+
+def disallow_redirect(fn):
+    """ Decorator to raise IsRedirectPage exception by default.
+
+    compat often include an argument get_redirect, always default False.
+    It is confusingly named, as 'get' here means get the raw wikitext which
+    includes the #REDIRECT, and not that the redirect should be followed.
+
+    This decorator looks for argument 'allow_redirect' and 'get_redirect',
+    which if set will skip raising IsRedirectPage when used with a redirect.
+
+    @return: decorated method
+    """
+    def callee(self, *args, **kwargs):
+        allow_redirect = kwargs.pop('allow_redirect',
+                                    kwargs.pop('get_redirect', False))
+        if not allow_redirect and self.isRedirectPage():
+            raise pywikibot.IsRedirectPage(self)
+        return fn(self, *args, **kwargs)
+
+    callee.__name__ = fn.__name__
+    callee.__doc__ = fn.__doc__
+    callee.__module__ = callee.__module__
+    if not hasattr(fn, '__full_name__'):
+        add_decorated_full_name(fn)
+    callee.__full_name__ = fn.__full_name__
+    return callee
 
 
 # Note: Link objects (defined later on) represent a wiki-page's title, while
@@ -303,6 +332,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         return self.autoFormat()[0] is not None
 
     @deprecated_args(throttle=None, change_edit_time=None)
+    # FIXME: rename get_redirect to allow_redirect after using warnings module.
     def get(self, force=False, get_redirect=False, sysop=False):
         """Return the wiki-text of the page.
 
@@ -367,13 +397,17 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             self._getexception = pywikibot.IsRedirectPage(self)
             raise self._getexception
 
-    @deprecated_args(throttle=None, change_edit_time=None)
-    def getOldVersion(self, oldid, force=False, get_redirect=False,
-                      sysop=False):
-        """Return text of an old revision of this page; same options as get().
+    @deprecated_args(throttle=None, change_edit_time=None, get_redirect=None)
+    def getOldVersion(self, oldid, force=False, sysop=False):
+        """Return text of an old revision of this page.
 
         @param oldid: The revid of the revision desired.
+        @param force: reload all page attributes, including errors
+        @param sysop: if the user has a sysop account, use it to
+                      retrieve this page
 
+        @return: old revision page text
+        @rtype: unicode
         """
         if force or oldid not in self._revisions \
                 or self._revisions[oldid].text is None:
@@ -381,7 +415,6 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                                     getText=True,
                                     revids=oldid,
                                     sysop=sysop)
-        # TODO: what about redirects, errors?
         return self._revisions[oldid].text
 
     def permalink(self, oldid=None):
@@ -1227,6 +1260,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         """DEPRECATED. Use templates()."""
         return self.templates()
 
+    @disallow_redirect
     def templates(self, content=False):
         """Return a list of Page objects for templates used on this Page.
 
@@ -1277,7 +1311,8 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         return self.site.pageimages(self, step=step, total=total,
                                     content=content)
 
-    @deprecate_arg("get_redirect", None)
+    @disallow_redirect
+    @deprecated_args(thistxt=None)
     def templatesWithParams(self):
         """Iterate templates used on this Page.
 
@@ -1328,7 +1363,10 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             result.append((pywikibot.Page(link, self.site), positional))
         return result
 
-    @deprecated_args(nofollow_redirects=None, get_redirect=None)
+    # nofollow_redirects was removed (not deprecated) from compat in mid-2008
+    # (7cb7143).  However it was still used in core until late 2014.
+    @deprecated_args(nofollow_redirects='allow_redirect')
+    @disallow_redirect
     def categories(self, withSortKey=False, step=None, total=None,
                    content=False):
         """Iterate categories that the article is in.

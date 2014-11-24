@@ -13,7 +13,12 @@ from pywikibot import config
 from pywikibot import InvalidTitle
 import pywikibot.page
 
-from tests.aspects import unittest, TestCase, DefaultSiteTestCase
+from tests.aspects import (
+    unittest,
+    TestCase,
+    DefaultSiteTestCase,
+    DeprecationTestCase,
+)
 
 if sys.version_info[0] > 2:
     basestring = (str, )
@@ -599,6 +604,33 @@ class TestPageUserAction(DefaultSiteTestCase):
     def test_purge(self):
         mainpage = self.get_mainpage()
         self.assertIsInstance(mainpage.purge(), bool)
+
+
+class TestDeprecation(DeprecationTestCase):
+
+    """Test page method deprecation."""
+
+    family = 'wikipedia'
+    code = 'en'
+
+    cached = True
+
+    # FIXME: this should be a DefaultSiteTestCase, however mainpage.backlinks
+    # returns incorrect results, on enwp at least.
+
+    def test_categories_nofollow_redirects(self):
+        # 'Main page' is a redirect to 'Main Page', and it is in category
+        # 'Category:Main Page' among others.
+        redirect = pywikibot.Page(self.get_site(), 'Main page')
+
+        self.assertRaises(pywikibot.IsRedirectPage, redirect.categories,
+                                                    allow_redirect=False)
+
+        self.assertNoDeprecation()
+
+        cats = list(redirect.categories(nofollow_redirects=True))
+        self.assertTrue(cats)
+        self.assertDeprecation('nofollow_redirects argument of pywikibot.page.BasePage.categories is deprecated; use allow_redirect instead.')
 
 
 if __name__ == '__main__':

@@ -851,10 +851,10 @@ u"        [m]ore context, show [d]isambiguation page, [l]ist, [a]dd new):")
         if disambPage.isRedirectPage() and not self.primary:
             if (disambPage.site.lang in self.primary_redir_template
                 and self.primary_redir_template[disambPage.site.lang]
-                    in disambPage.templates(get_redirect=True)):
+                    in disambPage.templates(allow_redirect=True)):
                 baseTerm = disambPage.title()
                 for template in disambPage.templatesWithParams(
-                        get_redirect=True):
+                        allow_redirect=True):
                     if template[0] == self.primary_redir_template[
                         disambPage.site.lang] \
                             and len(template[1]) > 0:
