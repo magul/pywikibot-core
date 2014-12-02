@@ -3364,7 +3364,7 @@ class ItemPage(WikibasePage):
         data = {'sitelinks': data}
         self.editEntity(data, **kwargs)
 
-    def addClaim(self, claim, bot=True, **kwargs):
+    def addClaim(self, claim, bot=True, save=True, **kwargs):
         """
         Add a claim to the item.
 
@@ -3372,8 +3372,18 @@ class ItemPage(WikibasePage):
         @type claim: Claim
         @param bot: Whether to flag as bot (if possible)
         @type bot: bool
+        @param save: If attached to an item, update the item on the server
+        @param save: bool
         """
-        self.repo.addClaim(self, claim, bot=bot, **kwargs)
+        if save:
+            self.repo.addClaim(self, claim, bot=bot, **kwargs)
+        else:
+            # Add the claim, which repo.addClaim also does
+            if claim.getID() in self.claims:
+                self.claims[claim.getID()].append(claim)
+            else:
+                self.claims[claim.getID()] = [claim]
+
         claim.on_item = self
 
     def removeClaims(self, claims, **kwargs):
@@ -3793,18 +3803,23 @@ class Claim(Property):
         """
         self.addSources([claim], **kwargs)
 
-    def addSources(self, claims, **kwargs):
+    def addSources(self, claims, save=True, **kwargs):
         """
         Add the claims as one source.
 
-        @param claims: the claims to add
+        @param claims: the source claims to add
         @type claims: list of pywikibot.Claim
+        @param save: If attached to an item, update the item on the server
+        @param save: bool
         """
-        data = self.repo.editSource(self, claims, new=True, **kwargs)
+        if self.on_item and save:
+            data = self.repo.editSource(self, claims, new=True, **kwargs)
+            self.on_item.lastrevid = data['pageinfo']['lastrevid']
+            for claim in claims:
+                claim.hash = data['reference']['hash']
+
         source = collections.defaultdict(list)
         for claim in claims:
-            claim.hash = data['reference']['hash']
-            self.on_item.lastrevid = data['pageinfo']['lastrevid']
             source[claim.getID()].append(claim)
         self.sources.append(source)
 
@@ -3830,15 +3845,18 @@ class Claim(Property):
             source_dict[source.getID()].append(source)
             self.sources.remove(source_dict)
 
-    def addQualifier(self, qualifier, **kwargs):
+    def addQualifier(self, qualifier, save=True, **kwargs):
         """Add the given qualifier.
 
         @param qualifier: the qualifier to add
         @type qualifier: Claim
+        @param save: If attached to an item, update the item on the server
+        @param save: bool
         """
-        data = self.repo.editQualifier(self, qualifier, **kwargs)
         qualifier.isQualifier = True
-        self.on_item.lastrevid = data['pageinfo']['lastrevid']
+        if self.on_item and save:
+            data = self.repo.editQualifier(self, qualifier, **kwargs)
+            self.on_item.lastrevid = data['pageinfo']['lastrevid']
         if qualifier.getID() in self.qualifiers:
             self.qualifiers[qualifier.getID()].append(qualifier)
         else:
