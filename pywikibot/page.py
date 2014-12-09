@@ -19,7 +19,6 @@ from __future__ import unicode_literals
 __version__ = '$Id$'
 #
 
-import hashlib
 import logging
 import re
 import sys
@@ -2107,16 +2106,6 @@ class FilePage(Page):
         else:
             return self.fileUrl().startswith(
                 'https://upload.wikimedia.org/wikipedia/commons/')
-
-    @deprecated("FilePage.latest_file_info.sha1")
-    def getFileMd5Sum(self):
-        """Return image file's MD5 checksum."""
-        # TODO: check whether this needs a User-Agent header added
-        req = http.fetch(self.fileUrl())
-        h = hashlib.md5()
-        h.update(req.raw)
-        md5Checksum = h.hexdigest()
-        return md5Checksum
 
     @deprecated("FilePage.latest_file_info.sha1")
     def getFileSHA1Sum(self):

@@ -112,8 +112,8 @@ The following methods have had their outputs changed:
 === FilePage objects ===
 
 The old ImagePage class has been renamed into FilePage.
-For FilePage objects, the getFileMd5Sum() method is deprecated; it is
-recommended to replace it with getFileSHA1Sum(), because MediaWiki now
+For FilePage objects, the getFileMd5Sum() method has been removed;
+it should be replaced with latest_file_info.sha1, because MediaWiki now
 stores the SHA1 hash of images.
 
 === Category objects ===

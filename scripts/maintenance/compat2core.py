@@ -100,7 +100,7 @@ warnings = (
      'User.contributions() returns a pywikibot.Timestamp object instead of a\n'
      'MediaWiki one'),
     ('.getFileMd5Sum(',
-     'FilePage.getFileMd5Sum() is deprecated should be replaced by '
+     'FilePage.getFileMd5Sum() has been removed and should be replaced by '
      'FilePage.latest_file_info.sha1'),
     (' wikipedia.',
      '"wikipedia" library has been changed to "pywikibot".'),
