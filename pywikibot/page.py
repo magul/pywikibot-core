@@ -608,6 +608,17 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                         break
         return found
 
+    def is_static_redirect(self, *args, **kwargs):
+        """
+        Determine whether the page is a static redirect.
+
+        Positional and keyword arguments are passed to self.properties().
+
+        @return: whether the page is a static redirect
+        @rtype: bool
+        """
+        return 'staticredirect' in self.properties(*args, **kwargs)
+
     def isCategoryRedirect(self):
         """Return True if this is a category redirect page, False otherwise.
 
