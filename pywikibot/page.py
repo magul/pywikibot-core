@@ -1906,6 +1906,9 @@ class Page(BasePage):
         # WARNING: may not return all templates used in particularly
         # intricate cases such as template substitution
         titles = list(t.title() for t in self.templates())
+        if not titles:
+            return []
+
         templates = textlib.extract_templates_and_params(self.text)
         # backwards-compatibility: convert the dict returned as the second
         # element into a list in the format used by old scripts
