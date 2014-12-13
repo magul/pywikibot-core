@@ -38,6 +38,12 @@ class Family(object):
         if not hasattr(self, 'langs'):
             self.langs = {}
 
+        if not hasattr(self, 'main_code'):
+            if len(self.langs) == 1:
+                self.main_code = list(self.langs.keys())[0]
+            else:
+                self.main_code = None
+
         # For interwiki sorting order see
         # https://meta.wikimedia.org/wiki/Interwiki_sorting_order
 

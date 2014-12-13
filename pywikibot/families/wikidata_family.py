@@ -19,6 +19,7 @@ class Family(family.WikimediaFamily):
             'wikidata': 'www.wikidata.org',
             'test': 'test.wikidata.org',
         }
+        self.main_code = 'wikidata'
 
         self.interwiki_forward = 'wikipedia'
 

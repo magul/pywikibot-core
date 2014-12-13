@@ -651,6 +651,7 @@ def handle_args(args=None, do_help=True):
             config.family = arg[len("-family:"):]
         elif arg.startswith('-lang:'):
             config.mylang = arg[len("-lang:"):]
+            config.force_lang = True
         elif arg.startswith("-user:"):
             username = arg[len("-user:"):]
         elif arg.startswith('-putthrottle:'):

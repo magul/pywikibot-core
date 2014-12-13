@@ -491,7 +491,7 @@ class BaseSite(ComparableMixin):
         @type sysop: str
 
         """
-        self.__code = code.lower()
+        self.__code = None if code is None else code.lower()
         if isinstance(fam, basestring) or fam is None:
             self.__family = pywikibot.family.Family.load(fam)
         else:
@@ -506,12 +506,18 @@ class BaseSite(ComparableMixin):
                 # no such language anymore
                 self.obsolete = True
         elif self.__code not in self.languages():
-            if self.__family.name in list(self.__family.langs.keys()) and \
-               len(self.__family.langs) == 1:
+            if pywikibot.config.force_lang:
+                raise UnknownSite("Language '%s' does not exist in family %s"
+                                  % (self.__code, self.__family.name))
+
+            if self.__family.name in pywikibot.config.default_langs:
+                pywikibot.config.mylang = self.__code = (
+                    pywikibot.config.default_langs[self.__family.name])
+            elif self.__family.main_code is not None:
                 oldcode = self.__code
-                self.__code = self.__family.name
-                if self.__family == pywikibot.config.family \
-                        and oldcode == pywikibot.config.mylang:
+                self.__code = self.__family.main_code
+                if (self.__family == pywikibot.config.family and
+                        oldcode == pywikibot.config.mylang):
                     pywikibot.config.mylang = self.__code
             else:
                 raise UnknownSite("Language '%s' does not exist in family %s"

@@ -53,6 +53,20 @@ mylang = 'language'
 # If family and mylang are not modified from the above, the default is changed
 # to test:test, which is test.wikipedia.org, at the end of this module.
 
+# If set to True, then the value of mylang won't be changed automatically in
+# any way (e.g. when the code specified does not exist and current family,
+# language won't be set to default value).
+# Set automatically to True if language was specified with -lang option.
+force_lang = False
+
+# The dictionary default_langs should contain a language for each site you
+# want to use, that is not specified explicitly (e.g. in case of family name
+# overriden by -family parameter or mylang not set).
+#
+# Example:
+# default_langs['wikidata'] = 'test'
+default_langs = collections.defaultdict(dict)
+
 # The dictionary usernames should contain a username for each site where you
 # have a bot account. Please set your usernames by adding such lines to your
 # user-config.py:
