@@ -66,6 +66,7 @@ def needcheck(pl):
 
 
 def include(pl, checklinks=True, realinclude=True, linkterm=None):
+    comment = i18n.twtranslate(pl.site, 'makecat-create', {'cat': workingcatname})
     cl = checklinks
     if linkterm:
         actualworkingcat = pywikibot.Category(mysite, workingcat.title(),
@@ -87,11 +88,13 @@ def include(pl, checklinks=True, realinclude=True, linkterm=None):
                 for c in cats:
                     if c in parentcats:
                         if removeparent:
-                            pl.change_category(actualworkingcat)
+                            pl.change_category(actualworkingcat,
+                                               comment=comment)
                             break
                 else:
                     pl.put(textlib.replaceCategoryLinks(
-                        text, cats + [actualworkingcat], site=pl.site))
+                        text, cats + [actualworkingcat], site=pl.site),
+                        comment=comment)
     if cl:
         if checkforward:
             for page2 in pl.linkedPages():
@@ -212,7 +215,6 @@ try:
         sys.exit(0)
 
     mysite = pywikibot.Site()
-    pywikibot.setAction(i18n.twtranslate(mysite, 'makecat-create', {'cat': workingcatname}))
     workingcat = pywikibot.Category(mysite,
                                     u'%s:%s'
                                     % (mysite.category_namespace(),
