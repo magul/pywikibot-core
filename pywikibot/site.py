@@ -3530,6 +3530,29 @@ class APISite(BaseSite):
 
         return rcgen
 
+    def is_search_disabled(self):
+        """Return True if gsrsearch is enabled.
+
+        If not called directly, it is cached by the first attempt
+        to search.
+        """
+        if hasattr(self, "_search_disabled"):
+            return self._search_disabled
+        else:
+            try:
+                srgen = self._generator(api.PageGenerator, type_arg="search",
+                                        gsrsearch="abc", gsrwhat="text", namespaces=None,
+                                        step=None, total=1, g_content=False)
+                srgen.request.submit()
+                self._search_disabled = False
+                return self._search_disabled
+            except api.APIError as error:
+                if (error.code == 'gsrsearch-text-disabled'):
+                    self._search_disabled = True
+                    return self._search_disabled
+                else:
+                    raise
+
     @deprecated_args(number="total")
     def search(self, searchstring, namespaces=None, where="text",
                getredirects=False, step=None, total=None, content=False):
@@ -3566,6 +3589,13 @@ class APISite(BaseSite):
                                 total=total, g_content=content)
         if getredirects and MediaWikiVersion(self.version()) < MediaWikiVersion('1.23'):
             srgen.request["gsrredirects"] = ""
+        try:
+            srgen.request.submit()
+            self._search_disabled = False
+        except api.APIError as error:
+            if (error.code == 'gsrsearch-text-disabled'):
+                self._search_disabled = True
+                raise
         return srgen
 
     def usercontribs(self, user=None, userprefix=None, start=None, end=None,

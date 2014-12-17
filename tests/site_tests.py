@@ -908,6 +908,8 @@ class SiteUserTestCase(DefaultSiteTestCase):
     def testSearch(self):
         """Test the site.search() method."""
         mysite = self.get_site()
+        if mysite.is_search_disabled():
+            raise unittest.SkipTest("gsrsearch is not enabled on site: %r" % mysite)
         try:
             se = list(mysite.search("wiki", total=100))
             self.assertLessEqual(len(se), 100)
