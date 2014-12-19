@@ -269,65 +269,69 @@ def buildDescription(flinfoDescription=u'', flickrreview=False, reviewer=u'',
     return description
 
 
-def processPhoto(flickr=None, photo_id=u'', flickrreview=False, reviewer=u'',
+def processPhoto(flickr=None, photo_urls=[], flickrreview=False, reviewer=u'',
                  override=u'', addCategory=u'', removeCategories=False,
                  autonomous=False):
     """Process a single Flickr photo."""
-    if photo_id:
-        pywikibot.output(str(photo_id))
-        (photoInfo, photoSizes) = getPhoto(flickr, photo_id)
-    if isAllowedLicense(photoInfo) or override:
-        # Get the url of the largest photo
-        photoUrl = getPhotoUrl(photoSizes)
-        # Should download the photo only once
-        photo = downloadPhoto(photoUrl)
+    photo_urls_to_be_uploaded = []
+    for photo_id in photo_urls:
+        if photo_id:
+            pywikibot.output(str(photo_id))
+            (photoInfo, photoSizes) = getPhoto(flickr, photo_id)
+        if isAllowedLicense(photoInfo) or override:
+            # Get the url of the largest photo
+            photoUrl = getPhotoUrl(photoSizes)
+            # Should download the photo only once
+            photo = downloadPhoto(photoUrl)
 
-        # Don't upload duplicate images, should add override option
-        duplicates = findDuplicateImages(photo)
-        if duplicates:
-            pywikibot.output(u'Found duplicate image at %s' % duplicates.pop())
-        else:
-            filename = getFilename(photoInfo)
-            flinfoDescription = getFlinfoDescription(photo_id)
-            photoDescription = buildDescription(flinfoDescription,
-                                                flickrreview, reviewer,
-                                                override, addCategory,
-                                                removeCategories)
-            # pywikibot.output(photoDescription)
-            if Tkdialog is not None and not autonomous:
-                try:
-                    (newPhotoDescription, newFilename, skip) = Tkdialog(
-                    photoDescription, photo, filename).run()
-                except ImportError as e:
-                    pywikibot.warning(e)
-                    pywikibot.warning('Switching to autonomous mode.')
+            # Don't upload duplicate images, should add override option
+            duplicates = findDuplicateImages(photo)
+            if duplicates:
+                pywikibot.output(u'Found duplicate image at %s' % duplicates.pop())
+            else:
+                filename = getFilename(photoInfo)
+                flinfoDescription = getFlinfoDescription(photo_id)
+                photoDescription = buildDescription(flinfoDescription,
+                                                    flickrreview, reviewer,
+                                                    override, addCategory,
+                                                    removeCategories)
+                # pywikibot.output(photoDescription)
+
+                if Tkdialog is not None and not autonomous:
+                    try:
+                        (newPhotoDescription, newFilename, skip) = Tkdialog(
+                        photoDescription, photo, filename).run()
+                    except ImportError as e:
+                        pywikibot.warning(e)
+                        pywikibot.warning('Switching to autonomous mode.')
+                        autonomous = True
+                elif not autonomous:
+                    pywikibot.warning('Switching to autonomous mode because GUI interface cannot be used')
+                    pywikibot.warning(_tk_error)
                     autonomous = True
-            elif not autonomous:
-                pywikibot.warning('Switching to autonomous mode because GUI interface cannot be used')
-                pywikibot.warning(_tk_error)
-                autonomous = True
-            if autonomous:
-                newPhotoDescription = photoDescription
-                newFilename = filename
-                skip = False
-        # pywikibot.output(newPhotoDescription)
-        # if (pywikibot.Page(title=u'File:'+ filename, site=pywikibot.Site()).exists()):
-        # I should probably check if the hash is the same and if not upload it under a different name
-        # pywikibot.output(u'File:' + filename + u' already exists!')
-        # else:
-            # Do the actual upload
-            # Would be nice to check before I upload if the file is already at Commons
-            # Not that important for this program, but maybe for derived programs
-            if not skip:
-                bot = upload.UploadRobot(photoUrl,
-                                         description=newPhotoDescription,
-                                         useFilename=newFilename,
-                                         keepFilename=True,
-                                         verifyDescription=False)
-                bot.upload_image(debug=False)
-                return 1
-    else:
-        pywikibot.output(u'Invalid license')
+                if autonomous:
+                    newPhotoDescription = photoDescription
+                    newFilename = filename
+                    skip = False
+            # pywikibot.output(newPhotoDescription)
+            # if (pywikibot.Page(title=u'File:'+ filename, site=pywikibot.Site()).exists()):
+            # I should probably check if the hash is the same and if not upload it under a different name
+            # pywikibot.output(u'File:' + filename + u' already exists!')
+            # else:
+                # Do the actual upload
+                # Would be nice to check before I upload if the file is already at Commons
+                # Not that important for this program, but maybe for derived programs
+                if not skip:
+                    photo_urls_to_be_uploaded.append(photoUrl)
+        else:
+            pywikibot.output(u'Invalid license')
+    bot = upload.UploadRobot(photo_urls_to_be_uploaded,
+                             description=newPhotoDescription,
+                             useFilename=newFilename,
+                             keepFilename=True,
+                             verifyDescription=False)
+    bot.upload_image(debug=False)
+    return len(photo_urls_to_be_uploaded)
     return 0
 
 
@@ -522,17 +526,19 @@ def main(*args):
             autonomous = True
 
     if user_id or group_id or photoset_id:
-        for photo_id in getPhotos(flickr, user_id, group_id, photoset_id,
-                                  start_id, end_id, tags):
-            uploadedPhotos += processPhoto(flickr, photo_id, flickrreview,
-                                           reviewer, override, addCategory,
-                                           removeCategories, autonomous)
-            totalPhotos += 1
+        photo_urls = [photo_id for photo_id in getPhotos(flickr, user_id,
+                                                         group_id, photoset_id,
+                                                         start_id, end_id, tags)]
+        uploadedPhotos += processPhoto(flickr, photo_urls, flickrreview,
+                                        reviewer, override, addCategory,
+                                        removeCategories, autonomous)
+        totalPhotos = len(photo_urls)
+        pywikibot.output(u'Finished running')
+        pywikibot.output(u'Total photos: ' + str(totalPhotos))
+        pywikibot.output(u'Uploaded photos: ' + str(uploadedPhotos))
+
     else:
         usage()
-    pywikibot.output(u'Finished running')
-    pywikibot.output(u'Total photos: ' + str(totalPhotos))
-    pywikibot.output(u'Uploaded photos: ' + str(uploadedPhotos))
 
 if __name__ == "__main__":
     main()
