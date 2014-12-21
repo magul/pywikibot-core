@@ -70,8 +70,7 @@ def make_categories(page, list, site=None):
         site = pywikibot.Site()
     pllist = []
     for p in list:
-        cattitle = "%s:%s" % (site.category_namespace(), p)
-        pllist.append(pywikibot.Page(site, cattitle))
+        pllist.append(pywikibot.Category(site, p, force_ns=True))
     page.put_async(textlib.replaceCategoryLinks(page.get(), pllist,
                                                 site=page.site),
                    comment=i18n.twtranslate(site.code, 'catall-changing'))

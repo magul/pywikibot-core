@@ -213,10 +213,7 @@ try:
 
     mysite = pywikibot.Site()
     pywikibot.setAction(i18n.twtranslate(mysite, 'makecat-create', {'cat': workingcatname}))
-    workingcat = pywikibot.Category(mysite,
-                                    u'%s:%s'
-                                    % (mysite.category_namespace(),
-                                       workingcatname))
+    workingcat = pywikibot.Category(mysite, workingcatname, force_ns=True)
     filename = pywikibot.config.datafilepath('category',
                                              workingcatname.encode('ascii', 'xmlcharrefreplace') + '_exclude.txt')
     try:

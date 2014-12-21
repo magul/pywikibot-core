@@ -77,8 +77,7 @@ if sys.version_info[0] > 2:
 
 
 def CAT(site, name, hide):
-    name = site.namespace(14) + ':' + name
-    cat = pywikibot.Category(site, name)
+    cat = pywikibot.Category(site, name, force_ns=True)
     for article in cat.articles(endsort=hide):
         yield article
     if hide:
@@ -87,7 +86,7 @@ def CAT(site, name, hide):
 
 
 def BACK(site, name, hide):  # pylint: disable=unused-argument
-    p = pywikibot.Page(site, name, ns=10)
+    p = pywikibot.Page(site, name, ns=10, force_ns=True)
     return [page for page in p.getReferences(follow_redirects=False,
                                              onlyTemplateInclusion=True)]
 

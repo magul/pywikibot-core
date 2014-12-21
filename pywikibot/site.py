@@ -774,12 +774,12 @@ class BaseSite(ComparableMixin):
     def disambcategory(self):
         """Return Category in which disambig pages are listed."""
         try:
-            name = '%s:%s' % (self.namespace(14),
-                              self.family.disambcatname[self.code])
+            return pywikibot.Category(self,
+                                      self.family.disambcatname[self.code],
+                                      force_ns=True)
         except KeyError:
             raise Error(u"No disambiguation category name found for %(site)s"
                         % {'site': self})
-        return pywikibot.Category(pywikibot.Link(name, self))
 
     @deprecated("pywikibot.Link")
     def linkto(self, title, othersite=None):
@@ -2446,7 +2446,7 @@ class APISite(BaseSite):
                 if _to['title'] in redirmap:
                     raise CircularRedirect(page)
             else:
-                target = pywikibot.Page(source=page.site, title=target_title)
+                target = pywikibot.Page(page.site, target_title, None, False)
 
                 # Check if target is on another site.
                 if target.site != page.site:
@@ -2462,7 +2462,8 @@ class APISite(BaseSite):
         # target, also in case of double redirects).
         if self.sametitle(pagedata['title'], target_title):
             # target_title is the ultimate target
-            target = pywikibot.Page(self, pagedata['title'], pagedata['ns'])
+            target = pywikibot.Page(self, pagedata['title'], pagedata['ns'],
+                                    False)
             api.update_page(target, pagedata, ['info'])
             page._redirtarget = target
         else:
@@ -2471,7 +2472,7 @@ class APISite(BaseSite):
             # it would be impossible to detect and fix double-redirects.
             # This handles also redirects to sections, as sametitle()
             # does not ignore sections.
-            target = pywikibot.Page(self, target_title)
+            target = pywikibot.Page(self, target_title, None, False)
             page._redirtarget = target
 
         return page._redirtarget
@@ -3218,7 +3219,7 @@ class APISite(BaseSite):
         if fromids:
             algen.request["alprop"] = "title|ids"
         for link in algen:
-            p = pywikibot.Page(self, link['title'], link['ns'])
+            p = pywikibot.Page(self, link['title'], link['ns'], False)
             if fromids:
                 p._fromid = link['fromid']
             yield p
@@ -4747,7 +4748,8 @@ class APISite(BaseSite):
             step=step, total=total
         )
         for pageitem in gen:
-            newpage = pywikibot.Page(self, pageitem['title'])
+            newpage = pywikibot.Page(self, pageitem['title'], pageitem['ns'],
+                                     False)
             if returndict:
                 yield (newpage, pageitem)
             else:
@@ -4769,7 +4771,7 @@ class APISite(BaseSite):
                                     start=start, end=end, reverse=reverse,
                                     step=step, total=total):
             # event.title() actually returns a Page
-            filepage = pywikibot.FilePage(event.title())
+            filepage = pywikibot.FilePage(event.title(), force_ns=False)
             date = event.timestamp()
             user = event.user()
             comment = event.comment() or u''
@@ -4799,7 +4801,7 @@ class APISite(BaseSite):
                                 step=step, total=total)
         for pageitem in lpgen:
             yield (pywikibot.Page(self, pageitem['title']),
-                   int(pageitem['value']))
+                   int(pageitem['value'], False))
 
     @deprecated_args(number="total", repeat=None)
     def shortpages(self, step=None, total=None):
@@ -4815,7 +4817,7 @@ class APISite(BaseSite):
                                 step=step, total=total)
         for pageitem in spgen:
             yield (pywikibot.Page(self, pageitem['title']),
-                   int(pageitem['value']))
+                   int(pageitem['value'], False))
 
     @deprecated_args(number=None, repeat=None)
     def deadendpages(self, step=None, total=None):
@@ -4840,7 +4842,7 @@ class APISite(BaseSite):
                                 type_arg="querypage", qppage="Ancientpages",
                                 step=step, total=total)
         for pageitem in apgen:
-            yield (pywikibot.Page(self, pageitem['title']),
+            yield (pywikibot.Page(self, pageitem['title'], None, False),
                    pywikibot.Timestamp.fromISOformat(pageitem['timestamp']))
 
     @deprecated_args(number=None, repeat=None)

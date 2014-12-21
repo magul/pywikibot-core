@@ -1608,7 +1608,7 @@ class PageGenerator(QueryGenerator):
         of object.
 
         """
-        p = pywikibot.Page(self.site, pagedata['title'], pagedata['ns'])
+        p = pywikibot.Page(self.site, pagedata['title'], pagedata['ns'], False)
         update_page(p, pagedata, self.props)
         return p
 
@@ -1618,8 +1618,8 @@ class CategoryPageGenerator(PageGenerator):
     """Like PageGenerator, but yields Category objects instead of Pages."""
 
     def result(self, pagedata):
-        p = PageGenerator.result(self, pagedata)
-        return pywikibot.Category(p)
+        p = super(CategoryPageGenerator, self).result(pagedata)
+        return pywikibot.Category(p, force_ns=False)
 
 
 class ImagePageGenerator(PageGenerator):
@@ -1627,8 +1627,8 @@ class ImagePageGenerator(PageGenerator):
     """Like PageGenerator, but yields FilePage objects instead of Pages."""
 
     def result(self, pagedata):
-        p = PageGenerator.result(self, pagedata)
-        filepage = pywikibot.FilePage(p)
+        p = super(ImagePageGenerator, self).result(pagedata)
+        filepage = pywikibot.FilePage(p, force_ns=False)
         if 'imageinfo' in pagedata:
             filepage._imageinfo = pagedata['imageinfo'][0]
         return filepage
@@ -1824,7 +1824,7 @@ def update_page(page, pagedict, props=[]):
         page._catinfo = pagedict["categoryinfo"]
 
     if "templates" in pagedict:
-        templates = [pywikibot.Page(page.site, tl['title'])
+        templates = [pywikibot.Page(page.site, tl['title'], tl['ns'], False)
                      for tl in pagedict['templates']]
         if hasattr(page, "_templates"):
             page._templates.extend(templates)

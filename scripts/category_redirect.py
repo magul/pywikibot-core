@@ -118,10 +118,10 @@ class CategoryRedirectBot(pywikibot.Bot):
         """The worker function that moves pages out of oldCat into newCat."""
         while True:
             try:
-                oldCat = pywikibot.Category(self.site,
-                                            self.catprefix + oldCatTitle)
-                newCat = pywikibot.Category(self.site,
-                                            self.catprefix + newCatTitle)
+                oldCat = pywikibot.Category(self.site, oldCatTitle,
+                                            force_ns=True)
+                newCat = pywikibot.Category(self.site, newCatTitle,
+                                            force_ns=True)
 
                 oldCatLink = oldCat.title()
                 newCatLink = newCat.title()
@@ -140,8 +140,8 @@ class CategoryRedirectBot(pywikibot.Bot):
                         "categorymembers", cmtitle=oldCat.title(),
                         cmprop="title|sortkey", cmnamespace="10",
                         cmlimit="max"):
-                    doc = pywikibot.Page(pywikibot.Link(item['title'] +
-                                                        "/doc", self.site))
+                    doc = pywikibot.Page(self.site, item['title'] + "/doc",
+                                         item['ns'], False)
                     try:
                         doc.get()
                     except pywikibot.Error:
@@ -340,8 +340,8 @@ class CategoryRedirectBot(pywikibot.Bot):
 
         # delete record entries for non-existent categories
         for cat_name in record.keys():
-            if pywikibot.Category(self.site,
-                                  self.catprefix + cat_name) not in catpages:
+            if pywikibot.Category(self.site, cat_name,
+                                  force_ns=True) not in catpages:
                 del record[cat_name]
 
         pywikibot.output(u"")

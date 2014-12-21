@@ -76,7 +76,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
     """
 
-    def __init__(self, source, title=u"", ns=0):
+    def __init__(self, source, title=u"", ns=0, force_ns=None):
         """Instantiate a Page object.
 
         Three calling formats are supported:
@@ -102,16 +102,24 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         @param title: normalized title of the page; required if source is a
             Site, ignored otherwise
         @type title: unicode
-        @param ns: namespace number; required if source is a Site, ignored
-            otherwise
-        @type ns: int
-
+        @param ns: The namespace this page is in, if None it's determined from
+            the page name (should be used together with force_ns=False).
+        @type ns: L{site.Namespace}, int, None
+        @param force_ns: If True it assumes that the title does not contain
+            the namespace and uses the given namespace. If False it chooses
+            the namespace from the title and verifies that the given
+            namespaces are the same. If None (default) it uses the given
+            namespace if the title doesn't contain any namespace, which is
+            not recommended. True or None don't make sense when the title is
+            not given.
+        @type force_ns: bool, None
         """
         if title is None:
             raise ValueError(u'Title cannot be None.')
 
         if isinstance(source, pywikibot.site.BaseSite):
-            self._link = Link(title, source=source, defaultNamespace=ns)
+            self._link = Link(title, source=source, defaultNamespace=ns,
+                              detect_ns=not force_ns)
             self._revisions = {}
         elif isinstance(source, Page):
             # copy all of source's attributes to this object
@@ -122,7 +130,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             if title:
                 # overwrite title
                 self._link = Link(title, source=source.site,
-                                  defaultNamespace=ns)
+                                  defaultNamespace=ns, detect_ns=not force_ns)
         elif isinstance(source, Link):
             self._link = source
             self._revisions = {}
@@ -130,6 +138,10 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
             raise pywikibot.Error(
                 "Invalid argument type '%s' in Page constructor: %s"
                 % (type(source), source))
+        if ns is not None and force_ns is False and self.namespace() != ns:
+            raise ValueError('The given namespace ({0}) and the namespace '
+                             'from the title ({1}) differ.'.format(
+                             int(ns), self.namespace()))
 
     @property
     def site(self):
@@ -1842,13 +1854,13 @@ class Page(BasePage):
 
     @deprecate_arg("insite", None)
     @deprecate_arg("defaultNamespace", "ns")
-    def __init__(self, source, title=u"", ns=0):
+    def __init__(self, source, title=u"", ns=0, force_ns=None):
         """Instantiate a Page object."""
         if isinstance(source, pywikibot.site.BaseSite):
             if not title:
                 raise ValueError(u'Title must be specified and not empty '
                                  'if source is a Site.')
-        super(Page, self).__init__(source, title, ns)
+        super(Page, self).__init__(source, title, ns, force_ns)
 
     @deprecate_arg("get_redirect", None)
     def templatesWithParams(self):
@@ -1910,11 +1922,9 @@ class FilePage(Page):
     """
 
     @deprecate_arg("insite", None)
-    def __init__(self, source, title=u""):
+    def __init__(self, source, title=u"", force_ns=False):
         """Constructor."""
-        super(FilePage, self).__init__(source, title, 6)
-        if self.namespace() != 6:
-            raise ValueError(u"'%s' is not in the file namespace!" % title)
+        super(FilePage, self).__init__(source, title, 6, force_ns)
 
     def getImagePageHtml(self):
         """
@@ -2028,7 +2038,7 @@ class Category(Page):
     """A page in the Category: namespace."""
 
     @deprecate_arg("insite", None)
-    def __init__(self, source, title=u"", sortKey=None):
+    def __init__(self, source, title=u"", sortKey=None, force_ns=False):
         """
         Constructor.
 
@@ -2036,10 +2046,7 @@ class Category(Page):
 
         """
         self.sortKey = sortKey
-        Page.__init__(self, source, title, ns=14)
-        if self.namespace() != 14:
-            raise ValueError(u"'%s' is not in the category namespace!"
-                             % title)
+        super(Category, self).__init__(source, title, 14, force_ns)
 
     @deprecated_args(forceInterwiki=None, textlink=None, noInterwiki=None)
     def aslink(self, sortKey=None):
@@ -2365,7 +2372,7 @@ class User(Page):
     """
 
     @deprecated_args(site="source", name="title")
-    def __init__(self, source, title=u''):
+    def __init__(self, source, title=u'', force_ns=False):
         """Initializer for a User object.
 
         All parameters are the same as for Page() constructor.
@@ -2375,10 +2382,7 @@ class User(Page):
             title = title[1:]
         else:
             self._isAutoblock = False
-        Page.__init__(self, source, title, ns=2)
-        if self.namespace() != 2:
-            raise ValueError(u"'%s' is not in the user namespace!"
-                             % title)
+        super(User, self).__init__(source, title, 2, force_ns)
         if self._isAutoblock:
             # This user is probably being queried for purpose of lifting
             # an autoblock.
@@ -3145,7 +3149,7 @@ class ItemPage(WikibasePage):
     been looked up, the item is then defined by the qid.
     """
 
-    def __init__(self, site, title=None, ns=None):
+    def __init__(self, site, title=None, ns=None, force_ns=None):
         """
         Constructor.
 
@@ -3162,11 +3166,11 @@ class ItemPage(WikibasePage):
             ns = site.item_namespace
         # Special case for empty item.
         if title is None or title == '-1':
-            super(ItemPage, self).__init__(site, u'-1', ns=ns)
+            super(ItemPage, self).__init__(site, u'-1', ns=ns, force_ns=force_ns)
             self.id = u'-1'
             return
 
-        super(ItemPage, self).__init__(site, title, ns=ns)
+        super(ItemPage, self).__init__(site, title, ns=ns, force_ns=force_ns)
 
         # Link.__init__, called from Page.__init__, has cleaned the title
         # stripping whitespace and uppercasing the first letter according
@@ -3561,7 +3565,7 @@ class PropertyPage(WikibasePage, Property):
         PropertyPage(DataSite, 'P21')
     """
 
-    def __init__(self, source, title=u""):
+    def __init__(self, source, title=u"", force_ns=None):
         """
         Constructor.
 
@@ -3571,7 +3575,7 @@ class PropertyPage(WikibasePage, Property):
         @type title: str
         """
         WikibasePage.__init__(self, source, title,
-                              ns=source.property_namespace)
+                              ns=source.property_namespace, force_ns=force_ns)
         Property.__init__(self, source, title)
         self.id = self.title(withNamespace=False).upper()
         if not self.id.startswith(u'P'):
@@ -4045,7 +4049,7 @@ class Link(ComparableMixin):
         u'|&#x[0-9A-Fa-f]+;'
     )
 
-    def __init__(self, text, source=None, defaultNamespace=0):
+    def __init__(self, text, source=None, defaultNamespace=0, detect_ns=True):
         """Constructor.
 
         @param text: the link text (everything appearing between [[ and ]]
@@ -4057,7 +4061,8 @@ class Link(ComparableMixin):
         @param defaultNamespace: a namespace to use if the link does not
             contain one (defaults to 0)
         @type defaultNamespace: int
-
+        @param detect_ns: Detect and parse the namespace from the text if True.
+        @type detect_ns: bool
         """
         assert source is None or isinstance(source, pywikibot.site.BaseSite), \
             "source parameter should be a Site object"
@@ -4065,6 +4070,7 @@ class Link(ComparableMixin):
         self._text = text
         self._source = source or pywikibot.Site()
         self._defaultns = defaultNamespace
+        self._detect_ns = detect_ns
 
         # preprocess text (these changes aren't site-dependent)
         # First remove anchor, which is stored unchanged, if there is one
@@ -4167,7 +4173,8 @@ class Link(ComparableMixin):
         while u":" in t:
             # Initial colon indicates main namespace rather than default
             if t.startswith(u":"):
-                self._namespace = 0
+                if self._detect_ns:
+                    self._namespace = None
                 # remove the colon but continue processing
                 # remove any subsequent whitespace
                 t = t.lstrip(u":").lstrip(u" ")
@@ -4176,10 +4183,11 @@ class Link(ComparableMixin):
             prefix = t[:t.index(u":")].lower()
             ns = self._site.ns_index(prefix)
             if ns:
-                # Ordinary namespace
-                t = t[t.index(u":"):].lstrip(u":").lstrip(u" ")
-                self._namespace = ns
-                ns_prefix = True
+                if self._detect_ns:
+                    # Ordinary namespace
+                    t = t[t.index(u":"):].lstrip(u":").lstrip(u" ")
+                    self._namespace = ns
+                    ns_prefix = True
                 break
             try:
                 newsite = self._site.interwiki(prefix)
@@ -4224,6 +4232,9 @@ class Link(ComparableMixin):
                         raise pywikibot.InvalidTitle(
                             u"The (non-)talk page of '{0}' is a valid title "
                             "in another namespace.".format(self._text))
+        elif self._namespace is None:
+            # defaultns is None and no namespace is like :title
+            self._namespace = self._site.ns_index('')
 
         # Reject illegal characters.
         m = Link.illegal_titles_pattern.search(t)
