@@ -146,6 +146,7 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         return self.site.version()
 
     @property
+    @deprecated('APISite.get_file_repositories')
     def image_repository(self):
         """Return the Site object for the image repository."""
         return self.site.image_repository()
@@ -1947,29 +1948,62 @@ class FilePage(Page):
             self._imageinfo = self.site.loadimageinfo(self)
         return self._imageinfo['url']
 
-    @deprecated("fileIsShared")
+    @deprecated("is_remote_file")
     def fileIsOnCommons(self):
-        """DEPRECATED. Check if the image is stored on Wikimedia Commons.
+        """
+        Check if the image is stored on Wikimedia Commons.
+
+        DEPRECATED: Use is_remote_file instead which works the same as long as
+            'self' is not the Commons.
 
         @return: bool
         """
-        return self.fileIsShared()
+        if self.is_remote_file():
+            site = self.site.get_remote_filerepository(self._imagerepository)
+        else:
+            site = self.site
+        return site == pywikibot.Site('commons', 'commons')
 
+    @deprecated("is_remote_file")
     def fileIsShared(self):
         """Check if the file is stored on any known shared repository.
 
+        DEPRECATED: Use is_remote_file instead which works the same as long as
+            'self' is not the file repository itself (like the Commons).
+
         @return: bool
         """
-        # as of now, the only known repositories are commons and wikitravel
-        # TODO: put the URLs to family file
         if not self.site.has_image_repository:
             return False
         elif 'wikitravel_shared' in self.site.shared_image_repository():
             return self.fileUrl().startswith(
-                u'http://wikitravel.org/upload/shared/')
+                'http://wikitravel.org/upload/shared/')
         else:
             return self.fileUrl().startswith(
                 'https://upload.wikimedia.org/wikipedia/commons/')
+
+    def file_repository(self):
+        self.is_remote_file()  # initialize _imagerepository and do checks
+        return self.site.get_remote_file_repository(self._imagerepository)
+
+    def remote_file(self):
+        """
+        Return a FilePage on the remote file repository.
+
+        @return: The file with the site of the shared file repository.
+        @rtype: FilePage
+        @raises NoPage: When this file is not a shared file
+        """
+        if not self.is_remote_file():
+            raise ValueError('This page is not a remote file.')
+        return pywikibot.FilePage(self.site.get_remote_file_repository(
+            self._imagerepository), self.title(withNamespace=True))
+
+    def is_remote_file(self):
+        """Return whether this is on a remote file repository."""
+        if not hasattr(self, '_imagerepository'):
+            self._imageinfo = self.site.loadimageinfo(self)
+        return self.site.is_remote_file_repository(self._imagerepository)
 
     @deprecated("FilePage.getFileSHA1Sum()")
     def getFileMd5Sum(self):

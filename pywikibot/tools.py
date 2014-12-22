@@ -415,6 +415,89 @@ def intersect_generators(genlist):
                     return
 
 
+class SequenceIter(object):
+
+    """An iterator for sequences which can return the remaining entries."""
+
+    def __init__(self, sequence):
+        """Constructor."""
+        self._sequence = sequence
+        self._index = 0
+
+    def __iter__(self):
+        """Return itself."""
+        return self
+
+    def __next__(self):
+        """Return the next item of the sequence or raise StopIteration."""
+        if self._index >= len(self._sequence):
+            raise StopIteration()
+        else:
+            self._index += 1
+            return self._sequence[self._index - 1]
+
+    def remaining(self):
+        """Return the remaining entries in the sequence as a list."""
+        return list(self._sequence[self._index:])
+
+    next = __next__
+
+
+class MissingKeyDict(collections.defaultdict):
+
+    """
+    Dictionary filling with keys for a list of values.
+
+    If an unknown key is requested it assigns the first value from the list.
+    But it is still possible to add entries to the dictionary. As this class is
+    subclassing defaultdict, it will not assign the value when using C{get}.
+    """
+
+    def __init__(self, values, **kwargs):
+        """
+        Create a dictionary with values for those the key is missing.
+
+        @param values: An iterable of the values without a key.
+        @type values: iterable
+        @param kwargs: The predefined data in a format usable for L{dict}.
+        @type kwargs: mapping
+        """
+        super(MissingKeyDict, self).__init__(None, **kwargs)
+        if isinstance(values, collections.Sequence):
+            # if it's already a sequence, the suitable iterator can be used
+            self._value_iter = SequenceIter(values)
+        else:
+            self._value_iter = iter(values)
+
+    def __missing__(self, key):
+        """
+        Assign the first value to the key.
+
+        If there are no values left, it throws a KeyError.
+
+        @param key: The dictionary key.
+        @type key: str
+        @return: The first value
+        """
+        if self._value_iter is not None:
+            try:
+                value = next(self._value_iter)
+            except StopIteration:
+                self._value_iter = None
+            else:
+                self[key] = value
+                return value
+        raise KeyError(key)
+
+    def missing_keys(self):
+        """Return a list of all values without a key."""
+        if self._value_iter is None:
+            return []
+        if not isinstance(self._value_iter, SequenceIter):
+            self._value_iter = SequenceIter(list(self._value_iter))
+        return self._value_iter.remaining()
+
+
 class CombinedError(KeyError, IndexError):
 
     """An error that gets caught by both KeyError and IndexError."""

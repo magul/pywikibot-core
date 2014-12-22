@@ -884,6 +884,39 @@ class Family(object):
         Family._families[fam] = myfamily.Family()
         return Family._families[fam]
 
+    def get_file_repositories(self, code):
+        """
+        Return a dictionary containing the repository info.
+
+        The returned dictionary needs to contain the repositories supported by
+        the family and code. Since version 1.22 the API supports
+        meta=filerepoinfo which allows to get some information. That information
+        suffices for local file repositories and certain types of remote file
+        repositories. All other remote file repositories must be defined here
+        (the rest will be determined via the API). If the site is older, all
+        repositories need to be defined here. All remote file repos which aren't
+        understood by L{APISite._cache_file_repositories} are defined using the
+        URL from here.
+
+        If the file repository is local the value in the dictionary is False
+        and the URL parsable by pywikibot.Site() otherwise.
+
+        The information from the server overwrite any definition given here.
+        All file repositories not returned from the server (if supported) won't
+        be recognized, even if they are defined here.
+
+        If this is not properly defined and the server returned one remote file
+        repository, is uses L{shared_image_repository} as it's definition. If
+        the server uses a version before 1.22 it also tries using
+        L{image_repository_names} and if that isn't defined either it guesses
+        and assumes that 'local' is the local file repository and that the first
+        other file repository name requested is the remote file repository.
+        """
+        if hasattr(self, 'file_repositories'):
+            return self.file_repositories[code]
+        else:
+            return {}
+
     @property
     def iwkeys(self):
         if self.interwiki_forward:
@@ -1203,6 +1236,10 @@ class Family(object):
         """Return the shared image repository, if any."""
         return (None, None)
 
+    def image_repository_names(self, code):
+        """Return the names of the local and shared repository."""
+        return None
+
     def shared_data_repository(self, code, transcluded=False):
         """Return the shared Wikibase repository, if any."""
         return (None, None)
@@ -1241,7 +1278,7 @@ class Family(object):
 
 class WikimediaFamily(Family):
 
-    """#Class for all wikimedia families."""
+    """Class for all wikimedia families."""
 
     def __init__(self):
         super(WikimediaFamily, self).__init__()
@@ -1255,6 +1292,7 @@ class WikimediaFamily(Family):
             'wikisource', 'wikiversity', 'wiktionary',
         ]
 
+    @deprecated
     def shared_image_repository(self, code):
         return ('commons', 'commons')
 

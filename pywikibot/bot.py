@@ -20,6 +20,7 @@ import datetime
 import json
 import os
 import re
+from itertools import count
 import sys
 import webbrowser
 
@@ -591,6 +592,43 @@ def inputChoice(question, answers, hotkeys, default=None):
     return ui.input_choice(question=question, options=zip(answers, hotkeys),
                            default=default, return_shortcut=True,
                            automatic_quit=False)
+
+
+def select_file_repository(site, repo_name=None, automatic_quit=True):
+    """
+    Select and return a file repository.
+
+    If there is no preferred repository, or it is an invalid name, it returns
+    the only repository or asks the user if there are two or more repositories.
+
+    @param repo_name: The preferred repository name. It tries to use that, and
+        warns if there is no such repository and it's not None.
+    @type repo_name: str or None
+    @param automatic_quit: The automatic_quit parameter for the input_choice
+        call.
+    @type automatic_quit: boolean
+    @return: The repository selected
+    @rtype: APISite
+    @raises QuitKeyboardInterrupt: If automatic_quit was set to True and the
+        user used that option when prompted.
+    """
+    repos = site.get_file_repositories()
+    if repo_name in repos:
+        return repos[repo_name]
+    else:
+        if repo_name is not None:
+            pywikibot.warning('The site {0} does not have a '
+                              'repository named "{1}"'.format(
+                              pywikibot.Site(), repo_name))
+        repos = sorted(repos.items())
+        if len(repos) == 1:
+            return repos[0][1]
+        else:
+            repo_index = pywikibot.input_choice(
+                'Which file repository should be used?',
+                zip(('{0} ({1})'.format(*repo) for repo in repos), count(0)),
+                automatic_quit=automatic_quit)
+            return repos[int(repo_index)][1]
 
 
 # Command line parsing and help

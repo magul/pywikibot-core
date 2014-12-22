@@ -46,7 +46,7 @@ class CommonsLinkBot(Bot):
 
     """Commons linking bot."""
 
-    def __init__(self, generator, **kwargs):
+    def __init__(self, generator, file_repository, **kwargs):
         self.availableOptions.update({
             'action': None,
         })
@@ -56,6 +56,7 @@ class CommonsLinkBot(Bot):
         self.findTemplate = re.compile(r'\{\{[Ss]isterlinks')
         self.findTemplate2 = re.compile(r'\{\{[Cc]ommonscat')
         self.findTemplate3 = re.compile(r'\{\{[Cc]ommons')
+        self._file_repository = file_repository
 
     def run(self):
         if not all((self.getOption('action'), self.generator)):
@@ -64,10 +65,9 @@ class CommonsLinkBot(Bot):
         for page in self.generator:
             try:
                 self.current_page = page
-                commons = page.site.image_repository()
                 commonspage = getattr(pywikibot,
                                       ('Page', 'Category')[catmode]
-                                      )(commons, page.title())
+                                      )(self._file_repository, page.title())
                 try:
                     commonspage.get(get_redirect=True)
                     pagetitle = commonspage.title(withNamespace=not catmode)
@@ -120,6 +120,7 @@ def main(*args):
     @type args: list of unicode
     """
     options = {}
+    repo_name = None
 
     local_args = pywikibot.handle_args(args)
     genFactory = pagegenerators.GeneratorFactory()
@@ -129,14 +130,21 @@ def main(*args):
             options['action'] = arg
         elif arg == '-always':
             options['always'] = True
+        elif arg.startswith('-filerepo:'):
+            repo_name = arg[len('-filerepo:'):]
         else:
             genFactory.handleArg(arg)
 
     if 'action' in options:
         gen = genFactory.getCombinedGenerator()
         if gen:
+            try:
+                repo = pywikibot.bot.select_file_repository(pywikibot.Site(),
+                                                            repo_name)
+            except pywikibot.QuitKeyboardInterrupt:
+                return
             gen = pagegenerators.PreloadingGenerator(gen)
-            bot = CommonsLinkBot(gen, **options)
+            bot = CommonsLinkBot(gen, repo, **options)
             bot.run()
             return
     pywikibot.showHelp()

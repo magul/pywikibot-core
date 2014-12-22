@@ -224,7 +224,7 @@ class CommonscatBot(Bot):
 
     """Commons categorisation bot."""
 
-    def __init__(self, generator, **kwargs):
+    def __init__(self, generator, file_repository, **kwargs):
         """Constructor."""
         self.availableOptions.update({
             'summary': None,
@@ -232,6 +232,7 @@ class CommonscatBot(Bot):
         super(CommonscatBot, self).__init__(**kwargs)
         self.generator = generator
         self.site = pywikibot.Site()
+        self._file_repository = file_repository
 
     def treat(self, page):
         """ Load the given page, do some changes, and save it. """
@@ -445,13 +446,12 @@ class CommonscatBot(Bot):
         """
         pywikibot.log("getCommonscat: " + name)
         try:
-            commonsSite = self.site.image_repository()
             # This can throw a pywikibot.BadTitle
-            commonsPage = pywikibot.Page(commonsSite, "Category:" + name)
+            commonsPage = pywikibot.Page(self._file_repository, "Category:" + name)
 
             if not commonsPage.exists():
                 pywikibot.output(u'Commons category does not exist. Examining deletion log...')
-                logpages = commonsSite.logevents(logtype='delete', page=commonsPage)
+                logpages = self._file_repository.logevents(logtype='delete', page=commonsPage)
                 for logitem in logpages:
                     loguser = logitem.user()
                     logcomment = logitem.comment()
@@ -503,6 +503,7 @@ def main(*args):
     """
     options = {}
     checkcurrent = False
+    repo_name = None
 
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
@@ -518,6 +519,8 @@ def main(*args):
             checkcurrent = True
         elif arg == '-always':
             options['always'] = True
+        elif arg == '-filerepo:':
+            repo_name = arg[len('-filerepo:'):]
         else:
             genFactory.handleArg(arg)
 
@@ -533,8 +536,13 @@ def main(*args):
         generator = genFactory.getCombinedGenerator()
 
     if generator:
+        try:
+            repo = pywikibot.bot.select_file_repository(pywikibot.Site(),
+                                                        repo_name)
+        except pywikibot.QuitKeyboardInterrupt:
+            return
         pregenerator = pagegenerators.PreloadingGenerator(generator)
-        bot = CommonscatBot(pregenerator, **options)
+        bot = CommonscatBot(pregenerator, repo, **options)
         bot.run()
     else:
         pywikibot.showHelp()

@@ -82,6 +82,7 @@ runnable_script_list = (['login'] +
 script_input = {
     'catall': 'q\n',  # q for quit
     'editarticle': 'Test page\n',
+    'imageuncat': 'c\n',  # skip warning that it's not using commons
     'interwiki': 'Test page\n',
     'misspelling': 'q\n',
     'pagefromfile': 'q\n',
