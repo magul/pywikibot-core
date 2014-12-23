@@ -328,6 +328,10 @@ def init_handlers(strm=None):
 
     writelogheader()
 
+    loglevels = {'debug': debug, 'log': log, 'warning': warning}
+    for level, message in config.__messages__:
+        loglevels[level](message)
+
 
 def writelogheader():
     """
@@ -361,6 +365,9 @@ def writelogheader():
     if hasattr(os, 'uname'):
         log(u'SYSTEM: {0}'.format(os.uname()))
 
+    # log environment variables
+    for env in [u'PYWIKIBOT2_DIR', u'PYWIKIBOT2_NO_USER_CONFIG']:
+        log(u'{}={!r}'.format(env, os.environ.get(env, None)))
     # config file dir
     log(u'CONFIG FILE DIR: %s' % pywikibot.config2.base_dir)
 

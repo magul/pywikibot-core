@@ -86,6 +86,19 @@ _private_values = ['authenticate', 'proxy', 'db_password']
 _deprecated_variables = ['use_SSL_onlogin', 'use_SSL_always',
                          'available_ssl_project']
 
+# Messages will be reported once the user interface has been instantiated
+__messages__ = []
+
+
+def _log(level, message):
+    """Log a message to be shown once the user interface has been instantiated.
+
+    level can be any of 'debug', 'log', 'warning'.
+
+    For higher level messages, do not use this function; raise an Exception instead.
+    """
+    __messages__.append((level, message))
+
 # ############# ACCOUNT SETTINGS ##############
 
 # The family of sites we are working on. pywikibot will import
@@ -317,7 +330,7 @@ def get_base_dir(test_directory=None):
         exc_text = "No user-config.py found in directory '%s'.\n" % base_dir
         if _no_user_config:
             if _no_user_config != '2':
-                print(exc_text)
+                _log('log', exc_text)
         else:
             exc_text += "  Please check that user-config.py is stored in the correct location.\n"
             exc_text += "  Directory where user-config.py is searched is determined as follows:\n\n"
@@ -333,7 +346,7 @@ base_dir = _base_dir
 
 for arg in sys.argv[1:]:
     if arg.startswith(str('-verbose')) or arg == str('-v'):
-        print("The base directory is %s" % base_dir)
+        _log('log', "The base directory is %s" % base_dir)
         break
 family_files = {}
 
@@ -922,7 +935,7 @@ for _key, _val in _glv.items():
 _thislevel = 0
 if _no_user_config:
     if _no_user_config != '2':
-        print("WARNING: Skipping loading of user-config.py.")
+        _log('log', "WARNING: Skipping loading of user-config.py.")
     _fns = []
 else:
     _fns = [os.path.join(_base_dir, "user-config.py")]
@@ -937,11 +950,11 @@ for _filename in _fns:
                 with open(_filename, 'rb') as f:
                     exec(compile(f.read(), _filename, 'exec'), _uc)
             else:
-                print("WARNING: Skipped '%(fn)s': writeable by others."
-                      % {'fn': _filename})
+                _log('warning', "Skipped '%(fn)s': writeable by others."
+                                % {'fn': _filename})
         else:
-            print("WARNING: Skipped '%(fn)s': owned by someone else."
-                  % {'fn': _filename})
+            _log('warning', "Skipped '%(fn)s': owned by someone else."
+                            % {'fn': _filename})
 
 
 class _DifferentTypeError(UserWarning, TypeError):
@@ -995,7 +1008,6 @@ def _check_user_config_types(user_config, default_values, skipped):
 
 _check_user_config_types(_uc, _glv, _imports)
 
-
 # Copy the user config settings into globals
 _modified = [_key for _key in _gl
              if _uc[_key] != globals()[_key] or
@@ -1031,10 +1043,9 @@ if console_encoding is None:
 if transliteration_target == 'not set':
     if sys.platform == 'win32':
         transliteration_target = console_encoding
-        print("WARNING: Running on Windows and transliteration_target is not "
-              "set.")
-        print("Please see "
-              "https://www.mediawiki.org/wiki/Special:MyLanguage/Manual:Pywikibot/Windows")
+        _log('warning',
+             "Running on Windows and transliteration_target is not set.\n"
+             "Please see https://www.mediawiki.org/wiki/Special:MyLanguage/Manual:Pywikibot/Windows")
     else:
         transliteration_target = None
 elif transliteration_target in ('None', 'none'):
@@ -1057,8 +1068,9 @@ if sys.platform == 'win32' and editor:
 
 # Fix up default site
 if family == 'wikipedia' and mylang == 'language' and _no_user_config != '2':
-    print("WARNING: family and mylang are not set.\n"
-          "Defaulting to family='test' and mylang='test'.")
+    _log('warning' if len(_fns) > 0 else 'log',
+         "family and mylang are not set.\n"
+         "Defaulting to family='test' and mylang='test'.")
     family = mylang = 'test'
 
 # SECURITY WARNINGS
@@ -1076,13 +1088,17 @@ if (not ignore_file_security_warnings and
 # When called as main program, list all configuration variables
 #
 if __name__ == "__main__":
+    # first, output all logged entries
+    for level, message in __messages__:
+        print("{}: {}".format(level.upper(), message))
     import types
     _all = 1
     for _arg in sys.argv[1:]:
         if _arg == "modified":
             _all = 0
         else:
-            print("Unknown arg %(_arg)s ignored" % locals())
+            _log('warning',
+                 "Unknown arg %(_arg)s ignored" % locals())
     _k = list(globals().keys())
     _k.sort()
     for _name in _k:
