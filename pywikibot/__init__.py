@@ -529,6 +529,8 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
     By default rely on config settings. These defaults may all be overridden
     using the method parameters.
 
+    fam and code should always be overridden together.
+
     @param code: language code (override config.mylang)
     @type code: string
     @param fam: family name or object (override config.family)
@@ -571,9 +573,16 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
                 #       AutoFamily
                 raise Error("Unknown URL '{0}'.".format(url))
     else:
+        if fam:
+            assert(code)
+        if code and not fam:
+            pywikibot.warning(u'pywikibot.Site(code=%r) is deprecated; please '
+                              u'specify the family. Defaulting to family %s.'
+                              % (code, config.family))
         # Fallback to config defaults
         code = code or config.mylang
         fam = fam or config.family
+
     interface = interface or config.site_interface
 
     # config.usernames is initialised with a dict for each family name
