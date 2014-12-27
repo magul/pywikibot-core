@@ -1148,7 +1148,14 @@ class WikidataBot(Bot):
         It is stored internally and reused by getSource()
         """
         page = pywikibot.Page(self.repo, u'List of wikis/python', ns=4)
-        self.source_values = json.loads(page.get())
+        try:
+            data = page.get()
+        except pywikibot.NoPage as e:
+            pywikibot.warning(u'cacheSources: Could not load sources: %s' % e)
+            self.source_values = {}
+            return
+
+        self.source_values = json.loads(data)
         for family_code, family in self.source_values.items():
             for source_lang in family:
                 self.source_values[family_code][source_lang] = pywikibot.ItemPage(self.repo,
