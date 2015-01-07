@@ -26,6 +26,8 @@ script_deps = {
     'flickrripper': ['flickrapi'],
 
     'states_redirect': ['pycountry'],
+
+    'commons_information': ['mwparserfromhell'],
 }
 if sys.version_info < (2, 7):
     script_deps['replicate_wiki'] = ['argparse']
