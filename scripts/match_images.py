@@ -40,15 +40,18 @@ import pywikibot
 from pywikibot.comms import http
 
 
-def match_image_pages(imagePageA, imagePageB):
-    """The function expects two image page objects.
+def match_file_pages(file_page_a, file_page_b):
+    """Match two images based on FilePage objects.
 
-    It will return True if the image are the same and False if the images are
-    not the same
-
+    @param file_page_a: file page of the first image
+    @type file_page_a: pywikibot.FilePage
+    @param file_page_b: file page of the second image
+    @type file_page_b: pywikibot.FilePage
+    @return: whether the images are the same
+    @rtype: bool
     """
-    imageA = get_image_from_image_page(imagePageA)
-    imageB = get_image_from_image_page(imagePageB)
+    imageA = get_image_from_file_page(file_page_a)
+    imageB = get_image_from_file_page(file_page_b)
 
     (imA_width, imA_height) = imageA.size
     (imB_width, imB_height) = imageB.size
@@ -105,44 +108,40 @@ def match_image_pages(imagePageA, imagePageB):
         return False
 
 
-def get_image_from_image_page(imagePage):
-    """ Get the image object to work based on an imagePage object. """
-    imageBuffer = None
-    imageURL = imagePage.fileUrl()
-    imageURLopener = http.fetch(imageURL)
-    imageBuffer = io.BytesIO(imageURLopener.raw[:])
-    image = Image.open(imageBuffer)
+def get_image_from_file_page(file_page):
+    """ Get the image object to work on based on a FilePage object. """
+    image_url_opener = http.fetch(file_page.fileUrl())
+    image_buffer = io.BytesIO(image_url_opener.raw[:])
+    image = Image.open(image_buffer)
     return image
 
 
-def match_images(imageA, imageB):
+def match_images(image_a, image_b):
     """ Match two image objects. Return the ratio of pixels that match. """
-    histogramA = imageA.histogram()
-    histogramB = imageB.histogram()
+    histogram_a = image_a.histogram()
+    histogram_b = image_b.histogram()
 
-    totalMatch = 0
-    totalPixels = 0
+    total_match = 0
+    total_pixels = 0
 
-    if len(histogramA) != len(histogramB):
+    if len(histogram_a) != len(histogram_b):
         return 0
 
-    for i in range(0, len(histogramA)):
-        totalMatch = totalMatch + min(histogramA[i], histogramB[i])
-        totalPixels = totalPixels + max(histogramA[i], histogramB[i])
+    for i in range(0, len(histogram_a)):
+        total_match += min(histogram_a[i], histogram_b[i])
+        total_pixels += max(histogram_a[i], histogram_b[i])
 
-    if totalPixels == 0:
+    if total_pixels == 0:
         return 0
 
-    return totalMatch / totalPixels * 100
+    return total_match / total_pixels * 100
 
 
 def main(*args):
-    """ Extracting file page information of images to work on and initiate matching. """
+    """ Extract file page information of images to work on and initiate matching. """
     images = []
-    other_family = u''
-    other_lang = u''
-    imagePageA = None
-    imagePageB = None
+    other_family = None
+    other_lang = None
 
     # Read commandline parameters.
     local_args = pywikibot.handle_args(args)
@@ -162,29 +161,21 @@ def main(*args):
             images.append(arg)
 
     if len(images) != 2:
-        pywikibot.showHelp('match_images')
+        pywikibot.showHelp()
         pywikibot.error('Require two images to work on.')
         return
 
-    else:
-        pass
-
-    imagePageA = pywikibot.page.FilePage(pywikibot.Site(),
-                                         images[0])
+    file_page_a = pywikibot.FilePage(pywikibot.Site(), images[0])
     if other_lang:
         if other_family:
-            imagePageB = pywikibot.page.FilePage(pywikibot.Site(
-                                                 other_lang, other_family),
-                                                 images[1])
+            other_args = (other_lang, other_family)
         else:
-            imagePageB = pywikibot.page.FilePage(pywikibot.Site(
-                                                 other_lang),
-                                                 images[1])
+            other_args = (other_lang,)
     else:
-        imagePageB = pywikibot.page.FilePage(pywikibot.Site(),
-                                             images[1])
+        other_args = tuple()
+    file_page_b = pywikibot.FilePage(pywikibot.Site(*other_args), images[1])
 
-    match_image_pages(imagePageA, imagePageB)
+    match_file_pages(file_page_a, file_page_b)
 
 
 if __name__ == "__main__":
