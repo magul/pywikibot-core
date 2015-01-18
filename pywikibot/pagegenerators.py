@@ -287,21 +287,28 @@ class GeneratorFactory(object):
     that are used by many scripts and that determine which pages to work on.
     """
 
-    def __init__(self, site=None):
+    def __init__(self, site=None, predefined_namespaces=None):
         """
         Constructor.
 
         @param site: Site for generator results.
         @type site: L{pywikibot.site.BaseSite}
+        @param predefined_namespaces: The namespaces for which the page
+            generators should only work. If they are not empty it will lock the
+            available namespaces (-ns etc. won't work). This requires the site
+            so it should be done after handle_args.
+        @type predefined_namespaces: Iterable
         """
         self.gens = []
-        self._namespaces = []
+        self._namespaces = predefined_namespaces or []
         self.step = None
         self.limit = None
         self.articlefilter_list = []
         self.claimfilter_list = []
         self.intersect = False
         self._site = site
+        if self._namespaces:
+            self._lock_namespaces()
 
     @property
     def site(self):
@@ -319,6 +326,12 @@ class GeneratorFactory(object):
         if not self._site:
             self._site = pywikibot.Site()
         return self._site
+
+    def _lock_namespaces(self):
+        """If the namespaces aren't a frozenset, this will freeze it."""
+        if not isinstance(self._namespaces, frozenset):
+            self._namespaces = frozenset(
+                Namespace.resolve(self._namespaces, self.site.namespaces))
 
     @property
     def namespaces(self):
@@ -339,9 +352,7 @@ class GeneratorFactory(object):
         @raises TypeError: a namespace identifier has an inappropriate
             type such as NoneType or bool
         """
-        if isinstance(self._namespaces, list):
-            self._namespaces = frozenset(
-                Namespace.resolve(self._namespaces, self.site.namespaces))
+        self._lock_namespaces()
         return self._namespaces
 
     def getCombinedGenerator(self, gen=None):
