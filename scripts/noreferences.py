@@ -15,12 +15,6 @@ These command line parameters can be used to specify which pages to work on:
                   or pages-meta-current, see https://download.wikimedia.org).
                   Argument can also be given as "-xml:filename".
 
-    -namespace:n  Number or name of namespace to process. The parameter can be
-                  used multiple times. It works in combination with all other
-                  parameters, except for the -start parameter. If you e.g.
-                  want to iterate over all categories starting at M, use
-                  -start:Category:M.
-
     -always       Don't prompt you for each replacement.
 
     -quiet        Use this option to get less output

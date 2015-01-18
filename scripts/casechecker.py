@@ -16,6 +16,7 @@ import codecs
 import pywikibot
 from pywikibot import i18n
 from pywikibot.data import api
+from pywikibot import pagegenerators
 
 if sys.version_info[0] > 2:
     xrange = range
@@ -138,6 +139,7 @@ class CaseChecker(object):
     filterredir = 'nonredirects'
 
     def __init__(self):
+        namespace_parser = pagegenerators.NamespaceParser()
 
         for arg in pywikibot.handle_args():
             if arg.startswith('-from'):
@@ -162,18 +164,19 @@ class CaseChecker(object):
                 self.stopAfter = int(arg[7:])
             elif arg == '-autonomous' or arg == '-a':
                 self.autonomous = True
-            elif arg.startswith('-ns:'):
-                self.namespaces.append(int(arg[4:]))
             elif arg.startswith('-wikilog:'):
                 self.wikilogfile = arg[9:]
             elif arg.startswith('-failedlog:'):
                 self.failedTitles = arg[11:]
             elif arg == '-failed':
                 self.doFailed = True
-            else:
+            elif not namespace_parser.handle_arg(arg):
                 pywikibot.output(u'Unknown argument %s.' % arg)
                 pywikibot.showHelp()
                 sys.exit()
+
+        # TODO: get it in the same order as the parser got it
+        self.namespaces = list(namespace_parser.namespaces)
 
         if self.namespaces == [] and not self.doFailed:
             if self.apfrom == u'':

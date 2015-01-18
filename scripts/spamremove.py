@@ -19,8 +19,7 @@ Command line options:
 -always           Do not ask, but remove the lines automatically. Be very
                   careful in using this option!
 
--namespace:       Filters the search to a given namespace. If this is specified
-                  multiple times it will search all given namespaces
+&nsparams;
 
 """
 
@@ -36,6 +35,10 @@ __version__ = '$Id$'
 import pywikibot
 from pywikibot import i18n
 from pywikibot.editor import TextEditor
+from pywikibot import pagegenerators
+
+
+docuReplacements = {'&nsparams;': pagegenerators.namespace_help}
 
 
 def main(*args):
@@ -48,17 +51,12 @@ def main(*args):
     @type args: list of unicode
     """
     always = False
-    namespaces = []
+    namespace_parser = pagegenerators.NamespaceParser()
     spamSite = ''
     for arg in pywikibot.handle_args(args):
         if arg == "-always":
             always = True
-        elif arg.startswith('-namespace:'):
-            try:
-                namespaces.append(int(arg[len('-namespace:'):]))
-            except ValueError:
-                namespaces.append(arg[len('-namespace:'):])
-        else:
+        elif not namespace_parser.handle_arg(arg):
             spamSite = arg
 
     if not spamSite:
@@ -67,7 +65,8 @@ def main(*args):
         return
 
     mysite = pywikibot.Site()
-    pages = mysite.exturlusage(spamSite, namespaces=namespaces, content=True)
+    pages = mysite.exturlusage(spamSite, namespaces=namespace_parser.namespaces,
+                               content=True)
 
     summary = i18n.twtranslate(mysite, 'spamremove-remove',
                                {'url': spamSite})

@@ -34,9 +34,6 @@ These command line parameters can be used to specify which pages to work on:
              least one week), which is required before the script will report
              the problem.
 
--namespace   Only process templates in the namespace with the given number or
-             name. This parameter may be used multiple times.
-
 -xml         Should be used instead of a simple page fetching method from
              pagegenerators.py for performance and load issues
 

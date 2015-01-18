@@ -53,8 +53,16 @@ _logger = "pagegenerators"
 # most of these functions just wrap a Site or Page method that returns
 # a generator
 
-parameterHelp = u"""\
+namespace_help = u"""
+-namespaces       Filter the page generator to only yield pages in the
+-namespace        specified namespaces. Separate multiple namespace
+-ns               numbers or names with commas.
+                  Examples:
+                  -ns:0,2,4
+                  -ns:Help,MediaWiki
+"""
 
+parameter_help = u"""
 -cat              Work on all pages which are in a specific category.
                   Argument can also be given as "-cat:categoryname" or
                   as "-cat:categoryname|fromtitle" (using # instead of |
@@ -108,19 +116,6 @@ parameterHelp = u"""\
                   -logevents:protect,Usr gives pages from protect by user Usr
                   -logevents:patrol,Usr,20 gives 20 patroled pages by user Usr
                   In some cases it must be written as -logevents:"patrol,Usr,20"
-
--namespaces       Filter the page generator to only yield pages in the
--namespace        specified namespaces. Separate multiple namespace
--ns               numbers or names with commas.
-                  Examples:
-                  -ns:0,2,4
-                  -ns:Help,MediaWiki
-                  If used with -newpages, -namepace/ns must be provided
-                  before -newpages.
-                  If used with -recentchanges, efficiency is improved if
-                  -namepace/ns is provided before -recentchanges.
-                  If used with -titleregex, -namepace/ns must be provided
-                  before -titleregex and shall contain only one value.
 
 -interwiki        Work on the given page and all equivalent pages in other
                   languages. This can, for example, be used to fight
@@ -267,6 +262,17 @@ parameterHelp = u"""\
 -intersect        Work on the intersection of all the provided generators.
 """
 
+parameterHelp = (namespace_help +
+                 u"""
+                  If used with -newpages, -namepace/ns must be provided
+                  before -newpages.
+                  If used with -recentchanges, efficiency is improved if
+                  -namepace/ns is provided before -recentchanges.
+                  If used with -titleregex, -namepace/ns must be provided
+                  before -titleregex and shall contain only one value.
+                 """ +
+                 parameter_help)
+
 docuReplacements = {'&params;': parameterHelp}
 
 # if a bot uses GeneratorFactory, the module should include the line
@@ -279,28 +285,17 @@ docuReplacements = {'&params;': parameterHelp}
 __doc__ = __doc__.replace("&params;", parameterHelp)
 
 
-class GeneratorFactory(object):
+class _LazySite(object):
 
-    """Process command line arguments and return appropriate page generator.
+    """
+    Instantiate the site instance only when requested.
 
-    This factory is responsible for processing command line arguments
-    that are used by many scripts and that determine which pages to work on.
+    This allows to instantiate this class first and then handle global arguments
+    which specify the site used. As soon as the site instance is requested it'll
+    create a default instance. It is still possible to define a site on create.
     """
 
     def __init__(self, site=None):
-        """
-        Constructor.
-
-        @param site: Site for generator results.
-        @type site: L{pywikibot.site.BaseSite}
-        """
-        self.gens = []
-        self._namespaces = []
-        self.step = None
-        self.limit = None
-        self.articlefilter_list = []
-        self.claimfilter_list = []
-        self.intersect = False
         self._site = site
 
     @property
@@ -320,6 +315,28 @@ class GeneratorFactory(object):
             self._site = pywikibot.Site()
         return self._site
 
+
+class NamespaceParser(_LazySite):
+
+    """
+    Parse just the namespace parameter given via the command line or similar.
+
+    It'll accept the namespace numbers as well as the namespace name or aliases.
+    It tries to lazy load as much as possible so it's possible to modify the
+    namespaces until they are used the first time when they become immutable. It
+    will use the default site unless specified first so the global parameters
+    should be handled first.
+    """
+
+    # The parameter name is matched too in case someone doesn't want to allow
+    # the plural (e.g. because only one namespace is supported)
+    _RE = re.compile(r'-(ns|namespaces?):?(.*)')
+
+    def __init__(self, site=None):
+        """Constructor."""
+        super(NamespaceParser, self).__init__(site)
+        self._namespaces = []
+
     @property
     def namespaces(self):
         """
@@ -334,7 +351,7 @@ class GeneratorFactory(object):
         arguments are handled.
 
         @return: namespaces selected using arguments
-        @rtype: list of Namespace
+        @rtype: frozenset of Namespace
         @raises KeyError: a namespace identifier was not resolved
         @raises TypeError: a namespace identifier has an inappropriate
             type such as NoneType or bool
@@ -343,6 +360,92 @@ class GeneratorFactory(object):
             self._namespaces = frozenset(
                 Namespace.resolve(self._namespaces, self.site.namespaces))
         return self._namespaces
+
+    def handle_arg(self, arg):
+        """Parse arg and return whether the arg is handled by this class."""
+        match = self._RE.match(arg)
+        if match:
+            if isinstance(self._namespaces, frozenset):
+                warn('Cannot handle arg {0} as namespaces can not '
+                     'be altered after a generator is created.'.format(arg),
+                     ArgumentDeprecationWarning, 2)
+                return True
+            value = match.group(2)
+            if not value:
+                value = pywikibot.input(
+                    u'What namespace are you filtering on?')
+            self._namespaces += value.split(',')
+            return True
+        else:
+            return False
+
+
+class GeneratorFactory(_LazySite):
+
+    """Process command line arguments and return appropriate page generator.
+
+    This factory is responsible for processing command line arguments
+    that are used by many scripts and that determine which pages to work on.
+    """
+
+    def __init__(self, site=None, predefined_namespaces=None):
+        """
+        Constructor.
+
+        @param site: Site for generator results.
+        @type site: L{pywikibot.site.BaseSite}
+        @param predefined_namespaces: The namespaces for which the page
+            generators should only work. If they are not empty it will lock the
+            available namespaces (-ns etc. won't work). This requires the site
+            so it should be done after handle_args. Only supports namespace
+            numbers and not names.
+        @type predefined_namespaces: iterable of int
+        """
+        super(GeneratorFactory, self).__init__(site)
+        self.gens = []
+        self.step = None
+        self.limit = None
+        self.articlefilter_list = []
+        self.claimfilter_list = []
+        self.intersect = False
+        if predefined_namespaces:
+            # Prevent that it's a frozenset from the start but keep it immutable
+            # so if something is directly mocking with it will be stopped
+            self._namespaces = tuple(predefined_namespaces)
+            self._no_namespaces = True
+        else:
+            self._namespaces = NamespaceParser(site)
+            self._no_namespaces = False
+
+    @property
+    def namespaces(self):
+        """
+        List of Namespace parameters.
+
+        Converts int or string namespaces to Namespace objects and
+        change the storage to immutable once it has been accessed.
+
+        The resolving and validation of namespace command line arguments
+        is performed in this method, as it depends on the site property
+        which is lazy loaded to avoid being cached before the global
+        arguments are handled.
+
+        String namespaces are only allowed when no predefined namespaces are
+        used.
+
+        @return: namespaces selected using arguments
+        @rtype: list of Namespace
+        @raises KeyError: a namespace identifier was not resolved
+        @raises TypeError: a namespace identifier has an inappropriate
+            type such as NoneType or bool
+        """
+        if self._no_namespaces:
+            if not isinstance(self._namespaces, frozenset):
+                self._namespaces = frozenset(self.site.namespaces[ns]
+                                             for ns in self._namespaces)
+            return self._namespaces
+        else:
+            return self._namespaces.namespaces
 
     def getCombinedGenerator(self, gen=None):
         """Return the combination of all accumulated generators.
@@ -541,24 +644,16 @@ class GeneratorFactory(object):
                 textfilename = pywikibot.input(
                     u'Please enter the local file name:')
             gen = TextfilePageGenerator(textfilename, site=self.site)
-        elif arg.startswith('-namespace') or arg.startswith('-ns'):
-            if isinstance(self._namespaces, frozenset):
-                warn('Cannot handle arg %s as namespaces can not '
-                     'be altered after a generator is created.'
-                     % arg,
-                     ArgumentDeprecationWarning, 2)
+        elif NamespaceParser._RE.match(arg):
+            if self._no_namespaces:
+                # This will only show the namespace numbers to avoid
+                # initializing a site instance
+                warn(u'This script only works on the namespace(s) "{0}". '
+                     u'Parameter {1} has been ignored.'.format(
+                     '", "'.join(sorted(self._namespaces)), arg), UserWarning)
                 return True
-            value = None
-            if arg.startswith('-ns:'):
-                value = arg[len('-ns:'):]
-            elif arg.startswith('-namespace:'):
-                value = arg[len('-namespace:'):]
-            elif arg.startswith('-namespaces:'):
-                value = arg[len('-namespaces:'):]
-            if not value:
-                value = pywikibot.input(
-                    u'What namespace are you filtering on?')
-            self._namespaces += value.split(",")
+            else:
+                self._namespaces.handle_arg(arg)
             return True
         elif arg.startswith('-step'):
             if len(arg) == len('-step'):

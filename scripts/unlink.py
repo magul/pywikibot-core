@@ -5,11 +5,7 @@ This bot unlinks a page on every page that links to it.
 
 This script understands this command-line argument:
 
-    -namespace:n   Number of namespace to process. The parameter can be used
-                   multiple times. It works in combination with all other
-                   parameters, except for the -start parameter. If you e.g.
-                   want to iterate over all user pages starting at User:M, use
-                   -start:User:M.
+&nsparams;
 
 Any other parameter will be regarded as the title of the page
 that should be unlinked.
@@ -32,6 +28,10 @@ import re
 import pywikibot
 from pywikibot.editor import TextEditor
 from pywikibot import i18n, Bot
+from pywikibot import pagegenerators
+
+
+docuReplacements = {'&nsparams;': pagegenerators.namespace_help}
 
 
 class UnlinkBot(Bot):
@@ -174,19 +174,16 @@ def main(*args):
     # of the page that should be unlinked.
     page_title = None
     options = {}
+    namespace_parser = pagegenerators.NamespaceParser()
 
     for arg in pywikibot.handle_args(args):
-        if arg.startswith('-namespace:'):
-            if 'namespaces' not in options:
-                options['namespaces'] = []
-            try:
-                options['namespaces'].append(int(arg[11:]))
-            except ValueError:
-                options['namespaces'].append(arg[11:])
-        elif arg == '-always':
+        if arg == '-always':
             options['always'] = True
-        else:
+        elif not namespace_parser.handle_arg(arg):
             page_title = arg
+
+    if namespace_parser.namespaces:
+        options['namespaces'] = namespace_parser.namespaces
 
     if page_title:
         page = pywikibot.Page(pywikibot.Site(), page_title)

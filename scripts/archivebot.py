@@ -76,14 +76,14 @@ See also:
  - https://docs.python.org/3.4/library/datetime.html#datetime.date.isocalendar
 
 Options (may be omitted):
-  -help           show this help message and exit
-  -calc:PAGE      calculate key for PAGE and exit
-  -file:FILE      load list of pages from FILE
-  -force          override security options
-  -locale:LOCALE  switch to locale LOCALE
-  -namespace:NS   only archive pages from a given namespace
-  -page:PAGE      archive a single PAGE, default ns is a user talk page
-  -salt:SALT      specify salt
+-help             show this help message and exit
+-calc:PAGE        calculate key for PAGE and exit
+-file:FILE        load list of pages from FILE
+-force            override security options
+-locale:LOCALE    switch to locale LOCALE
+-page:PAGE        archive a single PAGE, default ns is a user talk page
+-salt:SALT        specify salt
+&nsparams;
 """
 #
 # (C) Misza13, 2006-2010
@@ -106,7 +106,10 @@ import pywikibot
 from pywikibot import i18n
 from pywikibot.textlib import TimeStripper
 from pywikibot.textlib import to_local_digits
+from pywikibot import pagegenerators
 
+
+docuReplacements = {'&nsparams;': pagegenerators.namespace_help}
 ZERO = datetime.timedelta(0)
 
 
@@ -561,7 +564,7 @@ def main(*args):
     """
     filename = None
     pagename = None
-    namespace = None
+    namespace_parser = pagegenerators.NamespaceParser()
     salt = None
     force = False
     calc = None
@@ -592,8 +595,7 @@ def main(*args):
             filename = v
         for v in if_arg_value(arg, '-page'):
             pagename = v
-        for v in if_arg_value(arg, '-namespace'):
-            namespace = v
+        namespace_parser.handle_arg(arg)
         if not arg.startswith('-'):
             args.append(arg)
 
@@ -628,12 +630,8 @@ def main(*args):
     for a in args:
         pagelist = []
         if not filename and not pagename:
-            if namespace is not None:
-                ns = [str(namespace)]
-            else:
-                ns = []
-            for pg in generate_transclusions(site, a, ns):
-                pagelist.append(pg)
+            pagelist.extend(generate_transclusions(site, a,
+                                                   namespace_parser.namespaces))
         if filename:
             for pg in open(filename, 'r').readlines():
                 pagelist.append(pywikibot.Page(site, pg, ns=10))

@@ -42,9 +42,7 @@ and arguments can be:
 
 -page:title    Work on a single page
 
--namespace:n   Namespace to process. Can be given multiple times, for several
-               namespaces. If omitted, only the main (article) namespace is
-               treated.
+&nsparams;
 
 -offset:n      With -moves, the number of hours ago to start scanning moved
                pages. With -xml, the number of the redirect to restart with
@@ -80,6 +78,10 @@ import re
 import datetime
 import pywikibot
 from pywikibot import i18n, xmlreader, Bot
+from pywikibot import pagegenerators
+
+
+docuReplacements = {'&nsparams;': pagegenerators.namespace_help}
 
 
 class RedirectGenerator:
@@ -714,9 +716,6 @@ def main(*args):
     # maintenance special page from the live wiki, or the filename of a
     # local XML dump file)
     xmlFilename = None
-    # Which namespace should be processed when using a XML dump
-    # default to -1 which means all namespaces will be processed
-    namespaces = []
     # at which redirect shall we start searching double redirects again
     # (only with dump); default to -1 which means all redirects are checked
     offset = -1
@@ -727,6 +726,8 @@ def main(*args):
     number = None
     step = None
     pagename = None
+
+    namespace_parser = pagegenerators.NamespaceParser()
 
     for arg in pywikibot.handle_args(args):
         if arg == 'double' or arg == 'do':
@@ -744,23 +745,6 @@ def main(*args):
                 xmlFilename = arg[5:]
         elif arg.startswith('-moves'):
             moved_pages = True
-        elif arg.startswith('-namespace:'):
-            ns = arg[11:]
-            if ns == '':
-                # "-namespace:" does NOT yield -namespace:0 further down the road!
-                ns = i18n.input('pywikibot-enter-namespace-number')
-            # TODO: at least for some generators enter a namespace by its name
-            # or number
-            if ns == '':
-                ns = '0'
-            try:
-                ns = int(ns)
-            except ValueError:
-                # -namespace:all Process all namespaces.
-                # Only works with the API read interface.
-                pass
-            if ns not in namespaces:
-                namespaces.append(ns)
         elif arg.startswith('-offset:'):
             offset = int(arg[8:])
         elif arg.startswith('-start:'):
@@ -777,7 +761,7 @@ def main(*args):
             options['always'] = True
         elif arg == '-delete':
             options['delete'] = True
-        else:
+        elif not namespace_parser.handle_arg(arg):
             pywikibot.output(u'Unknown argument: %s' % arg)
 
     if (
@@ -788,8 +772,9 @@ def main(*args):
         pywikibot.showHelp()
     else:
         pywikibot.Site().login()
-        gen = RedirectGenerator(xmlFilename, namespaces, offset, moved_pages,
-                                fullscan, start, until, number, step, pagename)
+        gen = RedirectGenerator(xmlFilename, namespace_parser.namespaces,
+                                offset, moved_pages, fullscan, start, until,
+                                number, step, pagename)
         bot = RedirectRobot(action, gen, number=number, **options)
         bot.run()
 
