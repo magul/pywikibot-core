@@ -515,6 +515,10 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
                 self._expanded_text = ''
                 return ''
 
+            # Raise NoPage
+            if not hasattr(self, '_text'):
+                self.get()
+
             self._expanded_text = self.site.expand_text(
                 self.text,
                 title=self.title(withSection=False),
@@ -1182,6 +1186,10 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
 
         @return: a generator that yields Link objects
         """
+        # Raise NoPage
+        if not hasattr(self, '_text'):
+            self.get()
+
         # This function does not exist in the API, so it has to be
         # implemented by screen-scraping
         if expand:
@@ -1724,6 +1732,10 @@ class BasePage(pywikibot.UnicodeMixin, ComparableMixin):
         @rtype: bool
 
         """
+        # Raise NoPage
+        if not hasattr(self, '_text'):
+            self.get()
+
         # get list of Category objects the article is in and remove possible
         # duplicates
         cats = []
@@ -1868,6 +1880,10 @@ class Page(BasePage):
         parameters as the second entry.
 
         """
+        # Raise NoPage
+        if not hasattr(self, '_text'):
+            self.get()
+
         # WARNING: may not return all templates used in particularly
         # intricate cases such as template substitution
         titles = list(t.title() for t in self.templates())
