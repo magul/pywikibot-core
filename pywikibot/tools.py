@@ -170,60 +170,40 @@ class MediaWikiVersion(Version):
         __cmp__ = _cmp
 
 
-class ThreadedGenerator(threading.Thread):
-
-    """Look-ahead generator class.
-
-    Runs a generator in a separate thread and queues the results; can
-    be called like a regular generator.
-
-    Subclasses should override self.generator, I{not} self.run
-
-    Important: the generator thread will stop itself if the generator's
-    internal queue is exhausted; but, if the calling program does not use
-    all the generated values, it must call the generator's stop() method to
-    stop the background thread.  Example usage:
-
-    >>> gen = ThreadedGenerator(target=range, args=(20,))
-    >>> try:
-    ...     data = list(gen)
-    ... finally:
-    ...     gen.stop()
-    >>> data
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+class _ThreadedGeneratorBase(threading.Thread):
 
     """
+    The ThreadedGeneratorBase for the new and old variant.
 
-    def __init__(self, group=None, target=None, name="GeneratorThread",
-                 args=(), kwargs=None, qsize=65536):
+    Because the old variant would overwrite the generator method, but needed
+    additional logic before the _ThreadedGeneratorBase actually uses
+    '_generator' to create the generator.
+
+    It is not recommended to subclass this class but instead the
+    'ThreadedGeneratorBase' which calls 'generator' when '_generator' is called.
+    A future version will remove 'ThreadedGenerator' to allow renaming
+    '_ThreadedGeneratorBase' to 'ThreadedGenerator'. Additionally the usage of
+    '_generator' will be removed too.
+    """
+
+    def __init__(self, group=None, name="GeneratorThread", qsize=65536):
         """Constructor.  Takes same keyword arguments as threading.Thread.
 
-        target must be a generator function (or other callable that returns
-        an iterable object).
-
         @param qsize: The size of the lookahead queue. The larger the qsize,
-        the more values will be computed in advance of use (which can eat
-        up memory and processor time).
+            the more values will be computed in advance of use (which can eat
+            up memory and processor time).
         @type qsize: int
-
         """
-        if kwargs is None:
-            kwargs = {}
-        if target:
-            self.generator = target
-        if not hasattr(self, "generator"):
-            raise RuntimeError("No generator for ThreadedGenerator to run.")
-        self.args, self.kwargs = args, kwargs
-        threading.Thread.__init__(self, group=group, name=name)
+        super(_ThreadedGeneratorBase, self).__init__(group=group, name=name)
         self.queue = Queue.Queue(qsize)
-        self.finished = threading.Event()
+        self._finished = threading.Event()
 
     def __iter__(self):
         """Iterate results from the queue."""
-        if not self.isAlive() and not self.finished.isSet():
+        if not self.is_alive() and not self._finished.isSet():
             self.start()
         # if there is an item in the queue, yield it, otherwise wait
-        while not self.finished.isSet():
+        while not self._finished.isSet():
             try:
                 yield self.queue.get(True, 0.25)
             except Queue.Empty:
@@ -231,21 +211,25 @@ class ThreadedGenerator(threading.Thread):
             except KeyboardInterrupt:
                 self.stop()
 
+    def start(self):
+        """Start the background thread."""
+        self.__gen = self._generator()
+        try:
+            self.__gen = iter(self.__gen)
+        except TypeError:
+            raise RuntimeError('No generator for ThreadedGenerator '
+                               'to run.')
+        super(_ThreadedGeneratorBase, self).start()
+
     def stop(self):
         """Stop the background thread."""
-        self.finished.set()
+        self._finished.set()
 
     def run(self):
         """Run the generator and store the results on the queue."""
-        iterable = any([hasattr(self.generator, key)
-                        for key in ['__iter__', '__getitem__']])
-        if iterable and not self.args and not self.kwargs:
-            self.__gen = self.generator
-        else:
-            self.__gen = self.generator(*self.args, **self.kwargs)
         for result in self.__gen:
             while True:
-                if self.finished.isSet():
+                if self._finished.isSet():
                     return
                 try:
                     self.queue.put_nowait(result)
@@ -254,9 +238,104 @@ class ThreadedGenerator(threading.Thread):
                     continue
                 break
         # wait for queue to be emptied, then kill the thread
-        while not self.finished.isSet() and not self.queue.empty():
+        while not self._finished.isSet() and not self.queue.empty():
             time.sleep(0.25)
         self.stop()
+
+
+class ThreadedGeneratorBase(_ThreadedGeneratorBase):
+
+    """
+    Look-ahead generator class.
+
+    Runs a generator in a separate thread and queues the results; can be called
+    like a regular generator.
+
+    Subclasses should override self.generator, I{not} self.run
+
+    Important: the generator thread will stop itself if the generator's
+    internal queue is exhausted; but, if the calling program does not use
+    all the generated values, it must call the generator's stop() method to
+    stop the background thread.  Example usage:
+
+    >>> class MyThreadedGenerator(ThreadedGeneratorBase):
+    ...     def generator(self):
+    ...         return range(20)
+    >>> gen = MyThreadedGenerator()
+    >>> try:
+    ...     data = list(gen)
+    ... finally:
+    ...     gen.stop()
+    >>> data
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    """
+
+    def _generator(self):
+        return self.generator()
+
+
+class ThreadedGeneratorProperty(ThreadedGeneratorBase):
+
+    """
+    Look-ahead generator class.
+
+    The generator will be defined on __init__ and 'generator' simply returns it.
+
+    >>> gen = ThreadedGeneratorProperty(target=range(20))
+    >>> try:
+    ...     data = list(gen)
+    ... finally:
+    ...     gen.stop()
+    >>> data
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    """
+
+    def __init__(self, target, group=None, name="GeneratorThread", qsize=65536):
+        super(ThreadedGeneratorProperty, self).__init__(group, name, qsize)
+        self._target = target
+
+    def generator(self):
+        """Return defined target."""
+        return self._target
+
+
+class ThreadedGeneratorMethod(ThreadedGeneratorBase):
+
+    """
+    Look-ahead generator class.
+
+    The generator function will be defined on __init__ and 'generator' calls
+    it and returns the result.
+
+    >>> gen = ThreadedGeneratorMethod(target=range, args=(20,))
+    >>> try:
+    ...     data = list(gen)
+    ... finally:
+    ...     gen.stop()
+    >>> data
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+    """
+
+    def __init__(self, target, args=(), kwargs=None, group=None,
+                 name="GeneratorThread", qsize=65536):
+        """
+        Create a threaded generator.
+
+        @param target: The generator function
+        @type target: callable
+        @param args: The arguments for that function
+        @type args: iterable
+        @param kwargs: The keyword arguments for that function
+        @type kwargs: mapping
+        """
+        super(ThreadedGeneratorMethod, self).__init__(group, name, qsize)
+        self._target = target
+        self._args = args
+        self._kwargs = kwargs or {}
+
+    def generator(self):
+        """Call defined target and return it."""
+        return self._target(*self._args, **self._kwargs)
 
 
 def itergroup(iterable, size):
@@ -373,7 +452,8 @@ def intersect_generators(genlist):
     thrlist = ThreadList()
 
     for source in genlist:
-        threaded_gen = ThreadedGenerator(name=repr(source), target=source)
+        threaded_gen = ThreadedGeneratorProperty(name=repr(source),
+                                                 target=source)
         thrlist.append(threaded_gen)
         debug("INTERSECT: thread started: %r" % threaded_gen, _logger)
 
@@ -964,6 +1044,47 @@ class ModuleDeprecationWrapper(types.ModuleType):
             if self._deprecated[attr][1]:
                 return self._deprecated[attr][1]
         return getattr(self._module, attr)
+
+
+class ThreadedGenerator(_ThreadedGeneratorBase):
+
+    """
+    DEPRECATED: The original ThreadedGenerator.
+
+    It is recommended to use either ThreadedGeneratorBase (if generator is a
+    method of a subclass), ThreadedGeneratorProperty (if the generator is
+    already created and passed as an argument) or ThreadedGeneratorMethod (if
+    the generator is passed as an argument but needs to be created first).
+    """
+
+    @deprecated
+    def __init__(self, group=None, target=None, name="GeneratorThread",
+                 args=(), kwargs=None, qsize=65536):
+        """Constructor.  Takes same keyword arguments as threading.Thread.
+
+        target must be a generator function (or other callable that returns
+        an iterable object).
+
+        @param qsize: The size of the lookahead queue. The larger the qsize,
+        the more values will be computed in advance of use (which can eat
+        up memory and processor time).
+        @type qsize: int
+        """
+        super(ThreadedGenerator, self).__init__(group, name, qsize)
+        self._target = target
+        self.args = args
+        self.kwargs = kwargs or {}
+        self.finished = self._finished
+
+    def _generator(self):
+        if self._target:
+            source = self._target
+        else:
+            source = self.generator
+        try:
+            return iter(source)
+        except TypeError:
+            return source(*self.args, **self.kwargs)
 
 
 if __name__ == "__main__":

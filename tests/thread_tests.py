@@ -8,7 +8,8 @@
 __version__ = '$Id$'
 
 from tests.aspects import unittest, TestCase
-from pywikibot.tools import ThreadedGenerator, intersect_generators
+import pywikibot.tools
+from pywikibot.tools import intersect_generators
 
 
 class BasicThreadedGeneratorTestCase(TestCase):
@@ -17,20 +18,44 @@ class BasicThreadedGeneratorTestCase(TestCase):
 
     net = False
 
-    def test_run_from_iterable(self):
-        iterable = 'abcd'
-        thd_gen = ThreadedGenerator(target=iterable)
-        thd_gen.start()
-        self.assertEqual(list(thd_gen), list(iterable))
-
-    def gen_func(self):
-        iterable = 'abcd'
+    def gen_func(self, iterable):
         for i in iterable:
             yield i
 
-    def test_run_from_gen_function(self):
+    class TestingThreadedGenerator(pywikibot.tools.ThreadedGeneratorBase):
+        def generator(self):
+            return self.iterable
+
+    def test_run_old_from_iterable(self):
         iterable = 'abcd'
-        thd_gen = ThreadedGenerator(target=self.gen_func)
+        thd_gen = pywikibot.tools.ThreadedGenerator(target=iterable)
+        thd_gen.start()
+        self.assertEqual(list(thd_gen), list(iterable))
+
+    def test_run_old_from_gen_function(self):
+        iterable = 'abcd'
+        thd_gen = pywikibot.tools.ThreadedGenerator(target=self.gen_func,
+                                                    args=(iterable,))
+        thd_gen.start()
+        self.assertEqual(list(thd_gen), list(iterable))
+
+    def test_run_new_from_iterable(self):
+        iterable = 'abcd'
+        thd_gen = pywikibot.tools.ThreadedGeneratorProperty(target=iterable)
+        thd_gen.start()
+        self.assertEqual(list(thd_gen), list(iterable))
+
+    def test_run_new_from_gen_function(self):
+        iterable = 'abcd'
+        thd_gen = pywikibot.tools.ThreadedGeneratorMethod(target=self.gen_func,
+                                                          args=(iterable,))
+        thd_gen.start()
+        self.assertEqual(list(thd_gen), list(iterable))
+
+    def test_run_new_from_subclass(self):
+        iterable = 'abcd'
+        thd_gen = BasicThreadedGeneratorTestCase.TestingThreadedGenerator()
+        thd_gen.iterable = iterable
         thd_gen.start()
         self.assertEqual(list(thd_gen), list(iterable))
 
