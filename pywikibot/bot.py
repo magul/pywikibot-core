@@ -33,6 +33,7 @@ INPUT = 25
 
 import pywikibot
 from pywikibot import config
+from pywikibot import configuration
 from pywikibot import version
 from pywikibot.tools import deprecated
 
@@ -644,6 +645,10 @@ def handle_args(args=None, do_help=True):
     nonGlobalArgs = []
     username = None
     do_help = None if do_help else False
+    args, config_dir = configuration._parse_arg(args)
+
+    config._load(config_dir)
+
     for arg in args:
         if do_help is not False and arg == '-help':
             do_help = True
@@ -736,6 +741,8 @@ def handle_args(args=None, do_help=True):
     init_handlers()
 
     if config.verbose_output:
+        # TODO: Output config.base_dir
+
         # Please don't change the regular expression here unless you really
         # have to - some git versions (like 1.7.0.4) seem to treat lines
         # containing just `$Id:` as if they were ident lines (see

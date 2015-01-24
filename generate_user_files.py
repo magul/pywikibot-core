@@ -86,7 +86,7 @@ def change_base_dir():
             pywikibot.output("Created new directory.")
             break
 
-    if new_base == pywikibot.config2.get_base_dir(new_base):
+    if new_base == pywikibot.config2.get_base_dir(None, new_base):
         # config would find that file
         return new_base
     from textwrap import wrap
