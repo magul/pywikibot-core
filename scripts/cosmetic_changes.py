@@ -435,6 +435,63 @@ class CosmeticChangesToolkit:
                     r'[[\g<left>' + aliases[0] + '\g<right>', exceptions)
         return text
 
+    CC_SP_NEVER = 0
+    CC_SP_TOCUSTOM = 1
+    CC_SP_TOCANONCIAL = 2
+    CC_SP_ASCUSTOM = 3
+
+    def translate_special_pages(self, text, change_namespace=False,
+                                select_alias=CC_SP_ASCUSTOM):
+        """
+        Update the special page links.
+
+        It always changes the capitalisation to the appropiate name and spaces
+        around the colon between the namespace and page name. The spaces before
+        the pipe are removed too (but not after the pipe).
+
+        @param text: The original text
+        @type text: str
+        @param change_namespace: Use the custom namespace name instead of the
+            original namespace in the link
+        @type change_namespace: bool
+        @param select_alias: Update the link target to another alias. Allowed:
+            * CC_SP_NEVER: Change it never
+            * CC_SP_TOCUSTOM: Always use the first alias
+            * CC_SP_TOCANONCIAL: Always use the canonical name
+            * CC_SP_ASCUSTOM: If it's using the canonical name, it should us the
+                first alias, otherwise the alias remains
+        """
+        def repl(match):
+            if change_namespace:
+                ns = self.site.namespaces[-1].custom_name
+            else:
+                ns = match.group(1)
+            if (select_alias is CosmeticChangesToolkit.CC_SP_TOCUSTOM or
+                    (select_alias is CosmeticChangesToolkit.CC_SP_ASCUSTOM and
+                     names[-1].lower() == match.group(2).lower())):
+                name = names[0]
+            elif select_alias is CosmeticChangesToolkit.CC_SP_TOCANONCIAL:
+                name = names[-1]
+            else:
+                name_l = match.group(2).lower()
+                for alias in names:
+                    if name_l == alias.lower():
+                        name = alias
+                        break
+                # If this for loop wasn't successful, the regex matched a link
+                # with an invalid page name. That shouldn't happen!
+            return '[[{0}:{1}{2}]]'.format(ns, name, (match.group(3) or ''))
+
+        exceptions = ['nowiki', 'comment', 'math', 'pre']
+        regex_template = r'\[\[({0}) *: *({{0}}) *(\|.*?)\]\]'.format(
+            '|'.join(self.site.namespaces[-1]))
+        special_pages = self.site.siteinfo['specialpagealiases']
+        for special_page in special_pages:
+            names = special_page['aliases']
+            regex = re.compile(regex_template.format('|'.join(names)), re.I)
+            text = textlib.replaceExcept(text, regex, repl, exceptions)
+        return text
+
     def cleanUpLinks(self, text):
         # helper function which works on one link and either returns it
         # unmodified, or returns a replacement.
