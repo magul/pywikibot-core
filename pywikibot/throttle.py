@@ -1,27 +1,32 @@
 # -*- coding: utf-8  -*-
 """Mechanics to slow down wiki read and/or write rate."""
 #
-# (C) Pywikibot team, 2008
+# (C) Pywikibot team, 2008 - 2015
 #
 # Distributed under the terms of the MIT license.
 #
-__version__ = '$Id$'
-#
+from __future__ import unicode_literals
 
+__version__ = '$Id$'
+
+import codecs
 import math
 import threading
 import time
+import os.path
 
 import pywikibot
 from pywikibot import config
+from pywikibot.tools import deprecated
 
-_logger = "wiki.throttle"
+_logger = 'wiki.throttle'
 
 # global process identifier
 #
 # When the first Throttle is instantiated, it will set this variable to a
 # positive integer, which will apply to all throttle objects created by this
-# process.
+# process. It is different from the actual process id and only unique inside
+# the control file.
 pid = False
 
 
@@ -56,14 +61,11 @@ class Throttle(object):
         self.last_write = 0
         self.next_multiplicity = 1.0
 
-        # Check logfile again after this many seconds:
+        # Check throttle file again after this many seconds
         self.checkdelay = 300
 
-        # Ignore processes that have not made a check in this many seconds:
-        self.dropdelay = 600
-
-        # Free the process id after this many seconds:
-        self.releasepid = 1200
+        # The number of seconds entries of this process need to be counted
+        self.expiry = 600
 
         self.lastwait = 0.0
         self.delay = 0
@@ -72,70 +74,45 @@ class Throttle(object):
         if self.multiplydelay:
             self.checkMultiplicity()
         self.setDelays()
+        self._mtime = None
+
+    @property
+    @deprecated('expiry')
+    def releasepid(self):
+        """DEPRECATED: Seconds this process is counted."""
+        return self.expiry
+
+    @property
+    @deprecated('expiry')
+    def dropdelay(self):
+        """DEPRECATED: Seconds this process is counted."""
+        return self.expiry
 
     def checkMultiplicity(self):
         """Count running processes for site and set process_multiplicity."""
         global pid
         self.lock.acquire()
-        mysite = self.mysite
-        pywikibot.debug(u"Checking multiplicity: pid = %(pid)s" % globals(),
-                        _logger)
+        pywikibot.debug('Checking multiplicity: pid = {0}'.format(pid), _logger)
         try:
-            processes = []
-            my_pid = pid or 1  # start at 1 if global pid not yet set
-            count = 1
-            # open throttle.log
-            try:
-                f = open(self.ctrlfilename, 'r')
-            except IOError:
-                if not pid:
-                    pass
-                else:
-                    raise
-            else:
-                now = time.time()
-                for line in f.readlines():
-                    # parse line; format is "pid timestamp site"
-                    try:
-                        line = line.split(' ')
-                        this_pid = int(line[0])
-                        ptime = int(line[1].split('.')[0])
-                        this_site = line[2].rstrip()
-                    except (IndexError, ValueError):
-                        # Sometimes the file gets corrupted ignore that line
-                        continue
-                    if now - ptime > self.releasepid:
-                        continue    # process has expired, drop from file
-                    if now - ptime <= self.dropdelay \
-                       and this_site == mysite \
-                       and this_pid != pid:
-                        count += 1
-                    if this_site != self.mysite or this_pid != pid:
-                        processes.append({'pid': this_pid,
-                                          'time': ptime,
-                                          'site': this_site})
-                    if not pid and this_pid >= my_pid:
-                        my_pid = this_pid + 1  # next unused process id
-                f.close()
-
-            if not pid:
-                pid = my_pid
             self.checktime = time.time()
+            processes = [p for p in self._read_processes(self.checktime)
+                         if p['site'] != self.mysite or p['pid'] != pid]
+            if not pid:
+                if processes:
+                    pid = max(p['pid'] for p in processes) + 1
+                else:
+                    # use pid of 1 if there are no entries
+                    pid = 1
+            count = sum(1 for p in processes
+                        if p['pid'] != pid and p['site'] == self.mysite) + 1
+
             processes.append({'pid': pid,
-                              'time': self.checktime,
-                              'site': mysite})
-            processes.sort(key=lambda p: (p['pid'], p['site']))
-            try:
-                f = open(self.ctrlfilename, 'w')
-                for p in processes:
-                    f.write("%(pid)s %(time)s %(site)s\n" % p)
-            except IOError:
-                pass
-            else:
-                f.close()
+                              'time': int(self.checktime + self.expiry),
+                              'site': self.mysite})
+            self._write_processes(processes)
             self.process_multiplicity = count
-            pywikibot.log(u"Found %(count)s %(mysite)s processes "
-                          u"running, including this one." % locals())
+            pywikibot.log('Found {0} {1} processes running, including '
+                          'this one.'.format(count, self.mysite))
         finally:
             self.lock.release()
 
@@ -189,45 +166,77 @@ class Throttle(object):
             ago = now - self.last_write
         else:
             ago = now - self.last_read
-        if ago < thisdelay:
-            delta = thisdelay - ago
-            return delta
-        else:
-            return 0.0
+        return max(thisdelay - ago, 0.0)
 
     def drop(self):
         """Remove me from the list of running bot processes."""
         # drop all throttles with this process's pid, regardless of site
         self.checktime = 0
+        if pid is not False:
+            self._write_processes(p for p in self._read_processes()
+                                  if p['pid'] != pid)
+
+    def _read_processes(self, now=None):
+        """
+        Read all processes from the control file.
+
+        All entries which are older than the given time are skipped. It also
+        skips all entries which have an invalid line format (and would cause
+        IndexError or ValueError).
+
+        It is opening the file in read mode and with UTF-8 encoding.
+        """
         processes = []
-        try:
-            f = open(self.ctrlfilename, 'r')
-        except IOError:
-            return
+        if os.path.exists(self.ctrlfilename):
+            try:
+                with codecs.open(self.ctrlfilename, 'r', 'utf-8') as f:
+                    now = time.time() if now is None else now
+                    for line in f.readlines():
+                        # parse line; format is 'pid timestamp site'
+                        try:
+                            line = line.split(' ')
+                            this_pid = int(line[0])
+                            ptime = int(line[1])
+                            this_site = line[2].rstrip()
+                        except (IndexError, ValueError) as e:
+                            # Sometimes the file gets corrupted ignore that line
+                            pywikibot.debug('Invalid line found in throttle '
+                                            'file: {0}'.format(e), _logger)
+                        else:
+                            if now < ptime:
+                                # not outdated
+                                processes.append({'pid': this_pid,
+                                                  'time': ptime,
+                                                  'site': this_site})
+            except (IOError, OSError) as e:
+                pywikibot.error('Unable to read the throttle control file.')
+                pywikibot.error(e)
+            self._mtime = os.lstat(self.ctrlfilename).st_mtime
         else:
-            now = time.time()
-            for line in f.readlines():
-                try:
-                    line = line.split(' ')
-                    this_pid = int(line[0])
-                    ptime = int(line[1].split('.')[0])
-                    this_site = line[2].rstrip()
-                except (IndexError, ValueError):
-                    # Sometimes the file gets corrupted ignore that line
-                    continue
-                if now - ptime <= self.releasepid \
-                   and this_pid != pid:
-                    processes.append({'pid': this_pid,
-                                      'time': ptime,
-                                      'site': this_site})
-        processes.sort(key=lambda p: p['pid'])
+            pywikibot.log('No throttle control file found. It should create a '
+                          'new one automatically.')
+            self._mtime = False
+        return processes
+
+    def _write_processes(self, processes):
+        """Write the processes to the throttle control file."""
+        if self._mtime is None:
+            raise pywikibot.Error('Writing the throttle file before reading it.')
+        content = '\n'.join(
+            '{pid} {time} {site}'.format(**p)
+            for p in sorted(processes, key=lambda p: (p['pid'], p['site'])))
+        if (self._mtime is not False and
+                self._mtime != os.lstat(self.ctrlfilename).st_mtime):
+            pywikibot.warning('The throttle file has been changed between '
+                              'reading and writing it. The changes will be '
+                              'overwritten')
         try:
-            f = open(self.ctrlfilename, 'w')
-            for p in processes:
-                f.write("%(pid)s %(time)s %(site)s\n" % p)
-        except IOError:
-            return
-        f.close()
+            with codecs.open(self.ctrlfilename, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except OSError as e:
+            pywikibot.warning('Unable to change the throttle control file.')
+            pywikibot.error(e)
+        self._mtime = None
 
     def wait(self, seconds):
         """Wait for seconds seconds.
@@ -238,11 +247,8 @@ class Throttle(object):
         if seconds <= 0:
             return
 
-        message = (u"Sleeping for %(seconds).1f seconds, %(now)s" % {
-            'seconds': seconds,
-            'now': time.strftime("%Y-%m-%d %H:%M:%S",
-                                 time.localtime())
-        })
+        message = 'Sleeping for {0:.1f} seconds, {1}'.format(
+            seconds, time.strftime('%Y-%m-%d %H:%M:%S', time.localtime()))
         if seconds > config.noisysleep:
             pywikibot.output(message)
         else:
