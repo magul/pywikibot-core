@@ -32,7 +32,7 @@ import pywikibot.family
 from pywikibot.tools import (
     itergroup, UnicodeMixin, ComparableMixin, SelfCallDict, SelfCallString,
     deprecated, deprecate_arg, deprecated_args, remove_last_args,
-    redirect_func, manage_wrapping,
+    redirect_func, redirect_method, manage_wrapping,
 )
 from pywikibot.tools import MediaWikiVersion
 from pywikibot.throttle import Throttle
@@ -751,10 +751,6 @@ class BaseSite(ComparableMixin):
         """
         return Namespace.lookup_name(namespace, self.namespaces)
 
-    # for backwards-compatibility
-    getNamespaceIndex = redirect_func(ns_index, old_name='getNamespaceIndex',
-                                      class_name='BaseSite')
-
     @property
     def namespaces(self):
         """Return dict of valid namespaces on this wiki."""
@@ -773,11 +769,6 @@ class BaseSite(ComparableMixin):
         """
         index = self.ns_index(value)
         return self.namespace(index)
-
-    # for backwards-compatibility
-    normalizeNamespace = redirect_func(ns_normalize,
-                                       old_name='normalizeNamespace',
-                                       class_name='BaseSite')
 
     @remove_last_args(('default', ))
     def redirect(self):
@@ -1078,6 +1069,11 @@ def need_version(version):
 
         return callee
     return decorator
+
+
+# for backwards-compatibility
+redirect_method('ns_index', 'getNamespaceIndex', BaseSite)
+redirect_method('ns_normalize', 'normalizeNamespace', BaseSite)
 
 
 class Siteinfo(Container):
@@ -1672,10 +1668,6 @@ class APISite(BaseSite):
                                  if sysop else LoginStatus.AS_USER)
         else:
             self._loginstatus = LoginStatus.NOT_LOGGED_IN  # failure
-
-    # alias for backward-compatibility
-    forceLogin = redirect_func(login, old_name='forceLogin',
-                               class_name='APISite')
 
     def logout(self):
         """ Logout of the site and load details for the logged out user.
@@ -5187,6 +5179,10 @@ class APISite(BaseSite):
                                 gqppage="Listredirects",
                                 step=step, total=total)
         return lrgen
+
+
+# alias for backward-compatibility
+redirect_method('login', 'forceLogin', APISite)
 
 
 class DataSite(APISite):

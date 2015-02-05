@@ -45,7 +45,7 @@ from pywikibot.exceptions import (
     CaptchaError, SpamfilterError, CircularRedirect, InterwikiRedirectPage,
     WikiBaseError, CoordinateGlobeUnknownException,
 )
-from pywikibot.tools import UnicodeMixin, redirect_func
+from pywikibot.tools import UnicodeMixin, redirect_func, redirect_method
 from pywikibot.i18n import translate
 from pywikibot.data.api import UploadWarning
 from pywikibot.diff import PatchManager
@@ -158,9 +158,6 @@ class Timestamp(datetime.datetime):
         """
         return self.strftime(self.ISO8601Format)
 
-    toISOformat = redirect_func(isoformat, old_name='toISOformat',
-                                class_name='Timestamp')
-
     def totimestampformat(self):
         """Convert object to a MediaWiki internal timestamp."""
         return self.strftime(self.mediawikiTSFormat)
@@ -188,6 +185,9 @@ class Timestamp(datetime.datetime):
                              newdt.tzinfo)
         else:
             return newdt
+
+
+redirect_method('isoformat', 'toISOformat', Timestamp)
 
 
 class Coordinate(object):

@@ -930,6 +930,25 @@ def redirect_func(target, source_module=None, target_module=None,
     return call
 
 
+def redirect_method(target, old_name, cls):
+    """
+    Create a redirect with a deprecation warning to a method of a class.
+
+    @param target: The target method
+    @type target: str or function
+    @param old_name: The old (deprecated) name of the method.
+    @type old_name: str
+    @param cls: The class to which the method belongs
+    @type cls: class
+    """
+    if isinstance(target, basestring):
+        target = getattr(cls, target)
+    # source_module is '.' because otherwise it'd use _getframe(1) which is this
+    setattr(cls, old_name,
+            redirect_func(target, source_module='.',
+                          old_name=old_name, class_name=cls.__name__))
+
+
 class ModuleDeprecationWrapper(types.ModuleType):
 
     """A wrapper for a module to deprecate classes or variables of it."""
