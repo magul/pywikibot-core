@@ -115,58 +115,63 @@ sys.path = [sys.path[0], rewrite_path,
             os.path.join(rewrite_path, 'externals')
             ] + sys.path[1:]
 
-# try importing the known externals, and raise an error if they are not found
-try:
-    import httplib2
-    if not hasattr(httplib2, '__version__'):
-        print("httplib2 import problem: httplib2.__version__ does not exist.")
-        if sys.version_info > (3, 3):
-            print("Python 3.4+ has probably loaded externals/httplib2 "
-                  "although it doesnt have an __init__.py.")
+
+def check_dependecies():
+    """Try importing the known externals, raise error if they're not found."""
+    try:
+        import httplib2
+        if not hasattr(httplib2, '__version__'):
+            print("httplib2 import problem: httplib2.__version__ does not exist.")
+            if sys.version_info > (3, 3):
+                print("Python 3.4+ has probably loaded externals/httplib2 "
+                      "although it doesnt have an __init__.py.")
+            httplib2 = None
+    except ImportError as e:
+        print("ImportError: %s" % e)
         httplib2 = None
-except ImportError as e:
-    print("ImportError: %s" % e)
-    httplib2 = None
 
-if not httplib2:
-    print("Python module httplib2 >= 0.6.0 is required.")
-    print("Did you clone without --recursive?\n"
-          "Try running 'git submodule update --init' "
-          "or 'pip install httplib2'.")
-    sys.exit(1)
+    if not httplib2:
+        print("Python module httplib2 >= 0.6.0 is required.")
+        print("Did you clone without --recursive?\n"
+              "Try running 'git submodule update --init' "
+              "or 'pip install httplib2'.")
+        sys.exit(1)
 
-# httplib2 0.6.0 was released with __version__ as '$Rev$'
-#                and no module variable CA_CERTS.
-if httplib2.__version__ == '$Rev$' and 'CA_CERTS' not in httplib2.__dict__:
-    httplib2.__version__ = '0.6.0'
-from distutils.version import StrictVersion
-if StrictVersion(httplib2.__version__) < StrictVersion("0.6.0"):
-    print("Python module httplib2 (%s) needs to be 0.6.0 or greater." %
-          httplib2.__file__)
-    print("Did you clone without --recursive?\n"
-          "Try running 'git submodule update --init' "
-          "or 'pip install --upgrade httplib2'.")
-    sys.exit(1)
+    # httplib2 0.6.0 was released with __version__ as '$Rev$'
+    #                and no module variable CA_CERTS.
+    if httplib2.__version__ == '$Rev$' and 'CA_CERTS' not in httplib2.__dict__:
+        httplib2.__version__ = '0.6.0'
+    from distutils.version import StrictVersion
+    if StrictVersion(httplib2.__version__) < StrictVersion("0.6.0"):
+        print("Python module httplib2 (%s) needs to be 0.6.0 or greater." %
+              httplib2.__file__)
+        print("Did you clone without --recursive?\n"
+              "Try running 'git submodule update --init' "
+              "or 'pip install --upgrade httplib2'.")
+        sys.exit(1)
 
-del httplib2
+    del httplib2
 
-# Search for user-config.py before creating one.
-try:
-    # If successful, user-config.py already exists in one of the candidate
-    # directories. See config2.py for details on search order.
-    # Use env var to communicate to config2.py pwb.py location (bug 72918).
-    os.environ['PYWIKIBOT2_DIR_PWB'] = os.path.split(__file__)[0]
-    import pywikibot  # noqa
-except RuntimeError as err:
-    # user-config.py to be created
-    print("NOTE: 'user-config.py' was not found!")
-    print("Please follow the prompts to create it:")
-    run_python_file('generate_user_files.py',
-                    ['generate_user_files.py'] + sys.argv[1:],
-                    [])
-    sys.exit(1)
+    # Search for user-config.py before creating one.
+    try:
+        # If successful, user-config.py already exists in one of the candidate
+        # directories. See config2.py for details on search order.
+        # Use env var to communicate to config2.py pwb.py location (bug 72918).
+        os.environ['PYWIKIBOT2_DIR_PWB'] = os.path.split(__file__)[0]
+        import pywikibot  # noqa
+    except RuntimeError:
+        # user-config.py to be created
+        print("NOTE: 'user-config.py' was not found!")
+        print("Please follow the prompts to create it:")
+        run_python_file('generate_user_files.py',
+                        ['generate_user_files.py'] + sys.argv[1:],
+                        [])
+        sys.exit(1)
 
-if __name__ == "__main__":
+
+def main():
+    """Check and run the request script, show help if nothing is determined."""
+    check_dependecies()
     if len(sys.argv) > 1 and not re.match('-{1,2}help', sys.argv[1]):
         file_package = None
         tryimport_pwb()
@@ -213,3 +218,8 @@ if __name__ == "__main__":
         run_python_file(filename, argv, argvu, file_package)
     else:
         print(__doc__)
+
+if __name__ == "__main__":
+    main()
+else:
+    check_dependecies()

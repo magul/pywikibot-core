@@ -108,6 +108,7 @@ version = '2.0b3'
 github_url = 'https://github.com/wikimedia/pywikibot-core'
 download_url = github_url + '/archive/master.zip#egg=' + name + '-' + version
 
+
 setup(
     name=name,
     version=version,
@@ -116,9 +117,9 @@ setup(
     maintainer='The Pywikibot team',
     maintainer_email='pywikipedia-l@lists.wikimedia.org',
     license='MIT License',
-    packages=['pywikibot'] + [package
-                              for package in find_packages()
-                              if package.startswith('pywikibot.')],
+    packages=['pywikibot', 'pywikibot.scripts'] +
+            [package for package in find_packages()
+                if package.startswith('pywikibot.')],
     install_requires=dependencies,
     dependency_links=dependency_links,
     extras_require=extra_deps,
@@ -126,6 +127,8 @@ setup(
     download_url=download_url,
     test_suite="tests.collector",
     tests_require=test_deps,
+    package_dir={'pywikibot.scripts': 'scripts'},
+    data_files=[('pywikibot', ['pwb.py'])],
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Development Status :: 4 - Beta',
@@ -134,5 +137,10 @@ setup(
         'Environment :: Console',
         'Programming Language :: Python :: 2.7'
     ],
-    use_2to3=False
+    use_2to3=False,
+    entry_points={
+        'console_scripts': [
+            'pwb = pywikibot.pwb:main',
+        ]
+    }
 )
