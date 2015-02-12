@@ -864,6 +864,11 @@ class Family(object):
         if fam in config.family_files:
             family_file = config.family_files[fam]
 
+            if isinstance(family_file, dict):
+                myfamily = AutoFamily(fam, **family_file)
+                Family._families[fam] = myfamily
+                return Family._families[fam]
+
             if family_file.startswith('http://') or family_file.startswith('https://'):
                 myfamily = AutoFamily(fam, family_file)
                 Family._families[fam] = myfamily
@@ -1273,7 +1278,7 @@ class AutoFamily(Family):
 
     """Family that automatically loads the site configuration."""
 
-    def __init__(self, name, url, site=None):
+    def __init__(self, name, url, site=None, ignore_certificate_error=False):
         """Constructor."""
         super(AutoFamily, self).__init__()
         self.name = name
@@ -1281,10 +1286,14 @@ class AutoFamily(Family):
         self.langs = {
             name: self.url.netloc
         }
+        self._ignore_certificate_error = ignore_certificate_error
 
     def protocol(self, code):
         """Return the protocol of the URL."""
         return self.url.scheme
+
+    def ignore_certificate_error(self, code):
+        return self._ignore_certificate_error
 
     def scriptpath(self, code):
         """Extract the script path from the URL."""
