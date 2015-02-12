@@ -865,31 +865,33 @@ class Family(object):
             family_file = config.family_files[fam]
 
             if isinstance(family_file, dict):
-                myfamily = AutoFamily(fam, **family_file)
-                Family._families[fam] = myfamily
-                return Family._families[fam]
-
-            if family_file.startswith('http://') or family_file.startswith('https://'):
-                myfamily = AutoFamily(fam, family_file)
-                Family._families[fam] = myfamily
-                return Family._families[fam]
+                family_instance = AutoFamily(fam, **family_file)
+            if (family_file.startswith('http://') or
+                    family_file.startswith('https://')):
+                family_instance = AutoFamily(fam, family_file)
+            else:
+                try:
+                    # Ignore warnings due to dots in family names.
+                    # TODO: use more specific filter, so that family classes can use
+                    #       RuntimeWarning's while loading.
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", RuntimeWarning)
+                        family_module = imp.load_source(fam, family_file)
+                except ImportError:
+                    raise UnknownFamily('Family {0} could not be '
+                                        'imported.'.format(fam))
+                else:
+                    family_instance = family_module.Family()
         elif fam == 'lockwiki':
             raise UnknownFamily(
                 "Family 'lockwiki' has been removed as it not a public wiki.\n"
                 "You may install your own family file for this wiki, and a "
                 "old family file may be found at:\n"
                 "http://git.wikimedia.org/commitdiff/pywikibot%2Fcore.git/dfdc0c9150fa8e09829bb9d236")
+        else:
+            raise UnknownFamily('Family {0} not defined in config.'.format(fam))
 
-        try:
-            # Ignore warnings due to dots in family names.
-            # TODO: use more specific filter, so that family classes can use
-            #     RuntimeWarning's while loading.
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", RuntimeWarning)
-                myfamily = imp.load_source(fam, config.family_files[fam])
-        except (ImportError, KeyError):
-            raise UnknownFamily("Family %s does not exist" % fam)
-        Family._families[fam] = myfamily.Family()
+        Family._families[fam] = family_instance
         return Family._families[fam]
 
     @property
