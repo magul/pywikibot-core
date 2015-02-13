@@ -34,7 +34,8 @@ import pywikibot.family
 from pywikibot.tools import (
     itergroup, UnicodeMixin, ComparableMixin, SelfCallDict, SelfCallString,
     deprecated, deprecate_arg, deprecated_args, remove_last_args,
-    redirect_func, manage_wrapping, MediaWikiVersion, first_upper, normalize_username,
+    redirect_func, manage_wrapping, MediaWikiVersion, first_upper,
+    normalize_username, convert_PCRE, get_regex_group,
 )
 from pywikibot.tools.ip import is_IP
 from pywikibot.throttle import Throttle
@@ -1788,6 +1789,39 @@ class APISite(BaseSite):
         if self.is_blocked(sysop):
             # User blocked
             raise UserBlocked('User is blocked in site %s' % self)
+
+    def linktrail(self):
+        """
+        Build linktrail regex from the PCRE regex returned by the API.
+
+        @return: The linktrail regex.
+        @rtype: str
+        """
+        # This is overwriting Family's linktrail() method which is deprecated
+        # Wrap the linktrail regex into an optional non-capturing group
+        try:
+            return '(?:{0})?'.format(self.linktrail_regex[0])
+        except KeyError:
+            return self.family.linktrail(self.code())
+
+    @property
+    def linktrail_regex(self):
+        """
+        Build a regex string for the linktrail.
+
+        It is not compiled and doesn't match the empty string. So if also an
+        empty string should be matched it's possible to wrap this regex in an
+        optional non-capturing group:
+
+            '(?:' + site.linktrail_regex + ')?'
+
+        @return: The linktrail regex and the corresponding flags.
+        @rtype: str, int
+        @raise KeyError: When the site doesn't report the linktrail (< 1.21).
+        """
+        linktrail, flags = convert_PCRE(self.siteinfo['linktrail'])
+        # The linktrail is a regex with two groups use just the first group.
+        return get_regex_group(linktrail, 1), flags
 
     def get_searched_namespaces(self, force=False):
         """

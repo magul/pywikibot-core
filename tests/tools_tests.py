@@ -99,6 +99,43 @@ class OpenCompressedTestCase(TestCase):
         self.assertRaises(OSError, self._get_content, self.base_file + '_invalid.7z', True)
 
 
+class RegexTestCase(TestCase):
+
+    """Unit test class for the regex parts."""
+
+    net = False
+
+    def test_PCRE_regex(self):
+        """Test converting a PCRE regex into a python regex."""
+        self.assertEqual(tools.convert_PCRE('//')[0], '')
+        self.assertEqual(tools.convert_PCRE('/\\x{0A80}-\\x{0AFF}/')[0],
+                         '\u0A80-\u0AFF')
+        self.assertEqual(tools.convert_PCRE('/^([a-z\\x{0900}-\\x{0963}\\x{0966}-\\x{A8E0}-\\x{A8FF}]+)(.*)$/sDu')[0],
+                         '^([a-z\u0900-\u0963\u0966-\uA8E0-\uA8FF]+)(.*)$')
+        self.assertEqual(tools.convert_PCRE('/\\x41/')[0],
+                         '\u0041')
+
+    def test_regex_group(self):
+        """Test parsing the requested regex group."""
+        self.assertEqual(tools.get_regex_group('f(oo)(bar)', 0), 'f(oo)(bar)')
+        self.assertEqual(tools.get_regex_group('f(oo)(bar)', 1), 'oo')
+        self.assertEqual(tools.get_regex_group('f(oo)(bar)', 2), 'bar')
+        self.assertEqual(tools.get_regex_group('f(oo)(?P<baz>bar)', 'baz'), 'bar')
+        self.assertEqual(tools.get_regex_group('f(oo)(?P<baz>bar)', 2), 'bar')
+        self.assertEqual(tools.get_regex_group('f(o(o))bar', 1), 'o(o)')
+        self.assertEqual(tools.get_regex_group('f(o(o))bar', 2), 'o')
+        self.assertEqual(tools.get_regex_group('f(?:oo)(bar)', 1), 'bar')
+        self.assertEqual(tools.get_regex_group('f(?=oo)(bar)', 1), 'bar')
+        self.assertEqual(tools.get_regex_group('f(?:oo(bar))', 1), 'bar')
+
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(oo)(?:bar)', 2)
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(oo)(bar)', 3)
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(oo)(bar)', 'bar')
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(oo)(bar)', '1')
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(o(o)bar', 1)
+        self.assertRaises(ValueError, tools.get_regex_group, 'f(oo)(bar', '2')
+
+
 if __name__ == '__main__':
     try:
         unittest.main()

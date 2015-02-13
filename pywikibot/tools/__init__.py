@@ -301,6 +301,119 @@ def normalize_username(username):
     return first_upper(username)
 
 
+def full_chr(codepoint):
+    """Convert a codepoint into a unicode. Isn't limited by sys.maxunicode."""
+    if codepoint > sys.maxunicode:
+        # solve narrow Python 2 build exception (UTF-16)
+        return eval("'\\U{0:08x}'".format(codepoint))
+    elif sys.version_info[0] > 2:
+        return chr(codepoint)
+    else:
+        return unichr(codepoint)  # noqa: not in Python 3
+
+
+def get_regex_group(regex, group):
+    """
+    Return the regex part which captures the group.
+
+    Like with the group() method in the re module, group may be an int to give
+    the nth group. The group 0 returns the complete regex. Alternatively group
+    may be a string and is then matched with the group name.
+
+    This does not necessarily check if the regex is malformed. It might cause an
+    error but those aren't guaranteed and won't happen when the group is 0.
+
+    @param regex: The given regex string.
+    @type regex: str
+    @param group: The searched regex group.
+    @type group: int or str
+    @return: The regex string which capture the given group.
+    @rtype: str
+    @raise ValueError: When there is no such group.
+    """
+    if group == 0:
+        return regex
+    start = None
+    bracket_depth = -1
+    group_index = 0
+    idx = 0
+    while idx < len(regex):
+        if regex[idx] == '\\':
+            idx += 1
+        elif regex[idx] == '(':
+            old_group = group_index
+            if regex[idx + 1] != '?':
+                group_index += 1
+                name_match = False
+            elif (regex[idx + 2] == 'P' and
+                    regex[idx + 3] == '<'):
+                group_index += 1
+                name_end = regex.index('>', idx)
+                name_match = regex[idx + 4:name_end] == group
+                idx = name_end
+            if old_group < group_index:
+                if group_index == group or name_match:
+                    assert(start is None)
+                    start = idx + 1
+                    bracket_depth = 0  # this must got < 0 to find closing one
+                else:
+                    bracket_depth += 1
+        elif regex[idx] == ')' and start is not None:
+            assert(bracket_depth >= 0)
+            bracket_depth -= 1
+            if bracket_depth < 0:
+                return regex[start:idx]
+        idx += 1
+    raise ValueError('The regex is malformed or does not capture the group')
+
+
+def convert_PCRE(src):
+    r"""
+    Convert a PCRE into a compatible Python regex.
+
+    It currently separates the regex from the flags and the delimiters. There
+    must be one opening and closing delimiter around the regex itself.
+
+    The Unicode expressions \x?? and \x{?..} (where ? are hexadecimal digits)
+    are converted into the Unicode char points and directly added to the string.
+
+    @param src: The original and valid PCRE regex.
+    @type src: basestring
+    @return: The converted Python regex pattern and flags
+    @rtype: basestring, int
+    """
+    delim = src[0]
+    stop = 0
+    cursor = 1
+    while cursor % 2 != 0:
+        stop = src.index(delim, stop + 1)
+        cursor = 0  # number of backslashes immediately before
+        while src[stop - cursor - 1] == '\\':
+            cursor += 1
+
+    switches = set(src[stop + 1:])
+    flags = 0
+    if 's' in switches:
+        flags |= re.DOTALL
+    if 'u' in switches:
+        flags |= re.UNICODE  # TODO: This is probably the actual equivalent
+    if 'i' in switches:
+        flags |= re.IGNORE
+    if 'm' in switches:
+        flags |= re.MULTILINE
+    # TODO: Handle 'D'
+    src = src[1:stop]
+
+    compatible = ''
+    last = 0
+    for match in re.finditer(r'\\x(?:([0-9a-fA-F]{1,2})|\{([0-9a-fA-F]+)\})', src):
+        compatible += src[last:match.start()]
+        compatible += full_chr(int(match.group(1) or match.group(2), 16))
+        last = match.end()
+    compatible += src[last:]
+    return compatible, flags
+
+
 class MediaWikiVersion(Version):
 
     """

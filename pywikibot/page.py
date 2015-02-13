@@ -54,7 +54,7 @@ from pywikibot.exceptions import (
 from pywikibot.tools import (
     UnicodeMixin, DotReadableDict,
     ComparableMixin, deprecated, deprecate_arg, deprecated_args,
-    first_upper, remove_last_args, _NotImplementedWarning,
+    full_chr, first_upper, remove_last_args, _NotImplementedWarning,
     OrderedDict, Counter,
 )
 from pywikibot.tools.ip import ip_regexp  # noqa & deprecated
@@ -4965,11 +4965,7 @@ def html2unicode(text, ignore=None):
         except KeyError:
             pass
         if unicodeCodepoint and unicodeCodepoint not in ignore:
-            if unicodeCodepoint > sys.maxunicode:
-                # solve narrow Python 2 build exception (UTF-16)
-                return eval("'\\U{0:08x}'".format(unicodeCodepoint))
-            else:
-                return chr(unicodeCodepoint)
+            return full_chr(unicodeCodepoint)
         else:
             # Leave the entity unchanged
             return match.group(0)
