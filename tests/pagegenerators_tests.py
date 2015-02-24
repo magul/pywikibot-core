@@ -341,7 +341,6 @@ class TestPreloadingGenerator(DefaultSiteTestCase):
             self.assertIsInstance(page.exists(), bool)
             if page.exists():
                 self.assertTrue(hasattr(page, "_text"))
-                self.assertEqual(len(page._revisions), 1)
                 self.assertFalse(hasattr(page, '_pageprops'))
             count += 1
         self.assertEqual(len(links), count)
@@ -356,7 +355,6 @@ class TestPreloadingGenerator(DefaultSiteTestCase):
             self.assertIsInstance(page.exists(), bool)
             if page.exists():
                 self.assertTrue(hasattr(page, "_text"))
-                self.assertEqual(len(page._revisions), 1)
                 self.assertFalse(hasattr(page, '_pageprops'))
             count += 1
         self.assertEqual(len(links), count)

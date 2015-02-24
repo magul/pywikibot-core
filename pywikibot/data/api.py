@@ -2204,23 +2204,13 @@ def update_page(page, pagedict, props=[]):
         for item in pagedict['protection']:
             page._protection[item['type']] = item['level'], item['expiry']
     if 'revisions' in pagedict:
-        for rev in pagedict['revisions']:
-            revision = pywikibot.page.Revision(
-                revid=rev['revid'],
-                timestamp=pywikibot.Timestamp.fromISOformat(rev['timestamp']),
-                user=rev.get('user', u''),
-                anon='anon' in rev,
-                comment=rev.get('comment', u''),
-                minor='minor' in rev,
-                text=rev.get('*', None),
-                rollbacktoken=rev.get('rollbacktoken', None)
-            )
-            page._revisions[revision.revid] = revision
+        page._revision_cache.cache_revisions(pagedict['revisions'])
 
     if 'lastrevid' in pagedict:
         page._revid = pagedict['lastrevid']
-        if page._revid in page._revisions:
-            page._text = page._revisions[page._revid].text
+        if page._revid in page._revision_cache:
+            # use Revision._text to prevent loading the value
+            page._text = page._revision_cache[page._revid]._text
 
     if 'imageinfo' in pagedict:
         assert(isinstance(page, pywikibot.FilePage))

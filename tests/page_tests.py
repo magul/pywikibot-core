@@ -7,13 +7,17 @@
 #
 __version__ = '$Id$'
 
+from datetime import timedelta
 import sys
+
 import pywikibot
 from pywikibot import config
 from pywikibot import InvalidTitle
 import pywikibot.page
 
-from tests.aspects import unittest, TestCase, DefaultSiteTestCase
+from tests.aspects import (
+    unittest, TestCase, DefaultSiteTestCase, DefaultDrySiteTestCase
+)
 from tests.utils import allowed_failure
 
 if sys.version_info[0] > 2:
@@ -255,7 +259,13 @@ class TestPageObjectEnglish(TestCase):
 
     def test_creation(self):
         mainpage = self.get_mainpage()
+        print('=' * 40)
+        print(mainpage._revision_cache)
         creation = mainpage.getCreator()
+        print('=' * 40)
+        print(mainpage._revision_cache)
+        print(creation)
+        print('=' * 40)
         self.assertEqual(creation[0], 'TwoOneTwo')
         self.assertIsInstance(creation[1], pywikibot.Timestamp)
 
@@ -801,6 +811,81 @@ class HtmlEntity(TestCase):
     def test_recursive_entities(self):
         """Test recursive entities."""
         self.assertEqual(pywikibot.page.html2unicode('A&amp;amp;O'), 'A&amp;O')
+
+
+class RevisionCacheTest(DefaultSiteTestCase):
+
+    """Test the revision cache on a life site."""
+
+    def test_consitency(self):
+        page = self.get_mainpage()
+        # force empty cache
+        page._rev_chache = pywikibot.page._RevisionCache(page)
+        child = None
+        for rev in list(page.revisions(total=3)):
+            if child is not None:
+                self.assertEqual(rev.revid, child.parentid)
+            child = rev
+        self.assertEqual(page._revision_cache._check_integrity(), [])
+
+    def test_refresh(self):
+        """Test that missing revisions in a cache are reloaded."""
+        page = self.get_mainpage()
+        # force empty cache
+        page._rev_chache = pywikibot.page._RevisionCache(page)
+        revisions = list(page.revisions(total=3))
+        if len(revisions) < 3:
+            raise unittest.SkipTest('Main page has less than 3 revisions')
+        # remove one in the middle, but there might be already revisions cached
+        chunk, index = page._revision_cache._index(revisions[1].revid)
+        self.assertGreaterEqual(len(page._revision_cache._cache[chunk]), 3)
+        page._revision_cache._cache.insert(
+            chunk + 1, page._revision_cache._cache[chunk][index + 1:])
+        page._revision_cache._cache[chunk] = (
+            page._revision_cache._cache[chunk][:index])
+        self.assertEqual(page._revision_cache._check_integrity(), [])
+        new_revisions = list(page._revision_cache.get_revisions(
+                             startid=revisions[0].revid, total=3))
+        self.assertEqual([rev.revid for rev in new_revisions],
+                         [rev.revid for rev in revisions])
+
+
+class DryRevisionCacheTest(DefaultDrySiteTestCase):
+
+    """Test the revision cache with static revisions."""
+
+    @staticmethod
+    def _fake_revisions(lengths):
+        """Generate a cache with chunks of the given length."""
+        cache = []
+        revid = sum(lengths) * 2
+        ts = pywikibot.Timestamp.utcnow()
+        for length in lengths:
+            chunk = []
+            for index in range(length):
+                chunk += [pywikibot.page.Revision(revid, ts, 'no_user',
+                                                  parentid=revid - 2)]
+                revid -= 2
+                ts -= timedelta(days=1)
+            cache += [chunk]
+        return cache
+
+    def test(self):
+        """Test that the revisions are correctly returned without API."""
+        site = self.get_site()
+        page = pywikibot.Page(site, 'Testpage')
+        page._revision_cache._cache = self._fake_revisions([3, 5])
+        cache = page._revision_cache._cache[-1]
+        self.assertEqual(
+            list(page._revision_cache.get_revisions(startid=10, endid=2)),
+            cache)
+        self.assertEqual(
+            list(page._revision_cache.get_revisions(startid=10, endid=4)),
+            cache[:-1])
+        self.assertEqual(
+            list(page._revision_cache.get_revisions(endid=10, startid=2, reverse=True)),
+            cache[::-1])
+        self.assertEqual(page.oldest_revision, cache[-1])
 
 
 if __name__ == '__main__':

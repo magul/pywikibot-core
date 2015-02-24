@@ -4378,20 +4378,23 @@ class APISite(BaseSite):
         @param page: the Page to be rolled back (must exist)
 
         """
-        if len(page._revisions) < 2:
-            raise Error(
-                u"Rollback of %s aborted; load revision history first."
-                % page.title(asLink=True))
-        last_rev = page.latest_revision
-        last_user = last_rev.user
-        for rev in sorted(list(page._revisions.keys()), reverse=True):
-            # start with most recent revision first
-            if rev.user != last_user:
+        last_user = None
+        length = 0
+        for rev in page.revisions():
+            length += 1
+            if last_user is None:
+                last_user = rev.user
+            elif rev.user != last_user:
                 break
         else:
-            raise Error(
-                u"Rollback of %s aborted; only one user in revision history."
-                % page.title(asLink=True))
+            if length < 2:
+                raise Error(
+                    u'Rollback of {0} aborted; only one revision.'.format(
+                    page.title(asLink=True)))
+            else:
+                raise Error(
+                    u"Rollback of %s aborted; only one user in revision history."
+                    % page.title(asLink=True))
         token = self.tokens["rollback"]
         self.lock_page(page)
         req = api.Request(site=self, action="rollback",
