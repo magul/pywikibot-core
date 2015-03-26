@@ -463,36 +463,52 @@ class ParamInfo(Container):
                 if not prefix:
                     continue
 
-                params = {}
+                self._paraminfo[path]['parameters'] = []
 
-                # Check existence of parameters used frequently by pywikibot.
-                # TODO: for each parameter, parse list of values ('type')
-                if prefix + 'limit' in help_text:
-                    params['limit'] = {
-                        'name': 'limit',
-                        'type': 'limit',
-                        'max': 50,
-                    }
+                param_start = help_text.find('Parameters:', start)
+                param_start += len('Parameters:')
+                param_end = help_text.find('Example', param_start) - 1
 
-                if prefix + 'namespace' in help_text:
-                    params['namespace'] = {
-                        'name': 'namespace',
-                        'type': 'namespace',
-                    }
-                    if not submodule.startswith('all'):
-                        params['namespace']['multi'] = ''
+                # If this module has no parameter
+                if param_start > end:
+                    param_start = end
+                # If there are no examples after the parameters
+                if param_end > end:
+                    param_end = end
 
-                for param_name in ['token', 'prop', 'type', 'show']:
-                    if prefix + param_name in help_text:
-                        params[param_name] = {
-                            'name': param_name,
-                            'type': [],
-                            'multi': '',
-                        }
+                parameter = None
+                # skip first as the parameters begin with '\n  ' and the regex
+                # does split an empty group before that match
+                for param in re.split(r'\n  (?=\w)', help_text[param_start:param_end])[1:]:
+                    lines = param.splitlines()
+                    name = param[:param.index('-')].strip()
+                    assert(name.startswith(prefix))
+                    name = name[len(prefix):]
+                    parameter = {'name': name}
+                    self._paraminfo[path]['parameters'] += [parameter]
+                    values_line = -1
+                    if 'Default: ' in lines[-1]:
+                        parameter['default'] = lines[-1][lines[-1].index(':') + 2:]
+                        values_line -= 1
+                    values_line = lines[values_line].strip()
+                    if values_line.startswith(query_help_list_prefix):
+                        parameter['multi'] = ''
+                        has_type = True
+                    else:
+                        limits = re.match(r'No more than (\d+) (?:(\d+) for bots) allowed.', values_line)
+                        if limits:
+                            parameter['max'] = int(limits.group(1))
+                            parameter['highmax'] = int(limits.group(2))
+                            parameter['type'] = 'limit'
+                        has_type = not limits and values_line.startswith('One value: ')
+                    if name == 'namespace':
+                        assert(has_type)
+                        parameter['type'] = 'namespace'
+                    elif has_type:
+                        parameter['type'] = values_line[values_line.index(': ') + 2:].split(', ')
 
-                self._paraminfo[path]['parameters'] = params.values()
                 if (help_text.find('\n\nThis module only accepts POST '
-                                   'requests.\n', start) < end):
+                                   'requests.\n', start) < param_start):
                     self._paraminfo[path]['mustbeposted'] = ''
 
         self._emulate_pageset()
