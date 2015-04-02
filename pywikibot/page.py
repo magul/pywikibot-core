@@ -3345,6 +3345,71 @@ class WikibasePage(BasePage):
         self.editEntity(data, **kwargs)
 
 
+class Importer(pywikibot.Page):
+
+    def __init__(self, site):
+        self.importsite = site
+        pywikibot.Page.__init__(self, site, 'Special:Import', None, 0)
+
+    def Import(self, target, project='w', crono='1', namespace='', prompt=True):
+        """Import the page from the wiki. Requires administrator status.
+        If prompt is True, asks the user if he wants to delete the page.
+
+        """
+        if project == 'w':
+            site = pywikibot.Site(fam='wikipedia')
+        elif project == 'b':
+            site = pywikibot.Site(fam='wikibooks')
+        elif project == 'wikt':
+            site = pywikibot.Site(fam='wiktionary')
+        elif project == 's':
+            site = pywikibot.Site(fam='wikisource')
+        elif project == 'q':
+            site = pywikibot.Site(fam='wikiquote')
+        else:
+            site = pywikibot.Site()
+        # Fixing the crono value...
+        if crono:
+            crono = '1'
+        else:
+            crono = '0'
+        # Fixing namespace's value.
+        if namespace == '0':
+            namespace == ''
+        answer = 'y'
+        if prompt:
+            answer = pywikibot.input_yn(u'Do you want to import %s?', default=False, automatic_quit=False)
+        if answer:
+            host = self.site.hostname()
+            address = self.site().path() + '?title=%s&action=submit' % self.urlname()
+            # You need to be a sysop for the import.
+            pywikibot.login.LoginManager(sysop=True, site=self.site())
+            # Getting the token.
+            token = self.site.tokens
+            # Defing the predata.
+            predata = {
+                'action': 'submit',
+                'source': 'interwiki',
+                # from what project do you want to import the page?
+                'interwiki': project,
+                # What is the page that you want to import?
+                'frompage': target,
+                # The entire history... or not?
+                'interwikiHistory': crono,
+                # What namespace do you want?
+                'namespace': '',
+            }
+            data = self.site.getUrl(address, data=predata, sysop=True)
+            if data:
+                pywikibot.output(u'Page imported, checking...')
+                if pywikibot.Page(self.importsite, target).exists():
+                    pywikibot.output(u'Import success!')
+                    return True
+                else:
+                    pywikibot.output(u'Import failed!')
+                    return False
+
+
 class ItemPage(WikibasePage):
 
     """Wikibase entity of type 'item'.
