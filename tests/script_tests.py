@@ -397,8 +397,6 @@ class TestScriptSimulate(DefaultSiteTestCase, PwbTestCase):
         'misspelling',
         # T77965
         'watchlist',
-        # T94680: uses exit code 1
-        'lonelypages',
     ]
 
     _argument = 'simulate'

@@ -54,6 +54,7 @@ docuReplacements = {
     '&params;':     pagegenerators.parameterHelp,
 }
 
+# TODO: Deprecated
 template = {
     'ar': u'{{يتيمة|تاريخ={{نسخ:اسم_شهر}} {{نسخ:عام}}}}',
     'ca': u'{{Orfe|date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}}}',
@@ -63,6 +64,7 @@ template = {
     'zh': u'{{subst:Orphan/auto}}',
 }
 
+# TODO: Deprecated
 # Use regex to prevent to put the same template twice!
 exception_regex = {
     'ar': [u'\\{\\{(?:قالب:|)(يتيمة)[\\|\\}]'],
@@ -72,6 +74,50 @@ exception_regex = {
     'it': [r'\{\{(?:template:|)(o|a)[\|\}]'],
     'ja': [u'\\{\\{(?:template:|)(孤立)[\\|\\}]'],
     'zh': [r'\{\{(?:template:|)(orphan)[\|\}]'],
+}
+
+
+class OrphanTemplate(object):
+
+    """The orphan template configuration."""
+
+    def __init__(self, name, parameters, aliases=None, subst=False):
+        self._name = name
+        if not aliases:
+            aliases = []
+        elif not subst:
+            aliases = list(aliases) + [name]
+        else:
+            name = 'subst:' + name
+        if parameters:
+            name += '|' + parameters
+        self._template = u'{{' + name + '}}'
+        self._names = frozenset(aliases)
+
+    def generate(self, site):
+        """Create regex from the given names."""
+        template_ns = site.namespaces[10]
+        # TODO: Add redirects to self.names too
+        if not pywikibot.Page(site, self._name, template_ns.id).exists():
+            raise ValueError(u'Orphan template "{0}" does not exist on '
+                             u'"{1}".'.format(self._name, site))
+        for name in self._names:
+            if not pywikibot.Page(site, name, template_ns.id).exists():
+                pywikibot.warning(u'Orphan template alias "{0}" does not exist '
+                                  u'on "{1}"'.format(name, site))
+        return re.compile(r'\{\{(?:' + u':|'.join(template_ns) + '|)(' +
+                          u'|'.join(re.escape(name) for name in self._names) +
+                          r')[\|\}]', re.I)
+
+
+# The orphan template names in the different languages.
+templates = {
+    'ar': OrphanTemplate(u'ﻲﺘﻴﻣﺓ', u'ﺕﺍﺮﻴﺧ={{ﻦﺴﺧ:ﺎﺴﻣ_ﺶﻫﺭ}} {{ﻦﺴﺧ:ﻉﺎﻣ}}'),
+    'ca': OrphanTemplate('Orfe', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}'),
+    'en': OrphanTemplate('Orphan', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['wi']),
+    'it': OrphanTemplate('O', '||mese={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['a']),
+    'ja': OrphanTemplate(u'孤立', '{{subst:DATE}}'),
+    'zh': OrphanTemplate(u'Orphan/auto', '', ['orphan'], True),
 }
 
 
@@ -96,11 +142,19 @@ class LonelyPagesBot(Bot):
             self.site, 'lonelypages-comment-add-template')
         self.commentdisambig = i18n.twtranslate(
             self.site, 'lonelypages-comment-add-disambig-template')
-        self.template = i18n.translate(self.site, template)
-        self.exception = i18n.translate(self.site, exception_regex)
-        if self.template is None or self.exception is None:
+        orphan_template = i18n.translate(self.site, templates)
+        if orphan_template is None:
             pywikibot.showHelp()
             sys.exit(u'Missing configuration for site %s' % self.site)
+        try:
+            self._exception = orphan_template.generate(self.site)
+        except ValueError as e:
+            pywikibot.showHelp()
+            pywikibot.error(e)
+            sys.exit(u'Missing configuration for site %s' % self.site)
+        else:
+            self.exception = [self._exception.pattern]  # for backwards compatibility
+            self.template = orphan_template._template
         # DisambigPage part
         if self.getOption('disambigPage') is not None:
             self.disambigpage = pywikibot.Page(self.site, self.getOption('disambigPage'))
@@ -136,9 +190,7 @@ class LonelyPagesBot(Bot):
         if not self.enable_page():
             pywikibot.output('The bot is disabled')
             return
-        # Main Loop
-        for page in self.generator:
-            self.treat(page)
+        super(LonelyPagesBot, self).run()
 
     def treat(self, page):
         pywikibot.output(u"Checking %s..." % page.title())
@@ -159,18 +211,10 @@ class LonelyPagesBot(Bot):
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u"%s is a redirect! Skip..." % page.title())
                 return
-            # I've used a loop in a loop. If I use continue in the second loop,
-            # it won't do anything in the first. So let's create a variable to
-            # avoid this problem.
-            for regexp in self.exception:
-                res = re.findall(regexp, oldtxt.lower())
-                # Found a template! Let's skip the page!
-                if res != []:
-                    pywikibot.output(
-                        u'Your regex has found something in %s, skipping...'
-                        % page.title())
-                    break
-            else:
+            if self._exception.search(oldtxt):
+                pywikibot.output(
+                    u'Your regex has found something in %s, skipping...'
+                    % page.title())
                 return
             if page.isDisambig() and self.getOption('disambigPage') is not None:
                 pywikibot.output(u'%s is a disambig page, report..'
