@@ -3077,6 +3077,27 @@ class WikibasePage(BasePage):
     There should be no need to instantiate this directly.
     """
 
+    # _metadata_keys contains the keys into the Wikibase entity representation
+    # that refer to entity metadata and not content.
+    _metadata_keys = set((
+        'id',
+        'lastrevid',
+        'modified',
+        'ns',
+        'pageid',
+        'title',
+        'type',
+    ))
+
+    # _content_keys contains the keys into the Wikibase entity representation
+    # that refer to entity content rather than metadata.
+    _content_keys = set((
+        'aliases',
+        'labels',
+        'descriptions',
+        'claims',
+    ))
+
     def __init__(self, site, title=u"", **kwargs):
         """Constructor.
 
@@ -3280,6 +3301,44 @@ class WikibasePage(BasePage):
         """
         return True
 
+    @property
+    def id(self):
+        """
+        Get Entity id.
+
+        @raise AttributeError: id has not yet been lazily loaded
+        """
+        if not hasattr(self, '_id'):
+            raise AttributeError
+        return self._id
+
+    @id.setter
+    def id(self, value):
+        """
+        Set Entity id.
+
+        @param value: Entity id, or -1 for an empty item
+        @type value: str
+        """
+        if hasattr(self, '_content'):
+            del self._content
+
+        if value == '-1':
+            for key in self._content_keys:
+                setattr(self, key, {})
+        else:
+            for key in self._content_keys:
+                if hasattr(self, key):
+                    delattr(self, key)
+
+        self._id = value
+
+    @id.deleter
+    def id(self):
+        """Delete Entity id."""
+        if hasattr(self, '_id'):
+            del self._id
+
     def get(self, force=False, *args, **kwargs):
         """
         Fetch all page data, and cache it.
@@ -3300,6 +3359,7 @@ class WikibasePage(BasePage):
                 self.id = item_index
 
             self._content = data[item_index]
+
         if 'lastrevid' in self._content:
             self.latest_revision_id = self._content['lastrevid']
         else:
@@ -3308,6 +3368,13 @@ class WikibasePage(BasePage):
                 if not p.exists():
                     raise pywikibot.NoPage(p)
             raise pywikibot.NoPage(self)
+
+        assert set(self._content) >= self._metadata_keys, \
+            'Metadata keys {0} missing'.format(
+                self._metadata_keys - set(self._content))
+
+        assert set(self._content).intersection(self._content_keys), \
+            'None of the content keys exist: {0}'.format(self._content_keys)
 
         # aliases
         self.aliases = {}
@@ -3605,6 +3672,11 @@ class ItemPage(WikibasePage):
     If an item is defined by site & title, once an item's qid has
     been looked up, the item is then defined by the qid.
     """
+
+    _content_keys = WikibasePage._content_keys | set((
+        'sitelinks',
+        'redirects',
+    ))
 
     def __init__(self, site, title=None, ns=None):
         """
@@ -4012,6 +4084,10 @@ class PropertyPage(WikibasePage, Property):
 
         PropertyPage(DataSite, 'P21')
     """
+
+    _metadata_keys = WikibasePage._metadata_keys | set((
+        'datatype',
+    ))
 
     def __init__(self, source, title=u""):
         """
