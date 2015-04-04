@@ -17,7 +17,7 @@ import os
 import pywikibot
 
 from pywikibot import pagegenerators
-from pywikibot.page import WikibasePage, ItemPage
+from pywikibot.page import WikibasePage, ItemPage, PropertyPage
 from pywikibot.site import Namespace, NamespacesDict
 
 from tests.aspects import (
@@ -241,6 +241,8 @@ class TestItemLoad(WikidataTestCase):
         wikidata = self.get_repo()
         item = pywikibot.ItemPage(wikidata, 'Q60')
         self.assertEqual(item._link._title, 'Q60')
+        self.assertRaises(AttributeError, getattr, item, 'labels')
+        self.assertRaises(AttributeError, getattr, item, 'sitelinks')
         self.assertEqual(item._defined_by(), {u'ids': u'Q60'})
         self.assertEqual(item.id, 'Q60')
         self.assertFalse(hasattr(item, '_title'))
@@ -249,20 +251,30 @@ class TestItemLoad(WikidataTestCase):
         self.assertEqual(item.getID(), 'Q60')
         self.assertEqual(item.getID(numeric=True), 60)
         self.assertFalse(hasattr(item, '_content'))
+        self.assertRaises(AttributeError, getattr, item, 'labels')
+        self.assertRaises(AttributeError, getattr, item, 'sitelinks')
         item.get()
         self.assertTrue(hasattr(item, '_content'))
+        self.assertTrue(item.labels)
+        self.assertTrue(item.sitelinks)
 
     def test_load_item_set_id(self):
         """Test setting item.id attribute on empty item."""
         wikidata = self.get_repo()
         item = pywikibot.ItemPage(wikidata, '-1')
         self.assertEqual(item._link._title, '-1')
+        self.assertEqual(item.labels, {})
+        self.assertEqual(item.claims, {})
         item.id = 'Q60'
+        self.assertFalse(hasattr(item, 'labels'))
+        self.assertFalse(hasattr(item, 'sitelinks'))
         self.assertFalse(hasattr(item, '_content'))
         self.assertEqual(item.getID(), 'Q60')
         self.assertFalse(hasattr(item, '_content'))
         item.get()
         self.assertTrue(hasattr(item, '_content'))
+        self.assertTrue(item.labels)
+        self.assertTrue(item.sitelinks)
         self.assertIn('en', item.labels)
         self.assertEqual(item.labels['en'], 'New York City')
         self.assertEqual(item.title(), 'Q60')
@@ -271,28 +283,25 @@ class TestItemLoad(WikidataTestCase):
         """
         Test modifying item.id attribute.
 
-        Some scripts are using item.id = 'Q60' semantics, which does work
-        but modifying item.id does not currently work, and this test
-        highlights that it breaks silently.
+        Some scripts are using item.id = 'Q60' after instantiation using '-1'.
+        If it can be modified once, it should be possible to modify it twice.
         """
         wikidata = self.get_repo()
-        item = pywikibot.ItemPage(wikidata, 'Q60')
+        item = pywikibot.ItemPage(wikidata)
+        item.id = 'Q60'
         item.get()
         self.assertEqual(item.labels['en'], 'New York City')
 
-        # When the id attribute is modified, the ItemPage goes into
-        # an inconsistent state.
+        # Setting the id attribute should clear the cached values
         item.id = 'Q5296'
         # The title is updated correctly
         self.assertEqual(item.title(), 'Q5296')
 
-        # This del has no effect on the test; it is here to demonstrate that
-        # it doesnt help to clear this piece of saved state.
-        del item._content
-        # The labels are not updated; assertion showing undesirable behaviour:
-        self.assertEqual(item.labels['en'], 'New York City')
-        # TODO: This is the assertion that this test should be using:
-        # self.assertTrue(item.labels['en'].lower().endswith('main page'))
+        # The exposed content shouldnt exist until .get() is called,
+        # as callers have assumed that AttributeError will be raised.
+        self.assertFalse(hasattr(item, 'labels'))
+        item.get()
+        self.assertTrue(item.labels['en'].lower().endswith('main page'))
 
     def test_empty_item(self):
         # should not raise an error as the constructor only requires
@@ -799,11 +808,13 @@ class TestNamespaces(WikidataTestCase):
 
         page = pywikibot.page.WikibasePage(wikidata, title='Q60', ns=0)
         self.assertEqual(page.namespace(), 0)
+        page._content_keys = ItemPage._content_keys
         page.get()
 
         page = pywikibot.page.WikibasePage(wikidata, title='Q60',
                                            entity_type='item')
         self.assertEqual(page.namespace(), 0)
+        page._content_keys = ItemPage._content_keys
         page.get()
 
         page = pywikibot.page.PropertyPage(wikidata, 'Property:P6')
@@ -816,15 +827,18 @@ class TestNamespaces(WikidataTestCase):
 
         page = pywikibot.page.WikibasePage(wikidata, title='Property:P6')
         self.assertEqual(page.namespace(), 120)
+        page._metadata_keys = PropertyPage._metadata_keys
         page.get()
 
         page = pywikibot.page.WikibasePage(wikidata, title='P6', ns=120)
         self.assertEqual(page.namespace(), 120)
+        page._metadata_keys = PropertyPage._metadata_keys
         page.get()
 
         page = pywikibot.page.WikibasePage(wikidata, title='P6',
                                            entity_type='property')
         self.assertEqual(page.namespace(), 120)
+        page._metadata_keys = PropertyPage._metadata_keys
         page.get()
 
     def test_wrong_namespaces(self):
@@ -971,12 +985,13 @@ class TestJSON(WikidataTestCase):
         with open(os.path.join(os.path.split(__file__)[0], 'pages', 'Q60.wd')) as f:
             self.wdp._content = json.load(f)
         self.wdp.get()
-        del self.wdp._content['id']
-        del self.wdp._content['type']
-        del self.wdp._content['lastrevid']
 
     def test_itempage_json(self):
-        old = json.dumps(self.wdp._content, indent=2, sort_keys=True)
+        old_content = self.wdp._content.copy()
+        for key in WikibasePage._metadata_keys:
+            del old_content[key]
+
+        old = json.dumps(old_content, indent=2, sort_keys=True)
         new = json.dumps(self.wdp.toJSON(), indent=2, sort_keys=True)
 
         self.assertEqual(old, new)
