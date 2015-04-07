@@ -29,16 +29,22 @@ import threading
 if sys.version_info[0] > 2:
     from http import cookiejar as cookielib
     from urllib.parse import splittype, splithost, unquote, urlparse, urljoin
+
+    class addinfourl(object):
+
+        """Dummy class missing from Python 3."""
+
+        pass
 else:
     import cookielib
     from urlparse import urlparse, urljoin
-    from urllib import splittype, splithost, unquote
+    from urllib import addinfourl, splittype, splithost, unquote
 
 import pywikibot
 
 from pywikibot import config
 
-from pywikibot.tools import UnicodeMixin
+from pywikibot.tools import UnicodeMixin, deprecated
 
 _logger = "comm.threadedhttp"
 
@@ -311,7 +317,7 @@ class Http(httplib2.Http):
                 response, content)
 
 
-class HttpRequest(UnicodeMixin):
+class HttpRequest(UnicodeMixin, addinfourl):
 
     """Object wrapper for HTTP requests that need to block origin thread.
 
@@ -350,8 +356,8 @@ class HttpRequest(UnicodeMixin):
         """
         self.uri = uri
         self.method = method
-        self.body = body
-        self.headers = headers
+        self.request_body = body
+        self.request_headers = headers
         if isinstance(charset, codecs.CodecInfo):
             self.charset = charset.name
         elif charset:
@@ -369,6 +375,14 @@ class HttpRequest(UnicodeMixin):
         self._parsed_uri = None
         self._data = None
         self.lock = threading.Semaphore(0)
+
+        # urllib.addinfourl attributes emulating a closed fp
+        # TODO: allow fp-like access to raw response body.
+        self.fp = None
+        self.read = None
+        self.readline = None
+        self.readlines = None
+        self.fileno = None
 
     def _join(self):
         """Block until response has arrived."""
@@ -400,7 +414,7 @@ class HttpRequest(UnicodeMixin):
 
     @property
     def response_headers(self):
-        """Return the response headers."""
+        """Return the HTTP response headers."""
         if not self.exception:
             return self.data[0]
 
@@ -498,6 +512,83 @@ class HttpRequest(UnicodeMixin):
     def __bytes__(self):
         """Return the undecoded response."""
         return self.raw
+
+    @property
+    def headers(self):
+        """HTTP response headers.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: dict
+        """
+        return self.response_headers
+
+    @deprecated
+    def info(self):
+        """HTTP response headers.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: dict
+        """
+        return self.response_headers
+
+    @property
+    def url(self):
+        """Return the parsed requested uri.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: str
+        """
+        return self.parsed_uri
+
+    @property
+    def code(self):
+        """HTTP response status.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: int
+        """
+        return self.response_headers.status
+
+    @deprecated
+    def getcode(self):
+        """HTTP response status. DEPRECATED.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: int
+        """
+        return self.response_headers.status
+
+    @deprecated('parsed_uri')
+    def geturl(self):
+        """Return the parsed requested uri. DEPRECATED.
+
+        Emulating urllib2.urlopen response attributes.
+
+        @rtype: str
+        """
+        return self.parsed_uri
+
+    @deprecated('response_headers')
+    def getheader(self, name):
+        """Return the response header. DEPRECATED.
+
+        @rtype: str
+        """
+        return self.response_headers[name]
+
+    @property
+    @deprecated('status')
+    def msg(self):
+        """Return a description of the status. DEPRECATED.
+
+        @rtype: str
+        """
+        return 'OK' if self.status == 200 else 'NOT 200'
 
 
 class HttpProcessor(threading.Thread):
