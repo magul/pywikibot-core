@@ -569,6 +569,7 @@ db_connect_file = os.path.expanduser('~/.my.cnf')
 
 # ############# SEARCH ENGINE SETTINGS ##############
 
+google_key = ''
 # Some scripts allow using the Yahoo! Search Web Services. To use this feature,
 # you must install the pYsearch module from http://pysearch.sourceforge.net
 # and get a Yahoo AppID from https://developer.yahoo.com/
