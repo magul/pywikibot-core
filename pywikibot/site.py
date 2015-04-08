@@ -5408,6 +5408,23 @@ class APISite(BaseSite):
         return comparison
 
 
+class EntityNamespaces(dict):
+
+    """
+    Custom dict subclass for Wikibase entity namespaces.
+
+    Raises EntityTypeUnknownException instead of KeyError.
+    """
+
+    def __init__(self, site):
+        self.site = site
+
+    def __missing__(self, key):
+        raise EntityTypeUnknownException(
+            '%r does not support entity type "%s"'
+            % (self.site, key))
+
+
 class DataSite(APISite):
 
     """Wikibase data capable site."""
@@ -5415,25 +5432,48 @@ class DataSite(APISite):
     def __init__(self, *args, **kwargs):
         """Constructor."""
         super(DataSite, self).__init__(*args, **kwargs)
-        self._item_namespace = None
-        self._property_namespace = None
+        self._entity_namespaces = None
 
     def _cache_entity_namespaces(self):
         """Find namespaces for each known wikibase entity type."""
-        self._item_namespace = False
-        self._property_namespace = False
+        self._entity_namespaces = EntityNamespaces(self)
 
         for namespace in self.namespaces().values():
             if not hasattr(namespace, 'defaultcontentmodel'):
                 continue
 
             content_model = namespace.defaultcontentmodel
-            if content_model == 'wikibase-item':
-                self._item_namespace = namespace
-            elif content_model == 'wikibase-property':
-                self._property_namespace = namespace
+            if content_model.startswith('wikibase-'):
+                self._entity_namespaces[content_model[9:]] = namespace
 
     @property
+    def type_to_class(self):
+        """
+        Return a mapping of Wikibase entity types to Page subclasses.
+
+        @return: entity classes
+        @rtype: dict
+        """
+        # FIXME: should be a constant
+        return {
+            pywikibot.ItemPage.ENTITY_TYPE: pywikibot.ItemPage,
+            pywikibot.PropertyPage.ENTITY_TYPE: pywikibot.PropertyPage
+        }
+
+    @property
+    def entity_namespaces(self):
+        """
+        Return a mapping of Wikibase entity types to MediaWiki namespaces.
+
+        @return: entity namespaces
+        @rtype: EntityNamespaces
+        """
+        if self._entity_namespaces is None:
+            self._cache_entity_namespaces()
+        return self._entity_namespaces
+
+    @property
+    @deprecated("DataSite.entity_namespaces['item']")
     def item_namespace(self):
         """
         Return namespace for items.
@@ -5441,17 +5481,10 @@ class DataSite(APISite):
         @return: item namespace
         @rtype: Namespace
         """
-        if self._item_namespace is None:
-            self._cache_entity_namespaces()
-
-        if isinstance(self._item_namespace, Namespace):
-            return self._item_namespace
-        else:
-            raise EntityTypeUnknownException(
-                '%r does not support entity type "item"'
-                % self)
+        return self.entity_namespaces['item']
 
     @property
+    @deprecated("DataSite.entity_namespaces['property']")
     def property_namespace(self):
         """
         Return namespace for properties.
@@ -5459,15 +5492,7 @@ class DataSite(APISite):
         @return: property namespace
         @rtype: Namespace
         """
-        if self._property_namespace is None:
-            self._cache_entity_namespaces()
-
-        if isinstance(self._property_namespace, Namespace):
-            return self._property_namespace
-        else:
-            raise EntityTypeUnknownException(
-                '%r does not support entity type "property"'
-                % self)
+        return self.entity_namespaces['property']
 
     def __getattr__(self, attr):
         """Provide data access methods.
@@ -5546,8 +5571,8 @@ class DataSite(APISite):
             raise api.APIError(data['errors'])
         return data['entities']
 
-    def preloaditempages(self, pagelist, groupsize=50):
-        """Yield ItemPages with content prefilled.
+    def preload_entities(self, pagelist, groupsize=50):
+        """Yield WikibasePages with content prefilled.
 
         Note that pages will be iterated in a different order
         than in the underlying pagelist.
@@ -5567,7 +5592,7 @@ class DataSite(APISite):
                 else:
                     assert(p.site.has_data_repository)
                     if (p.site == p.site.data_repository() and
-                            p.namespace() == p.data_repository.item_namespace):
+                            p.namespace() in p.data_repository.entity_namespaces.values()):
                         req['ids'].append(p.title(withNamespace=False))
                     else:
                         req['sites'].append(p.site.dbName())
@@ -5575,10 +5600,10 @@ class DataSite(APISite):
 
             req = api.Request(site=self, action='wbgetentities', **req)
             data = req.submit()
-            for qid in data['entities']:
-                item = pywikibot.ItemPage(self, qid)
-                item._content = data['entities'][qid]
-                yield item
+            for entity_id, content in data['entities'].items():
+                entity = self.type_to_class[content['type']](self, entity_id)
+                entity._content = content
+                yield entity
 
     def getPropertyType(self, prop):
         """
@@ -5609,12 +5634,12 @@ class DataSite(APISite):
         return dtype
 
     @must_be(group='user')
-    def editEntity(self, identification, data, bot=True, **kwargs):
+    def editEntity(self, identification, data, entity_type, bot=True, **kwargs):
         if "id" in identification and identification["id"] == "-1":
             del identification["id"]
         params = dict(**identification)
         if not params:  # If no identification was provided
-            params['new'] = 'item'  # TODO create properties+queries
+            params['new'] = entity_type
         params['action'] = 'wbeditentity'
         if bot:
             params['bot'] = 1
@@ -5898,7 +5923,7 @@ class DataSite(APISite):
             'sitelinks': sitelinks,
             'labels': labels,
         }
-        result = self.editEntity({}, data, bot=bot, **kwargs)
+        result = self.editEntity({}, data, entity_type='item', bot=bot, **kwargs)
         return pywikibot.ItemPage(self, result['entity']['id'])
 
     def search_entities(self, search, language, limit=None, **kwargs):

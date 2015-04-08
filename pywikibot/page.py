@@ -2959,31 +2959,27 @@ class WikibasePage(BasePage):
             else:
                 # numerical namespace given
                 ns = int(kwargs['ns'])
-                if site.item_namespace.id == ns:
-                    self._namespace = site.item_namespace
-                elif site.property_namespace.id == ns:
-                    self._namespace = site.property_namespace
+                for entity_type, namespace in site.entity_namespaces:
+                    if namespace.id == ns:
+                        self._namespace = namespace
+                        break
                 else:
                     raise ValueError('%r: Namespace "%d" is not valid'
                                      % self.site)
 
         if 'entity_type' in kwargs:
             entity_type = kwargs.pop('entity_type')
-            if entity_type == 'item':
-                entity_type_ns = site.item_namespace
-            elif entity_type == 'property':
-                entity_type_ns = site.property_namespace
-            else:
+            if entity_type not in site.entity_namespaces:
                 raise ValueError('Wikibase entity type "%s" unknown'
                                  % entity_type)
 
             if self._namespace:
-                if self._namespace != entity_type_ns:
+                if self._namespace != site.entity_namespaces[entity_type]:
                     raise ValueError('Namespace "%d" is not valid for Wikibase'
                                      ' entity type "%s"'
                                      % (kwargs['ns'], entity_type))
             else:
-                self._namespace = entity_type_ns
+                self._namespace = site.entity_namespaces[entity_type]
                 kwargs['ns'] = self._namespace.id
 
         super(WikibasePage, self).__init__(site, title, **kwargs)
@@ -3002,10 +2998,10 @@ class WikibasePage(BasePage):
             # Neither ns or entity_type was provided.
             # Use the _link to determine entity type.
             ns = self._link.namespace
-            if self.site.item_namespace.id == ns:
-                self._namespace = self.site.item_namespace
-            elif self.site.property_namespace.id == ns:
-                self._namespace = self.site.property_namespace
+            for entity_type, namespace in self.site.entity_namespaces:
+                if namespace.id == ns:
+                    self._namespace = namespace
+                    break
             else:
                 raise ValueError('%r: Namespace "%r" is not valid'
                                  % (self.site, ns))
@@ -3314,6 +3310,7 @@ class WikibasePage(BasePage):
             data = WikibasePage._normalizeData(data)
 
         updates = self.repo.editEntity(self._defined_by(singular=True), data,
+                                       entity_type=self.ENTITY_TYPE,
                                        baserevid=baserevid, **kwargs)
         self.lastrevid = updates['entity']['lastrevid']
 
@@ -3368,6 +3365,8 @@ class ItemPage(WikibasePage):
     been looked up, the item is then defined by the qid.
     """
 
+    ENTITY_TYPE = 'item'
+
     def __init__(self, site, title=None, ns=None):
         """
         Constructor.
@@ -3382,7 +3381,7 @@ class ItemPage(WikibasePage):
             for default item_namespace
         """
         if ns is None:
-            ns = site.item_namespace
+            ns = site.entity_namespaces[self.ENTITY_TYPE]
         # Special case for empty item.
         if title is None or title == '-1':
             super(ItemPage, self).__init__(site, u'-1', ns=ns)
@@ -3777,6 +3776,8 @@ class PropertyPage(WikibasePage, Property):
 
         PropertyPage(DataSite, 'P21')
     """
+
+    ENTITY_TYPE = 'property'
 
     def __init__(self, source, title=u""):
         """
