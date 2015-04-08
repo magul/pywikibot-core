@@ -3251,25 +3251,19 @@ class WikibasePage(BasePage):
 
         # aliases
         self.aliases = {}
-        if 'aliases' in self._content:
-            for lang in self._content['aliases']:
-                self.aliases[lang] = list()
-                for value in self._content['aliases'][lang]:
-                    self.aliases[lang].append(value['value'])
+        for lang, values in self._content.get('aliases', {}).items():
+            self.aliases[lang] = [value['value'] for value in values]
 
         # labels
         self.labels = {}
-        if 'labels' in self._content:
-            for lang in self._content['labels']:
-                if 'removed' not in self._content['labels'][lang]:  # Bug 54767
-                    self.labels[lang] = self._content['labels'][lang]['value']
+        for lang, value in self._content.get('labels', {}).items():
+            if 'removed' not in value:  # Bug 54767
+                self.labels[lang] = value['value']
 
         # descriptions
         self.descriptions = {}
-        if 'descriptions' in self._content:
-            for lang in self._content['descriptions']:
-                self.descriptions[lang] = self._content[
-                    'descriptions'][lang]['value']
+        for lang, value in self._content.get('descriptions', {}).items():
+            self.descriptions[lang] = value['value']
 
         return {'aliases': self.aliases,
                 'labels': self.labels,
@@ -3622,20 +3616,17 @@ class ItemPage(WikibasePage):
 
         # claims
         self.claims = {}
-        if 'claims' in self._content:
-            for pid in self._content['claims']:
-                self.claims[pid] = list()
-                for claim in self._content['claims'][pid]:
-                    c = Claim.fromJSON(self.repo, claim)
-                    c.on_item = self
-                    self.claims[pid].append(c)
+        for pid, claims in self._content.get('claims', {}).items():
+            self.claims[pid] = []
+            for claim in claims:
+                c = Claim.fromJSON(self.repo, claim)
+                c.on_item = self
+                self.claims[pid].append(c)
 
         # sitelinks
         self.sitelinks = {}
-        if 'sitelinks' in self._content:
-            for dbname in self._content['sitelinks']:
-                self.sitelinks[dbname] = self._content[
-                    'sitelinks'][dbname]['title']
+        for dbname, value in self._content.get('sitelinks', {}).items():
+            self.sitelinks[dbname] = value['title']
 
         data['claims'] = self.claims
         data['sitelinks'] = self.sitelinks
