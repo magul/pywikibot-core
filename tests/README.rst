@@ -114,6 +114,21 @@ operations, you are responsible for your own passwords.
 It is strongly recommended that an untrusted bot account is created for
 travis tests, using a password that is not shared with trusted accounts.
 
+OSX builds
+----------
+
+To run tests on OSX using travis-ci, create a new repository in github,
+with builds enabled in travis-ci, and populate the new repository using:
+
+$ git submodule add git://github.com/MacPython/terryfy.git
+$ git subtree add --prefix pywikibot-core git://github.com/wikimedia/pywikibot-core.git master --squash
+$ ln -s pywikibot-core/.travis.osx.yml .travis.yml
+$ git commit -a
+$ git push
+
+Environment variables
+=====================
+
 There are a set of 'edit failure' tests, which attempt to write to the wikis
 and **should** fail.  If there is a bug in pywikibot or MediaWiki, these
 tests **may** actually perform a write operation.
@@ -121,16 +136,16 @@ tests **may** actually perform a write operation.
 These 'edit failure' tests are disabled by default for the 'wikimedia' builds,
 but are enabled by default on builds by any other github account.
 
-To disable 'edit failure' tests in travis, add PYWIKIBOT2_TEST_WRITE_FAIL=0
+To disable 'edit failure' tests, set PYWIKIBOT2_TEST_WRITE_FAIL=0
 
 There are also several other 'write' tests which also attempt to perform
 write operations successfully.  These **will** write to the wikis, and they
 should always only write to 'test' wikis.
 
-These 'write' tests are disabled in travis builds, and currently can not be
+These 'write' tests are disabled by default, and currently can not be
 run on travis as they require interaction using a terminal.
 
-To enable 'write' tests in travis, add PYWIKIBOT2_TEST_WRITE=1
+To enable 'write' tests, set PYWIKIBOT2_TEST_WRITE=1
 
 Contributing tests
 ==================
