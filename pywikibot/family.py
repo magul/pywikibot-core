@@ -1112,6 +1112,12 @@ class Family(object):
     def rcstream_host(self, code):
         raise NotImplementedError("This family does not support RCStream")
 
+    def irc_rc_channel(self, code):
+        raise NotImplementedError("This family does not support IRC streaming")
+
+    def irc_rc_host(self, code):
+        raise NotImplementedError("This family does not support IRC streaming")
+
     @deprecated_args(name='title')
     def get_address(self, code, title):
         return '%s?title=%s&redirect=no' % (self.path(code), title)
@@ -1471,6 +1477,11 @@ class WikimediaFamily(Family):
     def rcstream_host(self, code):
         return 'stream.wikimedia.org'
 
+    def irc_rc_channel(self, code):
+        return '#{}.{}'.format(code, self.name)
+
+    def irc_rc_host(self, code):
+        return 'irc.wikimedia.org'
 
 class AutoFamily(Family):
 
