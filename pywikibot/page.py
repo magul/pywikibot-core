@@ -567,11 +567,14 @@ class BasePage(UnicodeMixin, ComparableMixin):
         return self._lastNonBotUser
 
     @remove_last_args(('datetime', ))
-    def editTime(self):
+    def editTime(self, force=False):
         """Return timestamp of last revision to page.
 
         @rtype: pywikibot.Timestamp
         """
+        if not force and hasattr(self, '_revid') \
+               and self._revid in self._revisions:
+            return self._revisions[self._revid].timestamp
         return self.latest_revision.timestamp
 
     @property
