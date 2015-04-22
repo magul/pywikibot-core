@@ -100,6 +100,32 @@ NESTED_TEMPLATE_REGEX = re.compile(r"""
 """, re.VERBOSE)
 
 
+# The verbose regular expression which finds internal links. re.X must be used.
+# Results consist of four groups:
+# 1. <title> is the target page title, everything before | or ].
+# 2. <section> is the page section, including the '#'.
+# 3. <label> is the alternative link title between | and ].
+# 4. <linktrail> is the 'link trail' after ]] which are part of the linked word.
+# Note: the letters which may be included in <linktrail> are defined by each
+# site as the definition of word varies from language to language.
+# As a result, site.linktrail() must be substituted into this regex.
+INTERNAL_LINK_REGEX = r"""
+    \[\[
+        (?P<title>     [^\[\]\|#]*)
+        (?P<section> \#[^\]\|]*)?\s*
+            (\|(?P<label>([^\[\]]* (\[\[[^\]]*\]\])* [\[^\]]*)* ))?
+    \]\]  (?P<linktrail>%s)
+"""
+# As above, but it excludes titles with a ':', which limits it to namespace 0
+# but will additionally exclude namespace 0 titles that use a ':'.
+NS0_INTERNAL_LINK_REGEX = r"""
+    \[\[
+        (?P<title>     :?[^\[\]\|#:]*)
+        (?P<section> \#[^\]\|]*)?\s*
+            (\|(?P<label>[^\[\]]*))?
+    \]\]  (?P<linktrail>%s)
+"""
+
 NON_LATIN_DIGITS = {
     'ckb': u'٠١٢٣٤٥٦٧٨٩',
     'fa': u'۰۱۲۳۴۵۶۷۸۹',

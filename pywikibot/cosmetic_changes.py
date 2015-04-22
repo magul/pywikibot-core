@@ -470,7 +470,10 @@ class CosmeticChangesToolkit(object):
         # helper function which works on one link and either returns it
         # unmodified, or returns a replacement.
         def handleOneLink(match):
-            titleWithSection = match.group('titleWithSection')
+            titleWithSection = match.group('title')
+            if match.group('section'):
+                titleWithSection += match.group('section')
+
             label = match.group('label')
             trailingChars = match.group('linktrail')
             newline = match.group('newline')
@@ -486,6 +489,7 @@ class CosmeticChangesToolkit(object):
                     namespace = page.namespace()
                 except pywikibot.InvalidTitle:
                     return match.group()
+                # NS 0 is also enforced by textlib.NS0_INTERNAL_LINK_REGEX
                 if namespace == 0:
                     # Replace underlines by spaces, also multiple underlines
                     titleWithSection = re.sub('_+', ' ', titleWithSection)
@@ -576,16 +580,9 @@ class CosmeticChangesToolkit(object):
             return match.group()
 
         trailR = re.compile(self.site.linktrail())
-    # The regular expression which finds links. Results consist of four groups:
-    # group <newline> depends whether the links starts with a new line.
-    # group <titleWithSection> is the page title and section, that is,
-    # everything before | or ]. It'll include the # to make life easier for us.
-    # group <label> is the alternative link title between | and ].
-    # group <linktrail> is the link trail after ]] which are part of the word.
-    # note that the definition of 'letter' varies from language to language.
         linkR = re.compile(
-            r'(?P<newline>[\n]*)\[\[(?P<titleWithSection>[^\]\|]+)(\|(?P<label>[^\]\|]*))?\]\](?P<linktrail>' +
-            self.site.linktrail() + ')')
+            '(?P<newline>[\n]*)' + textlib.NS0_INTERNAL_LINK_REGEX
+            % self.site.linktrail(), re.VERBOSE)
 
         text = textlib.replaceExcept(text, linkR, handleOneLink,
                                      ['comment', 'math', 'nowiki', 'pre',

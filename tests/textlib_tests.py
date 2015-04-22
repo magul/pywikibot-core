@@ -1222,6 +1222,122 @@ class TestGetLanguageLinks(SiteAttributeTestCase):
         self.assertEqual(set(lang_links), self.sites_set - set([self.site]))
 
 
+class TestLinkRegex(DefaultDrySiteTestCase):
+
+    """Link regex tests."""
+
+    def test_whitespace(self):
+        site = self.get_site()
+        linkR = re.compile(textlib.INTERNAL_LINK_REGEX % site.linktrail(), re.X)
+
+        m = linkR.search(' [[Foo]] ')
+        self.assertEqual(m.group('title'), 'Foo')
+
+        m = linkR.search('before[[ Foo ]]after ')
+        self.assertEqual(m.group('title'), ' Foo ')
+        self.assertEqual(m.group('linktrail'), 'after')
+
+        m = linkR.search('before[[ Foo bar ]]after ')
+        self.assertEqual(m.group('title'), ' Foo bar ')
+        self.assertIsNone(m.group('label'))
+        self.assertEqual(m.group('linktrail'), 'after')
+
+        m = linkR.search('before[[ Foo | bar]]after ')
+        self.assertEqual(m.group('title'), ' Foo ')
+        self.assertEqual(m.group('label'), ' bar')
+        self.assertEqual(m.group('linktrail'), 'after')
+        self.assertEqual(m.start(), 6)
+        self.assertEqual(m.end(), 25)
+
+        m = linkR.search('previous.\n\n[[ Foo ]]after ')
+        self.assertEqual(m.group('title'), ' Foo ')
+        self.assertEqual(m.group('linktrail'), 'after')
+        self.assertEqual(m.start(), 11)
+        self.assertEqual(m.end(), 25)
+
+    def test_namespace(self):
+        site = self.get_site()
+        linkR = re.compile(textlib.INTERNAL_LINK_REGEX % site.linktrail(), re.X)
+
+        m = linkR.search('before[[ Foo:baz | bar]]after')
+        self.assertEqual(m.group('title'), ' Foo:baz ')
+
+        m = linkR.search('before[[ Foo | bar]]after')
+        self.assertEqual(m.group('title'), ' Foo ')
+
+        m = linkR.search('before[[ :Foo: | bar]]after')
+        self.assertEqual(m.group('title'), ' :Foo: ')
+
+        m = linkR.search('before[[ :Foo:baz | bar]]after')
+        self.assertEqual(m.group('title'), ' :Foo:baz ')
+
+    def test_section(self):
+        site = self.get_site()
+        linkR = re.compile(textlib.INTERNAL_LINK_REGEX % site.linktrail(), re.X)
+
+        m = linkR.search(' [[Foo#blah]] ')
+        self.assertEqual(m.group('section'), '#blah')
+
+        m = linkR.search(' [[Foo#blah|]] ')
+        self.assertEqual(m.group('section'), '#blah')
+
+        m = linkR.search(' [[Foo#blah |]] ')
+        self.assertEqual(m.group('section'), '#blah ')
+
+        m = linkR.search(' [[Foo|bar#blah ]] ')
+        self.assertEqual(m.group('title'), 'Foo')
+        self.assertEqual(m.group('label'), 'bar#blah ')
+        self.assertIsNone(m.group('section'))
+
+    def test_ns0(self):
+        site = self.get_site()
+        linkR = re.compile(textlib.NS0_INTERNAL_LINK_REGEX % site.linktrail(), re.X)
+
+        m = linkR.search(' [[ Foo | bar ]] ')
+        self.assertEqual(m.group('title'), ' Foo ')
+        self.assertEqual(m.group('label'), ' bar ')
+
+        m = linkR.search(' [[:Foo|bar]] ')
+        self.assertEqual(m.group('title'), ':Foo')
+        self.assertEqual(m.group('label'), 'bar')
+
+        m = linkR.search(' [[File:Foo|bar]] ')
+        self.assertIsNone(m)
+
+        m = linkR.search(' [[:File:Foo|bar]] ')
+        self.assertIsNone(m)
+
+        m = linkR.search(' [[:Image:Foo|bar]] ')
+        self.assertIsNone(m)
+
+    def test_image(self):
+        site = self.get_site()
+        linkR = re.compile(textlib.INTERNAL_LINK_REGEX % site.linktrail(), re.X)
+
+        m = linkR.search(' [[File:Foo|bar]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), 'bar')
+
+        m = linkR.search(' [[File:Foo|300px|bar]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), '300px|bar')
+
+        m = linkR.search(' [[File:Foo|bar with [note].]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), 'bar with [note].')
+
+        m = linkR.search(' [[File:Foo|bar with [[link]].]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), 'bar with [[link]].')
+
+        m = linkR.search(' [[File:Foo|bar with [[multiple]] [[links]].]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), 'bar with [[multiple]] [[links]].')
+
+        m = linkR.search(' [[File:Foo|bar with <ref>link]]</ref>.]] ')
+        self.assertEqual(m.group('title'), 'File:Foo')
+        self.assertEqual(m.group('label'), 'bar with <ref>link]]</ref>.')
+
 if __name__ == '__main__':
     try:
         unittest.main()
