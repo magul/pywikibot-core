@@ -63,10 +63,14 @@ import re
 
 from warnings import warn
 
+stdnum_isbn = False
 try:
-    import stdnum.isbn as stdnum_isbn
+    import stdnum.isbn as isbn_lib
+    stdnum_isbn = True
 except ImportError:
-    stdnum_isbn = None
+    from pywikibot import isbn_lib
+    warn('package stdnum.isbn not found; using pywikibot.isbn_lib',
+         ImportWarning)
 
 import pywikibot
 
@@ -142,48 +146,19 @@ CANCEL_MATCH = 3
 
 def _format_isbn_match(match, strict=True):
     """Helper function to validate and format a single matched ISBN."""
-    scripts_isbn = None
-
-    if not stdnum_isbn:
-        # For backwards compatibility, if stdnum.isbn is not available
-        # attempt loading scripts.isbn as an alternative implementation.
-        try:
-            import scripts.isbn as scripts_isbn
-        except ImportError:
-            raise NotImplementedError(
-                'ISBN functionality not available.  Install stdnum package.')
-
-        warn('package stdnum.isbn not found; using scripts.isbn',
-             ImportWarning)
-
     isbn = match.group('code')
-    if stdnum_isbn:
-        try:
-            stdnum_isbn.validate(isbn)
-        except stdnum_isbn.ValidationError as e:
-            if strict:
-                raise
-            pywikibot.log('ISBN "%s" validation error: %s' % (isbn, e))
-            return isbn
-
-        return stdnum_isbn.format(isbn)
-    else:
-        try:
-            scripts_isbn.is_valid(isbn)
-        except scripts_isbn.InvalidIsbnException as e:
-            if strict:
-                raise
-            pywikibot.log('ISBN "%s" validation error: %s' % (isbn, e))
-            return isbn
-
-        isbn = scripts_isbn.getIsbn(isbn)
-        try:
-            isbn.format()
-        except scripts_isbn.InvalidIsbnException as e:
-            if strict:
-                raise
-            pywikibot.log('ISBN "%s" validation error: %s' % (isbn, e))
+    try:
+        isbn_lib.validate(isbn)
+        if stdnum_isbn:
+            return stdnum_isbn.format(isbn)
+        isbn = isbn_lib.get_isbn(isbn)
+        isbn.format()
         return isbn.code
+    except (isbn_lib.ValidationError, isbn_lib.InvalidIsbnException) as e:
+        if strict:
+            raise
+        pywikibot.log('ISBN "%s" validation error: %s' % (isbn, e))
+    return isbn
 
 
 def _reformat_ISBNs(text, strict=True):
@@ -235,8 +210,7 @@ class CosmeticChangesToolkit(object):
             self.fixTypo,
 
             self.fixArabicLetters,
-            # FIXME: T144288
-            # self.fix_ISBN,
+            self.fix_ISBN,
         )
 
     @classmethod

@@ -18,10 +18,12 @@ except ImportError:
 
 from pywikibot import Bot, Claim, ItemPage
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit, CANCEL_MATCH
+from pywikibot.isbn_lib import (
+    ISBN10, ISBN13, InvalidIsbnException as IsbnExc, get_isbn
+)
 
 from scripts.isbn import (
-    ISBN10, ISBN13, InvalidIsbnException as IsbnExc,
-    getIsbn, hyphenateIsbnNumbers, convertIsbn10toIsbn13,
+    hyphenateIsbnNumbers, convertIsbn10toIsbn13,
     main
 )
 
@@ -142,13 +144,13 @@ class TestIsbn(TestCase):
 
     def test_general(self):
         """Test things that apply both to ISBN10 and ISBN13."""
-        # getIsbn
-        self.assertIsInstance(getIsbn('097522980x'), ISBN10)
-        self.assertIsInstance(getIsbn('9783161484100'), ISBN13)
+        # get_isbn
+        self.assertIsInstance(get_isbn('097522980x'), ISBN10)
+        self.assertIsInstance(get_isbn('9783161484100'), ISBN13)
         self.assertRaisesRegex(IsbnExc,
                                'ISBN-13: The ISBN 097522 is not 13 digits '
                                'long. / ISBN-10: The ISBN 097522 is not 10 '
-                               'digits long.', getIsbn, '097522')
+                               'digits long.', get_isbn, '097522')
 
         # hyphenateIsbnNumbers
         self.assertEqual(hyphenateIsbnNumbers('ISBN 097522980x'),
