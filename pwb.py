@@ -191,15 +191,15 @@ if __name__ == "__main__":
         argvu = pwb.argvu[1:]
         if not filename.endswith('.py'):
             filename += '.py'
-        if not os.path.exists(filename):
-            testpath = os.path.join(os.path.split(__file__)[0],
-                                    'scripts',
+        for file_package in ('.', 'scripts', 'pywikibot'):
+            testpath = os.path.join(_pwb_dir,
+                                    file_package,
                                     filename)
-            file_package = 'scripts'
             if os.path.exists(testpath):
                 filename = testpath
-            else:
-                raise OSError("%s not found!" % filename)
+                break
+        else:
+            raise OSError("%s not found!" % filename)
 
         # When both pwb.py and the filename to run are within the current
         # working directory:
