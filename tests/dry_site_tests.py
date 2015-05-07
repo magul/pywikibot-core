@@ -136,7 +136,7 @@ class TestMustBe(DebugOnlyTestCase):
     def setUp(self):
         """Creating fake variables to appear as a site."""
         self.code = 'test'
-        self.family = lambda: None
+        self.family = pywikibot.family.Family()
         self.family.name = 'test'
         self._logged_in_as = None
         self.obsolete = False

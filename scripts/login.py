@@ -171,7 +171,7 @@ def main(*args):
                     _oauth_login(site)
                     continue
                 if logout:
-                    site.logout()
+                    site.logout(sysop)
                 else:
                     site.login(sysop)
                 user = site.user()
