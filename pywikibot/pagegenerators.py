@@ -25,7 +25,9 @@ __version__ = '$Id$'
 
 import codecs
 import datetime
+import gzip
 import itertools
+import json
 import re
 import sys
 import time
@@ -44,6 +46,7 @@ from pywikibot.tools import (
 from pywikibot.comms import http
 from pywikibot.data import wikidataquery as wdquery
 from pywikibot.exceptions import ArgumentDeprecationWarning
+from pywikibot.page import WikibasePage
 from pywikibot.site import Namespace
 
 if sys.version_info[0] > 2:
@@ -2326,6 +2329,30 @@ def WikibaseSearchItemPageGenerator(text, language=None, total=None, site=None):
     pywikibot.output(u'retrieved %d items' % len(list(data)))
     for item in data:
         yield pywikibot.ItemPage(repo, item['id'])
+
+
+def WikibaseJSONDumpGenerator(dump, site=None):
+    """
+    Generate pages out of a Wikibase JSON dump.
+
+    @param dump: Location of dump on filesystem
+    @param site: Site
+    """
+    if site is None:
+        site = pywikibot.Site()
+    repo = site.data_repository()
+    if dump.endswith('.gz'):
+        open_func = gzip.open
+    else:
+        open_func = open
+    with open_func(dump) as f:
+        for line in f:
+            line = line.strip().decode()
+            if line == '[' or line == ']':
+                continue
+            if line.endswith(','):
+                line = line[:-1]
+            yield WikibasePage.fromJSON(repo, json.loads(line))
 
 
 if __name__ == "__main__":
