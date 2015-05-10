@@ -488,8 +488,9 @@ class NoReferencesBot(Bot):
 
         self.refR = re.compile('</ref>', re.IGNORECASE)
         self.referencesR = re.compile('<references.*?/>', re.IGNORECASE)
-        self.referencesTagR = re.compile('<references>.*?</references>',
-                                         re.IGNORECASE | re.DOTALL)
+        self.referencesTagR = re.compile(
+            r'<references(?: +group=([\'"]?)[^\'"]+?\1)?>.*?</ *references>',
+            re.IGNORECASE | re.DOTALL)
         try:
             self.referencesTemplates = referencesTemplates[
                 self.site.family.name][self.site.code]
