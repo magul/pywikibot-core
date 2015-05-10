@@ -3109,9 +3109,31 @@ class WikibasePage(BasePage):
         """
         return True
 
+    def _parse_content(self, content):
+        self.aliases = {}
+        if 'aliases' in content:
+            for lang in content['aliases']:
+                self.aliases[lang] = list()
+                for value in content['aliases'][lang]:
+                    self.aliases[lang].append(value['value'])
+
+        # labels
+        self.labels = {}
+        if 'labels' in content:
+            for lang in content['labels']:
+                if 'removed' not in content['labels'][lang]:  # Bug 54767
+                    self.labels[lang] = content['labels'][lang]['value']
+
+        # descriptions
+        self.descriptions = {}
+        if 'descriptions' in content:
+            for lang in content['descriptions']:
+                self.descriptions[lang] = content[
+                    'descriptions'][lang]['value']
+
     def get(self, force=False, *args, **kwargs):
         """
-        Fetch all page data, and cache it.
+        Fetch all page data, and store it.
 
         @param force: override caching
         @type force: bool
@@ -3137,33 +3159,6 @@ class WikibasePage(BasePage):
                 if not p.exists():
                     raise pywikibot.NoPage(p)
             raise pywikibot.NoPage(self)
-
-        # aliases
-        self.aliases = {}
-        if 'aliases' in self._content:
-            for lang in self._content['aliases']:
-                self.aliases[lang] = list()
-                for value in self._content['aliases'][lang]:
-                    self.aliases[lang].append(value['value'])
-
-        # labels
-        self.labels = {}
-        if 'labels' in self._content:
-            for lang in self._content['labels']:
-                if 'removed' not in self._content['labels'][lang]:  # Bug 54767
-                    self.labels[lang] = self._content['labels'][lang]['value']
-
-        # descriptions
-        self.descriptions = {}
-        if 'descriptions' in self._content:
-            for lang in self._content['descriptions']:
-                self.descriptions[lang] = self._content[
-                    'descriptions'][lang]['value']
-
-        return {'aliases': self.aliases,
-                'labels': self.labels,
-                'descriptions': self.descriptions,
-                }
 
     def _diff_to(self, type_key, key_name, value_name, diffto, data):
         assert(type_key not in data)
@@ -3216,6 +3211,25 @@ class WikibasePage(BasePage):
         if aliases:
             data['aliases'] = aliases
         return data
+
+    @classmethod
+    def fromJSON(cls, site, data):
+        """
+        Load an entity from a parsed JSON object, useful when parsing dumps.
+
+        @param site: A DataSite instance of where the dump is from
+        @param data: A dict of the parsed JSON object
+        @return: An ItemPage or PropertyPage
+        """
+        if data['type'] == 'item':
+            p = ItemPage(site, data['id'])
+        elif data['type'] == 'property':
+            p = PropertyPage(site, data['id'])
+        else:
+            raise ValueError('Invalid type provided: %s' % data['type'])
+        p._content = data
+        p._parse_content(p._content)
+        return p
 
     def getID(self, numeric=False, force=False):
         """
@@ -3482,16 +3496,8 @@ class ItemPage(WikibasePage):
             raise pywikibot.NoPage(i)
         return i
 
-    def get(self, force=False, *args, **kwargs):
-        """
-        Fetch all item data, and cache it.
-
-        @param force: override caching
-        @type force: bool
-        @param args: values of props
-        """
-        super(ItemPage, self).get(force=force, *args, **kwargs)
-
+    def _parse_content(self, content):
+        super(ItemPage, self)._parse_content(content)
         # claims
         self.claims = {}
         if 'claims' in self._content:
@@ -3508,6 +3514,18 @@ class ItemPage(WikibasePage):
             for dbname in self._content['sitelinks']:
                 self.sitelinks[dbname] = self._content[
                     'sitelinks'][dbname]['title']
+
+    def get(self, force=False, *args, **kwargs):
+        """
+        Fetch all item data, and cache it.
+
+        @param force: override caching
+        @type force: bool
+        @param args: values of props
+        """
+        super(ItemPage, self).get(force=force, *args, **kwargs)
+
+        self._parse_content(self._content)
 
         return {'aliases': self.aliases,
                 'labels': self.labels,
@@ -3805,6 +3823,10 @@ class PropertyPage(WikibasePage, Property):
             raise pywikibot.InvalidTitle(
                 u"'%s' is not an property page title" % title)
 
+    def _parse_content(self, content):
+        WikibasePage._parse_content(self, content)
+        self._type = content['datatype']
+
     def get(self, force=False, *args):
         """
         Fetch the property entity, and cache it.
@@ -3814,7 +3836,8 @@ class PropertyPage(WikibasePage, Property):
         """
         if force or not hasattr(self, '_content'):
             WikibasePage.get(self, force=force, *args)
-        self._type = self._content['datatype']
+
+        self._parse_content(self._content)
 
     def newClaim(self, *args, **kwargs):
         """
