@@ -119,8 +119,9 @@ class Family(family.WikimediaFamily):
             'zh-min-nan', 'ku', 'uz',
         ]
 
-        self.langs = dict([(lang, '%s.wikibooks.org' % lang)
-                           for lang in self.languages_by_size])
+        self.langs = dict(
+            (lang, '%s.wikibooks.org' % lang)
+            for lang in self.languages_by_size + self.closed_wikis)
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation

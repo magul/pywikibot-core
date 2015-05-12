@@ -45,6 +45,10 @@ class Family(object):
 
     """Parent class for all wiki families."""
 
+    # Code mappings which are only an alias, and should be accepted as valid
+    # codes in the Site constructor.
+    code_aliases = {}
+
     def __init__(self):
         if not hasattr(self, 'name'):
             self.name = None

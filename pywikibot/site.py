@@ -523,20 +523,19 @@ class BaseSite(ComparableMixin):
         else:
             self.__family = fam
 
-        self.obsolete = False
         # if we got an outdated language code, use the new one instead.
-        if self.__code in self.__family.obsolete:
-            if self.__family.obsolete[self.__code] is not None:
-                self.__code = self.__family.obsolete[self.__code]
-                # Note the Site function in __init__ emits a UserWarning
-                # for this condition, showing the callers file and line no.
-                pywikibot.log(u'Site %s instantiated using code %s'
-                              % (self, code))
-            else:
-                # no such language anymore
-                self.obsolete = True
-                pywikibot.log(u'Site %s instantiated and marked "obsolete" '
-                              u'to prevent access' % self)
+        if self.__code in self.__family.interwiki_replacements:
+            self.__code = self.__family.interwiki_replacements[self.__code]
+            # Note the Site function in __init__ emits a UserWarning
+            # for this condition, showing the callers file and line no.
+            pywikibot.log('Site %s instantiated using old interwiki code %s'
+                          % (self, code))
+        elif self.__code in self.__family.code_aliases:
+            self.__code = self.__family.code_aliases[self.__code]
+            # Note the Site function in __init__ emits a UserWarning
+            # for this condition, showing the callers file and line no.
+            pywikibot.log('Site %s instantiated using aliases code %s'
+                          % (self, code))
         elif self.__code not in self.languages():
             if self.__family.name in list(self.__family.langs.keys()) and \
                len(self.__family.langs) == 1:
@@ -547,6 +546,9 @@ class BaseSite(ComparableMixin):
                     warn(u'Global configuration variable "mylang" changed to '
                          u'"%s" while instantiating site %s'
                          % (self.__code, self), UserWarning)
+            elif self.__code in self.__family.interwiki_removals:
+                pywikibot.log('Site %s instantiated for old interwiki code '
+                              'which does not have an API endpoint' % self)
             else:
                 raise UnknownSite(u"Language '%s' does not exist in family %s"
                                   % (self.__code, self.__family.name))
@@ -559,6 +561,11 @@ class BaseSite(ComparableMixin):
         # following are for use with lock_page and unlock_page methods
         self._pagemutex = threading.Lock()
         self._locked_pages = []
+
+    @property
+    @deprecated('family.interwiki_replacements or family.interwiki_remocals')
+    def obsolete(self):
+        return self.code in self.__family.obsolete.keys()
 
     @property
     @deprecated("APISite.siteinfo['case'] or Namespace.case == 'case-sensitive'")
@@ -1063,9 +1070,9 @@ def must_be(group=None, right=None):
     """
     def decorator(fn):
         def callee(self, *args, **kwargs):
-            if self.obsolete:
-                raise UnknownSite("Language %s in family %s is obsolete"
-                                  % (self.code, self.family.name))
+            if self.code not in self.family.langs:
+                raise UnknownSite("%s does not have an API endpoint"
+                                  % (self))
             grp = kwargs.pop('as_group', group)
             if grp == 'user':
                 self.login(False)

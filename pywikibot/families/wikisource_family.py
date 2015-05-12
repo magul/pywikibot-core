@@ -33,8 +33,10 @@ class Family(family.WikimediaFamily):
             'kn', 'gl', 'lt', 'cy', 'sk', 'zh-min-nan', 'fo', 'or',
         ]
 
-        self.langs = dict([(lang, '%s.wikisource.org' % lang)
-                           for lang in self.languages_by_size])
+        self.langs = dict(
+            (lang, '%s.wikisource.org' % lang)
+            for lang in self.languages_by_size + self.closed_wikis)
+
         # FIXME: '-' is invalid at the beginning of a hostname, and
         # '-' is not a valid subdomain.
         self.langs['-'] = 'wikisource.org'

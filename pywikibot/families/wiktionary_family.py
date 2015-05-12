@@ -97,8 +97,9 @@ class Family(family.WikimediaFamily):
             'ti', 'sg', 'tn', 'dv', 'ts', 'ha', 'ks', 'ay',
         ]
 
-        self.langs = dict([(lang, '%s.wiktionary.org' % lang)
-                           for lang in self.languages_by_size])
+        self.langs = dict(
+            (lang, '%s.wiktionary.org' % lang)
+            for lang in self.languages_by_size + self.closed_wikis)
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation

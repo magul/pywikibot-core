@@ -108,11 +108,11 @@ class TestMustBe(DebugOnlyTestCase):
     # Implemented without setUpClass(cls) and global variables as objects
     # were not completely disposed and recreated but retained 'memory'
     def setUp(self):
-        self.code = 'test'
-        self.family = lambda: None
-        self.family.name = 'test'
+        self.__family = lambda: None
+        self.__family.name = 'test'
+        self.__family.langs = {'test', 'test.wikipedia.org'}
+        self.family = self.__family
         self._logged_in_as = None
-        self.obsolete = False
         super(TestMustBe, self).setUp()
         self.version = lambda: '1.13'  # pre 1.14
 
@@ -136,6 +136,7 @@ class TestMustBe(DebugOnlyTestCase):
         return args, kwargs
 
     def testMustBeSysop(self):
+        self.code = 'test'
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
         retval = self.call_this_sysop_req_function(*args, **kwargs)
@@ -144,6 +145,7 @@ class TestMustBe(DebugOnlyTestCase):
         self.assertEqual(self._logged_in_as, 'sysop')
 
     def testMustBeUser(self):
+        self.code = 'test'
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
         retval = self.call_this_user_req_function(*args, **kwargs)
@@ -152,6 +154,7 @@ class TestMustBe(DebugOnlyTestCase):
         self.assertEqual(self._logged_in_as, 'user')
 
     def testOverrideUserType(self):
+        self.code = 'test'
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
         retval = self.call_this_user_req_function(*args, as_group='sysop', **kwargs)
@@ -160,7 +163,7 @@ class TestMustBe(DebugOnlyTestCase):
         self.assertEqual(self._logged_in_as, 'sysop')
 
     def testObsoleteSite(self):
-        self.obsolete = True
+        self.code = 'missing'
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
         self.assertRaises(UnknownSite, self.call_this_user_req_function, args, kwargs)
