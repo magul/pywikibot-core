@@ -218,7 +218,7 @@ class TestFamilyUrlRegex(PatchingTestCase):
                                          family.path(code)))
                 # Families can switch off if they want to be detected using URL
                 # this applies for test:test (there is test:wikipedia)
-                if family._ignore_from_url or code in family._ignore_from_url:
+                if family._ignore_from_url is True or code in family._ignore_from_url:
                     self.assertIsNone(family.from_url(url))
                 else:
                     self.assertEqual(family.from_url(url), code)

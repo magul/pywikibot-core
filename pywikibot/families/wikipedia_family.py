@@ -48,6 +48,11 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
         'tokipona',
     ]
 
+    # Sites we want to edit but not count as real languages
+    test_codes = ['test', 'test2']
+    # test.wikipedia.org should resolve to be in the 'test' family
+    _ignore_from_url = ('test', )
+
     def __init__(self):
         """Constructor."""
         self.languages_by_size = [
@@ -81,9 +86,6 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
             'dz', 'ny', 'ch', 'ti', 've', 'ks', 'tum', 'cr', 'gom', 'lrc',
             'azb',
         ]
-
-        # Sites we want to edit but not count as real languages
-        self.test_codes = ['test', 'test2']
 
         super(Family, self).__init__()
 

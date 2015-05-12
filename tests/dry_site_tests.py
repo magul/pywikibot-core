@@ -112,12 +112,17 @@ class TestMustBe(DebugOnlyTestCase):
     def setUp(self):
         """Creating fake variables to appear as a site."""
         self.code = 'test'
-        self.family = lambda: None
-        self.family.name = 'test'
+        self.__family = lambda: None
+        self.__family.name = 'test'
+        self.family = self.__family
         self._logged_in_as = None
-        self.obsolete = False
         super(TestMustBe, self).setUp()
         self.version = lambda: '1.13'  # pre 1.14
+
+    @property
+    def invalid(self):
+        """Fake invalid."""
+        return self.code == 'missing'
 
     def login(self, sysop):
         """Fake the log in and just store who logged in."""
@@ -171,7 +176,7 @@ class TestMustBe(DebugOnlyTestCase):
 
     def testObsoleteSite(self):
         """Test when the site is obsolete and shouldn't be edited."""
-        self.obsolete = True
+        self.code = 'missing'
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
         self.assertRaises(UnknownSite, self.call_this_user_req_function, args, kwargs)

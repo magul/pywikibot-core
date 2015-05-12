@@ -45,6 +45,10 @@ class Family(object):
 
     """Parent class for all wiki families."""
 
+    # Code mappings which are only an alias, and should be accepted as valid
+    # codes in the Site constructor.
+    code_aliases = {}
+
     def __init__(self):
         """Constructor."""
         if not hasattr(self, 'name'):
@@ -1052,6 +1056,12 @@ class Family(object):
         The default value is the one used on Wikimedia Foundation wikis,
         but needs to be overridden in the family file for any wiki that
         uses a different value.
+
+        @param code: Site code
+        @type code: str
+        @raises KeyError: code is not recognised
+        @return: URL path without ending '/'
+        @rtype str
         """
         return '/w'
 
@@ -1070,6 +1080,17 @@ class Family(object):
         return protocol, host
 
     def base_url(self, code, uri):
+        """
+        Create a complete URL for the uri fragment.
+
+        @param code: Site code
+        @type code: str
+        @param uri: URI
+        @type uri: str
+        @raises KeyError: code is not recognised
+        @return: URL ending with uri
+        @rtype str
+        """
         protocol, host = self._hostname(code)
         if protocol == 'https':
             uri = self.ssl_pathprefix(code) + uri
@@ -1390,20 +1411,26 @@ class SubdomainFamily(Family):
         """Constructor."""
         assert self.domain
 
-        codes = self.codes
-        if hasattr(self, 'test_codes'):
-            codes = codes + self.test_codes
-
         self.langs = dict(
-            (code, '%s.%s' % (code, self.domain)) for code in codes)
+            (code, '%s.%s' % (code, self.domain)) for code in self.codes)
 
         super(SubdomainFamily, self).__init__()
 
     @property
     def codes(self):
-        """Property listing family codes."""
+        """
+        Property listing family codes.
+
+        It excludes test codes.
+        """
         if hasattr(self, 'languages_by_size'):
-            return self.languages_by_size
+            codes = set(self.languages_by_size)
+            if hasattr(self, 'test_codes'):
+                codes |= set(self.test_codes)
+            if hasattr(self, 'closed_wikis'):
+                codes |= set(self.closed_wikis)
+
+            return frozenset(codes)
         raise NotImplementedError(
             'Family %s needs property "languages_by_size" or "codes"'
             % self.name)

@@ -709,33 +709,46 @@ class BaseSite(ComparableMixin):
         else:
             self.__family = fam
 
-        self.obsolete = False
-        # if we got an outdated language code, use the new one instead.
-        if self.__code in self.__family.obsolete:
-            if self.__family.obsolete[self.__code] is not None:
-                self.__code = self.__family.obsolete[self.__code]
+        if self.__code not in self.__family.codes:
+            # if we got an unrecognised code; look for an alternative code.
+            # 1. code_aliases is a mapping without any other meanings
+            # 2. interwiki_replacements is a mapping which also means that
+            #    the code will be replaced from other wikis
+            # 3. APISite.languages() is family.langs in core
+            #    (but also supported interwiki_forward in compat)
+            # 3.1. Special rules for single site families
+            # 3.2. Allow codes in interwiki_removals, however a Site with
+            #      one of these codes will likely fail when accessing the API.
+            if self.__code in self.__family.code_aliases:
+                self.__code = self.__family.code_aliases[self.__code]
+                assert self.__code in self.__family.codes
                 # Note the Site function in __init__ emits a UserWarning
                 # for this condition, showing the callers file and line no.
-                pywikibot.log(u'Site %s instantiated using code %s'
+                pywikibot.log('Site %s instantiated using aliases code %s'
                               % (self, code))
-            else:
-                # no such language anymore
-                self.obsolete = True
-                pywikibot.log(u'Site %s instantiated and marked "obsolete" '
-                              u'to prevent access' % self)
-        elif self.__code not in self.languages():
-            if self.__family.name in list(self.__family.langs.keys()) and \
-               len(self.__family.langs) == 1:
-                self.__code = self.__family.name
-                if self.__family == pywikibot.config.family \
-                        and code == pywikibot.config.mylang:
-                    pywikibot.config.mylang = self.__code
-                    warn(u'Global configuration variable "mylang" changed to '
-                         u'"%s" while instantiating site %s'
-                         % (self.__code, self), UserWarning)
-            else:
-                raise UnknownSite(u"Language '%s' does not exist in family %s"
-                                  % (self.__code, self.__family.name))
+            elif self.__code in self.__family.interwiki_replacements:
+                self.__code = self.__family.interwiki_replacements[self.__code]
+                assert self.__code in self.__family.codes
+                # Note the Site function in __init__ emits a UserWarning
+                # for this condition, showing the callers file and line no.
+                pywikibot.log('Site %s instantiated using old interwiki code %s'
+                              % (self, code))
+            elif self.__code not in self.languages():
+                if self.__family.name in list(self.__family.langs.keys()) and \
+                   len(self.__family.langs) == 1:
+                    self.__code = self.__family.name
+                    if self.__family == pywikibot.config.family \
+                            and code == pywikibot.config.mylang:
+                        pywikibot.config.mylang = self.__code
+                        warn(u'Global configuration variable "mylang" changed to '
+                             u'"%s" while instantiating site %s'
+                             % (self.__code, self), UserWarning)
+                elif self.__code in self.__family.interwiki_removals:
+                    pywikibot.log('Site %s instantiated for old interwiki code '
+                                  'which does not have an API endpoint' % self)
+                else:
+                    raise UnknownSite(u"Language '%s' does not exist in family %s"
+                                      % (self.__code, self.__family.name))
 
         self._username = [normalize_username(user), normalize_username(sysop)]
 
@@ -746,10 +759,37 @@ class BaseSite(ComparableMixin):
         self._pagemutex = threading.Lock()
         self._locked_pages = []
 
-    @deprecated
+    @property
+    def invalid(self):
+        """
+        Return whether a Site is invalid.
+
+        An example of an invalid Site is one with a code which is
+        not known by the Family, or is not marked as local on the
+        interwiki map.
+
+        BaseSite assumes all family codes are valid.
+        """
+        assert self.code in (self.family.codes + self.interwiki_removals)
+        return self.code not in self.family.codes
+
+    @deprecated('not APISite.invalid')
     def has_api(self):
         """Return whether this site has an API."""
         return False
+
+    @property
+    @deprecated('invalid or family.interwiki_replacements or family.interwiki_removals')
+    def obsolete(self):
+        """Return True when the site code is in Family.obsolete."""
+        if self.code in self.__family.interwiki_replacements:
+            assert self.code in self.__family.codes
+            pywikibot.warn(
+                'Site %s is obsolete as it is listed in interwiki_replacements'
+                ' and should not be used.'
+                % self)
+            return True
+        return self.code in self.__family.interwiki_removals
 
     @property
     @deprecated("APISite.siteinfo['case'] or Namespace.case == 'case-sensitive'")
@@ -1252,9 +1292,8 @@ def must_be(group=None, right=None):
     """
     def decorator(fn):
         def callee(self, *args, **kwargs):
-            if self.obsolete:
-                raise UnknownSite("Language %s in family %s is obsolete"
-                                  % (self.code, self.family.name))
+            if self.invalid:
+                raise UnknownSite('Site {0} is invalid'.format(self))
             grp = kwargs.pop('as_group', group)
             if grp == 'user':
                 self.login(False)
@@ -1789,7 +1828,23 @@ class APISite(BaseSite):
                         return cls(site['code'], site['code'])
         raise ValueError("Cannot parse a site out of %s." % dbname)
 
-    @deprecated
+    @property
+    def invalid(self):
+        """
+        Return whether a Site is invalid.
+
+        @rtype: bool
+        """
+        try:
+            self.base_url(self.scriptpath())
+        except KeyError:
+            return True
+        else:
+            assert self.code in self.family.codes, \
+                'valid {0} not in {1}.codes: {2}'.format(self.code, self.family.name, self.family.codes)
+            return False
+
+    @deprecated('not APISite.invalid')
     def has_api(self):
         """Return whether this site has an API."""
         return True
