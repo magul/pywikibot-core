@@ -34,7 +34,7 @@ bandwidth. Instead, use the -xml parameter, or use another way to generate
 a list of affected articles
 """
 #
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -484,7 +484,7 @@ class NoReferencesBot(Bot):
 
         self.generator = pagegenerators.PreloadingGenerator(generator)
         self.site = pywikibot.Site()
-        self.comment = i18n.twtranslate(self.site, 'noreferences-add-tag')
+        self.comment = None
 
         self.refR = re.compile('</ref>', re.IGNORECASE)
         self.referencesR = re.compile('<references.*?/>', re.IGNORECASE)
@@ -534,7 +534,10 @@ class NoReferencesBot(Bot):
         * Returns : The modified pagetext
 
         """
+        comment = self.comment
         # Do we have a malformed <reference> tag which could be repaired?
+        if not comment:
+            self.comment = i18n.twtranslate(self.site, 'noreferences-fix-tag')
 
         # Repair two opening tags or a opening and an empty tag
         pattern = re.compile(r'< *references *>(.*?)'
@@ -549,6 +552,8 @@ class NoReferencesBot(Bot):
             return re.sub(pattern, '<references />', oldText)
 
         # Is there an existing section where we can add the references tag?
+        if not comment:
+            self.comment = i18n.twtranslate(self.site, 'noreferences-add-tag')
         for section in i18n.translate(self.site, referencesSections):
             sectionR = re.compile(r'\r?\n=+ *%s *=+ *\r?\n' % section)
             index = 0
