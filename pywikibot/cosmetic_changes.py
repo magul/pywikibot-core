@@ -784,6 +784,12 @@ class CosmeticChangesToolkit:
         text = textlib.replaceExcept(text,
                                      r'(?i)<ref\s+([^>]+?)\s*>\s*</ref>',
                                      r'<ref \1/>', exceptions)
+        # shorten empty <references></references> tag
+        text = textlib.replaceExcept(
+            text,
+            r'< *references *>\s*< */? *references */? *>',
+            '<references />',
+            exceptions)
         return text
 
     def fixStyle(self, text):
