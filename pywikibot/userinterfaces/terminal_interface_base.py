@@ -221,13 +221,20 @@ class UI:
         @rtype: unicode
         """
         assert(not password or not default)
-        end_marker = ':'
-        question = question.strip()
-        if question[-1] == ':':
+        end_marker = ''
+        question = question.rstrip()
+        if question[-1] == '}':
+            color_start = question.rfind('\03{')
+            if color_start == question.rfind('{') - 1:
+                end_marker = question[color_start:]
+                question = question[:color_start]
+        if question[-1] == '?':
+            end_marker = '?' + end_marker
             question = question[:-1]
-        elif question[-1] == '?':
-            question = question[:-1]
-            end_marker = '?'
+        else:
+            if question[-1] == ':':
+                question = question[:-1]
+            end_marker = ':' + end_marker
         if default:
             question = question + ' (default: %s)' % default
         question = question + end_marker
