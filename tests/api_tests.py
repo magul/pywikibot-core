@@ -192,7 +192,7 @@ class TestDryApiFunctions(DefaultDrySiteTestCase):
         # test compliance with dict interface
         # req.keys() should contain "action", "foo", "bar", "one"
         self.assertEqual(len(req.keys()), 4)
-        self.assertIn("test", req._encoded_items().values())
+        self.assertIn(b'test', req._encoded_items().values())
         for item in req.items():
             self.assertEqual(len(item), 2, item)
 

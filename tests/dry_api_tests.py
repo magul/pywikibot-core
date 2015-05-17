@@ -169,8 +169,8 @@ class MockCachedRequestKeyTests(TestCase):
         req = CachedRequest(expiry=1, site=self.mocksite,
                             action='query', meta='siteinfo')
 
-        expect = (u'MockSite()User(User:محمد الفلسطيني)' +
-                  "[('action', 'query'), ('meta', 'siteinfo')]")
+        expect = u'MockSite()User(User:محمد الفلسطيني)'
+        expect += repr([(b'action', b'query'), (b'meta', b'siteinfo')])
 
         self.assertEqual(repr(req._uniquedescriptionstr()), repr(expect))
 

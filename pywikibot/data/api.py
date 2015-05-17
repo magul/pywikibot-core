@@ -1316,60 +1316,87 @@ class Request(MutableMapping):
                 kwargs['parameters'] = {}
         return kwargs
 
-    def _format_value(self, value):
-        """
-        Format the MediaWiki API request parameter.
-
-        Converts from Python datatypes to MediaWiki API parameter values.
-
-        Supports:
-         * datetime.datetime (using strftime and ISO8601 format)
-         * pywikibot.page.BasePage (using title (+namespace; -section))
-
-        All other datatypes are converted to string using unicode() on Python 2
-        and str() on Python 3.
-        """
-        if isinstance(value, datetime.datetime):
-            return value.strftime(pywikibot.Timestamp.ISO8601Format)
-        elif isinstance(value, pywikibot.page.BasePage):
-            assert(value.site == self.site)
-            return value.title(withSection=False)
-        else:
-            return unicode(value)
-
     def __getitem__(self, key):
-        """Implement dict interface."""
+        """Return a request parameter value.
+
+        Returns either
+           - a list of unicode strings,
+           - a list of objects, or
+           - an OptionSet (or other object that implements the api_iter interface)
+        """
         return self._params[key]
+
+    @staticmethod
+    def _parse_setitem_value(value, encoding):
+        """Parse a request parameter.
+
+        @param value: parameter value(s)
+        @type value: - unicode or bytes in site encoding
+                       (string types may be a |-separated list)
+                     - iterable, which is enumerated into a list
+                                 bytes values are converted to unicode
+                     - OptionSet, or another object that implements the
+                                  api_iter API. These are /not/ enumerated
+                                  into a list. Instead, its .api_iter function
+                                  is called once the request is ready
+                                  for submission.
+
+        @param encoding: encoding to use for bytes objects
+        @returns: The parsed value
+        @rtype: list of unicode, list of object, or an object that implements
+                the api_iter interface.
+        """
+        if hasattr(value, 'api_iter'):
+            return value
+
+        # Allow site encoded bytes (note: str is a subclass of bytes in py2)
+        if isinstance(value, bytes):
+            value = value.decode(encoding)
+
+        if isinstance(value, unicode):
+            value = value.split("|")
+
+        # convert iterables to lists, and non-iterables to a single-element list
+        try:
+            iter(value)
+        except TypeError:
+            value = [value]
+        else:
+            value = list(value)
+
+        # check for bytes values in the list, and, if they are present, decode
+        # them to unicode
+
+        value = [v.decode(encoding)
+                 if isinstance(v, bytes)
+                 else v
+                 for v in value]
+
+        return value
 
     def __setitem__(self, key, value):
         """Set MediaWiki API request parameter.
 
         @param key: param key
         @type key: basestring
-        @param value: param value(s)
-        @type value: unicode or str in site encoding
-            (string types may be a |-separated list)
-            iterable, where items are converted to unicode
-            with special handling for datetime.datetime to convert it to a
-            string using the ISO 8601 format accepted by the MediaWiki API.
+        @param value: parameter value(s)
+        @type value: - unicode or bytes in site encoding
+                       (string types may be a |-separated list)
+                     - iterable, which is enumerated into a list
+                                 bytes values are converted to unicode
+                     - OptionSet, or another object that implements the
+                                  api_iter API. These are /not/ enumerated
+                                  into a list. Instead, its .api_iter function
+                                  is called once the request is ready
+                                  for submission.
+
         """
-        # Allow site encoded bytes (note: str is a subclass of bytes in py2)
-        if isinstance(value, bytes):
-            value = value.decode(self.site.encoding())
+        key = unicode(key)
+        value = self._parse_setitem_value(value, encoding=self.site.encoding())
+        self._params[key] = value
 
-        if isinstance(value, unicode):
-            value = value.split("|")
-
-        if hasattr(value, 'api_iter'):
-            self._params[key] = value
-        else:
-            try:
-                iter(value)
-            except TypeError:
-                # convert any non-iterable value into a single-element list
-                self._params[key] = [value]
-            else:
-                self._params[key] = list(value)
+        # make sure we can represent the value that was set
+        self._http_param_string()
 
     def __delitem__(self, key):
         """Implement dict interface."""
@@ -1468,53 +1495,80 @@ class Request(MutableMapping):
 
         self.__defaulted = True
 
+    def _format_value(self, value):
+        """Format the MediaWiki API request parameter.
+
+        Converts from Python datatypes to MediaWiki API parameter values.
+
+        Supports:
+         * datetime.datetime (using strftime and ISO8601 format)
+         * pywikibot.page.BasePage (using title (+namespace; -section))
+
+        All other datatypes are converted to string using unicode() on Python 2
+        and str() on Python 3.
+        """
+        if isinstance(value, datetime.datetime):
+            value = value.strftime(pywikibot.Timestamp.ISO8601Format)
+        elif isinstance(value, pywikibot.page.BasePage):
+            assert(value.site == self.site)
+            return value.title(withSection=False)
+        return unicode(value)
+
+    def _format_values(self, values):
+        """Build a suitable unicode representation of `values`.
+
+        If the key should not be represented, return None instead.
+
+        @param values: a list of objects, or an object that implements api_iter
+        @return: api parameter representation of `values`
+        @rtype: unicode or None
+        """
+        try:
+            values = list(values.api_iter())
+        except AttributeError:
+            pass
+
+        # Special case: empty list. Warn, and return an empty string.
+        if not values:
+            warn('Value results in empty representation. Consider removing '
+                 'the parameter, or using boolean values.',
+                 RuntimeWarning)
+            return u''
+
+        # Special case: boolean values
+        if isinstance(values[0], bool):
+            if len(values) > 1:
+                raise RuntimeError('Expected single boolean value, got %r' % values)
+            if values[0]:
+                return u''
+            else:
+                return None
+
+        return u'|'.join(self._format_value(value) for value in values)
+
     def _encoded_items(self):
         """
         Build a dict of params with minimal encoding needed for the site.
 
-        This helper method only prepares params for serialisation or
-        transmission, so it only encodes values which are not ASCII,
-        requiring callers to consider how to handle ASCII vs other values,
-        however the output is designed to enable __str__ and __repr__ to
-        do the right thing in most circumstances.
+        This helper builds a dictionary which can be passed to urlencode
+        by converting all keys and values to unicode, then encoding them
+        in the local site encoding.
 
-        Servers which use an encoding that is not a superset of ASCII
-        are not supported.
-
-        @return: Parameters either in the site encoding, or ASCII strings
-        @rtype: dict with values of either str or bytes
+        @return: Parameters in the site encoding
+        @rtype: dict with bytes keys and bytes values
         """
         params = {}
         for key, values in self._params.items():
+            value = self._format_values(values)
             try:
-                iterator = values.api_iter()
-            except AttributeError:
-                if len(values) == 1:
-                    value = values[0]
-                    if value is True:
-                        values = ['']
-                    elif value is False or value is None:
-                        # False and None are not included in the http URI
-                        continue
-                iterator = iter(values)
-            value = u'|'.join(self._format_value(value) for value in iterator)
-            # If the value is encodable as ascii, do not encode it.
-            # This means that any value which can be encoded as ascii
-            # is presumed to be ascii, and servers using a site encoding
-            # which is not a superset of ascii may be problematic.
-            try:
-                value.encode('ascii')
-                # In Python 2, ascii API params should be represented as 'foo'
-                # rather than u'foo'
-                if PY2:
-                    value = str(value)
-            except UnicodeError:
-                try:
-                    value = value.encode(self.site.encoding())
-                except Exception:
-                    pywikibot.error(
-                        u"_encoded_items: '%s' could not be encoded as '%s':"
-                        u" %r" % (key, self.site.encoding(), value))
+                key = key.encode(self.site.encoding())
+                value = value.encode(self.site.encoding())
+            except UnicodeEncodeError:
+                pywikibot.error(
+                    u"_encoded_items: %r=%r could not be encoded as '%s'" %
+                    (key, value, self.site.encoding())
+                )
+                raise
             params[key] = value
         return params
 
