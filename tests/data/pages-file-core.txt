@@ -1,0 +1,19 @@
+XXXXXX Good
+This is a file for the core mode (the compat mode may still work with it, but
+that is not important). It supports differentiating separators so that it's
+possible to write the file without knowing the content of all pages.
+
+So it's writing here with 6 Xes but it doesn't know if the following pages
+contain this text.
+XXXXXXYYYYYY Bad
+Okay here we go. It contains XXXXXX and it would stop there. But that is not
+good so it redefined the separator to 6 Ys.
+YYYYYY Good again
+Another good file. Only XXXXXX here but not YYYYY- HA tricked you ;)
+YYYYYYZZZ Changed length
+What if the marker changed length, does it still work? A change is not necessary
+here but the reader does not care.
+ZZZZZ Changed length but same chars
+Okay this is tricky. Did you see that three Z changed into two Z now? This is
+posssible too.
+ZZ

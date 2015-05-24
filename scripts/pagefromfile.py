@@ -19,6 +19,10 @@ Specific arguments:
 
 -start:xxx      Specify the text that marks the beginning of a page
 -end:xxx        Specify the text that marks the end of a page
+-autostart      The start marker is the first line of the file (replaces -start)
+-startisstop    The start marker is also the endmarker for the previous page and
+                expects then the second file variant.
+                (replaces -end)
 -file:xxx       Give the filename we are getting our material from
                 (default: dict.txt)
 -include        The beginning and end markers should be included
@@ -46,6 +50,14 @@ If the page to be uploaded already exists:
 -appendtop      add the text to the top of it
 -appendbottom   add the text to the bottom of it
 -force          overwrite the existing page
+
+The file should contain the text of each side with the start marker in front of
+it and the end marker at the end. The title of each page are the first words in
+the text surrounded by the title markers. When using -startisstop the title can
+also be given after the page start marker. In that mode the text starts after
+the first newline after the start marker, while in the original mode it uses the
+text immediately after the page start marker (so a new line is in theory not
+necessary). Leading newline (CR and LF) will be removed.
 """
 #
 # (C) Andre Engels, 2004
@@ -58,12 +70,15 @@ from __future__ import unicode_literals
 __version__ = '$Id$'
 #
 
-import os
-import re
 import codecs
+import os
+import random
+import re
+import string
 
 import pywikibot
 from pywikibot import config, Bot, i18n
+from pywikibot.tools import deprecated
 
 
 class NoTitle(Exception):
@@ -166,7 +181,75 @@ class PageFromFileRobot(Bot):
                      ignore_save_related_errors=True)
 
 
-class PageFromFileReader:
+class PageToFileWriter(object):
+
+    """
+    A class to write page contents into a file using the core mode.
+
+    It flushes the data after each page so even if an exception occurs, the
+    previous pages have been written. This is only possible in core file mode
+    as that allows to change the marker in between in case a page contains the
+    marker used on the previous pages.
+
+    The page name is also always set explicitly so when reading, title markers
+    are not necessary.
+    """
+
+    def __init__(self, filename, marker_hint=None):
+        """
+        Create a new writer instance and open the file object.
+
+        @param filename: The filename of the file
+        @type filename: str
+        @param marker_hint: A preset marker to be used between files. If not
+            set or as soon as the marker appears in the text it'll be changed.
+            By default it is not set.
+        @type marker_hint: str or None
+        """
+        super(PageToFileWriter, self).__init__()
+        if marker_hint and set(marker_hint) & set(' \n'):
+            raise ValueError('The marker_hint may not contain spaces or newlines.')
+        self._file = codecs.open(filename, 'w', config.textfile_encoding)
+        self._marker = marker_hint
+        self._marker_written = False
+
+    def _get_marker(self, text):
+        """Generate a new marker when the current is not suitable."""
+        # In theory it's possible that the text contains all sequences possible
+        # by generating 10 digits randomly but the chance is verly low
+        changed = False
+        while not self._marker or self._marker in text:
+            self._marker = ''.join(random.choice(string.ascii_letters + string.digits)
+                                   for _ in range(10))
+            changed = True
+        return changed
+
+    def write(self, page):
+        """Write this page's content to the file."""
+        # Test and if required select a new marker
+        if self._get_marker(page.text) or not self._marker_written:
+            self._marker_written = True
+            self._file.write(self._marker)
+        self._file.write(' {0}\n'.format(page.title(withSection=False)))
+        self._file.write(page.text)
+        # Don't add a new line after the marker in case the marker changes
+        self._file.write('\n' + self._marker)
+        self._file.flush()  # This is fine now
+
+    def __enter__(self):
+        """Enter a context and return itself."""
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit a context and close the file."""
+        self.close()
+
+    def close(self):
+        """Close the underlying file."""
+        self._file.close()
+
+
+class PageFromFileReader(object):
 
     """
     Responsible for reading the file.
@@ -190,6 +273,9 @@ class PageFromFileReader:
         self.titleEndMarker = titleEndMarker
         self.include = include
         self.notitle = notitle
+        self._title_regex = re.compile('{0}(.*?){1}'.format(
+            re.escape(self.titleStartMarker),
+            re.escape(self.titleEndMarker)), re.DOTALL)
 
     def run(self):
         """Read file and yield page title and content."""
@@ -203,46 +289,110 @@ class PageFromFileReader:
             pywikibot.output(str(err))
             raise IOError
 
-        position = 0
-        length = 0
-        while True:
-            try:
-                length, title, contents = self.findpage(text[position:])
-            except AttributeError:
-                if not length:
-                    pywikibot.output(u'\nStart or end marker not found.')
+        if self.pageStartMarker is None:
+            # In the startisstop-mode the marker also stops after the first
+            # space (whichever comes first)
+            search_for = r'\n'
+            if self.pageEndMarker is None:
+                search_for += r' '
+            self.pageStartMarker = re.search(r'(.*?)[{0}]'.format(search_for),
+                                             text).group(1)
+
+        end = 0
+        # search for the next pageStartMarker
+        position = start = text.find(self.pageStartMarker)
+        while start >= 0:
+            position = start
+            text_between = text[end:position].strip()
+            if text_between:
+                pywikibot.warning('Found text between page markers: {0}'.format(
+                    text_between))
+            marker_end = position + len(self.pageStartMarker)
+            if self.pageEndMarker is None:
+                # Read new start marker and title
+                # BEWARE: the start/end are relative to marker_end OR position
+                # when the marker has changed!
+                after_marker_match = re.match(r'^([^ \n]*) *(.*?)\n',
+                                              text[marker_end:])
+                content_start = after_marker_match.end() + marker_end
+                if after_marker_match.group(1):
+                    self.pageStartMarker = after_marker_match.group(1)
+                    # Changing the marker behaves like changing where the text
+                    # starts
+                    position = marker_end
+                    marker_end += len(self.pageStartMarker)
+                title = after_marker_match.group(2)
+                # these are always the same
+                start = end = text.find(self.pageStartMarker, marker_end)
+                if end >= 0:
+                    title, contents = self._extract_information(
+                        text, position, content_start, end, title)
+            else:
+                try:
+                    try:
+                        end, title, contents = self.findpage(text[position:])
+                    except NoTitle as err:
+                        end = err.offset
+                        title = None
+                    end += position
+                    start = text.find(self.pageStartMarker, end)
+                except AttributeError as e:
+                    assert('start' in str(e))
+                    end = start = -1
+                # Either both are -1 or end is at the end of the marker while
+                # find finds the start of the marker
+                assert(text.find(self.pageEndMarker, marker_end) ==
+                       (end if end == -1 else end - len(self.pageEndMarker)))
+
+            if start >= 0:
+                if not title:
+                    pywikibot.warning(
+                        'No title found for page in line {0}. Skipping.'.format(
+                            text.count('\n', 0, marker_end) + 1))
                 else:
-                    pywikibot.output(u'End of file.')
-                break
-            except NoTitle as err:
-                pywikibot.output(u'\nNo title found - skipping a page.')
-                position += err.offset
-                continue
+                    yield title, contents
 
-            position += length
-            yield title, contents
+        if self.pageEndMarker is None:
+            # start marker is also end marker, so it wasn't matched
+            position += len(self.pageStartMarker)
+        rest_of_file = text[position:].strip()
+        if rest_of_file:
+            pywikibot.warning('Found text after the last page marker: {0}'.format(
+                rest_of_file))
 
+    @deprecated
     def findpage(self, text):
         """Find page to work on."""
         pageR = re.compile(re.escape(self.pageStartMarker) + "(.*?)" +
                            re.escape(self.pageEndMarker), re.DOTALL)
-        titleR = re.compile(re.escape(self.titleStartMarker) + "(.*?)" +
-                            re.escape(self.titleEndMarker))
 
         location = pageR.search(text)
-        if self.include:
-            contents = location.group()
-        else:
-            contents = location.group(1)
-        try:
-            title = titleR.search(contents).group(1)
-            if self.notitle:
-                # Remove title (to allow creation of redirects)
-                contents = titleR.sub('', contents, count=1)
-        except AttributeError:
+        title, contents = self._extract_information(
+            text, location.start(), location.start(1), location.end(1))
+        if not title:
             raise NoTitle(location.end())
+        return location.end(), title, contents
+
+    def _extract_information(self, text, start, content_start,
+                             content_end, title=None):
+        """Return title and contents from the given match."""
+        if self.include:
+            # if the pageEndMarker is not defined use the pageStartMarker
+            contents = text[start:content_end + len(self.pageEndMarker or
+                                                    self.pageStartMarker)]
         else:
-            return location.end(), title, contents
+            contents = text[content_start:content_end]
+        title_match = self._title_regex.search(contents)
+        if title_match:
+            new_title = title_match.group(1)
+            if not title:
+                title = new_title
+            elif title == new_title:
+                if self.notitle:
+                    # Remove title (to allow creation of redirects)
+                    contents = (contents[:title_match.start()] +
+                                contents[title_match.end():])
+        return title, contents
 
 
 def main(*args):
@@ -273,6 +423,10 @@ def main(*args):
             pageStartMarker = arg[7:]
         elif arg.startswith("-end:"):
             pageEndMarker = arg[5:]
+        elif arg == '-autostart':
+            pageStartMarker = None
+        elif arg == '-startisstop':
+            pageEndMarker = None
         elif arg.startswith("-file:"):
             filename = arg[6:]
         elif arg == "-include":

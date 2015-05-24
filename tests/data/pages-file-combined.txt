@@ -1,0 +1,24 @@
+XXXXXX
+This is the content of '''Page''' 1.
+XXXXXX
+This format is fun. Why? Because you can write your own stories in between the
+pages. Or jokes..., but I can't think of any yet.
+
+But seriously! This is a test, so '''pretend''' we are a page!
+XXXXXX
+Anyway '''Other''' page is now here.
+XXXXXX
+Before I copy jokes from Google results I recommend to you the '''XKCD'''
+comics. One of my favourites is probably http://xkcd.com/612/ but there are a
+lot more which are good.
+XXXXXX Fifth
+So lets have a '''third''' page here.
+XXXXXX
+Oh maybe I should '''note''' a bit about this file. It should be readable by
+both modes. The compat mode should only read half as many as the core mode. The
+content for them is mostly irrelevant except for the page above this one. The
+text may NOT contain Fifth itself. Otherwise the content is not important as
+long as the title does not change.
+
+Happy testing!
+XXXXXX
