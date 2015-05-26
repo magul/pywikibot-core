@@ -34,12 +34,14 @@ import os
 import pkgutil
 
 from collections import defaultdict
+from warnings import warn
 
 from pywikibot import Error
 from .plural import plural_rules
 
 import pywikibot
 
+from pywikibot import site
 from . import config2 as config
 
 if sys.version_info[0] > 2:
@@ -458,11 +460,55 @@ def twtranslate(code, twtitle, parameters=None, fallback=True):
     fallback parameter must be True for i18n and False for L10N or testing
     purposes.
 
-    @param code: The language code
+    @param code: The language code which are the 'lang' and 'code' properties
+        when it's a site. When a site is given it will first try to use the
+        language and then the code. If the code is specifically required it
+        should be directly supplied instead of a site.
+    @type code: BaseSite or str
     @param twtitle: The TranslateWiki string title, in <package>-<key> format
     @param parameters: For passing parameters.
     @param fallback: Try an alternate language code
     @type fallback: boolean
+    """
+    # For backwards compatibility still support lists, when twntranslate was
+    # calling twtranslate and needed a way to get the used language code back
+    if isinstance(code, list):
+        warn('The code argument should not be a list but either a BaseSite or '
+             'a str/unicode.', DeprecationWarning, 2)
+        lang = code[-1]
+    else:
+        lang = code
+    trans, lang = _twtranslate(lang, twtitle, fallback)
+    # Write the value back as it did previously
+    if isinstance(code, list):
+        code[-1] = lang
+    if parameters:
+        return trans % parameters
+    else:
+        return trans
+
+
+def _get_language_codes(code):
+    """Get the language and code if it's a BaseSite and code otherwise."""
+    # If a site is given instead of a code, use its language
+    if isinstance(code, site.BaseSite):
+        langs = [code.lang]
+        if code.code not in langs:
+            langs += [code.code]
+    else:
+        langs = [code]
+    return langs
+
+
+def _twtranslate(code, twtitle, fallback=True):
+    """
+    Translate the given twtitle according to code.
+
+    It is using the same parameters as L{twtranslate} without the 'parameters'
+    parameter.
+
+    @return: The translated text and used language code
+    @rtype: str, str
     """
     if not messages_available():
         raise TranslationError(
@@ -471,25 +517,19 @@ def twtranslate(code, twtitle, parameters=None, fallback=True):
             'Read https://mediawiki.org/wiki/PWB/i18n'
             % (_messages_package_name, twtitle))
 
-    code_needed = False
-    # If a site is given instead of a code, use its language
-    if hasattr(code, 'code'):
-        lang = code.code
-    # check whether we need the language code back
-    elif isinstance(code, list):
-        lang = code.pop()
-        code_needed = True
-    else:
-        lang = code
+    langs = _get_language_codes(code)
+    use_code = len(langs) > 1
 
     # There are two possible failure modes: the translation dict might not have
     # the language altogether, or a specific key could be untranslated. Both
     # modes are caught with the KeyError.
-    langs = [lang]
     if fallback:
-        langs += _altlang(lang) + ['en']
-    for alt in langs:
-        trans = _get_translation(alt, twtitle)
+        # we modify langs, so iterate over a copy or it'll be an infinite loop
+        for lang in list(langs):
+            langs += _altlang(lang)
+        langs += ['en']
+    for lang in langs:
+        trans = _get_translation(lang, twtitle)
         if trans:
             break
     else:
@@ -497,13 +537,12 @@ def twtranslate(code, twtitle, parameters=None, fallback=True):
             'No English translation has been defined for TranslateWiki key'
             ' %r\nIt can happen due to lack of i18n submodule or files. '
             'Read https://mediawiki.org/wiki/PWB/i18n' % twtitle)
-    # send the language code back via the given list
-    if code_needed:
-        code.append(lang)
-    if parameters:
-        return trans % parameters
-    else:
-        return trans
+    # use_code is only True, when code.code is a new value and was added
+    if use_code and lang == code.code:
+        warn("There was no translation for the site's language but for the "
+             "site's code. If you want to use the site's code, apply the code "
+             "value and not the site itself.", DeprecationWarning, 3)
+    return trans, lang
 
 
 # Maybe this function should be merged with twtranslate
@@ -554,14 +593,7 @@ def twntranslate(code, twtitle, parameters=None):
     @param parameters: For passing (plural) parameters.
 
     """
-    # If a site is given instead of a code, use its language
-    if hasattr(code, 'code'):
-        code = code.code
-    # we send the code via list and get the alternate code back
-    code = [code]
-    trans = twtranslate(code, twtitle)
-    # get the alternate language code modified by twtranslate
-    lang = code.pop()
+    trans, lang = _twtranslate(code, twtitle)
     # check for PLURAL variants
     trans = _extract_plural(lang, trans, parameters)
     # we always have a dict for replacement of translatewiki messages
@@ -586,13 +618,12 @@ def twhas_key(code, twtitle):
     @param code: The language code
     @param twtitle: The TranslateWiki string title, in <package>-<key> format
     """
-    # If a site is given instead of a code, use its language
-    if hasattr(code, 'code'):
-        code = code.code
-    transdict = _get_translation(code, twtitle)
-    if transdict is None:
+    langs = _get_language_codes(code)
+    for lang in langs:
+        if _get_translation(lang, twtitle) is not None:
+            return True
+    else:
         return False
-    return True
 
 
 def twget_keys(twtitle):
