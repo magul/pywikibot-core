@@ -1235,6 +1235,118 @@ def extract_templates_and_params_regex(text):
     return result
 
 
+def extract_templates_and_params_iter(text):
+    """
+    Extract the templates and their parameters by iterating over it.
+
+    It first determines where templates start and end and then it looks for
+    each template which pipes and equal characters are not in parameters or
+    other templates.
+    """
+    def span_len(span):
+        return span[1] - span[0]
+
+    def name_counter():
+        count = 0
+        while True:
+            count += 1
+            yield str(count)
+
+    # Find the start and end positions of templates. Finding the end position
+    # is important because otherwise it's not possible to determine if opening
+    # brackets are actually used to templates
+    bracket_stack = []  # bracket stack containing start and end position of {
+    positions = []
+    for match in re.finditer(r'([{}])\1+', text):
+        if match.group(1) == '{':
+            bracket_stack += [match.span()]
+        else:
+            close_length = span_len(match.span())
+            close_start = match.start()
+            while close_length > 1:
+                open_length = span_len(bracket_stack[-1])
+                # First remove as many brackets as possible using three brackets
+                length = min(close_length, open_length)
+                remainder = length % 3
+                num_params = length // 3
+                assert(remainder != 1)  # TODO: Handle {{{{X|Y}}}} → {Y}
+                has_tmpl = remainder == 2
+                # number of brackets removed from the inside due to parameters
+                offset = num_params * 3
+                print('O: {0}'.format(offset))
+                if has_tmpl > 0:
+                    assert(open_length > 0)
+                    assert(close_length > 0)
+                    tmpl_start = bracket_stack[-1][1] - offset
+                    tmpl_end = close_start + offset
+                    print('TMPL: {0} ({1}:{2})'.format(text[tmpl_start:tmpl_end], tmpl_start, tmpl_end))
+                    positions += [(tmpl_start, tmpl_end)]
+                    offset += 2
+                close_length -= offset
+                close_start += offset
+                open_length -= offset
+                if open_length == 0:
+                    bracket_stack.pop()
+                else:
+                    bracket_stack[-1] = (bracket_stack[-1][0],
+                                         bracket_stack[-1][0] + open_length)
+
+    print(positions)
+    result = []
+    for start, end in sorted(positions):
+        bracket_stack = []
+        numeric_name = name_counter()
+        name = None
+        params = OrderedDict()
+        param_start = False
+        param_name = None
+        print(text[start:end])
+        for match in re.finditer(r'(?:([{}])\1+|\||=)', text[start:end]):
+            print(match.group())
+            if not bracket_stack:
+                if match.group() == '|':
+                    print('F {}'.format(param_start))
+                    if param_start is False:
+                        name = text[start:start + match.start()]
+                    else:
+                        value = text[start + param_start:start + match.start()]
+                        if param_name is None:
+                            param_name = next(numeric_name)
+                        params[param_name] = value
+                    print(params)
+                    param_start = match.end()
+                    param_name = None
+                elif match.group() == '=':
+                    if param_start is not False and param_name is None:
+                        param_name = text[start + param_start:start + match.start()]
+                        param_start = match.end()
+            if match.group(1) == '{':
+                bracket_stack += [span_len(match.span())]
+            elif match.group(1) == '}':
+                remaining_length = span_len(match.span())
+                print(bracket_stack)
+                print(remaining_length)
+                while remaining_length > 1 and bracket_stack[-1] <= remaining_length:
+                    print(bracket_stack)
+                    print(remaining_length)
+                    remaining_length -= bracket_stack.pop()
+                if bracket_stack and bracket_stack[-1] - remaining_length <= 1:
+                    bracket_stack.pop()
+        else:
+            # almost copied from the |-case above :/ (the 'end' is now end)
+            print(param_start)
+            print(param_name)
+            if param_start is False:
+                name = text[start:end]
+            else:
+                value = text[start + param_start:end]
+                if param_name is None:
+                    param_name = next(numeric_name)
+                params[param_name] = value
+        result += [(name.strip(), params)]
+    return result
+
+
 def glue_template_and_params(template_and_params):
     """Return wiki text of template glued from params.
 

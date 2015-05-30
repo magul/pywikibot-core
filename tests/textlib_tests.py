@@ -253,6 +253,16 @@ class TestTemplateParams(TestCase):
 
     net = False
 
+    def assertExtraction(self, func, original, result):
+        """
+        Extract template data and compare with simplified result.
+
+        The parameters in the result are just iterable and made into an
+        OrderedDict here.
+        """
+        result = [(name, OrderedDict(params)) for name, params in result]
+        self.assertEqual(func(original), result)
+
     def _extract_templates_params(self, func):
         self.assertEqual(func('{{a}}'), [('a', OrderedDict())])
         self.assertEqual(func('{{ a}}'), [('a', OrderedDict())])
@@ -287,7 +297,9 @@ class TestTemplateParams(TestCase):
 
         func = textlib.extract_templates_and_params_mwpfh
         self._extract_templates_params(func)
+        self._test_extract_templates_params_mwpfh_compatible(func)
 
+    def _test_extract_templates_params_mwpfh_compatible(self, func):
         self.assertEqual(func('{{a|}}'), [('a', OrderedDict((('1', ''), )))])
 
         self.assertEqual(func('{{a| b=c}}'), [('a', OrderedDict(((' b', 'c'), )))])
@@ -301,6 +313,11 @@ class TestTemplateParams(TestCase):
         self.assertEqual(func('{{a|b={{c}} }}'), [('a', OrderedDict((('b', '{{c}} '), ))), ('c', OrderedDict())])
 
         self.assertEqual(func('{{a|b=<!--{{{1}}}-->}}'), [('a', OrderedDict((('b', '<!--{{{1}}}-->'), )))])
+
+        # Uneven brackets
+        self.assertExtraction(func, '{{{a|b}}X}', [('a', (('1', 'b'), ))])
+        self.assertExtraction(func, '{{a|{{b|c}}}|d}}',
+                              [('a', (('1', '{{b|c}}}'), ('2', 'd'))), ('b', (('1', 'c'),))])
 
     def test_extract_templates_params_regex(self):
         func = textlib.extract_templates_and_params_regex
@@ -319,6 +336,12 @@ class TestTemplateParams(TestCase):
         self.assertEqual(func('{{a|b={{c}} }}'), [('c', OrderedDict()), ('a', OrderedDict((('b', '{{c}}'), )))])
 
         self.assertEqual(func('{{a|b=<!--{{{1}}}-->}}'), [('a', OrderedDict((('b', ''), )))])
+
+    def test_extract_templates_params_iter(self):
+        """Test extraction using the iterative method."""
+        func = textlib.extract_templates_and_params_iter
+        self._extract_templates_params(func)
+        self._test_extract_templates_params_mwpfh_compatible(func)
 
     def test_extract_templates_params(self):
         self._extract_templates_params(
