@@ -15,8 +15,9 @@ import types
 import pywikibot.data.api as api
 import pywikibot.family
 import pywikibot.login
-import pywikibot.site
+
 from pywikibot.tools import MediaWikiVersion
+from pywikibot.site import LoginStatus, APISite
 
 from tests.aspects import (
     unittest,
@@ -687,7 +688,7 @@ class TestLazyLoginBase(TestCase):
         super(TestLazyLoginBase, cls).setUpClass()
         fam = pywikibot.family.AutoFamily(
             'steward', 'https://steward.wikimedia.org/w/api.php')
-        cls.site = pywikibot.site.APISite('steward', fam)
+        cls.site = APISite('steward', fam)
 
 
 class TestLazyLoginNotExistUsername(TestLazyLoginBase):
@@ -710,8 +711,8 @@ class TestLazyLoginNotExistUsername(TestLazyLoginBase):
         self.site._username = ['Not registered username', None]
         req = api.Request(site=self.site, action='query')
         self.assertRaises(pywikibot.NoUsername, req.submit)
-        # FIXME: T100965
-        self.assertRaises(api.APIError, req.submit)
+        self.assertRaises(pywikibot.NoUsername, req.submit)
+        self.assertEqual(self.site._loginstatus, LoginStatus.NOT_LOGGED_IN)
 
 
 class TestLazyLoginNoUsername(TestLazyLoginBase):
@@ -731,8 +732,8 @@ class TestLazyLoginNoUsername(TestLazyLoginBase):
 
         req = api.Request(site=self.site, action='query')
         self.assertRaises(pywikibot.NoUsername, req.submit)
-        # FIXME: T100965
-        self.assertRaises(api.APIError, req.submit)
+        self.assertRaises(pywikibot.NoUsername, req.submit)
+        self.assertEqual(self.site._loginstatus, LoginStatus.NOT_LOGGED_IN)
 
 
 class TestBadTokenRecovery(TestCase):

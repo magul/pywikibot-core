@@ -1670,26 +1670,29 @@ class APISite(BaseSite):
             return
         # check whether a login cookie already exists for this user
         self._loginstatus = LoginStatus.IN_PROGRESS
-        if hasattr(self, "_userinfo"):
-            del self._userinfo
         try:
-            self.getuserinfo()
-            if self.userinfo['name'] == self._username[sysop] and \
-               self.logged_in(sysop):
-                return
-        except api.APIError:  # May occur if you are not logged in (no API read permissions).
-            pass
-        loginMan = api.LoginManager(site=self, sysop=sysop,
-                                    user=self._username[sysop])
-        if loginMan.login(retry=True):
-            self._username[sysop] = loginMan.username
             if hasattr(self, "_userinfo"):
                 del self._userinfo
-            self.getuserinfo()
-            self._loginstatus = (LoginStatus.AS_SYSOP
-                                 if sysop else LoginStatus.AS_USER)
-        else:
-            self._loginstatus = LoginStatus.NOT_LOGGED_IN  # failure
+            try:
+                self.getuserinfo()
+                if self.userinfo['name'] == self._username[sysop] and \
+                   self.logged_in(sysop):
+                    return
+            except api.APIError:  # May occur if you are not logged in (no API read permissions).
+                pass
+            loginMan = api.LoginManager(site=self, sysop=sysop,
+                                        user=self._username[sysop])
+            if loginMan.login(retry=True):
+                self._username[sysop] = loginMan.username
+                if hasattr(self, "_userinfo"):
+                    del self._userinfo
+                self.getuserinfo()
+                self._loginstatus = (LoginStatus.AS_SYSOP
+                                     if sysop else LoginStatus.AS_USER)
+        finally:
+            # Failure to login
+            if self._loginstatus == LoginStatus.IN_PROGRESS:
+                self._loginstatus = LoginStatus.NOT_LOGGED_IN
 
     # alias for backward-compatibility
     forceLogin = redirect_func(login, old_name='forceLogin',
