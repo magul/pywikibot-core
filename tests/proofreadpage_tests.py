@@ -86,7 +86,7 @@ class TestProofreadPageValidSite(TestCase):
 
     valid = {
         'title': 'Page:Popular Science Monthly Volume 1.djvu/12',
-        'ql': 4,
+        'level': 4,
         'user': 'T. Mazzei',
         'header': u"{{rh|2|''THE POPULAR SCIENCE MONTHLY.''}}",
         'footer': u'\n{{smallrefs}}',
@@ -147,7 +147,7 @@ class TestProofreadPageValidSite(TestCase):
     def test_valid_parsing(self):
         """Test ProofreadPage page parsing functions."""
         page = ProofreadPage(self.site, self.valid['title'])
-        self.assertEqual(page.ql, self.valid['ql'])
+        self.assertEqual(page.level, self.valid['level'])
         self.assertEqual(page.user, self.valid['user'])
         self.assertEqual(page.header, self.valid['header'])
         self.assertEqual(page.footer, self.valid['footer'])
@@ -156,6 +156,7 @@ class TestProofreadPageValidSite(TestCase):
         """Test ProofreadPage page decomposing/composing text."""
         page = ProofreadPage(self.site, self.valid['title'])
         plain_text = pywikibot.Page(self.site, self.valid['title']).text
+        # import pdb; pdb.set_trace()
         assert page.text
         self.assertEqual(plain_text, page.text)
 
@@ -171,11 +172,10 @@ class TestProofreadPageValidSite(TestCase):
     def test_preload_from_empty_text(self):
         """Test ProofreadPage page decomposing/composing text."""
         page = ProofreadPage(self.site, 'dummy test page')
-        page.text = ''
         self.assertEqual(page.text,
                          '<noinclude><pagequality level="1" user="%s" />'
                          '<div class="pagetext">\n\n\n</noinclude>'
-                         '<noinclude></div></noinclude>'
+                         '<noinclude><references/></div></noinclude>'
                          % self.site.username())
 
     def test_json_format(self):

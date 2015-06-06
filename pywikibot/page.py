@@ -326,7 +326,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         return self.autoFormat()[0] is not None
 
     @deprecated_args(throttle=None, change_edit_time=None)
-    def get(self, force=False, get_redirect=False, sysop=False):
+    def get(self, force=False, get_redirect=False, sysop=False, **kwargs):
         """Return the wiki-text of the page.
 
         This will retrieve the page from the server if it has not been
@@ -350,7 +350,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if force:
             del self.latest_revision_id
         try:
-            self._getInternals(sysop)
+            self._getInternals(sysop, **kwargs)
         except pywikibot.IsRedirectPage:
             if not get_redirect:
                 raise
@@ -365,7 +365,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         else:
             return None
 
-    def _getInternals(self, sysop):
+    def _getInternals(self, sysop, **kwargs):
         """Helper function for get().
 
         Stores latest revision in self if it doesn't contain it, doesn't think.
@@ -380,7 +380,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         # If not already stored, fetch revision
         if self._latest_cached_revision() is None:
             try:
-                self.site.loadrevisions(self, getText=True, sysop=sysop)
+                self.site.loadrevisions(self, getText=True, sysop=sysop, **kwargs)
             except (pywikibot.NoPage, pywikibot.SectionError) as e:
                 self._getexception = e
                 raise
@@ -4462,7 +4462,7 @@ class Revision(DotReadableDict):
         @type revid: int
         @param text: Revision wikitext.
         @type text: unicode, or None if text not yet retrieved
-        @param timestamp: Revision time stamp
+        @param timestamp: Revision timestamp
         @type timestamp: pywikibot.Timestamp
         @param user: user who edited this revision
         @type user: unicode
@@ -4472,6 +4472,10 @@ class Revision(DotReadableDict):
         @type comment: unicode
         @param minor: edit flagged as minor
         @type minor: bool
+        @param contentmodel
+        @type text: unicode, or None if not available
+        @param sha1
+        @type text: unicode, or None if not available
 
         """
         self.revid = revid

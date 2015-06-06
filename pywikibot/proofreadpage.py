@@ -25,37 +25,6 @@ import json
 import pywikibot
 
 
-class FullHeader(object):
-
-    """Header of a ProofreadPage object."""
-
-    p_header = re.compile(
-        r'<pagequality level="(?P<ql>\d)" user="(?P<user>.*?)" />'
-        r'<div class="pagetext">(?P<header>.*)',
-        re.DOTALL)
-
-    _template = ('<pagequality level="{0.ql}" user="{0.user}" />'
-                 '<div class="pagetext">{0.header}\n\n\n')
-
-    def __init__(self, text=None):
-        """Constructor."""
-        self._text = text or ''
-
-        m = self.p_header.search(self._text)
-        if m:
-            self.ql = int(m.group('ql'))
-            self.user = m.group('user')
-            self.header = m.group('header')
-        else:
-            self.ql = ProofreadPage.NOT_PROOFREAD
-            self.user = ''
-            self.header = ''
-
-    def __str__(self):
-        """Return a string representation."""
-        return self._template.format(self)
-
-
 class ProofreadPage(pywikibot.Page):
 
     """ProofreadPage page used in Mediawiki ProofreadPage extension."""
@@ -70,6 +39,12 @@ class ProofreadPage(pywikibot.Page):
     close_tag = '</noinclude>'
     p_open = re.compile(r'<noinclude>')
     p_close = re.compile(r'(</div>|\n\n\n)?</noinclude>')
+    p_header = re.compile(
+        r'<pagequality level="(?P<level>\d)" user="(?P<user>.*?)" />'
+        r'<div class="pagetext">(?P<header>.*)',
+        re.DOTALL)
+
+    KEYS = ['header', 'body', 'footer', 'level', 'user']
 
     def __init__(self, source, title=''):
         """Instantiate a ProofreadPage object.
@@ -86,122 +61,121 @@ class ProofreadPage(pywikibot.Page):
             raise ValueError('Page %s must belong to %s namespace'
                              % (self.title(), ns))
 
-    def decompose(fn):
+        self._page_dict = RestrictedDict(ProofreadPage.KEYS)
+
+    def load_text_and_apply(fn):
         """Decorator.
 
-        Decompose text if needed and recompose text.
+        Load text if needed and recompose text after change.
         """
         def wrapper(obj, *args, **kwargs):
-            if not hasattr(obj, '_full_header'):
-                obj._decompose_page()
+            if not hasattr(obj, '_text'):
+                obj.text  # Property force page text loading.
             _res = fn(obj, *args, **kwargs)
             obj._compose_page()
             return _res
         return wrapper
 
     @property
-    @decompose
-    def ql(self):
+    @load_text_and_apply
+    def level(self):
         """Return page quality level."""
-        return self._full_header.ql
+        return self._page_dict['level']
 
-    @ql.setter
-    @decompose
-    def ql(self, value):
+    @level.setter
+    @load_text_and_apply
+    def level(self, value):
         """Set page quality level."""
         if value not in self.site.proofread_levels:
-            raise ValueError('Not valid QL value: %s (legal values: %s)'
+            raise ValueError('Not valid Quality Level: %s (legal values: %s)'
                              % (value, self.site.proofread_levels))
-        # TODO: add logic to validate ql value change, considering
+        # TODO: add logic to validate level value change, considering
         # site.proofread_levels.
-        self._full_header.ql = value
+        self._page_dict['level'] = value
 
     @property
-    @decompose
+    @load_text_and_apply
     def user(self):
         """Return user in page header."""
-        return self._full_header.user
+        return self._page_dict['user']
 
     @user.setter
-    @decompose
+    @load_text_and_apply
     def user(self, value):
         """Set user in page header."""
-        self._full_header.user = value
+        self._page_dict['user'] = value
 
     @property
-    @decompose
+    @load_text_and_apply
     def status(self):
         """Return Proofread Page status."""
         try:
-            return self.site.proofread_levels[self.ql]
+            return self.site.proofread_levels[self.level]
         except KeyError:
             pywikibot.warning('Not valid status set for %s: quality level = %s'
-                              % (self.title(asLink=True), self.ql))
+                              % (self.title(asLink=True), self.level))
             return None
 
     def without_text(self):
-        """Set Page QL to "Without text"."""
-        self.ql = self.WITHOUT_TEXT
+        """Set Page Quality Level to "Without text"."""
+        self.level = self.WITHOUT_TEXT
 
     def problematic(self):
-        """Set Page QL to "Problematic"."""
-        self.ql = self.PROBLEMATIC
+        """Set Page Quality Level to "Problematic"."""
+        self.level = self.PROBLEMATIC
 
     def not_proofread(self):
-        """Set Page QL to "Not Proofread"."""
-        self.ql = self.NOT_PROOFREAD
+        """Set Page Quality Level to "Not Proofread"."""
+        self.level = self.NOT_PROOFREAD
 
     def proofread(self):
-        """Set Page QL to "Proofread"."""
+        """Set Page Quality Level to "Proofread"."""
         # TODO: check should be made to be consistent with Proofread Extension
-        self.ql = self.PROOFREAD
+        self.level = self.PROOFREAD
 
     def validate(self):
-        """Set Page QL to "Validated"."""
+        """Set Page Quality Level to "Validated"."""
         # TODO: check should be made to be consistent with Proofread Extension
-        self.ql = self.VALIDATED
+        self.level = self.VALIDATED
 
     @property
-    @decompose
+    @load_text_and_apply
     def header(self):
         """Return editable part of Page header."""
-        return self._full_header.header
+        return self._page_dict['header']
 
     @header.setter
-    @decompose
+    @load_text_and_apply
     def header(self, value):
         """Set editable part of Page header."""
-        self._full_header.header = value
+        self._page_dict['header'] = value
 
     @property
-    @decompose
+    @load_text_and_apply
     def body(self):
         """Return Page body."""
-        return self._body
+        return self._page_dict['body']
 
     @body.setter
-    @decompose
+    @load_text_and_apply
     def body(self, value):
         """Set Page body."""
-        self._body = value
+        self._page_dict['body'] = value
 
     @property
-    @decompose
+    @load_text_and_apply
     def footer(self):
         """Return Page footer."""
-        return self._footer
+        return self._page_dict['footer']
 
     @footer.setter
-    @decompose
+    @load_text_and_apply
     def footer(self, value):
         """Set Page footer."""
-        self._footer = value
+        self._page_dict['footer'] = value
 
     def _create_empty_page(self):
         """Create empty page."""
-        self._full_header = FullHeader()
-        self._body = ''
-        self._footer = ''
         self.user = self.site.username()  # Fill user field in empty header.
         self._compose_page()
 
@@ -209,18 +183,24 @@ class ProofreadPage(pywikibot.Page):
     def text(self):
         """Override text property.
 
+        Load text if needed and fill self._page_dict if needed.
+
         Preload text returned by EditFormPreloadText to preload non-existing
         pages.
         """
         # Text is already cached.
         if hasattr(self, '_text'):
             return self._text
-        # If page does not exist, preload it
         if self.exists():
-            # If page exists, load it
-            super(ProofreadPage, self).text
+            # If page exists, load it in 'application/json' format and
+            # convert it in 'text/x-wiki' format.
+            self._text = self.get(get_redirect=True, contentformat='application/json')
+            self._json_to_dict()  # Fill page dictionary structure.
+            self._compose_page()  # Update text in 'text/x-wiki' format.
         else:
+            # If page does not exist, preload it
             self._text = self.preloadText()
+            self._decompose_page()  # Fill page dictionary structure.
             self.user = self.site.username()  # Fill user field in empty header.
         return self._text
 
@@ -238,11 +218,27 @@ class ProofreadPage(pywikibot.Page):
         exception Error:   the page is not formatted according to ProofreadPage
                            extension.
         """
-        self._text = value
-        if self._text:
+
+
+        old_text, self._text = self._text, value
+
+        e_1, e_2 = None, None
+        try:
+            self._json_to_dict()
+            self._compose_page()
+        except ValueError as e_1:
+            pass
+
+        try:
             self._decompose_page()
-        else:
-            self._create_empty_page()
+        except pywikibot.Error as e_2:
+            pass
+
+        if all([e_1, e_2]):
+            self._text = old_text
+            raise pywikibot.Error('ProofreadPage %s: invalid format'
+                      % self.title())
+
 
     @text.deleter
     def text(self):
@@ -257,9 +253,6 @@ class ProofreadPage(pywikibot.Page):
         exception Error:   the page is not formatted according to ProofreadPage
                            extension.
         """
-        if not self.text:  # Property force page text loading.
-            self._create_empty_page()
-            return
 
         open_queue = list(self.p_open.finditer(self._text))
         close_queue = list(self.p_close.finditer(self._text))
@@ -267,24 +260,55 @@ class ProofreadPage(pywikibot.Page):
         len_oq = len(open_queue)
         len_cq = len(close_queue)
         if (len_oq != len_cq) or (len_oq < 2 or len_cq < 2):
-            raise pywikibot.Error('ProofreadPage %s: invalid format'
-                                  % self.title(asLink=True))
+            raise pywikibot.Error('ProofreadPage %s: invalid "text/x-wiki" format'
+                                  % self.title())
 
         f_open, f_close = open_queue[0], close_queue[0]
-        self._full_header = FullHeader(self._text[f_open.end():f_close.start()])
+        m = self.p_header.search(self._text[f_open.end():f_close.start()])
+        if m:
+            self._page_dict['level'] = int(m.group('level'))
+            self._page_dict['user'] = m.group('user')
+            self._page_dict['header'] = m.group('header')
+        else:
+            self._page_dict['level'] = ProofreadPage.NOT_PROOFREAD
+            self._page_dict['user'] = ''
+            self._page_dict['header'] = ''
 
         l_open, l_close = open_queue[-1], close_queue[-1]
-        self._footer = self._text[l_open.end():l_close.start()]
+        self._page_dict['footer'] = self._text[l_open.end():l_close.start()]
 
-        self._body = self._text[f_close.end():l_open.start()]
+        self._page_dict['body'] = self._text[f_close.end():l_open.start()]
 
     def _compose_page(self):
         """Compose Proofread Page text from header, body and footer."""
-        fmt = ('{0.open_tag}{0._full_header}{0.close_tag}'
-               '{0._body}'
-               '{0.open_tag}{0._footer}</div>{0.close_tag}')
-        self._text = fmt.format(self)
+        fmt = ('{open_tag}'
+               '<pagequality level="{level}" user="{user}" />'
+               '<div class="pagetext">{header}\n\n\n'
+               '{close_tag}'
+               '{body}'
+               '{open_tag}{footer}</div>{close_tag}')
+        value = dict(self._page_dict)
+        value.update({'open_tag': self.open_tag, 'close_tag': self.close_tag})
+        self._text = fmt.format(**value)
         return self._text
+
+    def _json_to_dict(self):
+        """Convert page json format to dict.
+
+        This is the format accepted by action=edit specifying
+        contentformat=application/json. This format is recommended to save the
+        page, as it is not subject to possible errors done in composing the
+        wikitext header and footer of the page or changes in the ProofreadPage
+        extension format.
+        """
+        try:
+            page_dict = json.loads(self.text)
+        except ValueError as e:
+            raise ValueError(e.args[0] + ' - text: %s' % self.text)
+
+        self._page_dict.update(page_dict)
+        self._page_dict.update(page_dict['level'])
+        return self._page_dict
 
     def _page_to_json(self):
         """Convert page text to json format.
@@ -298,7 +322,7 @@ class ProofreadPage(pywikibot.Page):
         page_dict = {'header': self.header,
                      'body': self.body,
                      'footer': self.footer,
-                     'level': {'level': self.ql, 'user': self.user},
+                     'level': {'level': self.level, 'user': self.user},
                      }
         # ensure_ascii=False returns a unicode
         return json.dumps(page_dict, ensure_ascii=False)
@@ -322,3 +346,55 @@ class ProofreadPage(pywikibot.Page):
         Status in the edit summary on wiki.
         """
         return '/* {0.status} */ '.format(self)
+
+
+# TODO: this could go in tools.
+class RestrictedDict(dict):
+    """
+    Stores the properties of an object. It's a dictionary that's
+    restricted to a tuple of allowed keys. Any attempt to set an invalid
+    key raises an error.
+
+    Based on http://code.activestate.com/recipes/578042-restricted-dictionary
+    """
+
+    def __init__(self, allowed_keys, seq=(), **kwargs):
+        """Class constructor."""
+        super(RestrictedDict, self).__init__()
+        self._allowed_keys = tuple(allowed_keys)
+        # normalize arguments to a (key, value) iterable
+        if hasattr(seq, 'keys'):
+            get = seq.__getitem__
+            seq = ((k, get(k)) for k in seq.keys())
+        if kwargs:
+            from itertools import chain
+            seq = chain(seq, kwargs.iteritems())
+        # scan the items keeping track of the keys' order
+        for k, v in seq:
+            self.__setitem__(k, v)
+
+    def __setitem__(self, key, value):
+        """Checks if the key is allowed before setting the value"""
+        if key in self._allowed_keys:
+            super(RestrictedDict, self).__setitem__(key, value)
+        else:
+            raise KeyError("%s is not allowed as key" % key)
+
+    def update(self, e=None, **kwargs):
+        """
+        Equivalent to dict.update(), but it was needed to call
+        RestrictedDict.__setitem__() instead of dict.__setitem__
+        """
+        try:
+            for k in e:
+                self.__setitem__(k, e[k])
+        except AttributeError:
+            for (k, v) in e:
+                self.__setitem__(k, v)
+        for k in kwargs:
+            self.__setitem__(k, kwargs[k])
+
+    def __repr__(self):
+        """Representation of the RestrictedDict"""
+        return 'RestrictedDict(%s, %s)' % (self._allowed_keys.__repr__(),
+                                     super(RestrictedDict, self).__repr__())

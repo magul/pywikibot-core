@@ -3404,7 +3404,8 @@ class APISite(BaseSite):
     def loadrevisions(self, page, getText=False, revids=None,
                       startid=None, endid=None, starttime=None,
                       endtime=None, rvdir=None, user=None, excludeuser=None,
-                      section=None, sysop=False, step=None, total=None, rollback=False):
+                      section=None, sysop=False, step=None, total=None, rollback=False,
+                      contentformat=None):
         """Retrieve and store revision information.
 
         By default, retrieves the last (current) revision of the page,
@@ -3440,6 +3441,10 @@ class APISite(BaseSite):
             retrieve this page
 
         """
+
+        VALID_FORMATS = ['application/json', 'text/x-wiki', 'text/javascript',
+                         'text/css', 'text/plain',]
+
         latest = (revids is None and
                   startid is None and
                   endid is None and
@@ -3475,6 +3480,14 @@ class APISite(BaseSite):
             rvargs = {'type_arg': 'info|revisions|proofread'}
         else:
             rvargs = {'type_arg': 'info|revisions'}
+
+        _mw_ver = MediaWikiVersion(self.version())
+        if contentformat is not None and _mw_ver >= MediaWikiVersion('1.21'):
+            if contentformat in VALID_FORMATS:
+                rvargs['rvcontentformat'] = contentformat
+            else:
+                raise ValueError('Invalid content format %s for %s'
+                                 % (contentformat, page))
 
         if getText:
             rvargs[u"rvprop"] = u"ids|flags|timestamp|user|comment|content|sha1"
