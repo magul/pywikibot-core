@@ -4911,6 +4911,32 @@ class Link(ComparableMixin):
         link._title = title
         return link
 
+    @staticmethod
+    def construct_link(title, section, label):
+        """
+        Construct a string from the title, section and label.
+
+        The section and label may optionally be prefixed. If the section or
+        label contain just the prefix it'll be removed.
+
+        All three parameters may evaluate to False and will be replaced by an
+        empty string. So a title being the int 0 will not result '0' but ''.
+        """
+        def prepend(text, prefix):
+            if text:
+                if text[0] != prefix:
+                    text = prefix + text
+                elif text == prefix:
+                    text = ''  # just the prefix
+            else:
+                text = ''
+            return text
+        if not title:
+            title = ''
+        section = prepend(section, '#')
+        label = prepend(label, '|')
+        return ''.join([title, section, label])
+
 
 # Utility functions for parsing page titles
 

@@ -124,6 +124,35 @@ class TestLink(DefaultDrySiteTestCase):
         l = Link('/bar', self.get_site())
         self.assertEquals(l.title, '/bar')
 
+    def test_construct(self):
+        """Test Link.construct_link."""
+        def iter_empty(args, prefix, original):
+            """Test the different 'empty' variants."""
+            assert prefix in ['#', '|']  # don't use '#|' to also assert length
+            pos = 1 if prefix == '#' else 2
+            assert args[pos] is None
+            for alias in [None, False, '', prefix]:
+                args[pos] = alias
+                self.assertEqual(Link.construct_link(*args), original)
+        # TODO: Test other combinations ('#' + '|' for example)
+        iter_empty(['Hello', None, None], '#', 'Hello')
+        iter_empty(['Hello', None, None], '|', 'Hello')
+        iter_empty(['Hello', 'World', None], '|', 'Hello#World')
+        iter_empty(['Hello', '#World', None], '|', 'Hello#World')
+        iter_empty(['Hello', None, 'To you'], '#', 'Hello|To you')
+        iter_empty(['Hello', None, '|To you'], '#', 'Hello|To you')
+        self.assertEqual(Link.construct_link('Hello', 'World', 'To you'),
+                         'Hello#World|To you')
+        self.assertEqual(Link.construct_link('Hello', '#World', 'To you'),
+                         'Hello#World|To you')
+        self.assertEqual(Link.construct_link('Hello', 'World', '|To you'),
+                         'Hello#World|To you')
+        self.assertEqual(Link.construct_link('Hello', '#World', '|To you'),
+                         'Hello#World|To you')
+        self.assertEqual(Link.construct_link('Hello', '##', None),
+                         'Hello##')
+
+
 # ---- The first set of tests are explicit links, starting with a ':'.
 
 
