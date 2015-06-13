@@ -4223,9 +4223,14 @@ class APISite(BaseSite):
         """Iterate all log entries.
 
         @param logtype: only iterate entries of this type (see wiki
-            documentation for available types, which will include "block",
-            "protect", "rights", "delete", "upload", "move", "import",
+            documentation for available letype types, which will include
+            "block", "protect", "rights", "delete", "upload", "move", "import",
             "patrol", "merge")
+            You may also use it for a more restrictive action filter according
+            to available leaction types e.g. "block/block", "block/unblock",
+            "block/reblock" where log event and log action are separated by a
+            slash.
+
         @type logtype: basestring
         @param user: only iterate entries that match this user name
         @type user: basestring
@@ -4257,7 +4262,12 @@ class APISite(BaseSite):
         legen = self._generator(api.LogEntryListGenerator, type_arg=logtype,
                                 step=step, total=total)
         if logtype is not None:
-            legen.request["letype"] = logtype
+            if '/' in logtype and (
+                    MediaWikiVersion(self.version()) >=
+                    MediaWikiVersion('1.17')):
+                legen.request['leaction'] = logtype
+            else:
+                legen.request['letype'] = logtype.split('/')[0]
         if user is not None:
             legen.request["leuser"] = user
         if page is not None:

@@ -152,20 +152,35 @@ class TestLogentryParams(TestLogentriesBase):
 
     def test_BlockEntry(self, key):
         """Test BlockEntry methods."""
-        # only 'block' entries can be tested
-        for logentry in self.site.logevents(logtype='block', total=5):
-            if logentry.action() == 'block':
-                self.assertIsInstance(logentry.flags(), list)
-                # Check that there are no empty strings
-                self.assertTrue(all(logentry.flags()))
-                if logentry.expiry() is not None:
-                    self.assertIsInstance(logentry.expiry(), pywikibot.Timestamp)
-                    self.assertIsInstance(logentry.duration(), datetime.timedelta)
-                    self.assertEqual(logentry.timestamp() + logentry.duration(),
-                                     logentry.expiry())
-                else:
-                    self.assertIsNone(logentry.duration())
-                break
+        logentry = self._get_logentry('block/block')
+        self.assertEqual(logentry.action(), 'block')
+        self.assertIsInstance(logentry.flags(), list)
+        # Check that there are no empty strings
+        self.assertTrue(all(logentry.flags()))
+        if logentry.expiry() is not None:
+            self.assertIsInstance(logentry.expiry(), pywikibot.Timestamp)
+            self.assertIsInstance(logentry.duration(), datetime.timedelta)
+            self.assertEqual(logentry.timestamp() + logentry.duration(),
+                             logentry.expiry())
+        else:
+            self.assertIsNone(logentry.duration())
+
+    def test_BlockEntry_unblock(self, key):
+        """Test BlockEntry methods for unblock action."""
+        logentry = self._get_logentry('block/unblock')
+        self.assertEqual(logentry.action(), 'unblock')
+        self.assertIsInstance(logentry.flags(), list)
+        # There are no flags for unblock action
+        self.assertEqual(logentry.flags(), [])
+        # Check that there are no empty strings
+        self.assertTrue(all(logentry.flags()))
+        if logentry.expiry() is not None:
+            self.assertIsInstance(logentry.expiry(), pywikibot.Timestamp)
+            self.assertIsInstance(logentry.duration(), datetime.timedelta)
+            self.assertEqual(logentry.timestamp() + logentry.duration(),
+                             logentry.expiry())
+        else:
+            self.assertIsNone(logentry.duration())
 
     def test_RightsEntry(self, key):
         """Test RightsEntry methods."""

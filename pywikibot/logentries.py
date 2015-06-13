@@ -68,8 +68,12 @@ class LogEntry(object):
         """
         if 'params' in self.data:
             return self.data['params']
-        else:  # try old mw style preceding mw 1.19
+        elif self._expectedType in self.data:
+            # try old mw style preceding mw 1.19
             return self.data[self._expectedType]
+        else:
+            # additional data dictionary may be missing for old mw versions
+            return {}
 
     def logid(self):
         """Return the id of the log entry."""
@@ -391,8 +395,10 @@ class LogEntryFactory(object):
         @type site: BaseSite
         @param logtype: The log type of the log entries, if known in advance.
                         If None, the Factory will fetch the log entry from
-                        the data to create each object.
-        @type logtype: (letype) str : move/block/patrol/etc...
+                        the data to create each object. May be either any
+                        value of letype or leaction, e.g. block, protect, rights
+                        or block/block, block/reblock, block/unblock, ...
+        @type logtype: (letype or leaction) str
         """
         self._site = site
         if logtype is None:
@@ -400,29 +406,42 @@ class LogEntryFactory(object):
         else:
             # Bind a Class object to self._creator:
             # When called, it will initialize a new object of that class
-            logclass = LogEntryFactory._getEntryClass(logtype)
+            self.letype, self.leaction = logtype.partition('/')[::2]
+            logclass = LogEntryFactory._getEntryClass(self.letype,
+                                                      self.leaction)
             self._creator = lambda data: logclass(data, self._site)
 
     def create(self, logdata):
         """
         Instantiate the LogEntry object representing logdata.
 
+        Check whether LogEntry object's action match leaction
+        part of LogEntryFactory's logtype. Otherwise return None.
+
         @param logdata: <item> returned by the api
         @type logdata: dict
 
         @return: LogEntry object representing logdata
+        @rtype: LogEntry or None
         """
-        return self._creator(logdata)
+        le = self._creator(logdata)
+        # Sanity check for mw < 1.17
+        if not self.leaction or le.action() == self.leaction:
+            return le
 
     @classmethod
-    def _getEntryClass(cls, logtype):
+    def _getEntryClass(cls, logtype, logaction):
         """
         Return the class corresponding to the @logtype string parameter.
 
         @return: specified subclass of LogEntry, or LogEntry
         @rtype: class
         """
+        cls.letype = logtype
+        cls.leaction = logaction
         try:
+            # logaction is not used yet.
+            # Maybe it will be used for different type/action classes
             return cls._logtypes[logtype]
         except KeyError:
             return LogEntry
@@ -437,7 +456,9 @@ class LogEntryFactory(object):
         """
         try:
             logtype = logdata['type']
-            return LogEntryFactory._getEntryClass(logtype)(logdata, self._site)
+            logaction = logdata.get('action')
+            return LogEntryFactory._getEntryClass(
+                logtype, logaction)(logdata, self._site)
         except KeyError:
             pywikibot.debug(u"API log entry received:\n" + logdata,
                             _logger)

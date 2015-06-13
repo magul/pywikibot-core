@@ -2681,7 +2681,7 @@ class QueryGenerator(_RequestWrapper):
         previous_result_had_data = True
         prev_limit = new_limit = None
 
-        count = 0
+        self.count = 0
         while True:
             if self.query_limit is not None:
                 prev_limit = new_limit
@@ -2690,7 +2690,8 @@ class QueryGenerator(_RequestWrapper):
                 elif self.limit > 0:
                     if previous_result_had_data:
                         # self.resultkey in data in last request.submit()
-                        new_limit = min(self.query_limit, self.limit - count)
+                        new_limit = min(self.query_limit,
+                                        self.limit - self.count)
                     else:
                         # only "(query-)continue" returned. See Bug 72209.
                         # increase new_limit to advance faster until new
@@ -2715,7 +2716,7 @@ class QueryGenerator(_RequestWrapper):
                         u"limit: %s, new_limit: %s, count: %s"
                         % (self.__class__.__name__,
                            self.query_limit, self.api_limit,
-                           self.limit, new_limit, count),
+                           self.limit, new_limit, self.count),
                         _logger)
                     pywikibot.debug(
                         u"%s: %s: %s"
@@ -2769,12 +2770,12 @@ class QueryGenerator(_RequestWrapper):
                         # item[self.continuekey] (e.g. 'revisions') and not
                         # self.resultkey (i.e. 'pages')
                         for key in set(self.continuekey) & set(item.keys()):
-                            count += len(item[key])
+                            self.count += len(item[key])
                     # otherwise we proceed as usual
                     else:
-                        count += 1
+                        self.count += 1
                     # note: self.limit could be -1
-                    if self.limit and self.limit > 0 and count >= self.limit:
+                    if self.limit and self.limit > 0 and self.count >= self.limit:
                         return
                 # self.resultkey in data in last request.submit()
                 previous_result_had_data = True
@@ -2973,6 +2974,25 @@ class LogEntryListGenerator(ListGenerator):
     def result(self, pagedata):
         """Instatiate LogEntry from data from api."""
         return self.entryFactory.create(pagedata)
+
+    def __iter__(self):
+        """
+        Adjust counter for MediaWiki version < 1.17.
+
+        Previous MW versions does not filter logentry requests by
+        action type. LogEntryFactory.create filters unwanted entries
+        and doesn't create a LogEntry but returns None.
+
+        This iterator doesn't yield NoneType items and updates the
+        counter to the total amount of requested entities.
+
+        @rtype: generator
+        """
+        for item in super(LogEntryListGenerator, self).__iter__():
+            if item is not None:
+                yield item
+            else:
+                self.count -= 1
 
 
 class LoginManager(login.LoginManager):
