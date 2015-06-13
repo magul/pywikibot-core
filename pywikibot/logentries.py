@@ -353,7 +353,7 @@ class LogEntryFactory(object):
         'newusers': NewUsersEntry
     }
 
-    def __init__(self, site, logtype=None):
+    def __init__(self, site, logtype=None, logaction=None):
         """
         Constructor.
 
@@ -362,15 +362,20 @@ class LogEntryFactory(object):
         @param logtype: The log type of the log entries, if known in advance.
                         If None, the Factory will fetch the log entry from
                         the data to create each object.
-        @type logtype: (letype) str : move/block/patrol/etc...
+        @type logtype: (type prop) str : move/block/patrol/etc...
+        @param logaction: The log action of the log entries, if known in
+                          advance. If None, the Factory will fetch the log entry
+                          from the data to create each object.
+        @type logaction: (action prop) str : e.g. block/unblock/reblock for
+                         block type
         """
         self._site = site
-        if logtype is None:
+        if logtype is None or logaction is None:
             self._creator = self._createFromData
         else:
             # Bind a Class object to self._creator:
             # When called, it will initialize a new object of that class
-            logclass = LogEntryFactory._getEntryClass(logtype)
+            logclass = LogEntryFactory._getEntryClass(logtype, logaction)
             self._creator = lambda data: logclass(data, self._site)
 
     def create(self, logdata):
@@ -385,7 +390,7 @@ class LogEntryFactory(object):
         return self._creator(logdata)
 
     @classmethod
-    def _getEntryClass(cls, logtype):
+    def _getEntryClass(cls, logtype, logaction):
         """
         Return the class corresponding to the @logtype string parameter.
 
@@ -393,6 +398,8 @@ class LogEntryFactory(object):
         @rtype: class
         """
         try:
+            # logaction is not used yet.
+            # Maybe it will be used for different type/action classes
             return cls._logtypes[logtype]
         except KeyError:
             return LogEntry
@@ -407,7 +414,9 @@ class LogEntryFactory(object):
         """
         try:
             logtype = logdata['type']
-            return LogEntryFactory._getEntryClass(logtype)(logdata, self._site)
+            logaction = logdata.get('action')
+            return LogEntryFactory._getEntryClass(
+                logtype, logaction)(logdata, self._site)
         except KeyError:
             pywikibot.debug(u"API log entry received:\n" + logdata,
                             _logger)

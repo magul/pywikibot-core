@@ -2672,7 +2672,9 @@ class LogEntryListGenerator(ListGenerator):
         ListGenerator.__init__(self, "logevents", **kwargs)
 
         from pywikibot import logentries
-        self.entryFactory = logentries.LogEntryFactory(self.site, logtype)
+        letype, leaction = (logtype.split('/') + [None])[:2]
+        self.entryFactory = logentries.LogEntryFactory(self.site,
+                                                       letype, leaction)
 
     def result(self, pagedata):
         """Instatiate LogEntry from data from api."""
