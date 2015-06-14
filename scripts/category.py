@@ -101,14 +101,9 @@ This will move all pages in the category US to the category United States.
 
 """
 #
-# (C) Rob W.W. Hooft, 2004
-# (C) Daniel Herding, 2004
 # (C) Wikipedian, 2004-2008
-# (C) leogregianin, 2004-2008
-# (C) Ben McIlwain (CydeWeys), 2006-2015
 # (C) Anreas J Schwab, 2007
-# (C) xqt, 2009-2015
-# (C) Pywikibot team, 2008-2015
+# (C) Pywikibot team, 2004-2015
 #
 # Distributed under the terms of the MIT license.
 #

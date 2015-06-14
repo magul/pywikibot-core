@@ -90,7 +90,6 @@ Syntax examples:
         Loads all wiki pages where dead links were found during a prior run
 """
 #
-# (C) Daniel Herding, 2005
 # (C) Pywikibot team, 2005-2014
 #
 # Distributed under the terms of the MIT license.

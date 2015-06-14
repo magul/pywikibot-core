@@ -64,7 +64,6 @@ or you need some help regarding this script, you can find us here:
 """
 
 #
-# (C) Filnik, 2007-2010
 # (C) Pywikibot team, 2007-2015
 #
 # Distributed under the terms of the MIT license.

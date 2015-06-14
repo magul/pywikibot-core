@@ -26,7 +26,6 @@ The following command line parameters are supported:
 
 """
 #
-# (C) Multichill, 2008-2011
 # (C) Pywikibot team, 2008-2014
 #
 #   Distributed under the terms of the MIT license.

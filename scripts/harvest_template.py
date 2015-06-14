@@ -21,7 +21,6 @@ Examples:
 
 """
 #
-# (C) Multichill, Amir, 2013
 # (C) Pywikibot team, 2013-2014
 #
 # Distributed under the terms of MIT License.

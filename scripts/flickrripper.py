@@ -25,7 +25,6 @@ Todo:
 *Filter the categories
 """
 #
-# (C) Multichill, 2009
 # (C) Pywikibot team, 2009-2014
 #
 # Distributed under the terms of the MIT license.

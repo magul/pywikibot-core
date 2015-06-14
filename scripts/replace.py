@@ -122,7 +122,6 @@ talk about HTTP, where the typo has become part of the standard:
 Please type "replace.py -help | more" if you can't read the top of the help.
 """
 #
-# (C) Daniel Herding, 2004-2012
 # (C) Pywikibot team, 2004-2015
 #
 # Distributed under the terms of the MIT license.

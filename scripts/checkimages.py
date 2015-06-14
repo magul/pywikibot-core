@@ -78,8 +78,6 @@ right parameter.
 """
 #
 # (C) Kyle/Orgullomoore, 2006-2007 (newimage.py)
-# (C) Siebrand Mazeland, 2007-2010
-# (C) Filnik, 2007-2011
 # (C) Pywikibot team, 2007-2015
 #
 # Distributed under the terms of the MIT license.

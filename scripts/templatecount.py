@@ -32,7 +32,6 @@ Lists all the category pages that transclude {{cfd}} and {{cfdu}}:
 """
 #
 # (C) Pywikibot team, 2006-2014
-# (C) xqt, 2009-2014
 #
 # Distributed under the terms of the MIT license.
 #

@@ -25,13 +25,8 @@ Furthermore, the following command line parameters are supported:
 
 """
 #
-# (C) Leonardo Gregianin, 2006
 # (C) Wikipedian, 2006-2007
-# (C) Andre Engels, 2007
-# (C) Siebrand Mazeland, 2007
-# (C) xqt, 2009-2014
-# (C) Dr. Trigon, 2012
-# (C) Pywikibot team, 2012-2014
+# (C) Pywikibot team, 2006-2014
 #
 # Distributed under the terms of the MIT license.
 #

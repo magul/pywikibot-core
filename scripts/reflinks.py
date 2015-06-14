@@ -37,7 +37,6 @@ See [[:en:User:DumZiBoT/refLinks]] for more information on the bot.
 -summary          Use a custom edit summary. Otherwise it uses the default
                   one from i18n/reflinks.py
 """
-# (C) Nicolas Dumazet (NicDumZ), 2008
 # (C) Pywikibot team, 2008-2014
 #
 # Distributed under the terms of the MIT license.

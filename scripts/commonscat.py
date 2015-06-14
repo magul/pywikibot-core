@@ -50,8 +50,6 @@ commonscat.py -start:Category:!
 # Ported by Allen Guo <Guoguo12@gmail.com>
 # November 2013
 #
-# (C) Multichill, 2008-2009
-# (C) Xqt, 2009-2015
 # (C) Pywikibot team, 2008-2015
 #
 # Distributed under the terms of the MIT license.

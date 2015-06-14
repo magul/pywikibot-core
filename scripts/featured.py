@@ -54,9 +54,6 @@ This script understands various command-line arguments:
 
 """
 #
-# (C) Maxim Razin, 2005
-# (C) Leonardo Gregianin, 2005-2008
-# (C) xqt, 2009-2014
 # (C) Pywikibot team, 2005-2014
 #
 # Distributed under the terms of the MIT license.

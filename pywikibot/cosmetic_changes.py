@@ -49,7 +49,6 @@ or by adding a list to the given one:
     cosmetic_changes_deny_script += ['your_script_name_1', 'your_script_name_2']
 """
 #
-# (C) xqt, 2009-2015
 # (C) Pywikibot team, 2006-2015
 #
 # Distributed under the terms of the MIT license.

@@ -6,7 +6,6 @@ Note: the script requires the Python IRC library
 http://python-irclib.sourceforge.net/
 """
 #
-# (C) Balasyum, 2008
 # (C) Pywikibot team, 2008-2015
 #
 # Distributed under the terms of the MIT license.

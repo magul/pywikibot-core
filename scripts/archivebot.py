@@ -86,9 +86,7 @@ Options (may be omitted):
   -salt:SALT      specify salt
 """
 #
-# (C) Misza13, 2006-2010
-# (C) xqt, 2009-2014
-# (C) Pywikibot team, 2007-2014
+# (C) Pywikibot team, 2006-2014
 #
 # Distributed under the terms of the MIT license.
 #

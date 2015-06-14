@@ -23,7 +23,7 @@ to show warnings about deprecated methods:
             pwb.py maintenance/compat2core <scriptname> -warnonly
 """
 #
-# (C) xqt, 2014
+# (C) Pywikibot team, 2014
 #
 # Distributed under the terms of the MIT license.
 #

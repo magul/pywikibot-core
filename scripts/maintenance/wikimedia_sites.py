@@ -2,7 +2,6 @@
 # -*- coding: utf-8  -*-
 """Script that updates the language lists in Wikimedia family files."""
 #
-# (C) xqt, 2009-2014
 # (C) Pywikibot team, 2008-2014
 #
 # Distributed under the terms of the MIT license.

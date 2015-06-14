@@ -32,8 +32,7 @@ C(heck) - check links to and from the page, but do not add the page itself
 R(emove) - remove a page that is already in the list
 L(ist) - show current list of pages to include or to check
 """
-# (C) Andre Engels, 2004
-# (C) Pywikibot team, 2005-2014
+# (C) Pywikibot team, 2004-2014
 #
 # Distributed under the terms of the MIT license.
 #

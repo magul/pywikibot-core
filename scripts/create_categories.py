@@ -33,9 +33,7 @@ from __future__ import unicode_literals
 
 __version__ = '$Id$'
 #
-# (C) Multichill, 2011
-# (C) xqt, 2011-2014
-# (c) Pywikibot team, 2014
+# (c) Pywikibot team, 2011-2014
 #
 # Distributed under the terms of the MIT license.
 #

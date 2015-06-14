@@ -23,7 +23,6 @@ It's also possible to make json files too by using to_json method:
 >>> bot.to_json()
 """
 #
-# (C) xqt, 2013-2014
 # (C) Pywikibot team, 2013-2014
 #
 # Distributed under the terms of the MIT license.
