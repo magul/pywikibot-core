@@ -3038,21 +3038,22 @@ class User(Page):
         """Yield tuples describing files uploaded by this user.
 
         Each tuple is composed of a pywikibot.Page, the timestamp (str in
-        ISO8601 format), comment (unicode) and a bool for pageid > 0.
+        ISO8601 format), comment (unicode) and a bool for pageid > 0 which
+        indicates that the page exists on local wiki.
+
         Pages returned are not guaranteed to be unique.
 
         @param total: limit result to this number of pages
         @type total: int
+        @rtype: generator
         """
         if not self.isRegistered():
             raise StopIteration
-        for item in self.site.logevents(
-                logtype='upload', user=self.username, total=total):
-            yield (item.page(),
-                   unicode(item.timestamp()),
-                   item.comment(),
-                   item.pageid() > 0
-                   )
+        return ((page, unicode(timestamp), comment, pageid > 0)
+                for page, timestamp, comment, pageid in
+                self.site.newfiles(
+                    user=self.username, total=total,
+                    prop=('page', 'timestamp', 'comment', 'pageid')))
 
 
 class WikibasePage(BasePage):

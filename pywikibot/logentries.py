@@ -121,7 +121,7 @@ class LogEntry(object):
         return self._timestamp
 
     def comment(self):
-        return self.data['comment']
+        return self.data['comment'] or ''
 
 
 class BlockEntry(LogEntry):

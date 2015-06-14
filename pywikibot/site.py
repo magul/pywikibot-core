@@ -5439,25 +5439,32 @@ class APISite(BaseSite):
     @deprecated_args(lestart='start', leend='end', leuser='user', letitle=None,
                      repeat=None, number='total')
     def newfiles(self, user=None, start=None, end=None, reverse=False,
-                 step=None, total=None):
+                 step=None, total=None, prop=None):
         """Yield information about newly uploaded files.
 
-        Yields a tuple of FilePage, Timestamp, user(unicode), comment(unicode).
+        The yielded tuple may be given by the prop parameter which represents
+        logevent methods.
+        Default tuple is FilePage, Timestamp, user(unicode), comment(unicode).
 
         N.B. the API does not provide direct access to Special:Newimages, so
         this is derived from the "upload" log events instead.
 
+        @param user: only iterate entries that match this user name
+        @param start: only iterate entries from and after this Timestamp
+        @param end: only iterate entries up to and through this Timestamp
+        @param reverse: if True, iterate oldest entries first (default: newest)
+        @param step: request batch size
+        @param total: number of pages to return
+        @param prop: tuple or list of logevent methods
+        @return: tuple of information about uploaded files
+        @rtype: generator
         """
-        # TODO: update docstring
+        if prop == None:
+            prop = ('page', 'timestamp', 'user', 'comment')
         for event in self.logevents(logtype="upload", user=user,
                                     start=start, end=end, reverse=reverse,
                                     step=step, total=total):
-            # event.page() actually returns a FilePage
-            filepage = event.page()
-            date = event.timestamp()
-            user = event.user()
-            comment = event.comment() or u''
-            yield (filepage, date, user, comment)
+            yield tuple(getattr(event, method)() for method in prop)
 
     @deprecated("Site().newfiles()")
     @deprecated_args(number='total', repeat=None)
