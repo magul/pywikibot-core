@@ -3252,24 +3252,23 @@ class WikibasePage(BasePage):
         # aliases
         self.aliases = {}
         if 'aliases' in self._content:
-            for lang in self._content['aliases']:
+            for lang, values in self._content['aliases'].items():
                 self.aliases[lang] = list()
-                for value in self._content['aliases'][lang]:
+                for value in values:
                     self.aliases[lang].append(value['value'])
 
         # labels
         self.labels = {}
         if 'labels' in self._content:
-            for lang in self._content['labels']:
-                if 'removed' not in self._content['labels'][lang]:  # Bug 54767
-                    self.labels[lang] = self._content['labels'][lang]['value']
+            for lang, value in self._content['labels'].items():
+                if 'removed' not in value:  # Bug 54767
+                    self.labels[lang] = value['value']
 
         # descriptions
         self.descriptions = {}
         if 'descriptions' in self._content:
-            for lang in self._content['descriptions']:
-                self.descriptions[lang] = self._content[
-                    'descriptions'][lang]['value']
+            for lang, value in self._content['descriptions'].items():
+                self.descriptions[lang] = value['value']
 
         return {'aliases': self.aliases,
                 'labels': self.labels,
@@ -3623,9 +3622,9 @@ class ItemPage(WikibasePage):
         # claims
         self.claims = {}
         if 'claims' in self._content:
-            for pid in self._content['claims']:
+            for pid, claims in self._content['claims'].items():
                 self.claims[pid] = list()
-                for claim in self._content['claims'][pid]:
+                for claim in claims:
                     c = Claim.fromJSON(self.repo, claim)
                     c.on_item = self
                     self.claims[pid].append(c)
@@ -3633,9 +3632,8 @@ class ItemPage(WikibasePage):
         # sitelinks
         self.sitelinks = {}
         if 'sitelinks' in self._content:
-            for dbname in self._content['sitelinks']:
-                self.sitelinks[dbname] = self._content[
-                    'sitelinks'][dbname]['title']
+            for dbname, value in self._content['sitelinks'].items():
+                self.sitelinks[dbname] = value['title']
 
         data['claims'] = self.claims
         data['sitelinks'] = self.sitelinks
