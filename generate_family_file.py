@@ -33,6 +33,8 @@ else:
 _orig_no_user_config = os.environ.get('PYWIKIBOT2_NO_USER_CONFIG')  # noqa
 os.environ['PYWIKIBOT2_NO_USER_CONFIG'] = '2'  # noqa
 
+from pywikibot.tools.os import is_writable
+from pywikibot.config2 import base_dir, datafilepath
 from pywikibot.site_detect import MWSite as Wiki
 
 # Reset this flag in case another script is run by pwb after this script
@@ -127,6 +129,9 @@ class FamilyFileGenerator(object):
 
     def writefile(self):
         fn = "pywikibot/families/%s_family.py" % self.name
+        if not is_writable('pywikibot/families'):
+            fn = datafilepath(base_dir, 'families', '%s_family.py' % self.name)
+
         print("Writing %s... " % fn)
         try:
             open(fn)

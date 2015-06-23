@@ -14,7 +14,7 @@ logs*
 /cache*
 .idea
 pywikibot.egg-info/
-pywikibot/families/
+families/
 build
 dist
 docs/_build/

@@ -331,6 +331,8 @@ def register_family_file(family_name, file_path):
 
 def register_families_folder(folder_path):
     """Register all family class files contained in a directory."""
+    if not os.path.isdir(folder_path):
+        return
     for file_name in os.listdir(folder_path):
         if file_name.endswith("_family.py"):
             family_name = file_name[:-len("_family.py")]
@@ -340,6 +342,9 @@ def register_families_folder(folder_path):
 # Get the names of all known families, and initialize with empty dictionaries.
 # ‘families/’ is a subdirectory of the directory in which config2.py is found.
 register_families_folder(os.path.join(os.path.dirname(__file__), 'families'))
+# ‘families/’ can also be stored in the base directory
+register_families_folder(os.path.join(_base_dir, 'families'))
+# or can be individually added here using a URL.
 register_family_file('wikiapiary', 'https://wikiapiary.com')
 
 # Set to True to override the {{bots}} exclusion protocol (at your own risk!)
