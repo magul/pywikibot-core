@@ -19,6 +19,9 @@ Furthermore, the following command line parameters are supported:
 -regex            Make replacements using regular expressions. If this argument
                   isn't given, the bot will make simple text replacements.
 
+-save             Saves the titles to a file rather than editing the article
+                  i.e. it does a search only.
+
 -nocase           Use case insensitive regular expressions.
 
 -dotall           Make the dot match any character at all, including a newline.
@@ -713,6 +716,8 @@ def main(*args):
     # the dump's path, either absolute or relative, which will be used
     # if -xml flag is present
     xmlFilename = None
+    # Save the titles to a file instead of editing it
+    saveoptFilename = None
     useSql = False
     # will become True when the user presses a ('yes to all') or uses the
     # -always flag.
@@ -771,6 +776,8 @@ def main(*args):
             exceptions['inside-tags'].append(arg[17:])
         elif arg.startswith('-fix:'):
             fixes_set += [arg[5:]]
+        elif arg.startswith == '-save:':
+            saveoptFilename = arg[5:]
         elif arg.startswith('-sleep:'):
             sleep = float(arg[7:])
         elif arg == '-always':
@@ -951,6 +958,23 @@ LIMIT 200""" % (whereClause, exceptClause)
     if not gen:
         # syntax error, show help text from the top of this file
         pywikibot.showHelp('replace')
+        return
+
+    if saveoptFilename:
+        try:
+            # This opens in strict error mode, that means bot will stop
+            # on encoding errors with ValueError.
+            # See http://docs.python.org/library/codecs.html#codecs.open
+            titlefile = codecs.open(saveoptFilename, encoding='utf-8',
+                                    mode='a')
+        except IOError as error:
+            pywikibot.output("Error in opening %s: %s" %
+                             saveoptFilename, error)
+            return
+
+        titlefile.write('\n'.join(page.title() for page in gen))
+        titlefile.write('\n')
+        titlefile.close()
         return
 
     preloadingGen = pagegenerators.PreloadingGenerator(gen)
