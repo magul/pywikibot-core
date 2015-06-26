@@ -7,7 +7,7 @@ __version__ = '$Id$'
 from pywikibot import family
 
 
-class Family(family.Family):
+class VikidiaFamily(family.Family):
 
     """Family class for Vikidia."""
 

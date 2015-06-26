@@ -9,7 +9,7 @@ from pywikibot import family
 
 # The Battlestar Wiki family, a set of Battlestar wikis.
 # http://battlestarwiki.org/
-class Family(family.Family):
+class BattlestarwikiFamily(family.Family):
 
     """Family class for Battlestar Wiki."""
 

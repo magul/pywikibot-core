@@ -11,7 +11,7 @@ from pywikibot import family
 
 # user_config.py:
 # usernames['lyricwiki']['en'] = 'user'
-class Family(family.Family):
+class LyricwikiFamily(family.Family):
 
     """Family class for LyricWiki."""
 

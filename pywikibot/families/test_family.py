@@ -8,7 +8,7 @@ from pywikibot import family
 
 
 # The test wikipedia family
-class Family(family.WikimediaFamily):
+class TestFamily(family.WikimediaFamily):
 
     """Family class for test.wikipedia.org."""
 

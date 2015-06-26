@@ -8,13 +8,13 @@ from pywikibot import family
 
 
 # The meta wikimedia family
-class Family(family.WikimediaFamily):
+class MetaFamily(family.WikimediaFamily):
 
     """Family class for Meta Wiki."""
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(MetaFamily, self).__init__()
         self.name = 'meta'
         self.langs = {
             'meta': 'meta.wikimedia.org',

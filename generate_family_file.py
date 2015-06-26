@@ -187,16 +187,18 @@ Configuration parameters:
 Please do not commit this to the Git repository!
 \"\"\"
 
-from pywikibot import family
+from pywikibot.family import Family
 from pywikibot.tools import deprecated
 
 
-class Family(family.Family):
+class %(cls_name)sFamily(Family):
+
     def __init__(self):
-        family.Family.__init__(self)
+        super(%(cls_name)sFamily, self).__init__()
         self.name = '%(name)s'
         self.langs = {
-""".lstrip() % {'url': self.base_url, 'name': self.name})
+""".lstrip() % {'url': self.base_url, 'name': self.name,
+                'cls_name': self.name[0].upper() + self.name[1:]})
 
         for w in self.wikis.values():
             f.write("            '%(lang)s': '%(hostname)s',\n"

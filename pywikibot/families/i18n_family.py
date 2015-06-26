@@ -8,7 +8,7 @@ from pywikibot import family
 
 
 # The Wikimedia i18n family
-class Family(family.Family):
+class I18nFamily(family.Family):
 
     """Family class for Translate Wiki."""
 

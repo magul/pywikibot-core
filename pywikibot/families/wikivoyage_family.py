@@ -9,13 +9,13 @@ __version__ = '$Id$'
 from pywikibot import family
 
 
-class Family(family.WikimediaFamily):
+class WikivoyageFamily(family.WikimediaFamily):
 
     """Family class for Wikivoyage."""
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikivoyageFamily, self).__init__()
         self.name = 'wikivoyage'
         self.languages_by_size = [
             'en', 'de', 'fr', 'it', 'nl', 'pt', 'pl', 'ru', 'he', 'es', 'vi',

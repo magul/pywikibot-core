@@ -9,13 +9,13 @@ from pywikibot import family
 # The Wikidata family
 
 
-class Family(family.WikimediaFamily):
+class WikidataFamily(family.WikimediaFamily):
 
     """Family class for Wikidata."""
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikidataFamily, self).__init__()
         self.name = 'wikidata'
         self.langs = {
             'wikidata': 'www.wikidata.org',

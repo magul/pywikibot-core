@@ -8,7 +8,7 @@ from pywikibot import family
 
 
 # The Wikitech family
-class Family(family.Family):
+class WikitechFamily(family.Family):
 
     """Family class for Wikitech."""
 

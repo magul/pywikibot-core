@@ -8,13 +8,13 @@ __version__ = '$Id$'
 
 
 # The Wikimedia family that is known as Wikiversity
-class Family(family.WikimediaFamily):
+class WikiversityFamily(family.WikimediaFamily):
 
     """Family class for Wikiversity."""
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikiversityFamily, self).__init__()
         self.name = 'wikiversity'
 
         self.languages_by_size = [

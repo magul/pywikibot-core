@@ -10,7 +10,7 @@ from pywikibot.tools import deprecated
 
 # The Wikia Search family
 # user-config.py: usernames['wikia']['wikia'] = 'User name'
-class Family(family.Family):
+class WikiaFamily(family.Family):
 
     """Family class for Wikia."""
 

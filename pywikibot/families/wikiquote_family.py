@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 
 # The Wikimedia family that is known as Wikiquote
-class Family(family.WikimediaFamily):
+class WikiquoteFamily(family.WikimediaFamily):
 
     """Family class for Wikiquote."""
 
@@ -63,7 +63,7 @@ class Family(family.WikimediaFamily):
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikiquoteFamily, self).__init__()
         self.name = 'wikiquote'
 
         self.languages_by_size = [

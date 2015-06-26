@@ -8,7 +8,7 @@ from pywikibot import family
 
 
 # The project wiki of OpenStreetMap (OSM).
-class Family(family.Family):
+class OsmFamily(family.Family):
 
     """Family class for OpenStreetMap wiki."""
 

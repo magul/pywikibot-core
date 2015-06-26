@@ -8,14 +8,12 @@ from pywikibot import family
 
 
 # The Wikimedia Incubator family
-class Family(family.WikimediaFamily):
+class IncubatorFamily(family.WikimediaFamily):
 
     """Family class for Incubator Wiki."""
 
-    def __init__(self):
-        """Constructor."""
-        super(Family, self).__init__()
-        self.name = 'incubator'
-        self.langs = {
-            'incubator': 'incubator.wikimedia.org',
-        }
+    name = 'incubator'
+
+    langs = {
+        'incubator': 'incubator.wikimedia.org',
+    }

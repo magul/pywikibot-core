@@ -30,7 +30,7 @@ import pywikibot
 from pywikibot import config2 as config
 from pywikibot.tools import (
     deprecated, deprecated_args, issue_deprecation_warning,
-    FrozenDict,
+    FrozenDict, first_upper,
 )
 from pywikibot.exceptions import UnknownFamily, FamilyMaintenanceWarning
 
@@ -919,7 +919,17 @@ class Family(object):
                 mod = imp.load_source(fam, config.family_files[fam])
         except (ImportError, KeyError):
             raise UnknownFamily(u'Family %s does not exist' % fam)
-        cls = mod.Family()
+
+        try:
+            cls = getattr(mod, first_upper('{0}Family'.format(fam)))
+        except AttributeError:
+            cls = mod.Family
+            # Don't highlight as prominent
+            warn('The family class in "{0}" should not use "Family" as a '
+                 'name.'.format(config.family_files[fam]),
+                 DeprecationWarning)
+
+        cls = cls()
         if cls.name != fam:
             warn(u'Family name %s does not match family module name %s'
                  % (cls.name, fam), FamilyMaintenanceWarning)

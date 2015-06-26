@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 
 # The Wikimedia family that is known as Wikinews
-class Family(family.WikimediaFamily):
+class WikinewsFamily(family.WikimediaFamily):
 
     """Family class for Wikinews."""
 
@@ -25,7 +25,7 @@ class Family(family.WikimediaFamily):
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikinewsFamily, self).__init__()
         self.name = 'wikinews'
 
         self.languages_by_size = [
