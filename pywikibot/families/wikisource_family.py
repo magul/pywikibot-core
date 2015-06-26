@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 
 # The Wikimedia family that is known as Wikisource
-class Family(family.WikimediaFamily):
+class WikisourceFamily(family.WikimediaFamily):
 
     """Family class for Wikisource."""
 
@@ -21,7 +21,7 @@ class Family(family.WikimediaFamily):
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikisourceFamily, self).__init__()
         self.name = 'wikisource'
 
         self.languages_by_size = [

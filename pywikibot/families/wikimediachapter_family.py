@@ -7,7 +7,7 @@ __version__ = '$Id$'
 from pywikibot import family
 
 
-class Family(family.Family):
+class WikimediachapterFamily(family.Family):
 
     """Family for Wikimedia chapters hosted on wikimedia.org."""
 

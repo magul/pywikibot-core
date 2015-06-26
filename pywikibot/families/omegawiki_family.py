@@ -8,7 +8,7 @@ from pywikibot import family
 
 
 # Omegawiki, the Ultimate online dictionary
-class Family(family.Family):
+class OmegawikiFamily(family.Family):
 
     """Family class for Omega Wiki."""
 

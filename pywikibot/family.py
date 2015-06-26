@@ -15,6 +15,7 @@ import logging
 import re
 import collections
 import imp
+import os
 import string
 import warnings
 
@@ -23,6 +24,7 @@ if sys.version_info[0] > 2:
 else:
     import urlparse
 
+from inspect import isclass
 from warnings import warn
 
 import pywikibot
@@ -30,7 +32,7 @@ import pywikibot
 from pywikibot import config2 as config
 from pywikibot.tools import (
     deprecated, deprecated_args, issue_deprecation_warning,
-    FrozenDict,
+    FrozenDict, first_upper,
 )
 from pywikibot.exceptions import UnknownFamily, FamilyMaintenanceWarning
 
@@ -859,6 +861,7 @@ class Family(object):
         #   }
 
     _families = {}
+    _family_files = set()
 
     def __getattribute__(self, name):
         """
@@ -877,15 +880,16 @@ class Family(object):
                                       'APISite.interwiki(prefix)', 2)
         return super(Family, self).__getattribute__(name)
 
-    @staticmethod
+    @classmethod
     @deprecated_args(fatal=None)
-    def load(fam=None):
+    def load(cls, fam=None):
         """Import the named family.
 
         @param fam: family name (if omitted, uses the configured default)
         @type fam: str
         @return: a Family instance configured for the named family.
         @raises UnknownFamily: family not known
+        @raises RuntimeError: multiple Family instances use the same name
         """
         if fam is None:
             fam = config.family
@@ -893,16 +897,19 @@ class Family(object):
         assert all(x in NAME_CHARACTERS for x in fam), \
             'Name of family must be ASCII character'
 
-        if fam in Family._families:
-            return Family._families[fam]
-
-        if fam in config.family_files:
+        if fam not in cls._families and fam in config.family_files:
             family_file = config.family_files[fam]
 
             if family_file.startswith('http://') or family_file.startswith('https://'):
                 myfamily = AutoFamily(fam, family_file)
                 Family._families[fam] = myfamily
                 return Family._families[fam]
+
+            # Try loading it, if that doesn't work it may in another file
+            cls._cache_family_file(family_file)
+
+        if fam in cls._families:
+            return cls._families[fam]
         elif fam == 'lockwiki':
             raise UnknownFamily(
                 "Family 'lockwiki' has been removed as it not a public wiki.\n"
@@ -910,19 +917,67 @@ class Family(object):
                 "old family file may be found at:\n"
                 "http://git.wikimedia.org/commitdiff/pywikibot%2Fcore.git/dfdc0c9150fa8e09829bb9d236")
 
+        for family_file in config.family_files.values():
+            if (family_file in cls._family_files or
+                    re.match('^https?://', family_file)):
+                continue
+            cls._cache_family_file(family_file)
+            if fam in cls._families:
+                return cls._families[fam]
+        else:
+            raise UnknownFamily('No family for "{0}" found'.format(fam))
+
+    @classmethod
+    def _cache_family_file(cls, family_file):
+        """Cache the family instances in the family files."""
+        # TODO: Properly define fam
+        fam = os.path.basename(family_file)[:-len('_family.py')]
         try:
             # Ignore warnings due to dots in family names.
             # TODO: use more specific filter, so that family classes can use
             #     RuntimeWarning's while loading.
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
-                mod = imp.load_source(fam, config.family_files[fam])
+                mod = imp.load_source(fam, family_file)
         except (ImportError, KeyError):
-            raise UnknownFamily(u'Family %s does not exist' % fam)
-        cls = mod.Family()
-        if cls.name != fam:
-            warn(u'Family name %s does not match family module name %s'
-                 % (cls.name, fam), FamilyMaintenanceWarning)
+            raise UnknownFamily(u'Family %s does not exist' % family_file)
+
+        for cls_name in dir(mod):
+            family_cls = getattr(mod, cls_name)
+            # Check if it's a subclass of Family and not in this module
+            if (not isclass(family_cls) or not issubclass(family_cls, Family) or
+                    family_cls.__module__ == Family.__module__):
+                continue
+            try:
+                family = family_cls()
+            except TypeError:
+                # TypeError can happen if the constructor requires additional
+                # parameters. Indicates an intermediate class
+                continue
+            else:
+                if family.name is None:
+                    # If the name is not set it indicates an intermediate class
+                    continue
+                cls._add_family(family, family_file)
+        cls._family_files.add(family_file)
+
+    @staticmethod
+    def _add_family(family, family_file):
+        """Check names and add a family to the cache."""
+        cls = family  # Do not use; just for old code
+        if family.__class__.__name__ == 'Family':
+            # Don't highlight as prominent
+            warn('The family class in "{0}" should not use "Family" as a '
+                 'name.'.format(family_file),
+                 DeprecationWarning)
+        elif (not family.__class__.__name__.endswith('Family') or
+                family.__class__.__name__[:-len('Family')].lower() != family.name):
+            # The part before Family is actually case insensitive
+            warn('The family class in "{0}" should use "{1}Family" and not '
+                 '"{2}" as class name.'.format(family_file,
+                                               first_upper(family.name),
+                                               family.__class__.__name__),
+                 FamilyMaintenanceWarning)
         # Family 'name' and the 'langs' codes must be ascii, and the
         # codes must be lower-case due to the Site loading algorithm.
         if not all(x in NAME_CHARACTERS for x in cls.name):
@@ -932,10 +987,14 @@ class Family(object):
         if not all(all(x in CODE_CHARACTERS for x in code) and
                    (cls.name == 'wikisource' or code[0] != '-')
                    for code in cls.langs.keys()):
-            warn(u'Family %s codes contains non-ascii characters',
+            warn(u'Family %s codes contains non-ascii characters' % family.name,
                  FamilyMaintenanceWarning)
-        Family._families[fam] = cls
-        return cls
+        # in case multiple families with the same name are in one module
+        if family.name not in Family._families:
+            Family._families[family.name] = family
+        else:
+            raise RuntimeError('Multiple families with the same name '
+                               '"{0}"'.format(family.name))
 
     @property
     def iwkeys(self):

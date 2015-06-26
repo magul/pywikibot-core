@@ -8,13 +8,13 @@ from pywikibot import family
 
 
 # The wikispecies family
-class Family(family.WikimediaFamily):
+class SpeciesFamily(family.WikimediaFamily):
 
     """Family class for Wikimedia species wiki."""
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(SpeciesFamily, self).__init__()
         self.name = 'species'
         self.langs = {
             'species': 'species.wikimedia.org',

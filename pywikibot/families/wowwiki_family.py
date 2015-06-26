@@ -8,7 +8,7 @@ from pywikibot import family
 from pywikibot.tools import deprecated
 
 
-class Family(family.Family):
+class WOWWikiFamily(family.Family):
 
     """Family class for WOW Wiki."""
 
@@ -18,7 +18,7 @@ class Family(family.Family):
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WOWWikiFamily, self).__init__()
 
         self.langs = {
             'cs': 'cs.wow.wikia.com',

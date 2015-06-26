@@ -9,15 +9,12 @@ from pywikibot import family
 
 # The MediaWiki family
 # user-config.py: usernames['mediawiki']['mediawiki'] = 'User name'
-class Family(family.WikimediaFamily):
+class MediawikiFamily(family.WikimediaFamily):
 
     """Family module for MediaWiki wiki."""
 
-    def __init__(self):
-        """Constructor."""
-        super(Family, self).__init__()
-        self.name = 'mediawiki'
+    name = 'mediawiki'
 
-        self.langs = {
-            'mediawiki': 'www.mediawiki.org',
-        }
+    langs = {
+        'mediawiki': 'www.mediawiki.org',
+    }

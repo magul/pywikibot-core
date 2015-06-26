@@ -9,7 +9,7 @@ from pywikibot.tools import deprecated
 
 
 # The Anarchopedia family
-class Family(family.Family):
+class AnarchopediaFamily(family.Family):
 
     """Family class for Anarchopedia wiki."""
 
@@ -60,7 +60,7 @@ class Family(family.Family):
 
     def __init__(self):
         """Constructor."""
-        family.Family.__init__(self)
+        super(AnarchopediaFamily, self).__init__()
         self.name = 'anarchopedia'
 
         self.languages_by_size = [

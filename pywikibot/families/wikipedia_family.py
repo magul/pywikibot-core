@@ -8,7 +8,7 @@ __version__ = '$Id$'
 
 
 # The Wikimedia family that is known as Wikipedia, the Free Encyclopedia
-class Family(family.WikimediaFamily):
+class WikipediaFamily(family.WikimediaFamily):
 
     """Family module for Wikipedia."""
 
@@ -48,7 +48,7 @@ class Family(family.WikimediaFamily):
 
     def __init__(self):
         """Constructor."""
-        super(Family, self).__init__()
+        super(WikipediaFamily, self).__init__()
         self.name = 'wikipedia'
 
         self.languages_by_size = [
