@@ -121,6 +121,7 @@ auto_run_script_list = [
     'clean_sandbox',
     'disambredir',
     'featured',
+    'followlive',
     'imagerecat',
     'login',
     'lonelypages',
