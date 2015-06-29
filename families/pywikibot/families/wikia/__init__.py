@@ -1,0 +1,1 @@
+"""Example family package."""
