@@ -82,6 +82,7 @@ library_test_modules = [
 ]
 
 script_test_modules = [
+    'bot',
     'pwb',
     'script',
     'archivebot',

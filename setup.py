@@ -99,6 +99,7 @@ if sys.version_info[0] == 3:
     if sys.version_info[1] < 3:
         print("ERROR: Python 3.3 or higher is required!")
         sys.exit(1)
+    dependencies.append('six')
 
 # Some of the ui_tests depend on accessing the console window's menu
 # to set the console font and copy and paste, achieved using pywinauto

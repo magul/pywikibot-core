@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
-"""Bot tests."""
+"""Test Bot classes."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2014-2015
 #
 # Distributed under the terms of the MIT license.
 #
@@ -344,6 +344,199 @@ class LiveBotTestCase(TestBotTreatExit, DefaultSiteTestCase):
         self.bot.treat_page = self._treat_page(treat_generator(), post_treat)
         self.bot.exit = self._exit()
         self.bot.run()
+
+
+class BotOptionTest(TestCase):
+
+    """Test Bot options."""
+
+    net = False
+
+    def setUp(self):
+        self.parameter = pywikibot.bot.BotOption(True, 'Testing parameter')
+        self.stringparam = pywikibot.bot.BotOption('some string', 'string parameter')
+
+        class BotOptionHolder(object):
+            parameter = self.parameter
+            stringparam = self.stringparam
+
+            def __init__(self):
+                self._options = {}
+
+        self.BotOptionHolder = BotOptionHolder
+
+        super(BotOptionTest, self).setUp()
+
+    def test_get_in_class(self):
+        self.assertIs(self.BotOptionHolder.parameter, self.parameter)
+
+    def test_get_defaults_in_object(self):
+        obj1 = self.BotOptionHolder()
+        self.assertEqual(obj1.parameter, True)
+        self.assertEqual(obj1.stringparam, 'some string')
+
+    def test_get_set_in_object(self):
+        obj1 = self.BotOptionHolder()
+        self.assertEqual(obj1.parameter, True)
+        obj1.parameter = False
+        self.assertEqual(obj1.parameter, False)
+
+    def test_parameters_are_independent(self):
+        obj1 = self.BotOptionHolder()
+        obj1.parameter = False
+        obj1.stringparam = 'blah'
+        self.assertEqual(obj1.parameter, False)
+        self.assertEqual(obj1.stringparam, 'blah')
+
+    def test_objects_are_independent(self):
+        obj1 = self.BotOptionHolder()
+        obj2 = self.BotOptionHolder()
+        obj1.parameter = False
+        self.assertEqual(obj1.parameter, False)
+        self.assertEqual(obj2.parameter, True)
+        obj3 = self.BotOptionHolder()
+        self.assertEqual(obj3.parameter, True)
+
+
+class BotMetaTest(TestCase):
+
+    """Test Bot metaclass."""
+
+    net = False
+
+    def setUp(self):
+        class BotOptionHolder(object):
+            parameter = pywikibot.bot.BotOption(True, 'Testing parameter')
+            stringparam = pywikibot.bot.BotOption('some string', 'string parameter')
+
+            def __init__(self):
+                self._options = {}
+
+        self.BotOptionHolder = BotOptionHolder
+        super(BotMetaTest, self).setUp()
+
+    def test_docstring_builder(self):
+        self.assertEqual(pywikibot.bot.BotMeta.build_docstring(self.BotOptionHolder), """
+@param parameter=True: Testing parameter
+@param stringparam='some string': string parameter
+        """.strip())
+
+
+class BotTest(TestCase):
+
+    """Test Bot class."""
+
+    net = False
+
+    def test_new_Bot_docstring(self):
+        self.assertEqual(pywikibot.bot.BaseBot.__init__.__doc__, """
+        Instantiate a new Bot.
+
+        Available parameters are:
+        @param always=False: Always save, even if normally the user is asked to confirm
+        """)
+
+    def test_init_function(self):
+        newbot = pywikibot.bot.BaseBot()
+        self.assertEqual(newbot.always, False)
+
+        newbot = pywikibot.bot.BaseBot(always=True)
+        self.assertEqual(newbot.always, True)
+
+    def test_deprecated_API(self):
+        bot = pywikibot.bot.BaseBot()
+        self.assertEqual(bot.getOption("always"), False)
+
+        bot.options["always"] = True
+        self.assertEqual(bot.getOption("always"), True)
+
+        bot = pywikibot.bot.BaseBot()
+        bot.options = {'always': True}
+        self.assertEqual(bot.getOption("always"), True)
+
+    def test_extend_bot(self):
+        class MyBot(pywikibot.bot.BaseBot):
+            comment = pywikibot.bot.BotOption('Random comment here', 'Edit comment')
+
+        self.assertEqual(MyBot.__init__.__doc__, """
+        Instantiate a new Bot.
+
+        Available parameters are:
+        @param always=False: Always save, even if normally the user is asked to confirm
+        @param comment='Random comment here': Edit comment
+        """)
+
+        bot = MyBot()
+        self.assertEqual(bot.comment, "Random comment here")
+        self.assertEqual(bot.always, False)
+
+        bot = MyBot(always=True, comment="Some other comment")
+        self.assertEqual(bot.comment, "Some other comment")
+        self.assertEqual(bot.always, True)
+
+    def test_extend_bot_new_init_no_docstring(self):
+        class MyBotWithInitWithoutDocstring(pywikibot.bot.BaseBot):
+            comment = pywikibot.bot.BotOption('Random comment here', 'Edit comment')
+
+            def __init__(self, **kwargs):
+                super(MyBotWithInitWithoutDocstring, self).__init__(**kwargs)
+
+        self.assertEqual(MyBotWithInitWithoutDocstring.__init__.__doc__, None)
+
+    def test_extend_bot_new_init_with_docstring(self):
+        class MyBotWithInitWithDocstring(pywikibot.bot.BaseBot):
+            comment = pywikibot.bot.BotOption('Random comment here', 'Edit comment')
+
+            def __init__(self, **kwargs):  # noqa
+                """Some awesomer bot.
+&botparameters;"""
+                super(MyBotWithInitWithDocstring, self).__init__(**kwargs)
+
+        self.assertEqual(MyBotWithInitWithDocstring.__init__.__doc__, """Some awesomer bot.
+@param always=False: Always save, even if normally the user is asked to confirm
+@param comment='Random comment here': Edit comment""")
+
+    def test_extend_bot_deprecated_method_1(self):
+        class MyAncientBot(pywikibot.bot.BaseBot):
+            availableOptions = {'jetzer': 'meuk'}
+
+        self.assertEqual(MyAncientBot.__init__.__doc__, """
+        Instantiate a new Bot.
+
+        Available parameters are:
+        @param always=False: Always save, even if normally the user is asked to confirm
+        @param jetzer='meuk': (this option has no description)
+        """)
+
+        bot = MyAncientBot()
+        self.assertEqual(bot.jetzer, 'meuk')
+        self.assertEqual(bot.getOption('jetzer'), 'meuk')
+
+        bot = MyAncientBot(jetzer='andere meuk')
+        self.assertEqual(bot.jetzer, 'andere meuk')
+        self.assertEqual(bot.getOption('jetzer'), 'andere meuk')
+
+    def test_extend_bot_deprecated_method_2(self):
+        class MyAncientDynamicBot(pywikibot.bot.BaseBot):
+            def __init__(self, **kwargs):  # noqa
+                """Some awesomer bot.
+&botparameters;"""
+                self.availableOptions = {'jetzer': 'meuk'}
+                super(MyAncientDynamicBot, self).__init__(**kwargs)
+
+        # we cannot generate the docstring based on what's in __init__ without
+        # running it, so we will ignore parameters added there. They can still
+        # be in the __init__ docstring, of course.
+        self.assertEqual(MyAncientDynamicBot.__init__.__doc__, """Some awesomer bot.
+@param always=False: Always save, even if normally the user is asked to confirm""")
+
+        bot = MyAncientDynamicBot()
+        self.assertEqual(bot.jetzer, 'meuk')
+        self.assertEqual(bot.getOption('jetzer'), 'meuk')
+
+        bot = MyAncientDynamicBot(jetzer='andere meuk')
+        self.assertEqual(bot.jetzer, 'andere meuk')
+        self.assertEqual(bot.getOption('jetzer'), 'andere meuk')
 
 
 if __name__ == '__main__':

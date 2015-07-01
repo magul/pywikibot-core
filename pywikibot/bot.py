@@ -17,6 +17,7 @@ __version__ = '$Id$'
 
 import codecs
 import datetime
+import inspect
 import json
 import logging
 import logging.handlers
@@ -24,6 +25,7 @@ import os
 import re
 import sys
 import time
+import types
 import warnings
 import webbrowser
 
@@ -48,7 +50,10 @@ from pywikibot.bot_choice import (  # noqa: unused imports
     ListOption, HighlightContextOption,
     ChoiceException, QuitKeyboardInterrupt,
 )
-from pywikibot.tools import deprecated, deprecated_args, PY2, PYTHON_VERSION
+from pywikibot.tools import (
+    deprecated, deprecated_args, issue_deprecation_warning,
+    PY2, PYTHON_VERSION
+)
 
 if not PY2:
     unicode = str
@@ -1264,6 +1269,104 @@ def open_webbrowser(page):
     i18n.input('pywikibot-enter-finished-browser')
 
 
+class BotOption(object):
+
+    """ Create a BotOption property.
+
+    name: the name as will be used in __init__
+    description: docstring
+    default: default value
+    """
+
+    def __init__(self, default, description='(this option has no description)'):
+        self.default = default
+        self.description = description
+
+    def __get__(self, obj, objtype):
+        if obj is None:  # used as class attribute
+            return self
+        else:            # used as object attribute
+            return obj._options.get(self, self.default)
+
+    def __set__(self, obj, value):
+        obj._options[self] = value
+
+
+class DeprecatedBotOptionDict(object):
+
+    """Deprecated BotOptions."""
+
+    def __init__(self, parent):
+        self.__parent = parent
+
+    def __getitem__(self, key):
+        try:
+            return getattr(self.__parent, key)
+        except AttributeError:
+            raise KeyError(key)
+
+    def __setitem__(self, key, value):
+        if key in self.__parent._available_options():
+            setattr(self.__parent, key, value)
+        else:
+            raise KeyError(key)
+
+    def __iter__(self):
+        """Iterate over all available options."""
+        return iter(self.__parent._available_options())
+
+
+class BotMeta(type):
+
+    """Bot meta class."""
+
+    def __new__(cls, name, parents, dct):
+        obj = super(BotMeta, cls).__new__(cls, name, parents, dct)
+        obj._available_options = types.MethodType(cls._available_options, obj)
+        # create attributes known at parse time
+        obj._create_magic_attributes(obj.availableOptions)
+        cls.update_init_docstring(obj)
+        return obj
+
+    @staticmethod
+    def _available_options(cls):
+        options = {}
+        for name, val in inspect.getmembers(cls):
+            if not name.startswith('_') and isinstance(val, BotOption):
+                options[name] = val
+        return options
+
+    @classmethod
+    def build_docstring(cls, obj, padding=''):
+        """Build string displaying the available options."""
+        template = padding + '@param {attr}={val.default!r}: {val.description}'
+        return '\n'.join(template.format(attr=attr, val=val) for attr, val in
+                         sorted(cls._available_options(obj).items()))
+
+    @classmethod
+    def update_init_docstring(cls, obj):
+        def change_docstring(fun, new_docstring):
+            def newfun(self, **kwargs):
+                return fun(self, **kwargs)
+            newfun.__internal__ = fun
+            newfun.__doc__ = new_docstring
+            return newfun
+
+        def replace(match):
+            return cls.build_docstring(obj, match.group(1))
+
+        try:
+            old_docstring = obj.__init__.__internal__.__doc__
+        except AttributeError:
+            old_docstring = obj.__init__.__doc__
+
+        if old_docstring is None:
+            return
+
+        new_docstring = re.sub('( *)&botparameters;', replace, old_docstring)
+        obj.__init__ = change_docstring(obj.__init__, new_docstring)
+
+
 class BaseBot(object):
 
     """
@@ -1280,30 +1383,61 @@ class BaseBot(object):
     treat() or run(), NotImplementedError is raised.
     """
 
+    __metaclass__ = BotMeta
+
     # Bot configuration.
-    # Only the keys of the dict can be passed as init options
-    # The values are the default values
-    # Extend this in subclasses!
-    availableOptions = {
-        'always': False,  # ask for confirmation when putting a page?
-    }
+    # Only attributes defined in this way can be passed as init options
+
+    always = BotOption(False, 'Always save, even if normally the user is asked to confirm')
+
+    # availableOptions is kept for backwards-compatibility. Do not use!
+    availableOptions = {}
 
     _current_page = None
 
     def __init__(self, **kwargs):
         """
-        Only accept options defined in availableOptions.
+        Instantiate a new Bot.
 
-        @param kwargs: bot options
-        @type kwargs: dict
+        Available parameters are:
+        &botparameters;
         """
+        # we still need to provide an empty options dictionary
+        self._options = {}
+
+        # Magically create attributes for options defined in the options dict
+        if self.availableOptions:
+            issue_deprecation_warning('Bot.availableOptions',
+                                      'BotOption attributes', 2)
+            self._create_magic_attributes(self.availableOptions)
+
         if 'generator' in kwargs:
             self.generator = kwargs.pop('generator')
 
+        self._deprecated_options = DeprecatedBotOptionDict(self)
         self.setOptions(**kwargs)
 
         self._treat_counter = 0
         self._save_counter = 0
+
+    @classmethod
+    def _create_magic_attributes(cls, attr_dict):
+        for key, value in attr_dict.items():
+            setattr(cls, key, BotOption(value))
+
+    @property
+    def options(self):
+        """DEPRECATED: Get current option dict."""
+        issue_deprecation_warning('options', 'attributes', 2)
+        return self._deprecated_options
+
+    @options.setter
+    def options(self, options):
+        """DEPRECATED: Overwrite options dict."""
+        issue_deprecation_warning('options', 'attributes', 2)
+        self._options = {}
+        pywikibot.debug('calling setOptions on %r: %r' % (self, options), _logger)
+        self.setOptions(**options)
 
     def setOptions(self, **kwargs):
         """
@@ -1312,19 +1446,15 @@ class BaseBot(object):
         @param kwargs: options
         @type kwargs: dict
         """
-        # contains the options overridden from defaults
-        self.options = {}
+        valid_options = self._available_options()
+        for opt, val in kwargs.items():
+            if opt in valid_options:
+                valid_options[opt].__set__(self, val)
+            else:
+                pywikibot.warning(
+                    u'%s is not a valid option. It was ignored.' % opt)
 
-        validOptions = set(self.availableOptions)
-        receivedOptions = set(kwargs)
-
-        for opt in receivedOptions & validOptions:
-            self.options[opt] = kwargs[opt]
-
-        for opt in receivedOptions - validOptions:
-            pywikibot.warning(u'%s is not a valid option. It was ignored.'
-                              % opt)
-
+    @deprecated('attribute access')
     def getOption(self, option):
         """
         Get the current value of an option.
@@ -1332,8 +1462,8 @@ class BaseBot(object):
         @param option: key defined in Bot.availableOptions
         """
         try:
-            return self.options.get(option, self.availableOptions[option])
-        except KeyError:
+            return getattr(self, option)
+        except AttributeError:
             raise pywikibot.Error(u'%s is not a valid bot option.' % option)
 
     @property
@@ -1578,6 +1708,15 @@ class BaseBot(object):
                                  self.__class__.__name__)
         finally:
             self.exit()
+
+
+# Avoid using six and instead manually make a metaclassed BaseBot instance
+if not PY2:
+    _super_bot = BaseBot
+    # Python 2 does not understand the metaclass= syntax
+    exec('class BaseBot(_super_bot, metaclass=BotMeta): pass')
+    BaseBot.__doc__ = _super_bot.__doc__
+    del _super_bot
 
 
 # TODO: Deprecate Bot class as self.site may be the site of the page or may be
