@@ -1521,7 +1521,7 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
         for page in self.done:
             if page.exists() and not page.isRedirectPage() and not page.isCategoryRedirect():
                 site = page.site
-                if site.family.interwiki_forward:
+                if not site.as_langlink():
                     # TODO: allow these cases to be propagated!
                     continue  # inhibit the forwarding families pages to be updated.
                 if site == self.originPage.site:
@@ -1656,7 +1656,7 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
         # replaceLinks will skip the site it's working on.
         if self.originPage.site not in new:
             # TODO: make this possible as well.
-            if not self.originPage.site.family.interwiki_forward:
+            if self.originPage.site.as_langlink():
                 new[self.originPage.site] = self.originPage
 
         # self.replaceLinks(self.originPage, new, True)
@@ -1881,9 +1881,9 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
         del new[page.site]
         # Do not add interwiki links to foreign families that page.site() does not forward to
         for stmp in new.keys():
-            if stmp.family != page.site.family:
-                if stmp.family.name != page.site.family.interwiki_forward:
-                    del new[stmp]
+            # Remove if a lang link is impossible
+            if not page.site.as_langlink(stmp):
+                del new[stmp]
 
         # Put interwiki links into a map
         old = {}

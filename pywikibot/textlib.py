@@ -37,7 +37,6 @@ import pywikibot
 
 from pywikibot import config2 as config
 from pywikibot.exceptions import InvalidTitle
-from pywikibot.family import Family
 from pywikibot.tools import OrderedDict, DeprecatedRegex
 
 # cache for replaceExcept to avoid recompile or regexes each call
@@ -699,11 +698,6 @@ def getLanguageLinks(text, insite=None, pageLink="[[]]",
     """
     if insite is None:
         insite = pywikibot.Site()
-    fam = insite.family
-    # when interwiki links forward to another family, retrieve pages & other
-    # infos there
-    if fam.interwiki_forward:
-        fam = Family.load(fam.interwiki_forward)
     result = {}
     # Ignore interwiki links within nowiki tags, includeonly tags, pre tags,
     # and HTML comments
@@ -722,17 +716,20 @@ def getLanguageLinks(text, insite=None, pageLink="[[]]",
     #       underscores -> fold them.
     interwikiR = re.compile(r'\[\[([a-zA-Z\-]+)\s?:([^\[\]\n]*)\]\]')
     for lang, pagetitle in interwikiR.findall(text):
-        lang = lang.lower()
-        # Check if it really is in fact an interwiki link to a known
-        # language, or if it's e.g. a category tag or an internal link
-        if lang in fam.obsolete:
-            lang = fam.obsolete[lang]
-        if lang in list(fam.langs.keys()):
+        if lang in insite.family.interwiki_replacements:
+            lang = insite.family.interwiki_replacements[lang]
+        try:
+            site = insite.interwiki(lang.lower())
+        except (KeyError, pywikibot.SiteDefinitionError):
+            # Not an interwiki prefix or there is no site defined for the URL
+            continue
+        else:
+            assert not site.obsolete, 'Obsolete wikis should not have a URL.'
+            if site.lang != lang:
+                continue  # not a language link
             if '|' in pagetitle:
                 # ignore text after the pipe
                 pagetitle = pagetitle[:pagetitle.index('|')]
-            # we want the actual page objects rather than the titles
-            site = pywikibot.Site(code=lang, fam=fam)
             try:
                 result[site] = pywikibot.Page(site, pagetitle, insite=insite)
             except pywikibot.InvalidTitle:

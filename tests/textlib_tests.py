@@ -25,7 +25,9 @@ import pywikibot.textlib as textlib
 from pywikibot import config, UnknownSite
 from pywikibot.tools import OrderedDict
 
-from tests.aspects import unittest, TestCase, DefaultDrySiteTestCase
+from tests.aspects import (
+    unittest, TestCase, DefaultDrySiteTestCase, SiteAttributeTestCase,
+)
 
 files = {}
 dirname = os.path.join(os.path.dirname(__file__), "pages")
@@ -724,6 +726,71 @@ class TestLocalDigits(TestCase):
         self.assertEqual(
             textlib.to_local_digits(
                 "299792458", 'km'), u"២៩៩៧៩២៤៥៨")
+
+
+class TestLanguageLinks(SiteAttributeTestCase):
+
+    """Test getLanguageLinks."""
+
+    # One site where lang links go to WP, one which stays in family and one
+    # which does not go to WP
+    sites = {
+        'commons': {
+            'family': 'commons',
+            'code': 'commons',
+        },
+        'enwp': {
+            'family': 'wikipedia',
+            'code': 'en',
+        },
+        'enwt': {
+            'family': 'wiktionary',
+            'code': 'en',
+        },
+        # Just defined to check if the links target the right sites
+        'dawp': {
+            'family': 'wikipedia',
+            'code': 'da',
+        },
+        'dawt': {
+            'family': 'wiktionary',
+            'code': 'da',
+        },
+    }
+
+    # "w:Not matched" should never appear as it's not a lang link.
+    # "en:Ignored" is always replaced by "en:English" and is necessary to check
+    # that the last link will be added (but not "w:Not matched").
+    text = '[[en:Ignored]], [[da:Dansk]] or [[en:English]]? [[w:Not matched]].'
+
+    def test_getLanguageLinks_forwarded(self):
+        """Test on a site which forwards all to Wikipedia."""
+        result = textlib.getLanguageLinks(self.text, self.commons)
+        self.assertCountEqual(result.keys(), [self.enwp, self.dawp])
+        self.assertEqual(result[self.enwp], pywikibot.Page(self.enwp, 'English'))
+        self.assertEqual(result[self.dawp], pywikibot.Page(self.dawp, 'Dansk'))
+
+    def test_getLanguageLinks_wiktionary(self):
+        """Test on a site which does not forward."""
+        result = textlib.getLanguageLinks(self.text, self.enwt)
+        self.assertCountEqual(result.keys(), [self.enwt, self.dawt])
+        self.assertEqual(result[self.enwt], pywikibot.Page(self.enwt, 'English'))
+        self.assertEqual(result[self.dawt], pywikibot.Page(self.dawt, 'Dansk'))
+
+    def test_getLanguageLinks_wikipedia(self):
+        """Test on a site which does not forward."""
+        result = textlib.getLanguageLinks(self.text, self.enwp)
+        self.assertCountEqual(result.keys(), [self.enwp, self.dawp])
+        self.assertEqual(result[self.enwp], pywikibot.Page(self.enwp, 'English'))
+        self.assertEqual(result[self.dawp], pywikibot.Page(self.dawp, 'Dansk'))
+
+        # interwiki replacement: not matched as 'dk' prefix is != 'da' lang
+        result = textlib.getLanguageLinks('[[dk:Dansk]]', self.enwp)
+        self.assertCountEqual(result.keys(), [self.dawp])
+        self.assertEqual(result[self.dawp], pywikibot.Page(self.dawp, 'Dansk'))
+        # interwiki "removal": not matched as there is no hostname for 'aa'
+        result = textlib.getLanguageLinks('[[aa:Afar]]', self.enwp)
+        self.assertCountEqual(result.keys(), [])
 
 
 class TestReplaceExcept(DefaultDrySiteTestCase):

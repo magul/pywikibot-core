@@ -743,7 +743,7 @@ class Family(object):
         # order.
         self.interwiki_putfirst = {}
 
-        # Some families, e. g. commons and meta, are not multilingual and
+        # DEPRECATED: Some families, e. g. commons and meta, are not multilingual and
         # forward interlanguage links to another family (wikipedia).
         # These families can set this variable to the name of the target
         # family.
@@ -875,6 +875,9 @@ class Family(object):
         elif name == 'known_families':
             issue_deprecation_warning('known_families',
                                       'APISite.interwiki(prefix)', 2)
+        elif name == 'interwiki_forward':
+            issue_deprecation_warning('interwiki_forward',
+                                      'APISite.as_langlink()', 2)
         return super(Family, self).__getattribute__(name)
 
     @staticmethod

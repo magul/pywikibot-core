@@ -725,7 +725,19 @@ class BaseSite(ComparableMixin):
                     site = pywikibot.Site(url=iw['url'])
                 except Exception as e:
                     site = e
-                self._iw_sites[iw['prefix']] = (site, 'local' in iw)
+                self._iw_sites[iw['prefix']] = (site, 'local' in iw,
+                                                iw.get('language'))
+
+    def _inverse_interwiki(self, site):
+        """Return all prefix, iwm entries for that site."""
+        assert site is not None, 'Site must not be None'
+        self._cache_interwikimap()
+        mapping = [(prefix, cache_entry)
+                   for prefix, cache_entry in self._iw_sites.items()
+                   if cache_entry[0] == site]
+        assert len(set(p for p, e in mapping)) == len(mapping), \
+            'prefixes must be unique'
+        return mapping
 
     def interwiki(self, prefix):
         """
@@ -761,11 +773,7 @@ class BaseSite(ComparableMixin):
         @rtype: list (guaranteed to be not empty)
         @raise KeyError: if there is no interwiki prefix for that site.
         """
-        assert site is not None, 'Site must not be None'
-        self._cache_interwikimap()
-        prefixes = set([prefix
-                        for prefix, cache_entry in self._iw_sites.items()
-                        if cache_entry[0] == site])
+        prefixes = [prefix for prefix, entry in self._inverse_interwiki(site)]
         if not prefixes:
             raise KeyError(
                 u"There is no interwiki prefix to '{0}'".format(site))
@@ -786,6 +794,28 @@ class BaseSite(ComparableMixin):
         # Request if necessary
         self.interwiki(prefix)
         return self._iw_sites[prefix][1]
+
+    def as_langlink(self, target=None):
+        """
+        Return whether the target site is available via a lang link.
+
+        This can be used to check if there is a prefix in the interwiki map
+        which is pointing to the target site and will appear as a language link.
+
+        @param target: The target site to be checked. Is this site if None
+            (default).
+        @type target: None or APISite
+        @return: The prefix used on this site to link to the target site using
+            a lang link. If no prefix can used None is returned.
+        @rtype: str or None
+        """
+        if target is None:
+            target = self
+        for prefix, entry in self._inverse_interwiki(target):
+            if entry[2]:
+                return prefix
+        else:
+            return None
 
     def ns_index(self, namespace):
         """

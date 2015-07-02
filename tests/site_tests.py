@@ -1663,6 +1663,31 @@ class TestSiteExtensions(WikimediaDefaultSiteTestCase):
         self.assertFalse(mysite.has_extension('ThisExtensionDoesNotExist'))
 
 
+class TestAsLanglink(TestCase):
+
+    """Test as_langlink from APISite."""
+
+    sites = {
+        'enwp': {
+            'family': 'wikipedia',
+            'code': 'en',
+            'langlink': True,
+        },
+        'commons': {
+            'family': 'commons',
+            'code': 'commons',
+            'langlink': False,
+        },
+    }
+
+    def test_as_langlink(self, key):
+        """Test if the site is itself available via langlink."""
+        if self.sites[key]['langlink']:
+            self.assertEqual(self.site.as_langlink(), self.code)
+        else:
+            self.assertIsNone(self.site.as_langlink())
+
+
 class TestSiteAPILimits(TestCase):
 
     """Test cases for Site method that use API limits."""
