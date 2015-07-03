@@ -101,13 +101,17 @@ import time
 import os
 import re
 import locale
+
 from hashlib import md5
 from math import ceil
 
 import pywikibot
+
 from pywikibot import i18n
+from pywikibot.bot import SingleSiteBot
 from pywikibot.textlib import TimeStripper
 from pywikibot.textlib import to_local_digits
+from pywikibot.tools import deprecated, deprecated_args
 
 ZERO = datetime.timedelta(0)
 
@@ -265,7 +269,6 @@ class DiscussionThread(object):
         self.title = title
         self.now = now
         self.ts = timestripper
-        self.code = self.ts.site.code
         self.content = ""
         self.timestamp = None
 
@@ -273,6 +276,11 @@ class DiscussionThread(object):
         return '%s("%s",%d bytes)' \
                % (self.__class__.__name__, self.title,
                   len(self.content.encode('utf-8')))
+
+    @property
+    @deprecated('ts.site')
+    def code(self):
+        return self.ts.site.code
 
     def feed_line(self, line):
         if not self.content and not line:
@@ -305,7 +313,7 @@ class DiscussionThread(object):
             maxage = str2time(re_t.group(1))
             if self.now - self.timestamp > maxage:
                 duration = str2localized_duration(archiver.site, re_t.group(1))
-                return i18n.twtranslate(self.code,
+                return i18n.twtranslate(self.ts.site,
                                         'archivebot-older-than',
                                         {'duration': duration})
         return ''
@@ -338,10 +346,7 @@ class DiscussionPage(pywikibot.Page):
         try:
             self.load_page()
         except pywikibot.NoPage:
-            self.header = archiver.get_attr('archiveheader',
-                                            i18n.twtranslate(
-                                                self.site.code,
-                                                'archivebot-archiveheader'))
+            self.header = archiver.getOption('archiveheader')
             if self.params:
                 self.header = self.header % self.params
 
@@ -398,33 +403,32 @@ class DiscussionPage(pywikibot.Page):
         for t in self.threads:
             newtext += t.to_text()
         if self.full:
-            summary += ' ' + i18n.twtranslate(self.site.code,
+            summary += ' ' + i18n.twtranslate(self.site,
                                               'archivebot-archive-full')
         self.text = newtext
         self.save(summary)
 
 
-class PageArchiver(object):
+class PageArchiver(SingleSiteBot):
 
-    """A class that encapsulates all archiving methods.
+    """A class that encapsulates all archiving methods."""
 
-    __init__ expects a pywikibot.Page object.
-    Execute by running the .run() method.
-    """
-
-    algo = 'none'
-
-    def __init__(self, page, tpl, salt, force=False):
-        self.attributes = {
-            'algo': ['old(24h)', False],
-            'archive': ['', False],
-            'maxarchivesize': ['1000M', False],
-            'counter': ['1', False],
-            'key': ['', False],
+    def __init__(self, page, tpl, salt, force=False, **kwargs):
+        # FIXME: see note in attr2text
+        self.availableOptions = {
+            'algo': 'old(24h)',
+            'archive': '',
+            'maxarchivesize': '1000M',
+            'minthreadsleft': 5,
+            'minthreadstoarchive': 2,
+            'maxage': None,  # appears to be unused
+            'counter': '1',
+            'key': '',
+            'archiveheader': None,
         }
+        super(PageArchiver, self).__init__(site=page.site, **kwargs)
         self.salt = salt
         self.force = force
-        self.site = page.site
         self.tpl = pywikibot.Page(self.site, tpl)
         self.timestripper = TimeStripper(site=self.site)
         self.page = DiscussionPage(page, self)
@@ -432,25 +436,39 @@ class PageArchiver(object):
         self.comment_params = {
             'from': self.page.title(),
         }
+        if 'archiveheader' not in self.options:
+            self.options['archiveheader'] = i18n.twtranslate(
+                self.site, 'archivebot-archiveheader')
         self.archives = {}
         self.archived_threads = 0
         self.month_num2orig_names = {}
         for n, (_long, _short) in enumerate(self.site.months_names):
             self.month_num2orig_names[n + 1] = {"long": _long, "short": _short}
 
-    def get_attr(self, attr, default=''):
-        return self.attributes.get(attr, [default])[0]
+    @property
+    @deprecated('options')
+    def attributes(self):
+        return self.options
 
-    def set_attr(self, attr, value, out=True):
+    @deprecated('getOption')
+    @deprecated_args(default=None)
+    def get_attr(self, attr):
+        return self.getOption(attr)
+
+    @deprecated_args(out=False)
+    def set_attr(self, attr, value):
         if attr == 'archive':
             value = value.replace('_', ' ')
-        self.attributes[attr] = [value, out]
+        self.options[attr] = value
 
     def saveables(self):
-        return [a for a in self.attributes if self.attributes[a][1] and
-                a != 'maxage']
+        return [a for a in self.options if a != 'maxage']
 
     def attr2text(self):
+        """Remove template parameters that are the current defaults."""
+        # FIXME: this is prone to failure if the defaults are changed as
+        # different bots using different defaults will erase the settings
+        # in the page, which will not be the same defaults used by other bots.
         return '{{%s\n%s\n}}' \
                % (self.tpl.title(withNamespace=(self.tpl.namespace() != 10)),
                   '\n'.join('|%s = %s' % (a, self.get_attr(a))
@@ -472,7 +490,7 @@ class PageArchiver(object):
                 break
         else:
             raise MissingConfigError(u'Missing or malformed template')
-        if not self.get_attr('algo', ''):
+        if not self.get_attr('algo'):
             raise MissingConfigError(u'Missing algo')
 
     def feed_archive(self, archive, thread, max_archive_size, params=None):
@@ -499,14 +517,14 @@ class PageArchiver(object):
 
     def analyze_page(self):
         max_arch_size = str2size(self.get_attr('maxarchivesize'))
-        arch_counter = int(self.get_attr('counter', '1'))
+        arch_counter = int(self.get_attr('counter'))
         oldthreads = self.page.threads
         self.page.threads = []
         whys = []
         pywikibot.output(u'Processing %d threads' % len(oldthreads))
         for t in oldthreads:
             if len(oldthreads) - self.archived_threads \
-               <= int(self.get_attr('minthreadsleft', 5)):
+               <= int(self.get_attr('minthreadsleft')):
                 self.page.threads.append(t)
                 continue  # Because there's too little threads left.
             # TODO: Make an option so that unstamped (unsigned) posts get
@@ -539,10 +557,11 @@ class PageArchiver(object):
         return set(whys)
 
     def run(self):
+        """Process one page."""
         if not self.page.botMayEdit():
             return
         whys = self.analyze_page()
-        mintoarchive = int(self.get_attr('minthreadstoarchive', 2))
+        mintoarchive = int(self.get_attr('minthreadstoarchive'))
         if self.archived_threads < mintoarchive:
             # We might not want to archive a measly few threads
             # (lowers edit frequency)
@@ -561,12 +580,13 @@ class PageArchiver(object):
             # Save the archives first (so that bugs don't cause a loss of data)
             for a in sorted(self.archives.keys()):
                 self.comment_params['count'] = self.archives[a].archived_threads
-                comment = i18n.twntranslate(self.site.code,
+                comment = i18n.twntranslate(self.site,
                                             'archivebot-archive-summary',
                                             self.comment_params)
                 self.archives[a].update(comment)
 
             # Save the page itself
+            # FIXME: see note in attr2text
             self.page.header = rx.sub(self.attr2text(), self.page.header)
             self.comment_params['count'] = self.archived_threads
             comma = self.site.mediawiki_message('comma-separator')
@@ -574,7 +594,7 @@ class PageArchiver(object):
                 = comma.join(a.title(asLink=True)
                              for a in self.archives.values())
             self.comment_params['why'] = comma.join(whys)
-            comment = i18n.twntranslate(self.site.code,
+            comment = i18n.twntranslate(self.site,
                                         'archivebot-page-summary',
                                         self.comment_params)
             self.page.update(comment)
