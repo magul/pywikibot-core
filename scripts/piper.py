@@ -44,8 +44,14 @@ import tempfile
 
 import pywikibot
 
-from pywikibot import i18n, pagegenerators
-from pywikibot.bot import MultipleSitesBot, ExistingPageBot, NoRedirectPageBot
+from pywikibot import pagegenerators
+from pywikibot.bot import (
+    MultipleSitesBot,
+    ExistingPageBot,
+    NoRedirectPageBot,
+    AutomaticTWSummaryBot,
+)
+from pywikibot.tools import deprecated_args
 
 # This is required for the text that is shown when you run this script
 # with the parameter -help.
@@ -54,23 +60,45 @@ docuReplacements = {
 }
 
 
-class PiperBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
+class PiperBot(MultipleSitesBot,
+               ExistingPageBot,
+               NoRedirectPageBot,
+               AutomaticTWSummaryBot):
 
     """Bot for munging text using external filtering programs."""
 
-    def __init__(self, generator, **kwargs):
+    summary_key = 'piper-edit-summary'
+
+    @deprecated_args('comment')  # introduced in core port
+    def __init__(self, generator, filters, always=False):
         """
         Constructor.
 
         @param generator: The page generator that determines on which pages
                           to work on.
+        @param filters: list of commands to pipe page text through
+        @type filters: list of unicode
+        @param always: If True, don't prompt for changes
+        @type always: bool
         """
         self.availableOptions.update({
             'always': False,
             'filters': [],
-            'comment': None,
         })
-        super(PiperBot, self).__init__(generator=generator, **kwargs)
+        if not filters:
+            raise ValueError('no filters specified')
+
+        super(PiperBot, self).__init__(generator=generator,
+                                       filters=filters, always=always)
+
+        self._used_filters = None
+
+    @property
+    def summary_parameters(self):
+        """A dictionary of available parameters for i18n."""
+        return {
+            'filters': ', '.join(self._used_filters),
+        }
 
     def pipe(self, program, text):
         """Pipe a given text through a given program.
@@ -100,12 +128,17 @@ class PiperBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
         # Load the page
         text = self.current_page.text
 
+        self._filters_used = []
+
         # Munge!
         for program in self.getOption('filters'):
+            old_text = text
             text = self.pipe(program, text)
+            if text != old_text:
+                self._filters_used.append(program)
 
         # only save if something was changed
-        self.put_current(text, summary=self.getOption('comment'))
+        self.put_current(text)
 
 
 def main(*args):
@@ -133,10 +166,6 @@ def main(*args):
             genFactory.handleArg(arg)
 
     options['filters'] = filters
-    s = ', '.join(options['filters'])
-    options['comment'] = i18n.twtranslate(pywikibot.Site().lang,
-                                          'piper-edit-summary',
-                                          {'filters': s})
 
     if not gen:
         gen = genFactory.getCombinedGenerator()
