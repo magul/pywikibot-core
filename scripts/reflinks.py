@@ -225,10 +225,10 @@ class RefLink(object):
 
     """Container to handle a single bare reference."""
 
-    def __init__(self, link, name):
+    def __init__(self, link, name, site=None):
         self.refname = name
         self.link = link
-        self.site = pywikibot.Site()
+        self.site = site or pywikibot.Site()
         self.linkComment = i18n.twtranslate(self.site, 'reflinks-comment')
         self.url = re.sub(u'#.*', '', self.link)
         self.title = None
@@ -302,7 +302,11 @@ class DuplicateReferences(object):
     name the first, and remove the content of the others
     """
 
-    def __init__(self):
+    def __init__(self, site=None):
+        """Constructor."""
+        if not site:
+            site = pywikibot.Site()
+
         # Match references
         self.REFS = re.compile(
             r'(?i)<ref(?P<params>[^>/]*)>(?P<content>.*?)</ref>')
@@ -310,7 +314,7 @@ class DuplicateReferences(object):
             r'(?i).*name\s*=\s*(?P<quote>"?)\s*(?P<name>.+)\s*(?P=quote).*')
         self.GROUPS = re.compile(
             r'(?i).*group\s*=\s*(?P<quote>"?)\s*(?P<group>.+)\s*(?P=quote).*')
-        self.autogen = i18n.twtranslate(pywikibot.Site(), 'reflinks-autogen')
+        self.autogen = i18n.twtranslate(site, 'reflinks-autogen')
 
     def process(self, text):
         # keys are ref groups
@@ -445,7 +449,7 @@ class ReferencesRobot(Bot):
             bad = globalbadtitles
         self.titleBlackList = re.compile(bad, re.I | re.S | re.X)
         self.norefbot = noreferences.NoReferencesBot(None, verbose=False)
-        self.deduplicator = DuplicateReferences()
+        self.deduplicator = DuplicateReferences(self.site)
         try:
             self.stopPageRevId = self.stopPage.latest_revision_id
         except pywikibot.NoPage:
@@ -544,7 +548,7 @@ class ReferencesRobot(Bot):
                     # TODO: Clean URL blacklist
                     continue
 
-                ref = RefLink(link, match.group('name'))
+                ref = RefLink(link, match.group('name'), site=self.site)
                 f = None
                 try:
                     socket.setdefaulttimeout(20)

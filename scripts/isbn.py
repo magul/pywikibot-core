@@ -1479,7 +1479,7 @@ class IsbnBot(Bot):
 
         self.generator = generator
         self.isbnR = re.compile(r'(?<=ISBN )(?P<code>[\d\-]+[Xx]?)')
-        self.comment = i18n.twtranslate(pywikibot.Site(), 'isbn-formatting')
+        self.comment = i18n.twtranslate(self.site, 'isbn-formatting')
 
     def treat(self, page):
         try:
@@ -1540,7 +1540,7 @@ class IsbnWikibaseBot(WikidataBot):
             self.isbn_10_prop_id = self.get_property_by_name('ISBN-10')
         if self.isbn_13_prop_id is None:
             self.isbn_13_prop_id = self.get_property_by_name('ISBN-13')
-        self.comment = i18n.twtranslate(pywikibot.Site(), 'isbn-formatting')
+        self.comment = i18n.twtranslate(self.site, 'isbn-formatting')
 
     def treat(self, page, item):
         change_messages = []
@@ -1646,9 +1646,9 @@ def main(*args):
     if gen:
         preloadingGen = pagegenerators.PreloadingGenerator(gen)
         if use_wikibase:
-            bot = IsbnWikibaseBot(preloadingGen, **options)
+            bot = IsbnWikibaseBot(preloadingGen, site=site, **options)
         else:
-            bot = IsbnBot(preloadingGen, **options)
+            bot = IsbnBot(preloadingGen, site=site, **options)
         bot.run()
     else:
         pywikibot.showHelp()
