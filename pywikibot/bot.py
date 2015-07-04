@@ -1160,7 +1160,7 @@ def showHelp(module_name=None):
         except NameError:
             module_name = "no_module"
 
-    globalHelp = u'''
+    globalHelp = '''
 Global arguments available for all bots:
 
 -dir:PATH         Read the bot's configuration data from directory given by
@@ -1230,7 +1230,8 @@ Global arguments available for all bots:
         if module_name:
             pywikibot.stdout(u'Sorry, no help available for %s' % module_name)
         pywikibot.log('showHelp:', exc_info=True)
-    pywikibot.stdout(globalHelp)
+    if input_yn('Show global options?', default=False, automatic_quit=False):
+        pywikibot.stdout(globalHelp)
 
 
 def writeToCommandLogFile():
