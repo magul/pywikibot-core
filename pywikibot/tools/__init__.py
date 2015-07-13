@@ -532,6 +532,16 @@ def itergroup(iterable, size):
         yield group
 
 
+def constrain_index(index, length):
+    """Return between 0 and length (including 0). Treat None as 0."""
+    if index is None:
+        index = 0
+    if index < 0:
+        return max(0, length - index)
+    else:
+        return min(index, length - 1)
+
+
 class ThreadList(list):
 
     """A simple threadpool class to limit the number of simultaneous threads.

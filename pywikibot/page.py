@@ -1423,15 +1423,18 @@ class BasePage(UnicodeMixin, ComparableMixin):
         else:
             return self._coords
 
-    def getRedirectTarget(self):
+    def getRedirectTarget(self, follow_count=None):
         """Return a Page object for the target this Page redirects to.
 
         If this page is not a redirect page, will raise an IsNotRedirectPage
         exception. This method also can raise a NoPage exception.
 
+        @param follow_count: Follow a certain number of redirects. Same as in
+            L{pywikibot.site.APISite.getredirtarget}.
+        @type follow_count: int or None
         @rtype: pywikibot.Page
         """
-        return self.site.getredirtarget(self)
+        return self.site.getredirtarget(self, follow_count)
 
     @deprecated('moved_target()')
     def getMovedTarget(self):

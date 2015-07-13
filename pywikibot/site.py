@@ -36,7 +36,7 @@ from pywikibot.tools import (
     deprecated, deprecate_arg, deprecated_args, remove_last_args,
     redirect_func, issue_deprecation_warning,
     manage_wrapping, MediaWikiVersion, first_upper, normalize_username,
-    merge_unique_dicts,
+    merge_unique_dicts, constrain_index,
 )
 from pywikibot.tools.ip import is_IP
 from pywikibot.throttle import Throttle
@@ -2706,25 +2706,37 @@ class APISite(BaseSite):
             self.loadpageinfo(page)
         return page._isredir
 
-    def getredirtarget(self, page):
+    def getredirtarget(self, page, follow_count=None):
         """
         Return page object for the redirect target of page.
 
         @param page: page to search redirects for
         @type page: BasePage
+        @param follow_count: follow the redirect as often redirects as it is
+            given. If negative it'll count from the end so that -n-1 redirects
+            are left along the chain. If None it will return the immediate
+            target (like set to 0) but throw an exception if there is a circular
+            redirect later along the chain.
+        @type follow_count: int or None
         @return: redirect target of page
         @rtype: BasePage
 
         @raise IsNotRedirectPage: page is not a redirect
         @raise RuntimeError: no redirects found
-        @raise CircularRedirect: page is a circular redirect
+        @raise CircularRedirect: if follow_count is an integer it'll throw it
+            only if any of the followed redirects, redirects to a already
+            visited redirect. If follow_count is negative or None, it'll throw
+            the exception if there is a circular redirect in the complete chain.
         @raise InterwikiRedirectPage: the redirect target is
             on another site
         """
+        # TODO: as soon as the API allows us to get the number of redirects
+        # followed, allow "True" as follow_count and which is replaced by it
         if not self.page_isredirect(page):
             raise IsNotRedirectPage(page)
         if hasattr(page, '_redirtarget'):
-            return page._redirtarget
+            return page._redirtarget[constrain_index(follow_count,
+                                                     len(page._redirtarget))]
 
         title = page.title(withSection=False)
         query = self._simple_request(
@@ -2761,42 +2773,46 @@ class APISite(BaseSite):
         if self.sametitle(title, target_title):
             raise CircularRedirect(page)
 
-        if "pages" not in result['query']:
-            # No "pages" element might indicate a circular redirect
-            # Check that a "to" link is also a "from" link in redirmap
-            for _from, _to in redirmap.items():
-                if _to['title'] in redirmap:
-                    raise CircularRedirect(page)
+        chain = []
+        intermediate_title = title
+        circular = False
+        while intermediate_title in redirmap and not circular:
+            intermediate_title = redirmap[intermediate_title]['title']
+            if intermediate_title == title or intermediate_title in chain:
+                circular = True
             else:
-                target = pywikibot.Page(source=page.site, title=target_title)
+                chain += [intermediate_title]
 
-                # Check if target is on another site.
-                if target.site != page.site:
-                    raise InterwikiRedirectPage(page, target)
-                else:
-                    # Redirect to Special: & Media: pages, which do not work
-                    # like redirects, but are rendered like a redirect.
-                    page._redirtarget = target
-                    return page._redirtarget
+        if (follow_count is None or follow_count < 0 or
+                follow_count >= len(chain)) and circular:
+            # negative and None require the complete chain to be circular free
+            # positive only if they require to much
+            raise CircularRedirect(page)
+        follow_count = constrain_index(follow_count, len(chain))
 
-        pagedata = list(result['query']['pages'].values())[0]
-        # There should be only one value in 'pages' (the ultimate
-        # target, also in case of double redirects).
-        if self.sametitle(pagedata['title'], target_title):
-            # target_title is the ultimate target
-            target = pywikibot.Page(self, pagedata['title'], pagedata['ns'])
-            api.update_page(target, pagedata, ['info'])
-            page._redirtarget = target
+        if not circular:
+            page._redirtarget = [pywikibot.Page(self, target)
+                                 for target in chain]
+            target = page._redirtarget[follow_count]
         else:
-            # Target is an intermediate redirect -> double redirect.
-            # Do not bypass double-redirects and return the ultimate target;
-            # it would be impossible to detect and fix double-redirects.
-            # This handles also redirects to sections, as sametitle()
-            # does not ignore sections.
-            target = pywikibot.Page(self, target_title)
-            page._redirtarget = target
+            target = pywikibot.Page(self, chain[follow_count])
 
-        return page._redirtarget
+        if "pages" not in result['query']:
+            # Check if target is on another site.
+            if target.site != page.site:
+                raise InterwikiRedirectPage(page, target)
+            assert circular
+        else:
+            assert not circular
+            # There should be only one value in 'pages' (the ultimate
+            # target, also in case of double redirects).
+            page_data = list(result['query']['pages'].values())
+            assert len(page_data) == 1
+            assert pywikibot.Page(self, page_data[0]['title']) == \
+                   page._redirtarget[-1]
+            api.update_page(page._redirtarget[-1], page_data[0], ['info'])
+
+        return target
 
     def preloadpages(self, pagelist, groupsize=50, templates=False,
                      langlinks=False):
