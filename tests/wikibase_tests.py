@@ -540,11 +540,9 @@ class TestPropertyPage(WikidataTestCase):
         wikidata = self.get_repo()
         property_page = pywikibot.PropertyPage(wikidata, 'P625')
         self.assertEqual(property_page.type, 'globe-coordinate')
-        self.assertEqual(property_page.getType(), 'globecoordinate')
 
         claim = pywikibot.Claim(wikidata, 'P625')
         self.assertEqual(claim.type, 'globe-coordinate')
-        self.assertEqual(claim.getType(), 'globecoordinate')
 
     def test_get(self):
         wikidata = self.get_repo()

@@ -3936,20 +3936,6 @@ class Property():
             self._type = self.repo.getPropertyType(self)
         return self._type
 
-    @deprecated("Property.type")
-    def getType(self):
-        """
-        Return the type of this property.
-
-        It returns 'globecoordinate' for type 'globe-coordinate'
-        in order to be backwards compatible.  See
-        https://gerrit.wikimedia.org/r/#/c/135405/ for background.
-        """
-        if self.type == 'globe-coordinate':
-            return 'globecoordinate'
-        else:
-            return self._type
-
     def getID(self, numeric=False):
         """
         Get the identifier of this property.
