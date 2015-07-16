@@ -642,9 +642,9 @@ class InteractiveReplace(object):
     * allow_skip_link = True (skip the current link)
     * allow_unlink = True (unlink)
     * allow_replace = True (just replace target, keep section and label)
-    * allow_replace_section = False (replace target and section, keep label)
-    * allow_replace_label = False (replace target and label, keep section)
-    * allow_replace_all = False (replace target, section and label)
+    * allow_replace_section = True (replace target and section, keep label)
+    * allow_replace_label = True (replace target and label, keep section)
+    * allow_replace_all = True (replace target, section and label)
     (The boolean values are the default values)
 
     It has also a C{context} attribute which must be a non-negative integer. If
@@ -692,9 +692,9 @@ class InteractiveReplace(object):
         self.allow_skip_link = True
         self.allow_unlink = True
         self.allow_replace = True
-        self.allow_replace_section = False
-        self.allow_replace_label = False
-        self.allow_replace_all = False
+        self.allow_replace_section = True
+        self.allow_replace_label = True
+        self.allow_replace_all = True
         # Use list to preserve order
         self._own_choices = [
             ('skip_link', StaticChoice('Do not change', 'n', None)),
