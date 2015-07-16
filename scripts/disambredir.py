@@ -35,9 +35,10 @@ class DisambiguationRedirectBot(MultipleSitesBot, AutomaticTWSummaryBot):
     def _create_callback(self, old, new):
         replace_callback = InteractiveReplace(
             old, new, default='n', automatic_quit=False)
-        replace_callback.allow_replace_label = True
-        replace_callback.allow_replace_section = True
-        replace_callback.allow_replace_all = True
+        replace_callback.allow_replace_label = False
+        replace_callback.allow_replace_section = (
+            self.site.sitename != 'wikipedia:de')
+        replace_callback.allow_replace = False
         return replace_callback
 
     def treat_page(self):
