@@ -89,22 +89,13 @@ def translate(page=None, hints=None, auto=True, removebrackets=False,
     # existing interwiki links.
     if auto and page:
         # search inside all dictionaries for this link
-        sitelang = page.site.code
-        dictName, value = date.getAutoFormat(sitelang, page.title())
-        if dictName:
-            if True:
-                pywikibot.output(
-                    u'TitleTranslate: %s was recognized as %s with value %d'
-                    % (page.title(), dictName, value))
-                for entryLang, entry in date.formats[dictName].items():
-                    if entryLang not in site.languages():
-                        continue
-                    if entryLang != sitelang:
-                        if True:
-                            newname = entry(value)
-                            x = pywikibot.Link(
-                                newname,
-                                pywikibot.Site(code=entryLang,
-                                               fam=site.family))
-                            result.add(x)
+        try:
+            date_links = date.page_translations(page)
+        except pywikibot.Error:
+            pass
+        else:
+            del date_links[page.site.code]
+            result += [link for link in date_links.values()
+                       if link is not None]
+
     return list(result)

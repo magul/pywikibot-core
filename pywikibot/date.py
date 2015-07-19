@@ -2354,6 +2354,50 @@ def getAutoFormat(lang, title, ignoreFirstLetterCase=True):
     return None, None
 
 
+def get_format_titles(format_name, value, family):
+    """
+    Get titles for format in all sites of a family.
+
+    @param format_name: name of format
+    @type format_name: str
+    @param value: date value (a year, date, ...)
+    @type value: object
+    @param family: family
+    @type family: Family
+    @rtype: dict of Link
+    """
+    import pywikibot
+    result = {}
+    format_data = formats[format_name]
+    for code in family.langs:
+        if code not in format_data:
+            result[code] = None
+            continue
+
+        title = format_data[code](value)
+
+        result[code] = pywikibot.Link(
+            title,
+            pywikibot.Site(code=code,
+                           fam=family))
+
+    return result
+
+
+def page_translations(page):
+    """Get equivalent title on all sites in family."""
+    import pywikibot
+    format_name, value = getAutoFormat(page.site.code, page.title())
+    if not format_name:
+        raise pywikibot.Error('Not a date page.')
+
+    pywikibot.log(
+        'page_translations: %s:%s was recognized as %s with value %d'
+        % (page.site, page.title(), format_name, value))
+
+    return get_format_titles(format_name, value, page.site.family)
+
+
 class FormatDate(object):
 
     """Format a date."""

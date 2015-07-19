@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 
+import pywikibot
+
 from pywikibot import date
 
 from tests.aspects import unittest, MetaTestCaseClass, TestCase
@@ -93,6 +95,20 @@ class TestMonthDelta(TestCase):
         self.assertEqual(date.get_month_delta(datetime(2012, 3, 31), datetime(2013, 1, 31)), 10)
         self.assertEqual(date.get_month_delta(datetime(2014, 3, 31), datetime(2013, 3, 31)), -12)
 
+
+class TestTitleTranslations(TestCase):
+
+    """Test date auto-translation of titles."""
+
+    family = 'wikipedia'
+    code = 'en'
+
+    def test_basic(self):
+        """Test date.page_translations."""
+        page = pywikibot.Page(self.site, '2000')
+        translations = date.page_translations(page)
+        self.assertEqual(translations['en'].title, '2000')
+        self.assertEqual(translations['ru'].title, '2000 год')
 
 if __name__ == '__main__':
     try:
