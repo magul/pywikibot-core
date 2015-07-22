@@ -44,7 +44,7 @@ import pywikibot
 import pywikibot.config2 as config
 
 from pywikibot import log, Site
-from pywikibot.exceptions import ServerError, NoUsername
+from pywikibot.exceptions import ServerError, LoginError
 from pywikibot.site import BaseSite
 from pywikibot.family import WikimediaFamily
 from pywikibot.comms import http
@@ -595,7 +595,7 @@ class RequireUserMixin(TestCaseBase):
 
             try:
                 site['site'].login(sysop)
-            except NoUsername:
+            except LoginError:
                 pass
 
             if not site['site'].user():

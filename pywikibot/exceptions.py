@@ -3,7 +3,6 @@
 Exception and warning classes used throughout the framework.
 
 Error: Base class, all exceptions should the subclass of this class.
-  - NoUsername: Username is not in user-config.py, or it is invalid.
   - UserBlocked: Username or IP has been blocked
   - AutoblockUser: requested action on a virtual autoblock user not valid
   - UserRightsError: insufficient rights for requested action
@@ -14,6 +13,11 @@ Error: Base class, all exceptions should the subclass of this class.
   - PageNotFound: Page not found (deprecated)
   - i18n.TranslationError: i18n/l10n message not available
   - UnknownExtension: Extension is not defined for this site
+
+LoginError: any exception caused by login process.
+  - NoUsername: Username is not in user-config.py, or it is invalid.
+  - NoPassword: No password is available.
+  - WrongPassword: Wrong password for the user.
 
 SiteDefinitionError: Site loading problem
   - UnknownSite: Site does not exist in Family
@@ -195,9 +199,28 @@ class OtherPageSaveError(PageSaveRelatedError):
         return unicode(self.reason)
 
 
-class NoUsername(Error):
+class LoginError(Error):
+
+    """Abstract Exception, used when the exception concerns login process."""
+
+
+class NoUsername(LoginError):
 
     """Username is not in user-config.py."""
+
+    pass
+
+
+class NoPassword(LoginError):
+
+    """No password is available."""
+
+    pass
+
+
+class WrongPassword(LoginError):
+
+    """Wrong password for the user."""
 
     pass
 

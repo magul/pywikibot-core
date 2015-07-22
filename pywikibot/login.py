@@ -21,7 +21,7 @@ import pywikibot
 
 from pywikibot import config
 from pywikibot.tools import deprecated_args, normalize_username
-from pywikibot.exceptions import NoUsername
+from pywikibot.exceptions import NoUsername, NoPassword, WrongPassword
 
 
 class _PasswordFileWarning(UserWarning):
@@ -247,11 +247,18 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
         @type retry: bool
 
         @raises NoUsername: Username is not recognised by the site.
+        @raises NoPassword: No password is available for the user.
+        @raises WrongPassword: Wrong password for the user.
         """
         if not self.password:
             # First check that the username exists,
             # to avoid asking for a password that will not work.
             self.check_user_exists()
+
+            if os.environ.get('PYWIKIBOT_ONLY_PASSWORD_FILE'):
+                raise NoPassword('Password of Username "%s" on %s '
+                                 'not set via password file'
+                                 % (self.username, self.site))
 
             # As we don't want the password to appear on the screen, we set
             # password = True
@@ -272,9 +279,14 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
             elif e.code == 'Illegal':
                 raise NoUsername(u"Username '%s' is invalid on %s"
                                  % (self.username, self.site))
+            elif e.code == 'WrongPass':
+                if os.environ.get('PYWIKIBOT_ONLY_PASSWORD_FILE'):
+                    raise WrongPassword('Wrong password of Username "%s" on %s'
+                                        % (self.username, self.site))
+                else:
+                    self.password = None
             # TODO: investigate other unhandled API codes (bug 73539)
             if retry:
-                self.password = None
                 return self.login(retry=True)
             else:
                 return False
