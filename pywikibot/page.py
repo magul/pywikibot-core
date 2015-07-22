@@ -4617,15 +4617,15 @@ class Link(ComparableMixin):
         @type defaultNamespace: int
 
         """
-        source_is_page = isinstance(source, BasePage)
-
-        assert source is None or source_is_page or isinstance(source, pywikibot.site.BaseSite), \
-            "source parameter should be either a Site or Page object"
-
-        if source_is_page:
+        if source is None:
+            self._source = pywikibot.Site()
+        elif isinstance(source, BasePage):
             self._source = source.site
         else:
-            self._source = source or pywikibot.Site()
+            self._source = source
+
+        assert isinstance(source, pywikibot.site.BaseSite), \
+            "source parameter should be either a Site or Page object"
 
         self._text = text
         self._defaultns = defaultNamespace
@@ -4670,7 +4670,7 @@ class Link(ComparableMixin):
         t = t.replace(u"\u200e", u"").replace(u"\u200f", u"")
         self._text = t
 
-        if source_is_page:
+        if isinstance(source, BasePage):
             self._text = source.title(withSection=False) + self._text
 
     def __repr__(self):
