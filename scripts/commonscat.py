@@ -262,17 +262,16 @@ class CommonscatBot(Bot):
     def skipPage(self, page):
         """Determine if the page should be skipped."""
         if page.site.code in ignoreTemplates:
-            templatesInThePage = page.templates()
-            templatesWithParams = page.templatesWithParams()
             for template in ignoreTemplates[page.site.code]:
                 if not isinstance(template, tuple):
-                    for pageTemplate in templatesInThePage:
+                    for pageTemplate in page.templates():
                         if pageTemplate.title(withNamespace=False) == template:
                             return True
                 else:
-                    for (inPageTemplate, param) in templatesWithParams:
+                    for (inPageTemplate, params) in page.templatesWithParams():
                         if inPageTemplate.title(withNamespace=False) == template[0] \
-                           and template[1] in param[0].replace(' ', ''):
+                           and any(template[1] in param.replace(' ', '')
+                                   for param in params):
                             return True
         return False
 
