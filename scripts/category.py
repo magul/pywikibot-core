@@ -801,18 +801,18 @@ class CategoryListifyRobot:
             if (not article.isImage() or
                     self.showImages) and not article.isCategory():
                 if self.talkPages and not article.isTalkPage():
-                    listString += "*[[%s]] -- [[%s|talk]]\n" \
+                    listString += "#[[%s]] -- [[%s|talk]]\n" \
                                   % (article.title(),
                                      article.toggleTalkPage().title())
                 else:
-                    listString += "*[[%s]]\n" % article.title()
+                    listString += "#[[%s]]\n" % article.title()
             else:
                 if self.talkPages and not article.isTalkPage():
-                    listString += "*[[:%s]] -- [[%s|talk]]\n" \
+                    listString += "#[[:%s]] -- [[%s|talk]]\n" \
                                   % (article.title(),
                                      article.toggleTalkPage().title())
                 else:
-                    listString += "*[[:%s]]\n" % article.title()
+                    listString += "#[[:%s]]\n" % article.title()
         if self.list.exists() and not self.overwrite:
             pywikibot.output(u'Page %s already exists, aborting.'
                              % self.list.title())
