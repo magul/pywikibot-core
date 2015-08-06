@@ -93,258 +93,31 @@ from pywikibot.bot import (
     Bot, QuitKeyboardInterrupt,
     StandardOption, HighlightContextOption, ListOption,
 )
+from pywikibot.scriptconfig import Configuration
 
-# Disambiguation Needed template
-dn_template = {
-    'en': u'{{dn}}',
-    'fr': u'{{Lien vers un homonyme}}',
+
+_example_config = """
+{
+  "dn template": "{{dn}}",
+  "primary topic format": "%s_(disambiguation)",
+  "ignore title": [
+      "Wikipedia:Links to disambiguating pages",
+      "Wikipedia:Disambiguation pages with links"
+  ]
 }
+"""
 
-# disambiguation page name format for "primary topic" disambiguations
-# (Begriffsklärungen nach Modell 2)
-primary_topic_format = {
-    'ar': u'%s_(توضيح)',
-    'ca': u'%s_(desambiguació)',
-    'cs': u'%s_(rozcestník)',
-    'de': u'%s_(Begriffsklärung)',
-    'en': u'%s_(disambiguation)',
-    'fa': u'%s_(ابهام‌زدایی)',
-    'fi': u'%s_(täsmennyssivu)',
-    'hu': u'%s_(egyértelműsítő lap)',
-    'ia': u'%s_(disambiguation)',
-    'it': u'%s_(disambigua)',
-    'lt': u'%s_(reikšmės)',
-    'kk': u'%s_(айрық)',
-    'ko': u'%s_(동음이의)',
-    'nl': u'%s_(doorverwijspagina)',
-    'no': u'%s_(peker)',
-    'pl': u'%s_(ujednoznacznienie)',
-    'pt': u'%s_(desambiguação)',
-    'pfl': u'%s_BKL',
-    'he': u'%s_(פירושונים)',
-    'ru': u'%s_(значения)',
-    'sr': u'%s_(вишезначна одредница)',
-    'sv': u'%s_(olika betydelser)',
-    'uk': u'%s_(значення)',
+_default_config = """
+{
+  "dn template": None
 }
+"""
 
-# List pages that will be ignored if they got a link to a disambiguation
-# page. An example is a page listing disambiguations articles.
-# Special chars should be encoded with unicode (\x##) and space used
-# instead of _
-
-ignore_title = {
-    'wikipedia': {
-        'ar': [
-            u'تصنيف:صفحات توضيح',
-        ],
-        'ca': [
-            u'Viquipèdia:Enllaços incorrectes a pàgines de desambiguació',
-            u'Viquipèdia:Registre de pàgines de desambiguació òrfenes',
-            u'.*Discussió:.+',
-            u'.*Usuari:.+',
-            u'.+/[aA]rxiu.*',
-        ],
-        'cs': [
-            u'Wikipedie:Chybějící interwiki/.+',
-            u'Wikipedie:Rozcestníky',
-            u'Wikipedie diskuse:Rozcestníky',
-            u'Wikipedie:Seznam nejvíce odkazovaných rozcestníků',
-            u'Wikipedie:Seznam rozcestníků/první typ',
-            u'Wikipedie:Seznam rozcestníků/druhý typ',
-            u'Wikipedista:Zirland/okres',
-        ],
-        'da': [
-            u'Wikipedia:Links til sider med flertydige titler'
-        ],
-        'de': [
-            u'.+/[aA]rchiv.*',
-            u'.+/Baustelle.*',
-            u'.+/Index',
-            u'.+/Spielwiese',
-            u'.+/[tT]est.*',
-            u'.*Diskussion:.+',
-            u'Benutzer:.+/[Ll]og.*',
-            u'Benutzer:C.Löser/.+',
-            u'Benutzer:Katharina/Begriffsklärungen',
-            u'Benutzer:Kirschblut/.+buchstabenkürzel',
-            u'Benutzer:Mathias Schindler/.+',
-            u'Benutzer:Noisper/Dingliste/[A-Z]',
-            u'Benutzer:Professor Einstein.*',
-            u'Benutzer:Sebbot/.+',
-            u'Benutzer:SirJective/.+',
-            u'Benutzer:Srbauer.*',
-            u'Benutzer:SteEis.',
-            u'Benutzer:Steindy.*',
-            u'Benutzer:SrbBot.*',
-            u'Benutzer:PortalBot/.+',
-            u'Benutzer:Xqbot/.+',
-            u'Lehnwort',
-            u'Liste griechischer Wortstämme in deutschen Fremdwörtern',
-            u'Liste von Gräzismen',
-            u'Portal:Abkürzungen/.+',
-            u'Portal:Astronomie/Moves',
-            u'Portal:Astronomie/Index/.+',
-            u'Portal:Hund',
-            u'Portal:Hund/Beobachtungsliste',
-            u'Portal:Marxismus',
-            u'Portal:Täuferbewegung/Seitenindex',
-            u'Wikipedia:Administratoren/Anfragen',
-            u'Wikipedia:Archiv/.+',
-            u'Wikipedia:Artikelwünsche/Ding-Liste/[A-Z]',
-            u'Wikipedia:Begriffsklärung.*',
-            u'Wikipedia:Bots/.+',
-            u'Wikipedia:Interwiki-Konflikte',
-            u'Wikipedia:ISBN-Suche',
-            u'Wikipedia:Liste mathematischer Themen/BKS',
-            u'Wikipedia:Liste mathematischer Themen/Redirects',
-            u'Wikipedia:Meinungsbilder/.+',
-            u'Wikipedia:Löschkandidaten/.+',
-            u'Wikipedia:WikiProjekt Altertumswissenschaft/.+',
-            u'Wikipedia:WikiProjekt Verwaiste Seiten/Begriffsklärungen',
-            u'Wikipedia:Qualitätssicherung/.+',
-            u'Vorlage:Infobox Weltraum',
-            u'Vorlage:Navigationsleiste Raumfahrt',
-        ],
-        'en': [
-            u'Wikipedia:Links to disambiguating pages',
-            u'Wikipedia:Disambiguation pages with links',
-            u'Wikipedia:Multiple-place names \\([A-Z]\\)',
-            u'Wikipedia:Non-unique personal name',
-            u"User:Jerzy/Disambiguation Pages i've Editted",
-            u'User:Gareth Owen/inprogress',
-            u'TLAs from [A-Z][A-Z][A-Z] to [A-Z][A-Z][A-Z]',
-            u'List of all two-letter combinations',
-            u'User:Daniel Quinlan/redirects.+',
-            u'User:Oliver Pereira/stuff',
-            u'Wikipedia:French Wikipedia language links',
-            u'Wikipedia:Polish language links',
-            u'Wikipedia:Undisambiguated abbreviations/.+',
-            u'List of acronyms and initialisms',
-            u'Wikipedia:Usemod article histories',
-            u'User:Pizza Puzzle/stuff',
-            u'List of generic names of political parties',
-            u'Talk:List of initialisms/marked',
-            u'Talk:List of initialisms/sorted',
-            u'Talk:Programming language',
-            u'Talk:SAMPA/To do',
-            u"Wikipedia:Outline of Roget's Thesaurus",
-            u'User:Wik/Articles',
-            u'User:Egil/Sandbox',
-            u'Wikipedia talk:Make only links relevant to the context',
-            u'Wikipedia:Common words, searching for which is not possible',
-        ],
-        'fa': [
-            u'ویکی‌پدیا:فهرست صفحات ابهام‌زدایی',
-        ],
-        'fi': [
-            u'Wikipedia:Luettelo täsmennyssivuista',
-            u'Wikipedia:Luettelo (täsmennyssivuista)',
-            u'Wikipedia:Täsmennyssivu',
-        ],
-        'fr': [
-            u'Wikipédia:Liens aux pages d’homonymie',
-            u'Wikipédia:Homonymie',
-            u'Wikipédia:Homonymie/Homonymes dynastiques',
-            u'Wikipédia:Prise de décision, noms des membres de dynasties/liste des dynastiens',
-            u'Liste de toutes les combinaisons de deux lettres',
-            u'Wikipédia:Log d’upload/.*',
-            u'Sigles de trois lettres de [A-Z]AA à [A-Z]ZZ',
-            u'Wikipédia:Pages sans interwiki,.'
-        ],
-        'fy': [
-            u'Wikipedy:Fangnet',
-        ],
-        'hu': [
-            # hu:Wikipédia:Kocsmafal (egyéb)#Hol nem kell egyértelműsíteni?
-            # 2012-02-08
-            u'Wikipédia:(?!Sportműhely/Eddigi cikkeink).*',
-            u'.*\\(egyértelműsítő lap\\)$',
-            u'.*[Vv]ita:.*',
-            u'Szerkesztő:[^/]+$',
-        ],
-        'ia': [
-            u'Categoria:Disambiguation',
-            u'Wikipedia:.+',
-            u'Usator:.+',
-            u'Discussion Usator:.+',
-        ],
-        'it': [
-            u'Aiuto:Disambigua/Disorfanamento',
-            u'Discussioni utente:.+',
-            u'Utente:Civvì/disorfanamento',
-        ],
-        'kk': [
-            u'Санат:Айрықты бет',
-        ],
-        'ko': [
-            u'위키백과:(동음이의) 문서의 목록',
-            u'위키백과:동음이의어 문서의 목록',
-        ],
-        'lt': [
-            u'Wikipedia:Rodomi nukreipiamieji straipsniai',
-        ],
-        'nl': [
-            u"Gebruiker:.*",
-            u"Overleg gebruiker:.+[aA]rchief.*",
-            u"Overleg gebruiker:Pven",
-            u"Portaal:.+[aA]rchief.*",
-            u"Wikipedia:Humor en onzin.*",
-            u"Wikipedia:Links naar doorverwijspagina's/Winkeldochters.*",
-            u"Wikipedia:Project aanmelding bij startpagina's",
-            u"Wikipedia:Wikiproject Roemeense gemeenten/Doorverwijspagina's",
-            u'Categorie:Doorverwijspagina',
-            u'Lijst van Nederlandse namen van pausen',
-            u'Overleg Wikipedia:Discussie spelling 2005',
-            u'Overleg Wikipedia:Doorverwijspagina',
-            u'Overleg Wikipedia:Logboek.*',
-            u'Wikipedia:Logboek.*',
-            u'Overleg gebruiker:Sybren/test.*',
-            u'Overleg gebruiker:([0-9][0-9]?[0-9]?\\.){3}[0-9][0-9]?[0-9]?',
-            u'Overleg:Lage Landen (staatkunde)',
-            u'Wikipedia:.*[aA]rchief.*',
-            u'Wikipedia:Doorverwijspagina',
-            u'Wikipedia:Lijst van alle tweeletter-combinaties',
-            u'Wikipedia:Onderhoudspagina',
-            u'Wikipedia:Ongelijke redirects',
-            u'Wikipedia:Protection log',
-            u'Wikipedia:Te verwijderen.*',
-            u'Wikipedia:Top 1000 van meest bekeken artikelen',
-            u'Wikipedia:Wikipedianen met een encyclopedisch artikel',
-            u'Wikipedia:Woorden die niet als zoekterm gebruikt kunnen worden',
-            u'Overleg gebruiker:Taka(/.*)?',
-            u"Wikipedia:Links naar doorverwijspagina's/Artikelen",
-        ],
-        'pl': [
-            u'Wikipedysta:.+',
-            u'Dyskusja.+:.+',
-        ],
-        'pt': [
-            u'Usuário:.+',
-            u'Usuário Discussão:.+',
-            u'Discussão:.+',
-            u'Lista de combinações de duas letras',
-            u'Wikipedia:Lista de páginas de desambiguação.+',
-            u'Wikipedia:Páginas para eliminar/.+',
-        ],
-        'ru': [
-            u'Категория:Disambig',
-            u'Википедия:Страницы разрешения неоднозначностей',
-            u'Википедия:Вики-уборка/Статьи без языковых ссылок',
-            u'Википедия:Страницы с пометкой «(значения)»',
-            u'Список общерусских фамилий',
-        ],
-    },
-    'memoryalpha': {
-        'en': [
-            u'Memory Alpha:Links to disambiguating pages'
-        ],
-        'de': [
-            u'Memory Alpha:Liste der Wortklärungsseiten'
-        ],
-    },
-}
-
+_config = Configuration(
+    'solve_disambiguation',
+    default_config=_default_config,
+    require_config=True
+)
 
 def correctcap(link, text):
     # If text links to a page with title link uncapitalized, uncapitalize link,
@@ -361,12 +134,16 @@ class ReferringPageGeneratorWithIgnore:
 
     """Referring Page generator, with an ignore manager."""
 
-    def __init__(self, disambPage, primary=False, minimum=0):
+    def __init__(self, disambPage, primary=False, minimum=0, ignore_title=None):
         self.disambPage = disambPage
         # if run with the -primary argument, enable the ignore manager
         self.primaryIgnoreManager = PrimaryIgnoreManager(disambPage,
                                                          enabled=primary)
         self.minimum = minimum
+        if ignore_title is None:
+            # Backwards compatibility: use _config
+            ignore_title =_config(self.disambPage.site)["ignore title"]
+        self.ignore_title = ignore_title
 
     def __iter__(self):
         # TODO: start yielding before all referring pages have been found
@@ -375,17 +152,14 @@ class ReferringPageGeneratorWithIgnore:
                                               withTemplateInclusion=False)]
         pywikibot.output(u"Found %d references." % len(refs))
         # Remove ignorables
-        if self.disambPage.site.family.name in ignore_title and \
-           self.disambPage.site.lang in ignore_title[self.disambPage.site.family.name]:
-            for ig in ignore_title[self.disambPage.site.family.name
-                                   ][self.disambPage.site.lang]:
-                for i in range(len(refs) - 1, -1, -1):
-                    if re.match(ig, refs[i].title()):
-                        pywikibot.log(u'Ignoring page %s'
-                                      % refs[i].title())
-                        del refs[i]
-                    elif self.primaryIgnoreManager.isIgnored(refs[i]):
-                        del refs[i]
+        for ig in self.ignore_title:
+           for i in range(len(refs) - 1, -1, -1):
+                if re.match(ig, refs[i].title()):
+                    pywikibot.log(u'Ignoring page %s'
+                                  % refs[i].title())
+                    del refs[i]
+                elif self.primaryIgnoreManager.isIgnored(refs[i]):
+                    del refs[i]
         if len(refs) < self.minimum:
             pywikibot.output(u"Found only %d pages to work on; skipping."
                              % len(refs))
@@ -577,7 +351,7 @@ class DisambiguationRobot(Bot):
         self.mylang = self.mysite.lang
         self.comment = None
 
-        self.dn_template_str = i18n.translate(self.mysite, dn_template)
+        self.dn_template_str = _config(self.mysite, "dn template")
 
         self.setupRegexes()
 
@@ -682,8 +456,10 @@ class DisambiguationRobot(Bot):
                     [('yes', 'y'), ('no', 'n'), ('change redirect', 'c')], 'n',
                     automatic_quit=False)
                 if choice == 'y':
-                    gen = ReferringPageGeneratorWithIgnore(refPage,
-                                                           self.primary)
+                    gen = ReferringPageGeneratorWithIgnore(
+                        refPage, self.primary,
+                        ignore_title=self.ignore_title
+                    )
                     preloadingGen = pagegenerators.PreloadingGenerator(gen)
                     for refPage2 in preloadingGen:
                         # run until the user selected 'quit'
@@ -904,7 +680,7 @@ class DisambiguationRobot(Bot):
                         disambPage.site.lang] \
                             and len(template[1]) > 0:
                         baseTerm = template[1][1]
-                disambTitle = primary_topic_format[self.mylang] % baseTerm
+                disambTitle = _config(self.mysite, "primary topic format") baseTerm
                 try:
                     disambPage2 = pywikibot.Page(
                         pywikibot.Link(disambTitle, self.mysite))
@@ -940,7 +716,7 @@ or press enter to quit:""")
                     try:
                         disambPage2 = pywikibot.Page(
                             pywikibot.Link(
-                                primary_topic_format[self.mylang]
+                                _config(self.mysite)['primary topic format']
                                 % disambPage.title(),
                                 self.mysite))
                         links = disambPage2.linkedPages()
@@ -1031,14 +807,9 @@ u"Page does not exist, using the first link in page %s."
                      'count': len(new_targets)})
 
     def run(self):
+        self.ignore_title = _config(self.mysite)["ignore title"][:]
         if self.main_only:
-            if self.mysite.family.name not in ignore_title:
-                ignore_title[self.mysite.family.name] = {}
-            if self.mylang not in ignore_title[self.mysite.family.name]:
-                ignore_title[self.mysite.family.name][self.mylang] = []
-
-            ignore_title[self.mysite.family.name][self.mylang] += [
-                '%s:' % ns for ns in itertools.chain(self.mysite.namespaces)]
+            self.ignore_title += ['%s:' % ns for ns in itertools.chain(self.mysite.namespaces)]
 
         for disambPage in self.generator:
             self.primaryIgnoreManager = PrimaryIgnoreManager(
@@ -1056,8 +827,11 @@ u"Page does not exist, using the first link in page %s."
                 self.alternatives.sort()
             self.listAlternatives()
 
-            gen = ReferringPageGeneratorWithIgnore(disambPage, self.primary,
-                                                   minimum=self.minimum)
+            gen = ReferringPageGeneratorWithIgnore(
+                disambPage, self.primary,
+                minimum=self.minimum,
+                ignore_title=self.ignore_title
+            )
             preloadingGen = pagegenerators.PreloadingGenerator(gen)
             for refPage in preloadingGen:
                 if not self.primaryIgnoreManager.isIgnored(refPage):
