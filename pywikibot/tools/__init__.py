@@ -92,6 +92,84 @@ else:
     from collections import OrderedDict
 
 
+if PYTHON_VERSION < (3, 3):
+    # A basic implementation of the Parameter and Signature class to provide
+    # the same support for getargspec on versions before 3.3
+
+    class _empty:
+
+        """A dummy class to show that the Parameter has no default value."""
+
+        pass
+
+    class Parameter(object):
+
+        """A basic Parameter class implementation."""
+
+        POSITIONAL_ONLY = 0
+        POSITIONAL_OR_KEYWORD = 1
+        VAR_POSITIONAL = 2
+        KEYWORD_ONLY = 3
+        VAR_KEYWORD = 4
+
+        empty = _empty
+
+        def __init__(self, name, kind, default=_empty):
+            """Constructor."""
+            self.name = name
+            self.kind = kind
+            self.default = default
+
+        def replace(self, **kwargs):
+            """Create a copy and replace the given variables."""
+            name = kwargs.pop('name', self.name)
+            kind = kwargs.pop('kind', self.kind)
+            default = kwargs.pop('default', self.default)
+            assert not kwargs
+            return Parameter(name, kind, default=default)
+
+    class Signature(object):
+
+        """A basic Signature class implementation."""
+
+        def __init__(self, parameters=None):
+            """Constructor."""
+            self.parameters = OrderedDict()
+            for param in parameters or []:
+                self.parameters[param.name] = param
+
+    def signature(obj):
+        """Return the basic signature for the callable."""
+        try:
+            spec = inspect.getargspec(obj)
+        except TypeError:
+            return None
+        defaults = (_empty,) * len(spec[0])
+        if spec[3] is not None:
+            # spec[3] are the defaults counting from the end, add to the
+            # "non-existing" defaults and shift by number of params
+            defaults = (defaults + spec[3])[-len(spec[0]):]
+        parameters = []
+        for arg, default in zip(spec[0], defaults):
+            parameters += [Parameter(arg, Parameter.POSITIONAL_OR_KEYWORD,
+                                     default=default)]
+        if spec[1] is not None:
+            parameters += [Parameter(spec[1], Parameter.VAR_POSITIONAL)]
+        if spec[2] is not None:
+            parameters += [Parameter(spec[2], Parameter.VAR_KEYWORD)]
+        return Signature(parameters)
+else:
+    Parameter = inspect.Parameter
+    Signature = inspect.Signature
+
+    def signature(obj):
+        """Return the signature for callable and None if a ValueError occurs."""
+        try:
+            return inspect.signature(obj)
+        except ValueError:
+            return None
+
+
 def empty_iterator():
     # http://stackoverflow.com/a/13243870/473890
     """An iterator which does nothing."""
@@ -956,26 +1034,6 @@ def merge_unique_dicts(*args, **kwargs):
 # a deprecator without any arguments.
 
 
-def signature(obj):
-    """
-    Safely return function Signature object (PEP 362).
-
-    inspect.signature was introduced in 3.3, however backports are available.
-    In Python 3.3, it does not support all types of callables, and should
-    not be relied upon.  Python 3.4 works correctly.
-
-    Any exception calling inspect.signature is ignored and None is returned.
-
-    @param obj: Function to inspect
-    @type obj: callable
-    @rtype: inpect.Signature or None
-    """
-    try:
-        return inspect.signature(obj)
-    except (AttributeError, ValueError):
-        return None
-
-
 def add_decorated_full_name(obj, stacklevel=1):
     """Extract full object name, including class, and store in __full_name__.
 
@@ -1233,18 +1291,20 @@ def deprecated_args(**arg_pairs):
 
         if wrapper.__signature__:
             # Build a new signature with deprecated args added.
-            # __signature__ is only available in Python 3 which has OrderedDict
-            params = OrderedDict()
+            params = []
+            var_position = 0
             for param in wrapper.__signature__.parameters.values():
-                params[param.name] = param.replace()
+                params += [param.replace()]
+                if param.kind == Parameter.POSITIONAL_OR_KEYWORD:
+                    var_position = len(params)
             for old_arg, new_arg in arg_pairs.items():
-                params[old_arg] = inspect.Parameter(
-                    old_arg, kind=inspect._POSITIONAL_OR_KEYWORD,
+                params.insert(var_position, Parameter(
+                    old_arg, kind=Parameter.POSITIONAL_OR_KEYWORD,
                     default='[deprecated name of ' + new_arg + ']'
                     if new_arg not in [True, False, None]
-                    else NotImplemented)
-            wrapper.__signature__ = inspect.Signature()
-            wrapper.__signature__._parameters = params
+                    else NotImplemented))
+                var_position += 1
+            wrapper.__signature__ = Signature(params)
 
         return wrapper
     return decorator
@@ -1287,10 +1347,12 @@ def remove_last_args(arg_names):
             """
             name = obj.__full_name__
             depth = get_wrapper_depth(wrapper) + 1
-            args, varargs, kwargs, _ = inspect.getargspec(wrapper.__wrapped__)
-            if varargs is not None and kwargs is not None:
-                raise ValueError(u'{1} may not have * or ** args.'.format(
-                    name))
+            args = list(signature(wrapper.__wrapped__).parameters.values())
+            for parameter in args:
+                if parameter.kind in (parameter.VAR_POSITIONAL,
+                                      parameter.VAR_KEYWORD):
+                    raise ValueError(u'{1} may not have * or ** args.'.format(
+                        name))
             deprecated = set(__kw) & set(arg_names)
             if len(__args) > len(args):
                 deprecated.update(arg_names[:len(__args) - len(args)])
