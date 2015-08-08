@@ -162,13 +162,14 @@ class UserTargetLogEntry(LogEntry):
 
         @return: target user
         @rtype: pywikibot.User
+        @raise: KeyError: title was missing from log entry
         """
         if not hasattr(self, '_page'):
-            self._page = pywikibot.User(super(UserTargetLogEntry, self).page())
+            self._page = pywikibot.User(self.site, self.data['title'])
         return self._page
 
 
-class BlockEntry(LogEntry):
+class BlockEntry(UserTargetLogEntry):
 
     """
     Block or unblock log entry.
@@ -179,30 +180,21 @@ class BlockEntry(LogEntry):
 
     _expectedType = 'block'
 
-    def __init__(self, apidata, site):
-        """Constructor."""
-        super(BlockEntry, self).__init__(apidata, site)
-        # When an autoblock is removed, the "title" field is not a page title
-        # See bug T19781
-        pos = self.data['title'].find('#')
-        self.isAutoblockRemoval = pos > 0
-        if self.isAutoblockRemoval:
-            self._blockid = int(self.data['title'][pos + 1:])
+    @property
+    def isAutoblockRemoval(self):
+        """Return autoblock removal status.
 
-    def page(self):
+        @return: True if an autoblock was removed, False if it was not and
+            None when no title was given e.g. by oversight action which
+            means the result is not defined.
+        @rtype: boolean or None
         """
-        Return the blocked account or IP.
-
-        @return: the Page object of username or IP if this block action
-            targets a username or IP, or the blockid if this log reflects
-            the removal of an autoblock
-        @rtype: pywikibot.Page or int
-        """
-        # TODO what for IP ranges ?
-        if self.isAutoblockRemoval:
-            return self._blockid
+        try:
+            user = self.page()
+        except KeyError:
+            return None
         else:
-            return super(BlockEntry, self).page()
+            return user._isAutoblock
 
     def flags(self):
         """
