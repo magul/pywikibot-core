@@ -2707,7 +2707,9 @@ class User(Page):
 
         All parameters are the same as for Page() constructor.
         """
-        if len(title) > 1 and title[0] == u'#':
+        if title[0] == '#' or ':#' in title:
+            issue_deprecation_warning(
+                'User for autoblocks', 'logentries._AutoblockIDPage', 2)
             self._isAutoblock = True
             title = title[1:]
         else:
@@ -2721,6 +2723,23 @@ class User(Page):
             # an autoblock.
             pywikibot.output(
                 "This is an autoblock ID, you can only use to unblock it.")
+
+    def __getattribute__(self, name):
+        """Get attribute."""
+        autoblock = object.__getattribute__(self, '_isAutoblock')
+        if not autoblock or name in [
+                '_cmpkey', '_link', 'title', 'site', 'namespace',
+                'user', 'username', '_isAutoblock']:
+            return super(User, self).__getattribute__(name)
+
+        raise AutoblockUser(
+            "This is an autoblock ID, you can only use to unblock it.")
+
+    def title(self, *args, **kwargs):
+        """Return the title of this Page, as a Unicode string."""
+        if self._isAutoblock:
+            warn('User.title() with autoblocks returns incorrect results.')
+        return super(User, self).title(*args, **kwargs)
 
     def name(self):
         """
@@ -2872,11 +2891,6 @@ class User(Page):
                             page title (optional)
         @type subpage: unicode
         """
-        if self._isAutoblock:
-            # This user is probably being queried for purpose of lifting
-            # an autoblock, so has no user pages per se.
-            raise AutoblockUser(
-                "This is an autoblock ID, you can only use to unblock it.")
         if subpage:
             subpage = u'/' + subpage
         return Page(Link(self.title() + subpage, self.site))
@@ -2888,11 +2902,6 @@ class User(Page):
                             talk page title (optional)
         @type subpage: unicode
         """
-        if self._isAutoblock:
-            # This user is probably being queried for purpose of lifting
-            # an autoblock, so has no user talk pages per se.
-            raise AutoblockUser(
-                "This is an autoblock ID, you can only use to unblock it.")
         if subpage:
             subpage = u'/' + subpage
         return Page(Link(self.title(withNamespace=False) + subpage,

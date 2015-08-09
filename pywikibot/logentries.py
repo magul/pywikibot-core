@@ -13,11 +13,13 @@ __version__ = '$Id$'
 import sys
 
 import pywikibot
-from pywikibot.exceptions import Error
+from pywikibot.exceptions import Error, AutoblockUser
+from pywikibot.page import Page, User
 from pywikibot.tools import deprecated
 
 if sys.version_info[0] > 2:
     basestring = (str, )
+    unicode = str
 
 _logger = "wiki"
 
@@ -44,6 +46,7 @@ class LogEntry(object):
     # block/patrol/etc...
     # Overridden in subclasses.
     _expectedType = None
+    _target_cls = Page
 
     def __init__(self, apidata, site):
         """Initialize object from a logevent dict returned by MW API."""
@@ -100,7 +103,7 @@ class LogEntry(object):
               hide the title. In that case a KeyError exception will raise
         """
         if not hasattr(self, '_page'):
-            self._page = pywikibot.Page(self.site, self.data['title'])
+            self._page = self._target_cls(self.site, self.data['title'])
         return self._page
 
     def type(self):
@@ -124,6 +127,64 @@ class LogEntry(object):
         return self.data['comment']
 
 
+class _AutoblockIDPage(int, User):
+
+    """User class for BlockEntry.page() to represent autoblocks."""
+
+    def __new__(cls, source, title):
+        """Create a User object which is also an int."""
+        pos = title.find('#')
+        autoblock_id = int(title[pos + 1:])
+        obj = int.__new__(cls, autoblock_id)
+        setattr(obj, '_autoblock_id', autoblock_id)
+        return obj
+
+    def __init__(self, source, title):
+        """Constructor."""
+        # An autoblock ID is not a valid Page
+        self._site = source
+
+    def __getattribute__(self, name):
+        """Raise AutoblockUser for most Page attributes."""
+        if name in ['_cmpkey', 'site', 'namespace', '_site',
+                    'user', 'username', '_isAutoblock', '_autoblock_id']:
+            return object.__getattribute__(self, name)
+        raise AutoblockUser(
+            "This is an autoblock ID, you can only use to unblock it.")
+
+    def __hash__(self):
+        return self._autoblock_id
+
+    def __unicode__(self):
+        return unicode(self._autoblock_id)
+
+    def __repr__(self):
+        return '<autoblock #%s on %s>' % (self._autoblock_id, self.site)
+
+    def _cmpkey(self):
+        """Use autoblock it as comparison key."""
+        return self._autoblock_id
+
+    @property
+    def site(self):
+        """Return site."""
+        return self._site
+
+    @property
+    def namespace(self):
+        """Return 2."""
+        return self.site.namespaces[2]
+
+    @property
+    def username(self):
+        """Return '#' followed by autoblock ID."""
+        return '#' + self._autoblock_id
+
+    @property
+    def _isAutoblock(self):
+        return True
+
+
 class BlockEntry(LogEntry):
 
     """
@@ -134,31 +195,18 @@ class BlockEntry(LogEntry):
     """
 
     _expectedType = 'block'
+    _target_cls = User
 
     def __init__(self, apidata, site):
         """Constructor."""
         super(BlockEntry, self).__init__(apidata, site)
-        # When an autoblock is removed, the "title" field is not a page title
-        # ( https://bugzilla.wikimedia.org/show_bug.cgi?id=17781 )
-        pos = self.data['title'].find('#')
-        self.isAutoblockRemoval = pos > 0
-        if self.isAutoblockRemoval:
-            self._blockid = int(self.data['title'][pos + 1:])
+        if ':#' in self.data.get('title', ''):
+            self._target_cls = _AutoblockIDPage
 
-    def page(self):
-        """
-        Return the blocked account or IP.
-
-        @return: the Page object of username or IP if this block action
-            targets a username or IP, or the blockid if this log reflects
-            the removal of an autoblock
-        @rtype: Page or int
-        """
-        # TODO what for IP ranges ?
-        if self.isAutoblockRemoval:
-            return self._blockid
-        else:
-            return super(BlockEntry, self).page()
+    @property
+    def isAutoblockRemoval(self):
+        """Return True when entry is an autoblock removal."""
+        return self._target_cls == _AutoblockIDPage
 
     def flags(self):
         """

@@ -13,7 +13,9 @@ import datetime
 import sys
 
 import pywikibot
-from pywikibot.logentries import LogEntryFactory
+from pywikibot.exceptions import AutoblockUser
+from pywikibot.logentries import LogEntryFactory, _AutoblockIDPage
+from pywikibot.page import User
 from pywikibot.tools import MediaWikiVersion
 
 from tests.aspects import (
@@ -274,6 +276,33 @@ class TestDeprecatedMethods(TestLogentriesBase, DeprecationTestCase):
 
         self.assertOneDeprecationParts('pywikibot.page.BasePage.getMovedTarget',
                                        'moved_target()')
+
+
+class TestAutoblock(TestCase):
+
+    """Test autoblock Page subclass."""
+
+    family = 'wikipedia'
+    code = 'en'
+
+    def test_object(self):
+        """Test an autoblock object is of correct class."""
+        gen = self.site.logevents(start='2009-03-04T00:35:07Z', total=1)
+        log_entry = next(iter(gen))
+        page = log_entry.page()
+
+        self.assertIsInstance(page, User)
+        self.assertIsInstance(page, _AutoblockIDPage)
+        self.assertIsInstance(page, int)
+        self.assertEqual(page, 1338201)
+        self.assertEqual(str(page), '1338201')
+        self.assertEqual(unicode(page), '1338201')
+        self.assertIsInstance(page.namespace, pywikibot.site.Namespace)
+
+        # use an integer operation to confirm it is a real int
+        self.assertEqual(page + page, 2676402)
+
+        self.assertRaises(AutoblockUser, getattr, page, 'title')
 
 
 if __name__ == '__main__':
