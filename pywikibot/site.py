@@ -3845,15 +3845,14 @@ class APISite(BaseSite):
 
         legen = self._generator(api.LogEntryListGenerator, type_arg=logtype,
                                 step=step, total=total)
+        action_filter = None
         if logtype is not None:
             if '/' in logtype:
                 if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.17'):
                     legen.request['leaction'] = logtype
                 else:
-                    pywikibot.warnig(
-                        "leaction filter for logevents is not implemented on "
-                        "this site.\nUsing letype instead.")
-                    legen.request['letype'] = logtype.split('/')[0]
+                    (legen.request['letype'],
+                     action_filter) = logtype.partition('/')[::2]
             else:
                 legen.request["letype"] = logtype
         if user is not None:
@@ -3868,7 +3867,9 @@ class APISite(BaseSite):
             legen.request["ledir"] = "newer"
         if namespace:
             legen.request["lenamespace"] = namespace
-        return legen
+        for log_entry in legen:
+            if action_filter is None or log_entry.action() == action_filter:
+                yield log_entry
 
     def recentchanges(self, start=None, end=None, reverse=False,
                       namespaces=None, pagelist=None, changetype=None,

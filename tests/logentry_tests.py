@@ -109,6 +109,19 @@ class TestLogentries(TestLogentriesBase):
     __metaclass__ = TestLogentriesMeta
 
 
+class TestLogentrySeparate(TestLogentriesBase):
+
+    """Test general LogEntry properties only on certain entries."""
+
+    def test_action(self, key):
+        """Test that both type and action are respected."""
+        # TODO: Run this test on a wiki before 1.17
+        block_entry = self._get_logentry('block/block')
+        unblock_entry = self._get_logentry('block/unblock')
+        self.assertNotEqual(block_entry.action(), unblock_entry.action())
+        self.assertEqual(block_entry.type(), unblock_entry.type())
+
+
 class TestLogentryParams(TestLogentriesBase):
 
     """Test LogEntry properties specific to their action."""
