@@ -666,7 +666,7 @@ class WelcomeBot(object):
                                       start=start):
             if ue.action == 'create' or (
                     ue.action == 'autocreate' and globalvar.welcomeAuto):
-                yield pywikibot.User(ue.page())
+                yield ue.page()
 
     def defineSign(self, force=False):
         """Setup signature."""
