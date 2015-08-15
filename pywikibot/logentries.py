@@ -369,7 +369,7 @@ class PatrolEntry(LogEntry):
         return 'auto' in self._params and self._params['auto'] != 0
 
 
-class NewUsersEntry(LogEntry):
+class NewUsersEntry(UserTargetLogEntry):
 
     """New user log entry."""
 
