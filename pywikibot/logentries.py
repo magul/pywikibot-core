@@ -140,7 +140,7 @@ class UserTargetLogEntry(LogEntry):
         superclass method.
         """
         if not hasattr(self, '_page'):
-            self._page = pywikibot.User(super(UserTargetLogEntry, self).page())
+            self._page = pywikibot.User(self.site, self.data['title'])
         return self._page
 
 
@@ -369,7 +369,7 @@ class PatrolEntry(LogEntry):
         return 'auto' in self._params and self._params['auto'] != 0
 
 
-class NewUsersEntry(LogEntry):
+class NewUsersEntry(UserTargetLogEntry):
 
     """New user log entry."""
 
