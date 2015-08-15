@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test logentries module."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -11,7 +11,7 @@ import datetime
 
 import pywikibot
 
-from pywikibot.logentries import LogEntryFactory
+from pywikibot.logentries import LogEntryFactory, UserTargetLogEntry
 from pywikibot.tools import (
     MediaWikiVersion,
     UnicodeType as unicode,
@@ -61,7 +61,7 @@ class TestLogentriesBase(TestCase):
             # isn't run on an older wiki.
             self.assertLess(MediaWikiVersion(self.site.version()),
                             MediaWikiVersion('1.20'))
-        return next(iter(self.site.logevents(logtype=logtype, total=1)))
+        return next(iter(self.site.logevents(logtype=logtype, total=10)))
 
     def _test_logevent(self, logtype):
         """Test a single logtype entry."""
@@ -83,6 +83,10 @@ class TestLogentriesBase(TestCase):
         if 'title' in logentry.data:  # title may be missing
             if logtype == 'block' and logentry.isAutoblockRemoval:
                 self.assertIsInstance(logentry.page(), int)
+            elif isinstance(logentry, UserTargetLogEntry):
+                self.assertIsInstance(logentry.page(), pywikibot.User)
+            elif logtype == 'upload':
+                self.assertIsInstance(logentry.page(), pywikibot.FilePage)
             else:
                 self.assertIsInstance(logentry.page(), pywikibot.Page)
         else:
