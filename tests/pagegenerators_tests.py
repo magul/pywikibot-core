@@ -1289,7 +1289,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         self.assertIsNotNone(gen)
         pages = set(gen)
         self.assertLessEqual(len(pages), 500)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in pages))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in pages))
 
     def test_logevents_default_multi(self):
         """Test old logevents option handling with limit argument."""
@@ -1299,7 +1300,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         self.assertIsNotNone(gen)
         pages = set(gen)
         self.assertLessEqual(len(pages), 10)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in pages))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in pages))
 
     def test_logevents_ns(self):
         """Test old logevents option with limit argument and namespace."""
@@ -1309,7 +1311,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         gen = gf.getCombinedGenerator()
         self.assertIsNotNone(gen)
         self.assertPagesInNamespaces(gen, 1)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in gen))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in gen))
 
     def test_logevents_user_multi(self):
         """Test old logevents option for a given user."""
@@ -1327,7 +1330,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         # (no easy way of checking from pages)
 
         self.assertLessEqual(len(pages), 10)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in pages))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in pages))
 
     def test_logevents_with_start_timestamp(self):
         """Test -logevents which uses timestamp for start."""
@@ -1341,7 +1345,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         self.assertIsNotNone(gen)
         pages = set(gen)
         self.assertGreater(len(pages), 0)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in pages))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in pages))
 
     def test_logevents_with_start_and_end_timestamp(self):
         """Test -logevents which uses timestamps for start and end."""
@@ -1360,7 +1365,8 @@ class TestLogeventsFactoryGenerator(DefaultSiteTestCase,
         self.assertIsNotNone(gen)
         pages = set(gen)
         self.assertEqual(len(pages), 1)
-        self.assertTrue(all(isinstance(item, pywikibot.Page) for item in pages))
+        self.assertTrue(all(isinstance(item, pywikibot.User)
+                            for item in pages))
 
 
 class PageGeneratorIntersectTestCase(GeneratorIntersectTestCase,
