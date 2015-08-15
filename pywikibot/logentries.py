@@ -339,6 +339,17 @@ class NewUsersEntry(LogEntry):
 
     _expectedType = 'newusers'
 
+    def page(self):
+        """
+        User on which action was performed.
+
+        Note: title may be missing in data dict e.g. by oversight action to
+              hide the title. In that case a KeyError exception will raise
+        """
+        if not hasattr(self, '_page'):
+            self._page = pywikibot.User(self.site, self.data['title'])
+        return self._page
+
 # TODO entries for merge,suppress,makebot,gblblock,renameuser,globalauth,gblrights ?
 
 
