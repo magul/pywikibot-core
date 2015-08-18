@@ -101,11 +101,15 @@ class LogEntry(object):
         """
         Page on which action was performed.
 
+        This will automatically choose the proper subclass depending on the
+        namespace.
+
         Note: title may be missing in data dict e.g. by oversight action to
               hide the title. In that case a KeyError exception will raise
         """
         if not hasattr(self, '_page'):
-            self._page = pywikibot.Page(self.site, self.data['title'])
+            self._page = pywikibot.Page.from_namespace(
+                self.site, self.data['title'], self.ns())
         return self._page
 
     def type(self):

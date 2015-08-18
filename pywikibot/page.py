@@ -2006,6 +2006,19 @@ class Page(BasePage):
                                  'if source is a Site.')
         super(Page, self).__init__(source, title, ns)
 
+    @classmethod
+    def from_namespace(cls, source, title, ns):
+        """Instantiate the proper page class depending on namespace."""
+        # Upcast to proper Page subclass.
+        if ns == 2:
+            return pywikibot.User(source, title)
+        elif ns == 6:
+            return pywikibot.FilePage(source, title)
+        elif ns == 14:
+            return pywikibot.Category(source, title)
+        else:
+            return pywikibot.Page(source, title, ns)
+
     @deprecate_arg("get_redirect", None)
     def templatesWithParams(self):
         """Iterate templates used on this Page.

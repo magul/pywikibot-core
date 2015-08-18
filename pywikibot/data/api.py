@@ -2799,13 +2799,8 @@ class PageGenerator(QueryGenerator):
         of object.
 
         """
-        p = pywikibot.Page(self.site, pagedata['title'], pagedata['ns'])
-        ns = pagedata['ns']
-        # Upcast to proper Page subclass.
-        if ns == 6:
-            p = pywikibot.FilePage(p)
-        elif ns == 14:
-            p = pywikibot.Category(p)
+        p = pywikibot.Page.from_namespace(self.site, pagedata['title'],
+                                          pagedata['ns'])
         update_page(p, pagedata, self.props)
         return p
 

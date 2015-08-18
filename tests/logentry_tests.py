@@ -152,6 +152,9 @@ class TestLogentryParams(TestLogentriesBase):
         # only 'block' entries can be tested
         for logentry in self.site.logevents(logtype='block', total=5):
             if logentry.action() == 'block':
+                if 'title' in logentry.data:
+                    self.assertIsInstance(logentry.page(), (pywikibot.User,
+                                                            int))
                 self.assertIsInstance(logentry.flags(), list)
                 # Check that there are no empty strings
                 self.assertTrue(all(logentry.flags()))
@@ -167,6 +170,8 @@ class TestLogentryParams(TestLogentriesBase):
     def test_RightsEntry(self, key):
         """Test RightsEntry methods."""
         logentry = self._get_logentry('rights')
+        if 'title' in logentry.data:
+            self.assertIsInstance(logentry.page(), pywikibot.User)
         self.assertIsInstance(logentry.oldgroups, list)
         self.assertIsInstance(logentry.newgroups, list)
 
