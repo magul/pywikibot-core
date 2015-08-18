@@ -225,7 +225,8 @@ def _get_regexes(keys, site):
 
 
 def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
-                  allowoverlap=False, marker='', site=None):
+                  allowoverlap=False, marker='', site=None,
+                  replacement_parameters=None):
     """
     Return text with 'old' replaced by 'new', ignoring specified types of text.
 
@@ -245,8 +246,17 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
     @type caseInsensitive: bool
     @param marker: a string that will be added to the last replacement;
         if nothing is changed, it is added at the end
-
+    @param replacement_parameters: if C{new} is a callable these parameters
+        are forwarded additionally to the match.
+    @type replacement_parameters: dict or None
     """
+    if replacement_parameters:
+        if not callable(new):
+            raise ValueError('The replacement_parameters cannot be set when '
+                             'the replacement is not callable.')
+    else:
+        replacement_parameters = {}
+
     # if we got a string, compile it as a regular expression
     if isinstance(old, basestring):
         if caseInsensitive:
@@ -289,7 +299,7 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
             if callable(new):
                 # the parameter new can be a function which takes the match
                 # as a parameter.
-                replacement = new(match)
+                replacement = new(match, **replacement_parameters)
             else:
                 # it is not a function, but a string.
 

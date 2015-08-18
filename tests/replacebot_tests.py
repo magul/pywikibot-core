@@ -238,6 +238,14 @@ class TestReplacementsMain(TestCase):
         self._test_fix_replacement(bot.replacements[0])
         self.assertTrue(callable(bot.replacements[0].new))
 
+    def test_fix_callable_page(self):
+        """Test fix replacements using a callable requiring a Page parameter."""
+        bot = self._get_bot(True, '-fix:no-msg-callable-page')
+        self.assertEqual(len(bot.replacements), 1)
+        self._test_fix_replacement(bot.replacements[0])
+        self.assertTrue(callable(bot.replacements[0].new))
+        self._apply(bot, 'Hello Test page@6')
+
 
 if __name__ == '__main__':
     try:

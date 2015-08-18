@@ -1027,6 +1027,39 @@ class TestReplaceExcept(DefaultDrySiteTestCase):
                                                r'X\g<foo>X', [], site=self.site),
                          r'X\g<bar>X')
 
+    def test_callable_replacement(self):
+        """Test replaceExcept with the replacement being callable."""
+        def no_parameters(match):
+            return 'np'
+
+        def req_parameter(match, value):
+            return value
+
+        def opt_parameter(match, value='nv'):
+            return value
+
+        self.assertEqual(textlib.replaceExcept('barfoo', 'foo', no_parameters,
+                                               [], site=self.site),
+                         'barnp')
+        self.assertRaises(TypeError, textlib.replaceExcept,
+                          'barfoo', 'foo', no_parameters, [], site=self.site,
+                          replacement_parameters={'value': '42'})
+        self.assertRaises(TypeError, textlib.replaceExcept,
+                          'barfoo', 'foo', req_parameter, [], site=self.site)
+        self.assertEqual(
+            textlib.replaceExcept(
+                'barfoo', 'foo', req_parameter, [], site=self.site,
+                replacement_parameters={'value': '42'}),
+            'bar42')
+        self.assertEqual(textlib.replaceExcept('barfoo', 'foo', opt_parameter,
+                                               [], site=self.site),
+                         'barnv')
+        self.assertEqual(
+            textlib.replaceExcept(
+                'barfoo', 'foo', opt_parameter, [], site=self.site,
+                replacement_parameters={'value': '42'}),
+            'bar42')
+
 
 if __name__ == '__main__':
     try:

@@ -182,12 +182,14 @@ class ReplacementBase(object):
 
     """The replacement instructions."""
 
-    def __init__(self, old, new, edit_summary=None, default_summary=True):
+    def __init__(self, old, new, edit_summary=None, default_summary=True,
+                 page_parameter=False):
         self.old = old
         self.old_regex = None
         self.new = new
         self._edit_summary = edit_summary
         self.default_summary = default_summary
+        self._page_parameter = page_parameter
 
     @property
     def edit_summary(self):
@@ -217,6 +219,11 @@ class ReplacementBase(object):
         Container objects must have a "name" attribute.
         """
         return None
+
+    @property
+    def page_parameter(self):
+        """Return whether the replacement accepts a page parameter."""
+        return self._page_parameter
 
     def _compile(self, use_regex, flags):
         # This does not update use_regex and flags depending on this instance
@@ -290,7 +297,7 @@ class ReplacementList(list):
     """
 
     def __init__(self, use_regex, exceptions, case_insensitive, edit_summary,
-                 name):
+                 name, page_parameter=False):
         super(ReplacementList, self).__init__()
         self.use_regex = use_regex
         self._exceptions = exceptions
@@ -298,6 +305,7 @@ class ReplacementList(list):
         self.case_insensitive = case_insensitive
         self.edit_summary = edit_summary
         self.name = name
+        self.page_parameter = page_parameter
 
     def _compile_exceptions(self, use_regex, flags):
         if not self.exceptions and self._exceptions is not None:
@@ -346,6 +354,11 @@ class ReplacementListEntry(ReplacementBase):
         Container objects must have a "name" attribute.
         """
         return self.fix_set
+
+    @property
+    def page_parameter(self):
+        """Return the page_parameter of the container."""
+        return self.container.page_parameter
 
     def _compile(self, use_regex, flags):
         super(ReplacementListEntry, self)._compile(use_regex, flags)
@@ -592,10 +605,15 @@ class ReplaceRobot(Bot):
                             replacement.description, page.title(asLink=True)))
                 continue
             old_text = new_text
+            if replacement.page_parameter:
+                parameters = {'page': page}
+            else:
+                parameters = {}
             new_text = textlib.replaceExcept(
                 new_text, replacement.old_regex, replacement.new,
                 exceptions + get_exceptions(replacement.exceptions or {}),
-                allowoverlap=self.allowoverlap, site=self.site)
+                allowoverlap=self.allowoverlap, site=self.site,
+                replacement_parameters=parameters)
             if old_text != new_text:
                 applied.add(replacement)
 
@@ -966,7 +984,8 @@ def main(*args):
                                           fix.get('exceptions'),
                                           fix.get('nocase'),
                                           set_summary,
-                                          name=fix_name)
+                                          name=fix_name,
+                                          page_parameter=fix.get('pass_page'))
         # Whether some replacements have a summary, if so only show which
         # have none, otherwise just mention the complete fix
         missing_fix_summaries = []

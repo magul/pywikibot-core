@@ -77,3 +77,11 @@ fixes['no-msg-callable'] = {
         ('1', lambda match: str(match.start())),
     ]
 }
+
+fixes['no-msg-callable-page'] = {
+    'regex': False,
+    'pass_page': True,
+    'replacements': [
+        ('1', lambda match, page: '{0}@{1}'.format(page.title(), match.start())),
+    ]
+}
