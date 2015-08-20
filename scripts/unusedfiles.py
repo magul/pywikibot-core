@@ -23,6 +23,7 @@ __version__ = '$Id$'
 
 import pywikibot
 from pywikibot import i18n, pagegenerators, Bot
+from pywikibot.flow import Board
 
 comment = {
     'ar': u'صور للاستبعاد',
@@ -36,11 +37,12 @@ comment = {
 template_to_the_image = {
     'it': u'{{immagine orfana}}',
     'fa': u'{{تصاویر بدون استفاده}}',
+    'test': '{{User:Happy5214/Unused file notice (file)}}',
 }
 
-# This template message should use subst:
 template_to_the_user = {
-    'fa': u'\n\n{{جا:اخطار به کاربر برای تصاویر بدون استفاده|%(title)s}}--~~~~',
+    'fa': u'{{جا:اخطار به کاربر برای تصاویر بدون استفاده|%(title)s}}--~~~~',
+    'test': '{{User:Happy5214/Unused file notice (user)|%(title)s}}',
 }
 
 
@@ -83,8 +85,12 @@ class UnusedFilesBot(Bot):
                 uploader = image.getFileVersionHistory().pop(0)['user']
                 user = pywikibot.User(image.site, uploader)
                 usertalkpage = user.getUserTalkPage()
-                msg2uploader = template_user % {'title': image.title()}
-                self.append_text(usertalkpage, msg2uploader)
+                template2uploader = template_user % {'title': image.title()}
+                msg2uploader = self.site.expand_text(template2uploader)
+                if usertalkpage.is_flow_page():
+                    self.post_to_flow_board(usertalkpage, msg2uploader)
+                else:
+                    self.append_text(usertalkpage, '\n\n' + msg2uploader + ' ~~~~')
 
     def append_text(self, page, apptext):
         """Append apptext to the page."""
@@ -101,6 +107,14 @@ class UnusedFilesBot(Bot):
         oldtext = text
         text += apptext
         self.userPut(page, oldtext, text, summary=self.summary)
+
+    def post_to_flow_board(self, page, post):
+        """Post message as a Flow topic."""
+        board = Board(page)
+        header, rest = post.split('\n', 1)
+        title = header.strip('=')
+        content = rest.lstrip()
+        board.new_topic(title, content)
 
 
 def main(*args):
