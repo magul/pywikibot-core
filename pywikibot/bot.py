@@ -17,6 +17,7 @@ __version__ = '$Id$'
 
 import codecs
 import datetime
+import inspect
 import json
 import logging
 import logging.handlers
@@ -1171,6 +1172,25 @@ def handleArgs(*args):
     return handle_args(args)
 
 
+# Maybe combine with tools.concat_options?
+def _concat_wrapped_list(prefix, entries, line_length=80):
+    """Return a string with the entries in a wrapped list."""
+    line = prefix.rstrip()
+    names = ''
+    first_entry = True
+    for entry in entries:
+        if not first_entry:
+            line += ','
+        if len(entry) + len(', ') + len(line) > line_length:
+            names += line + '\n'
+            line = '    '
+        else:
+            line += ' '
+        line += entry
+        first_entry = False
+    return names + line
+
+
 def showHelp(module_name=None):
     """Show help for the Bot."""
     if not module_name:
@@ -1243,11 +1263,38 @@ Global arguments available for all bots:
         helpText = module.__doc__
         if PY2 and isinstance(helpText, bytes):
             helpText = helpText.decode('utf-8')
+        settings = _get_setting_configurations(module)
+        if settings:
+            settings_help = """
+This script supports dynamic settings via pages in the wiki. It'll search for
+the page with that name in the MediaWiki namespace and as a subpage in the
+User namespace. These pages must contain a JSON mapping.
+
+This script supports the following setting{0}:
+""".format('s' if len(settings) > 1 else '')
+
+            for setting in settings:
+                settings_help += (
+                    'Page name: {0}\n'
+                    '  (So "MediaWiki:{0}.json", "MediaWiki:{0}", '
+                    '"User:USER_NAME/{0}.json" and "User:USER_NAME/{0}")\n'
+                    '{1}\n{2}\n').format(
+                        setting[0],
+                        _concat_wrapped_list(
+                            'Mandatory setting names:',
+                            ['Any'] if setting[1] is None else
+                            sorted(setting[1]) if setting[1] else ['None']),
+                        _concat_wrapped_list(
+                            'Optional setting names:',
+                            ['Any'] if setting[2] is None else
+                            sorted(setting[2]) if setting[2] else ['None']))
+            module.docuReplacements['&settings;'] = settings_help
         if hasattr(module, 'docuReplacements'):
             for key, value in module.docuReplacements.items():
                 helpText = helpText.replace(key, value.strip('\n\r'))
         pywikibot.stdout(helpText)  # output to STDOUT
-    except Exception:
+    except Exception as e:
+        print(e)
         if module_name:
             pywikibot.stdout(u'Sorry, no help available for %s' % module_name)
         pywikibot.log('showHelp:', exc_info=True)
@@ -1998,6 +2045,21 @@ class SettingsBot(CurrentPageBot):
     def settings(self):
         """Query the settings for the current page's site."""
         return self.get_settings(self.current_page.site)
+
+
+def _get_setting_configurations(module):
+    """
+    Search in the module for classes using L{pywikibot.bot.SettingsBot}.
+
+    It reads the settings value and returns them for further usage.
+    """
+    settings = []
+    for attr in module.__dict__.values():
+        if (inspect.isclass(attr) and issubclass(attr, SettingsBot) and
+                attr.__module__ == module.__name__):
+            settings += [(attr.settings_page, attr.mandatory_settings,
+                          attr.optional_settings)]
+    return settings
 
 
 class SettingsCallbackBot(SettingsBaseBot):
