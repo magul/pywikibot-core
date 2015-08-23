@@ -1063,11 +1063,12 @@ class BaseSite(ComparableMixin):
     def category_on_one_line(self):
         # TODO: is this even needed?  No family in the framework uses it.
         """Return True if this site wants all category links on one line."""
-        return self.code in self.family.category_on_one_line
+        return self.settings['category_on_one_line']
 
+    @deprecated("settings.get('interwiki_putfirst')")
     def interwiki_putfirst(self):
         """Return list of language codes for ordering of interwiki links."""
-        return self.family.interwiki_putfirst.get(self.code, None)
+        return self.settings.get('interwiki_putfirst')
 
     def getSite(self, code):
         """Return Site object for language 'code' in this Family."""
@@ -4352,6 +4353,10 @@ class APISite(BaseSite):
         "cascadeprotected": CascadeLockedPage,
     }
     _ep_text_overrides = set(['appendtext', 'prependtext', 'undo'])
+
+    @property
+    def settings(self):
+        return self.family.settings(self.code)
 
     @must_be(group='user')
     def editpage(self, page, summary=None, minor=True, notminor=False,

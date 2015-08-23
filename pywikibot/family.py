@@ -28,6 +28,7 @@ from warnings import warn
 import pywikibot
 
 from pywikibot import config2 as config
+from pywikibot.bot import load_settings
 from pywikibot.tools import (
     deprecated, deprecated_args, issue_deprecation_warning,
     FrozenDict,
@@ -47,6 +48,8 @@ class Family(object):
 
     def __init__(self):
         """Constructor."""
+        self._settings_cache = {}
+
         if not hasattr(self, 'name'):
             self.name = None
 
@@ -713,28 +716,28 @@ class Family(object):
         # main namespace. Use the Namespace given from the Site instead
         self.nocapitalize = []
 
-        # attop is a list of languages that prefer to have the interwiki
+        # DEPRECATED, attop is a list of languages that prefer to have the interwiki
         # links at the top of the page.
         self.interwiki_attop = []
-        # on_one_line is a list of languages that want the interwiki links
+        # DEPRECATED, on_one_line is a list of languages that want the interwiki links
         # one-after-another on a single line
         self.interwiki_on_one_line = []
-        # String used as separator between interwiki links and the text
+        # DEPRECATED, String used as separator between interwiki links and the text
         self.interwiki_text_separator = config.line_separator * 2
 
-        # Similar for category
+        # DEPRECATED, Similar for category
         self.category_attop = []
-        # on_one_line is a list of languages that want the category links
+        # DEPRECATED, on_one_line is a list of languages that want the category links
         # one-after-another on a single line
         self.category_on_one_line = []
-        # String used as separator between category links and the text
+        # DEPRECATED, String used as separator between category links and the text
         self.category_text_separator = config.line_separator * 2
-        # When both at the bottom should categories come after interwikilinks?
+        # DEPRECATED, When both at the bottom should categories come after interwikilinks?
         # TODO: T86284 Needed on Wikia sites, as it uses the CategorySelect
         # extension which puts categories last on all sites.  TO BE DEPRECATED!
         self.categories_last = []
 
-        # Which languages have a special order for putting interlanguage
+        # DEPRECATED, Which languages have a special order for putting interlanguage
         # links, and what order is it? If a language is not in
         # interwiki_putfirst, alphabetical order on language code is used.
         # For languages that are in interwiki_putfirst, interwiki_putfirst
@@ -875,6 +878,14 @@ class Family(object):
         elif name == 'known_families':
             issue_deprecation_warning('known_families',
                                       'APISite.interwiki(prefix)', 2)
+        elif name in set(['interwiki_text_separator', 'category_text_separator',
+                          'interwiki_attop', 'interwiki_on_one_line',
+                          'category_attop', 'category_on_one_line',
+                          'categories_last', 'interwiki_putfirst',
+                          'rcstream_host']):
+            issue_deprecation_warning(name,
+                                      "APISite.settings['{0}']".format(name), 2)
+
         return super(Family, self).__getattribute__(name)
 
     @staticmethod
@@ -1399,6 +1410,40 @@ class Family(object):
                                            for (old, new) in data.items()
                                            if new is not None)
 
+    def settings(self, code):
+        if code not in self._settings_cache:
+            self._settings_cache[code] = self._load_settings(pywikibot.Site(code, self.name))
+        return self._settings_cache[code]
+
+    def _load_settings(self, site):
+        """
+        Return the settings of the family's code.
+
+        It generates the dictionary from the already exisiting parameters. If
+        possible the Family should use PageSettingsFamily to load it
+        dynamically.
+        """
+        # avoid deprecation
+        get = super(Family, self).__getattribute__
+        settings = {}
+        # settings with a list (or similar) of languages
+        for setting in ('interwiki_attop', 'interwiki_on_one_line',
+                        'category_attop', 'category_on_one_line',
+                        'categories_last'):
+            settings[setting] = site.code in get(setting)
+        # settings with a global value for all sites
+        for setting in ('interwiki_text_separator', 'category_text_separator'):
+            settings[setting] = get(setting)
+        # settings with a dict of languages mapping to a setting
+        for setting in ('interwiki_putfirst', ):
+            if site.code in get(setting):
+                settings[setting] = get(setting)[site.code]
+        try:
+            settings['rcstream_host'] = get('rcstream_host')(site.code)
+        except NotImplementedError:
+            pass
+        return settings
+
 
 class WikimediaFamily(Family):
 
@@ -1495,3 +1540,42 @@ class AutoFamily(Family):
             return self.url.path[0:-8]
         else:
             return super(AutoFamily, self).scriptpath(code)
+
+
+class PageSettingsFamily(Family):
+
+    """A family class which reads the settings from a page."""
+
+    settings_pages = {}
+
+    def _maximum_GET_length(self, code):
+        # TODO: Make this possible, currently infinite recursion:
+        #       tries to get length, tries to get settings, request page,
+        #       tries to get length… you get the idea
+        #       It should use the configured length (or none?) the second time
+        if 'maximum_GET_length' in self.settings(code):
+            # when False it's like 'no length'
+            return min(config.maximum_GET_length,
+                       self.settings(code)['maximum_GET_length'] or 0)
+        else:
+            return config.maximum_GET_length
+
+    def _load_settings(self, site):
+        if (self.settings_pages is not True and
+                site.code not in self.settings_pages):
+            raise Exception('The "settings_pages" for {0} is not '
+                            'defined.'.format(site.code))
+        if (self.settings_pages is True or
+                self.settings_pages[site.code] is True):
+            settings_page = 'Pywikibot'
+        else:
+            settings_page = self.settings_pages[site.code]
+        # for now we can use the original method to create the default mapping
+        settings = super(PageSettingsFamily, self)._load_settings(site)
+        # this currently requires that the page exist and that it's not False
+        # Possible solutions:
+        #  * don't return False
+        #  * cache and only update if not False
+        #  * require that it's not False
+        settings.update(load_settings(site, settings_page))
+        return settings

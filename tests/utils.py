@@ -356,6 +356,11 @@ class DrySite(pywikibot.site.APISite):
             return pywikibot.Site(code, fam, self.username(),
                                   interface=DryDataSite)
 
+    @property
+    def settings(self):
+        """Return static settings from attributes."""
+        return pywikibot.family.Family._load_settings(self.family, self)
+
 
 class DryDataSite(DrySite, pywikibot.site.DataSite):
 

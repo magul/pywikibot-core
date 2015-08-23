@@ -839,8 +839,8 @@ def replaceLanguageLinks(oldtext, new, site=None, addOnly=False,
     marker = findmarker(oldtext)
     if site is None:
         site = pywikibot.Site()
-    separator = site.family.interwiki_text_separator
-    cseparator = site.family.category_text_separator
+    separator = site.settings['interwiki_text_separator']
+    cseparator = site.settings['category_text_separator']
     separatorstripped = separator.strip()
     cseparatorstripped = cseparator.strip()
     if addOnly:
@@ -850,11 +850,10 @@ def replaceLanguageLinks(oldtext, new, site=None, addOnly=False,
                                              separator=separatorstripped)
     s = interwikiFormat(new, insite=site)
     if s:
-        if site.code in site.family.interwiki_attop or \
-           u'<!-- interwiki at top -->' in oldtext:
+        if (site.settings['interwiki_attop'] or
+                '<!-- interwiki at top -->' in oldtext):
             # do not add separator if interwiki links are on one line
-            newtext = s + (u'' if site.code
-                           in site.family.interwiki_on_one_line
+            newtext = s + ('' if site.settings['interwiki_on_one_line']
                            else separator) + s2.replace(marker, '').strip()
         else:
             # calculate what was after the language links on the page
@@ -870,7 +869,7 @@ def replaceLanguageLinks(oldtext, new, site=None, addOnly=False,
                 newtext = (s2[:firstafter].replace(marker, '') +
                            s +
                            s2[firstafter:])
-            elif site.code in site.family.categories_last:
+            elif site.settings['categories_last']:
                 cats = getCategoryLinks(s2, site=site)
                 s2 = removeCategoryLinksAndSeparator(
                     s2.replace(marker, cseparatorstripped).strip(), site) + \
@@ -942,7 +941,7 @@ def interwikiFormat(links, insite=None):
         except AttributeError:
             s.append(pywikibot.Site(site, insite.family).linkto(
                 links[site], othersite=insite))
-    if insite.code in insite.family.interwiki_on_one_line:
+    if insite.settings['interwiki_on_one_line']:
         sep = u' '
     else:
         sep = config.line_separator
@@ -958,7 +957,7 @@ def interwikiSort(sites, insite=None):
         insite = pywikibot.Site()
 
     sites.sort()
-    putfirst = insite.interwiki_putfirst()
+    putfirst = insite.settings.get('interwiki_putfirst')
     if putfirst:
         # In this case I might have to change the order
         firstsites = []
@@ -1124,8 +1123,8 @@ def replaceCategoryLinks(oldtext, new, site=None, addOnly=False):
             'German\nWikipedia on pages that contain the Personendaten '
             'template because of the\nnon-standard placement of that template.\n'
             'See https://de.wikipedia.org/wiki/Hilfe:Personendaten#Kopiervorlage')
-    separator = site.family.category_text_separator
-    iseparator = site.family.interwiki_text_separator
+    separator = site.settings['category_text_separator']
+    iseparator = site.settings['interwiki_text_separator']
     separatorstripped = separator.strip()
     iseparatorstripped = iseparator.strip()
     if addOnly:
@@ -1135,7 +1134,7 @@ def replaceCategoryLinks(oldtext, new, site=None, addOnly=False):
                                              separator=separatorstripped)
     s = categoryFormat(new, insite=site)
     if s:
-        if site.code in site.family.category_attop:
+        if site.settings['category_attop']:
             newtext = s + separator + s2
         else:
             # calculate what was after the categories links on the page
@@ -1152,7 +1151,7 @@ def replaceCategoryLinks(oldtext, new, site=None, addOnly=False):
                 newtext = (s2[:firstafter].replace(marker, '') +
                            s +
                            s2[firstafter:])
-            elif site.code in site.family.categories_last:
+            elif site.settings['categories_last']:
                 newtext = s2.replace(marker, '').strip() + separator + s
             else:
                 interwiki = getLanguageLinks(s2, insite=site)

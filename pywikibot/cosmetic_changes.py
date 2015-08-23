@@ -399,7 +399,7 @@ class CosmeticChangesToolkit:
                                                 site=self.site)
         # Adding stars templates
         if allstars:
-            text = text.strip() + self.site.family.interwiki_text_separator
+            text = text.strip() + self.site.settings['interwiki_text_separator']
             allstars.sort()
             for element in allstars:
                 text += '%s%s' % (element.strip(), config.line_separator)
