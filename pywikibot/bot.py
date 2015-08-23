@@ -37,6 +37,11 @@ STDOUT = 16
 VERBOSE = 18
 INPUT = 25
 
+try:
+    import mwparserfromhell
+except ImportError as e:
+    mwparserfromhell = e
+
 import pywikibot
 
 from pywikibot import backports
@@ -1318,6 +1323,56 @@ def open_webbrowser(page):
     i18n.input('pywikibot-enter-finished-browser')
 
 
+def load_settings(site, page_title):
+    """
+    Load the page from the site and parse it as JSON.
+
+    The JSON data must be a dictionary which is read from a page in the
+    MediaWiki namespace and from the User namespace. The User settings overwrite
+    the MediaWiki settings.
+
+    It searches for the page with JSON as a extension and without it. If the
+    extension is not JSON it'll search for <pre> and <syntaxhighlight> tags in
+    the text and just interpret the content. If the tag is <syntaxhighlight>
+    it'll skip those where the lang is set to something else than javascript.
+
+    @return: The combined result or None if no page exist.
+    """
+    settings = None
+    titles = [(page_title, 8)]
+    if site.user():
+        titles += [(site.user() + '/' + page_title, 2)]
+    for title, namespace in titles:
+        page = pywikibot.Page(site, title + '.json', namespace)
+        if page.exists():
+            if not settings:
+                settings = {}
+            settings.update(json.loads(page.text))
+        else:
+            page = pywikibot.Page(site, title, namespace)
+            if page.exists():
+                # parse text from normal pages to allow for comments inside
+                if isinstance(mwparserfromhell, ImportError):
+                    raise ImportError('To parse normal non-JSON pages '
+                                      'mwparserfromhell needs to be installed.')
+                parsed = mwparserfromhell.parse(page.text)
+                for tag in parsed.ifilter_tags():
+                    if tag.tag == 'syntaxhighlight':
+                        lang = 'javascript'
+                        for attr in tag.attributes:
+                            if attr.name == 'lang':
+                                lang = attr.value
+                    elif tag.tag == 'pre':
+                        lang = 'javascript'
+                    else:
+                        continue
+
+                    if lang == 'javascript':
+                        settings.update(json.loads(tag.content))
+
+    return settings
+
+
 class BaseBot(object):
 
     """
@@ -1855,6 +1910,110 @@ class CurrentPageBot(BaseBot):
                      ignore_save_related_errors=ignore_save_related_errors,
                      ignore_server_errors=ignore_server_errors,
                      **kwargs)
+
+
+class SettingsBaseBot(BaseBot):
+
+    """
+    A bot querying and caching the settings for each site.
+
+    It must define 'settings_page' which is the page title without namespace and
+    file extension. This page must either exist in the MediaWiki or User
+    namespace. Whenever the script requests the settings it returns the combined
+    result of it using C{load_settings}. The settings_page is case sensitive
+    in the User namespace (when it's a subpage) but the first letter is case
+    insensitive in the MediaWiki namespace.
+
+    The available settings are defined via 'mandatory_settings' and
+    'optional_settings' which may not be changed after using the 'settings'
+    property. Each can be either an iterable or None. If either of them is None
+    it accepts and loads all available names. Otherwise it only loads entries
+    whose name are in either of the lists. All names from 'mandatory_settings'
+    must be present.
+
+    When the script's docstring has a '&settings;' entry it'll automatically
+    add a note about all classes using SettingsBot in that module.
+    """
+
+    settings_page = None
+    mandatory_settings = None
+    optional_settings = []
+
+    def __init__(self, *args, **kwargs):
+        """Constructor."""
+        super(SettingsBot, self).__init__(*args, **kwargs)
+        # the cached settings for each site
+        self._settings = {}
+
+    def _parse_settings(self, settings):
+        """Parse the settings dict and remove unrecognized values."""
+        def freeze_names(prop_name):
+            names = getattr(self, prop_name)
+            if names is not None:
+                names = frozenset(names)
+            if not hasattr(self, '_{0}'.format(prop_name)):
+                setattr(self, '_{0}'.format(prop_name), names)
+            elif names != set(getattr(self, '_{0}'.format(prop_name))):
+                raise ValueError('Settings name "{0}" changed since last '
+                                 'request'.format(prop_name))
+        freeze_names('mandatory_settings')
+        freeze_names('optional_settings')
+
+        if (self._mandatory_settings is not None and
+                self._optional_settings is not None):
+            unrecognized = (set(settings) - self._mandatory_settings -
+                            self._optional_settings)
+            settings = dict(setting for setting in settings.items()
+                            if setting[0] not in unrecognized)
+        else:
+            unrecognized = set()
+        if self._mandatory_settings:
+            missing = self._mandatory_settings - set(settings)
+            if missing:
+                raise ValueError('The values for "{0}" are/is missing.'.format(
+                                 '", "'.join(missing)))
+        if unrecognized:
+            # might be harmless (e.g. because the page supports deprecated
+            # parameters or because the script uses deprecated parameters)
+            debug('Found unrecognized setting keys "{0}"'.format(
+                  '", "'.join(unrecognized)), _logger)
+        return settings
+
+    def get_settings(self, site):
+        """Query the settings for the current site."""
+        if not self.settings_page:
+            raise Exception('The "settings_page" for {0} is not '
+                            'defined.'.format(self.__class__.__name__))
+        if site not in self._settings:
+            settings = load_settings(site, self.settings_page)
+            self._settings[site] = self._parse_settings(settings)
+        return self._settings[site]
+
+
+class SettingsBot(CurrentPageBot):
+
+    """A settings bot using the current page's site."""
+
+    @property
+    def settings(self):
+        """Query the settings for the current page's site."""
+        return self.get_settings(self.current_page.site)
+
+
+class SettingsCallbackBot(SettingsBaseBot):
+
+    """A class calling settings_callback on the parsed settings."""
+
+    settings_callback = None
+
+    def _parse_settings(self, settings):
+        """Use settings_callback with the parsed settings."""
+        if not self.settings_callback:
+            raise Exception('The "settings_callback" for {0} is not '
+                            'defined.'.format(self.__class__.__name__))
+        return self.settings_callback(
+            self.site,
+            **super(SettingsCallbackBot, self)._parse_settings(settings))
 
 
 class AutomaticTWSummaryBot(CurrentPageBot):

@@ -26,6 +26,7 @@ Furthermore, the following command line parameters are supported:
 
 -always           Always say yes, won't ask
 
+&settings;
 
 --- Examples ---
 python lonelypages.py -enable:User:Bot/CheckBot -always
@@ -46,7 +47,8 @@ import re
 import sys
 
 import pywikibot
-from pywikibot import i18n, pagegenerators, Bot
+from pywikibot import i18n, pagegenerators
+from pywikibot.bot import NoRedirectPageBot, SettingsBot, SettingsCallbackBot
 
 # This is required for the text that is shown when you run this script
 # with the parameter -help.
@@ -81,7 +83,7 @@ class OrphanTemplate(object):
 
     """The orphan template configuration."""
 
-    def __init__(self, name, parameters, aliases=None, subst=False):
+    def __init__(self, site, name, parameters, aliases=None, subst=False):
         self._name = name
         if not aliases:
             aliases = []
@@ -91,39 +93,33 @@ class OrphanTemplate(object):
             name = 'subst:' + name
         if parameters:
             name += '|' + parameters
-        self._template = u'{{' + name + '}}'
+        self.template = '{{' + name + '}}'
         self._names = frozenset(aliases)
+        self._site = site
 
-    def generate(self, site):
-        """Create regex from the given names."""
         template_ns = site.namespaces[10]
         # TODO: Add redirects to self.names too
         if not pywikibot.Page(site, self._name, template_ns.id).exists():
-            raise ValueError(u'Orphan template "{0}" does not exist on '
-                             u'"{1}".'.format(self._name, site))
+            raise ValueError('Orphan template "{0}" does not exist on '
+                             '"{1}".'.format(self._name, site))
         for name in self._names:
             if not pywikibot.Page(site, name, template_ns.id).exists():
-                pywikibot.warning(u'Orphan template alias "{0}" does not exist '
-                                  u'on "{1}"'.format(name, site))
-        return re.compile(r'\{\{(?:' + u':|'.join(template_ns) + '|)(' +
-                          u'|'.join(re.escape(name) for name in self._names) +
-                          r')[\|\}]', re.I)
+                pywikibot.warning('Orphan template alias "{0}" does not exist '
+                                  'on "{1}"'.format(name, site))
+        self.regex = re.compile(
+            r'\{\{(?:' + ':|'.join(template_ns) + '|)(' +
+            '|'.join(re.escape(name) for name in self._names) +
+            r')[\|\}]', re.I)
 
 
-# The orphan template names in the different languages.
-templates = {
-    'ar': OrphanTemplate(u'ﻲﺘﻴﻣﺓ', u'ﺕﺍﺮﻴﺧ={{ﻦﺴﺧ:ﺎﺴﻣ_ﺶﻫﺭ}} {{ﻦﺴﺧ:ﻉﺎﻣ}}'),
-    'ca': OrphanTemplate('Orfe', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}'),
-    'en': OrphanTemplate('Orphan', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['wi']),
-    'it': OrphanTemplate('O', '||mese={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['a']),
-    'ja': OrphanTemplate(u'孤立', '{{subst:DATE}}'),
-    'zh': OrphanTemplate(u'Orphan/auto', '', ['orphan'], True),
-}
-
-
-class LonelyPagesBot(Bot):
+class LonelyPagesBot(NoRedirectPageBot, SettingsBot, SettingsCallbackBot):
 
     """Orphan page tagging bot."""
+
+    settings_page = 'pywikibot-lonelypages'
+    mandatory_settings = ['name', 'parameters']
+    optional_settings = ['aliases', 'subst']
+    settings_callback = OrphanTemplate
 
     def __init__(self, generator, **kwargs):
         self.availableOptions.update({
@@ -142,19 +138,14 @@ class LonelyPagesBot(Bot):
             self.site, 'lonelypages-comment-add-template')
         self.commentdisambig = i18n.twtranslate(
             self.site, 'lonelypages-comment-add-disambig-template')
-        orphan_template = i18n.translate(self.site, templates)
-        if orphan_template is None:
-            pywikibot.showHelp()
-            sys.exit(u'Missing configuration for site %s' % self.site)
         try:
-            self._exception = orphan_template.generate(self.site)
+            if self.settings is None:
+                pywikibot.showHelp()
+                sys.exit(u'Missing configuration for site %s' % self.site)
         except ValueError as e:
             pywikibot.showHelp()
             pywikibot.error(e)
             sys.exit(u'Missing configuration for site %s' % self.site)
-        else:
-            self.exception = [self._exception.pattern]  # for backwards compatibility
-            self.template = orphan_template._template
         # DisambigPage part
         if self.getOption('disambigPage') is not None:
             self.disambigpage = pywikibot.Page(self.site, self.getOption('disambigPage'))
@@ -192,11 +183,9 @@ class LonelyPagesBot(Bot):
             return
         super(LonelyPagesBot, self).run()
 
-    def treat(self, page):
-        pywikibot.output(u"Checking %s..." % page.title())
-        if page.isRedirectPage():  # If redirect, skip!
-            pywikibot.output(u'%s is a redirect! Skip...' % page.title())
-            return
+    def treat_page(self):
+        """Search for the orphan template and add it if necessary."""
+        page = self.current_page
         refs = list(page.getReferences(total=1))
         if len(refs) > 0:
             pywikibot.output(u"%s isn't orphan! Skip..." % page.title())
@@ -211,7 +200,7 @@ class LonelyPagesBot(Bot):
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u"%s is a redirect! Skip..." % page.title())
                 return
-            if self._exception.search(oldtxt):
+            if self.settings.regex.search(oldtxt):
                 pywikibot.output(
                     u'Your regex has found something in %s, skipping...'
                     % page.title())
@@ -232,7 +221,7 @@ class LonelyPagesBot(Bot):
             else:
                 # Ok, the page need the template. Let's put it there!
                 # Adding the template in the text
-                newtxt = u"%s\n%s" % (self.template, oldtxt)
+                newtxt = '%s\n%s' % (self.settings.template, oldtxt)
                 self.userPut(page, oldtxt, newtxt, summary=self.comment)
 
 
