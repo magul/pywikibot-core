@@ -38,10 +38,22 @@ except ImportError as e:
 
 if sys.version_info[0] > 2:
     from http import cookiejar as cookielib
-    from urllib.parse import quote
+    from urllib.parse import quote, urlparse
 else:
     import cookielib
     from urllib2 import quote
+    from urlparse import urlparse
+
+try:
+    from requests.exceptions import SSLError
+except ImportError:
+
+    class SSLError():
+
+        """Fake SSLError."""
+
+        pass
+
 
 from pywikibot import config
 from pywikibot.exceptions import (
@@ -74,12 +86,16 @@ else:
     pywikibot.debug(u"Loaded cookies from file.", _logger)
 
 session = requests.Session()
-session.cookies = cookie_jar
+if not isinstance(requests_oauthlib, Exception):
+    session.cookies = cookie_jar
+else:
+    session.cookies = requests.utils.dict_from_cookiejar(cookie_jar)
 
 
 # Prepare flush on quit
 def _flush():
-    session.close()
+    if hasattr(session, 'close'):
+        session.close()
     message = 'Closing network session.'
     if hasattr(sys, 'last_type'):
         # we quit because of an exception
@@ -255,7 +271,7 @@ def get_authentication(uri):
     @return: authentication token
     @rtype: None or tuple of two str
     """
-    parsed_uri = requests.utils.urlparse(uri)
+    parsed_uri = urlparse(uri)
     netloc_parts = parsed_uri.netloc.split('.')
     netlocs = [parsed_uri.netloc] + ['.'.join(['*'] + netloc_parts[i + 1:])
                                      for i in range(len(netloc_parts))]
@@ -270,6 +286,8 @@ def get_authentication(uri):
 
 
 def _http_process(session, http_request):
+    global cookie_jar
+
     method = http_request.method
     uri = http_request.uri
     body = http_request.body
@@ -292,9 +310,19 @@ def _http_process(session, http_request):
         # Note that the connections are pooled which mean that a future
         # HTTPS request can succeed even if the certificate is invalid and
         # verify=True, when a request with verify=False happened before
+        kwargs = {
+            'auth': auth,
+            'timeout': timeout,
+            'verify': not ignore_validation,
+        }
+        if not hasattr(session, 'verify'):
+            del kwargs['verify']
+
         response = session.request(method, uri, data=body, headers=headers,
-                                   auth=auth, timeout=timeout,
-                                   verify=not ignore_validation)
+                                   **kwargs)
+
+        if isinstance(session.cookies, dict):
+            cookie_jar = requests.utils.cookiejar_from_dict(session.cookies)
     except Exception as e:
         http_request.data = e
     else:
@@ -309,7 +337,7 @@ def error_handling_callback(request):
     @type request: L{threadedhttp.HttpRequest}
     """
     # TODO: do some error correcting stuff
-    if isinstance(request.data, requests.exceptions.SSLError):
+    if isinstance(request.data, SSLError):
         if SSL_CERT_VERIFY_FAILED_MSG in str(request.data):
             raise FatalServerError(str(request.data))
 
