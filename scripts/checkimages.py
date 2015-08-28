@@ -98,6 +98,7 @@ import pywikibot
 from pywikibot import pagegenerators as pg
 from pywikibot import i18n
 
+from pywikibot.textlib import extract_templates_and_params
 from pywikibot.exceptions import NotEmailableError
 from pywikibot.family import Family
 from pywikibot.tools import deprecated
@@ -411,6 +412,21 @@ msg_comm10 = {
     'zh': u'機器人:更新記錄',
 }
 
+# Template needed on File page. If omitted, add it with default settings
+NeededTemplate = {
+    'de': """
+{{Information
+|Beschreibung     = 
+|Quelle           = 
+|Urheber          = 
+|Datum            = 
+|Genehmigung      = 
+|Andere Versionen = 
+|Anmerkungen      = 
+}}
+""",
+}
+
 # If a template isn't a license but it's included on a lot of images, that can
 # be skipped to analyze the image without taking care of it. (the template must
 # be in a list)
@@ -600,6 +616,30 @@ def printWithTimeZone(message):
     pywikibot.output(u"%s%s" % (message, time_zone))
 
 
+class PrettyTemplate(object):
+
+    """A class containing template informations."""
+
+    def __init__(self, content):
+        self.content = content or ''
+        tp = extract_templates_and_params(self.content)
+        if tp:
+            self.title = tp[0][0]
+            self.params = tp[0][1]
+        else:
+            self.title = None
+            self.params = None
+
+    def __repr__(self):
+        return '%s("{{%s}}")' % (self.__class__.__name__, self.title)
+
+    def __str__(self):
+        return self.title
+
+    def __len__(self):
+        return 0 if self.params is None else len(self.params) + 1
+
+
 class checkImagesBot(object):
 
     """A robot to check recently uploaded files."""
@@ -613,8 +653,12 @@ class checkImagesBot(object):
         self.rep_page = i18n.translate(self.site, report_page)
         self.rep_text = i18n.translate(self.site, report_text)
         self.com = i18n.translate(self.site, msg_comm10)
+        self.needed_template = PrettyTemplate(
+            NeededTemplate.get(self.site.code))
         hiddentemplatesRaw = i18n.translate(self.site, HiddenTemplate)
-        self.hiddentemplates = set([pywikibot.Page(self.site, tmp)
+        if self.needed_template:
+            hiddentemplatesRaw.append(self.needed_template.title)
+        self.hiddentemplates = set([pywikibot.Page(self.site, tmp, ns=10)
                                     for tmp in hiddentemplatesRaw])
         self.pageHidden = i18n.translate(self.site,
                                               PageWithHiddenTemplates)
@@ -1559,7 +1603,7 @@ class checkImagesBot(object):
         extension = self.imageName.split('.')[-1]
         # Load the notification messages
         HiddenTN = i18n.translate(self.site, HiddenTemplateNotification)
-        self.unvertext = i18n.translate(self.site, n_txt)
+        newtext = self.unvertext = i18n.translate(self.site, n_txt)
         di = i18n.translate(self.site, delete_immediately)
         dih = i18n.translate(self.site, delete_immediately_head)
         din = i18n.translate(self.site, delete_immediately_notification)
@@ -1577,11 +1621,11 @@ class checkImagesBot(object):
         except pywikibot.NoPage:
             pywikibot.output(u"Skipping %s because it has been deleted."
                              % self.imageName)
-            return True
+            return
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Skipping %s because it's a redirect."
                              % self.imageName)
-            return True
+            return
         # Delete the fields where the templates cannot be loaded
         regex_nowiki = re.compile(r'<nowiki>(.*?)</nowiki>', re.DOTALL)
         regex_pre = re.compile(r'<pre>(.*?)</pre>', re.DOTALL)
@@ -1591,7 +1635,7 @@ class checkImagesBot(object):
         # in the image the original text will be reloaded, don't worry).
         if self.isTagged():
             printWithTimeZone(u'%s is already tagged...' % self.imageName)
-            return True
+            return
 
         # something is the array with {{, MIT License and so on.
         for a_word in something:
@@ -1603,12 +1647,11 @@ class checkImagesBot(object):
             if parl.lower() in extension.lower():
                 delete = True
         (license_found, hiddenTemplateFound) = self.smartDetection()
+
         # Here begins the check block.
         if brackets and license_found:
-            # It works also without this... but i want only to be sure ^^
-            brackets = False
-            return True
-        elif delete:
+            return
+        if delete:
             pywikibot.output(u"%s is not a file!" % self.imageName)
             # Modify summary text
             pywikibot.setAction(dels)
@@ -1616,31 +1659,27 @@ class checkImagesBot(object):
             notification = din % self.imageName
             head = dih
             self.report(canctext, self.imageName, notification, head)
-            delete = False
-            return True
-        elif self.imageCheckText in nothing:
+            return
+
+        if self.imageCheckText in nothing:
             pywikibot.output(
                 u"The file's description for %s does not contain a license "
                 u" template!" % self.imageName)
-            if hiddenTemplateFound and HiddenTN:
-                notification = HiddenTN % self.imageName
-            elif nn:
-                notification = nn % self.imageName
-            head = nh
-            self.report(self.unvertext, self.imageName, notification, head,
-                        smwl)
-            return True
         else:
             pywikibot.output(u"%s has only text and not the specific license..."
                              % self.imageName)
-            if hiddenTemplateFound and HiddenTN:
-                notification = HiddenTN % self.imageName
-            elif nn:
-                notification = nn % self.imageName
-            head = nh
-            self.report(self.unvertext, self.imageName, notification, head,
-                        smwl)
-            return True
+        if hiddenTemplateFound and HiddenTN:
+            notification = HiddenTN % self.imageName
+        elif nn:
+            notification = nn % self.imageName
+        head = nh
+
+        # Add needed template
+        if (self.needed_template and
+                '{{' + self.needed_template.title not in self.imageCheckText):
+            newtext += self.needed_template.content
+
+        self.report(newtext, self.imageName, notification, head, smwl)
 
 
 def main(*args):
@@ -1826,8 +1865,7 @@ def main(*args):
             if duplicatesActive:
                 if not Bot.checkImageDuplicated(duplicates_rollback):
                     continue
-            if Bot.checkStep():
-                continue
+            Bot.checkStep()
 
         if repeat:
             pywikibot.output(u"Waiting for %s seconds," % time_sleep)
