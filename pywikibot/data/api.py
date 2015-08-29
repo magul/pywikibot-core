@@ -1667,8 +1667,13 @@ class Request(MutableMapping):
             raise ValueError('The mime_params and params may not share the '
                              'same keys.')
 
+        maxlag = config.maxlag
+
         if self.action == 'query':
             meta = self._params.get("meta", [])
+            if meta:
+                maxlag = None
+
             if "userinfo" not in meta:
                 meta.append("userinfo")
                 self._params["meta"] = meta
@@ -1687,7 +1692,11 @@ class Request(MutableMapping):
                     'rawcontinue' not in self._params and
                     MediaWikiVersion(self.site.version()) >= MediaWikiVersion('1.25wmf5')):
                 self._params['rawcontinue'] = ['']
-        if "maxlag" not in self._params and config.maxlag:
+
+        elif self.action == 'paraminfo':
+            maxlag = None
+
+        if 'maxlag' not in self._params and maxlag:
             self._params["maxlag"] = [str(config.maxlag)]
         if "format" not in self._params:
             self._params["format"] = ["json"]
