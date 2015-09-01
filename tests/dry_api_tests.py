@@ -23,7 +23,7 @@ from pywikibot.data.api import (
 from pywikibot.family import Family
 
 from tests import _images_dir
-from tests.utils import DummySiteinfo
+from tests.utils import DummySiteinfo, DryParamInfo
 from tests.aspects import (
     unittest, TestCase, DefaultDrySiteTestCase, SiteAttributeTestCase,
 )
@@ -49,6 +49,18 @@ class DryCachedRequestTests(SiteAttributeTestCase):
     def setUp(self):
         """Initialize the fake requests."""
         super(DryCachedRequestTests, self).setUp()
+        self.basesite._paraminfo.insert_modules({
+            'query': {
+                'param': {
+                    'meta': {
+                        'sm': {
+                            'siteinfo': {}, 'userinfo': {}
+                        }
+                    }
+                }
+            }
+        })
+        self.altsite._paraminfo = self.basesite._paraminfo
         self.parms = {'action': 'query',
                       'meta': 'userinfo'}
         self.req = CachedRequest(expiry=1, site=self.basesite,
@@ -146,6 +158,9 @@ class MockCachedRequestKeyTests(TestCase):
                 self._user = 'anon'
                 pywikibot.site.BaseSite.__init__(self, 'mock', MockFamily())
                 self._siteinfo = DummySiteinfo({'case': 'first-letter'})
+                self._paraminfo = DryParamInfo()
+                self._paraminfo.insert_modules(
+                    {'query': {'param': {'meta': {'sm': {'siteinfo': {}}}}}})
 
             def version(self):
                 return '1.13'  # pre 1.14
@@ -232,20 +247,29 @@ class DryWriteAssertTests(DefaultDrySiteTestCase):
 
     """Test client site write assert."""
 
+    def setUp(self):
+        """Add dummy paraminfo module to specify action=edit as a write."""
+        super(DryWriteAssertTests, self).setUp()
+        self.get_site()._paraminfo.insert_modules({
+            'edit': {
+                'writerights': '',
+            }
+        })
+
     def test_no_user(self):
         """Test Request object when not a user."""
         site = self.get_site()
 
         del site._userinfo
-        self.assertRaisesRegex(pywikibot.Error, ' without userinfo',
-                               Request, site=site, action='edit')
+        req = Request(site=site, action='edit')
+        req._simulate = lambda: True
+        self.assertRaisesRegex(pywikibot.Error, ' without userinfo', req.submit)
 
         # Explicitly using str as the test expects it to be str (without the
         # u-prefix) in Python 2 and this module is using unicode_literals
         site._userinfo = {'name': str('1.2.3.4'), 'groups': []}
 
-        self.assertRaisesRegex(pywikibot.Error, " as IP '1.2.3.4'",
-                               Request, site=site, action='edit')
+        self.assertRaisesRegex(pywikibot.Error, " as IP '1.2.3.4'", req.submit)
 
     def test_unexpected_user(self):
         """Test Request object when username is not correct."""
@@ -253,7 +277,9 @@ class DryWriteAssertTests(DefaultDrySiteTestCase):
         site._userinfo = {'name': 'other_username', 'groups': []}
         site._username[0] = 'myusername'
 
-        Request(site=site, action='edit')
+        req = Request(site=site, action='edit')
+        req._simulate = lambda: True
+        req.submit()
 
     def test_normal(self):
         """Test Request object when username is correct."""
@@ -261,7 +287,9 @@ class DryWriteAssertTests(DefaultDrySiteTestCase):
         site._userinfo = {'name': 'myusername', 'groups': []}
         site._username[0] = 'myusername'
 
-        Request(site=site, action='edit')
+        req = Request(site=site, action='edit')
+        req._simulate = lambda: True
+        req.submit()
 
 
 class DryMimeTests(TestCase):
@@ -301,8 +329,8 @@ class MimeTests(DefaultDrySiteTestCase):
         # fake write test needs the config username
         site = self.get_site()
         site._username[0] = 'myusername'
-        site._userinfo = {'name': 'myusername', 'groups': []}
-        req = Request(site=site, action="upload",
+        site._paraminfo.insert_modules({'upload': {'writerights': ''}})
+        req = Request(site=site, action='upload',
                       file='MP_sounds.png', mime=True,
                       filename=os.path.join(_images_dir, 'MP_sounds.png'))
         self.assertEqual(req.mime, True)
@@ -468,6 +496,8 @@ class QueryGenTests(DefaultDrySiteTestCase):
 
     def test_query_constructor(self):
         """Test QueryGenerator constructor."""
+        self.get_site()._paraminfo.insert_modules(
+            {'query': {'param': {'meta': {'sm': {'siteinfo': {}}}}}})
         qGen1 = QueryGenerator(site=self.get_site(), action="query", meta="siteinfo")
         qGen2 = QueryGenerator(site=self.get_site(), meta="siteinfo")
         self.assertCountEqual(qGen1.request._params.items(), qGen2.request._params.items())

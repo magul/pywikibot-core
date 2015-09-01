@@ -244,12 +244,83 @@ class DryParamInfo(dict):
 
     def fetch(self, modules, _init=False):
         """Prevented method."""
-        raise Exception(u'DryParamInfo.fetch(%r, %r) prevented'
-                        % (modules, _init))
+        missing_modules = set(module for module in modules if module not in self)
+        if missing_modules:
+            raise Exception(
+                'DryParamInfo.fetch({0}, {1}) prevented because "{2}" '
+                'was/were not cached'.format(
+                    modules, _init, '", "'.join(missing_modules)))
 
     def parameter(self, module, param_name):
         """Load dry data."""
         return self[module][param_name]
+
+    def insert_modules(self, entries):
+        """
+        Generate a paraminfo mapping from a simplified mapping.
+
+        The simplified mapping works as follows:
+        * The root is a dict which contains all root modules (e.g. query, edit).
+        * In each module is a dict which might be empty.
+        * That dict then contains all information about that module like normal
+          paraminfo except for 'parameters'.
+        * Instead of 'parameters' as a list it is using 'param' as a dict.
+        * The key is the name of the parameter and the value is a dict of all
+          properties. If this parameter is providing submodules a 'sm' entry
+          contains a dict of all modules which works like the root modules.
+          They may not use prefixes and the parameter may not provide 'type'.
+        * The 'param' entry in the dict is optional.
+
+        For any submodules in the query root module it'll create an alias
+        without the 'query+' prefix if there is no root module with that name.
+
+        For example:
+        {
+            'A': {
+                'writerights': '',
+                'param': {
+                    'token': {'tokentype': 'csrf'}
+                }
+            },
+            'B': {
+                'param': {
+                    'sm': {
+                        'C': {'mustbeposted': ''}
+                        'D': {'mustbeposted': ''}
+                    }
+                }
+            }
+        }
+
+        This will result in four modules ('A', 'B', 'B+C' and 'B+D').
+        """
+        query_modules = []
+        while entries:
+            new_entries = {}
+            for name, value in entries.items():
+                params = []
+                self[name] = entry = {'parameters': params,
+                                      'path': name,
+                                      'name': name.split('+')[-1],
+                                      'prefix': ''}
+                param_map = value.pop('param', {})
+                entry.update(value)
+                for param_name, param_value in param_map.items():
+                    param = {'name': param_name}
+                    param.update(param_value)
+                    submodules = param.pop('sm', {})
+                    if submodules:
+                        param['type'] = list(submodules)
+                        for sub_name, sub_value in submodules.items():
+                            new_entries[name + '+' + sub_name] = sub_value
+                        param['submodules'] = ''
+                        if name == 'query':
+                            query_modules.extend(param['type'])
+                    params.append(param)
+            entries = new_entries
+        for query_module in query_modules:
+            if query_module not in self:
+                self[query_module] = self['query+' + query_module]
 
 
 class DummySiteinfo():

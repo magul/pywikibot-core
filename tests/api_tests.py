@@ -116,6 +116,15 @@ class TestApiFunctions(DefaultSiteTestCase):
         self.assertTrue(req)
         self.assertEqual(req.site, self.get_site())
 
+    def test_request_modules(self):
+        """Test the modules which apply to a current Request."""
+        r = api.Request(site=self.get_site(), action='query', prop='info',
+                        pageids='42|1337')
+        self.assertCountEqual([m['path'] for m in r._paraminfo_modules],
+                              ['query', 'query+info'])
+        self.assertFalse(r._has_option('writerights'))
+        self.assertFalse(r._has_option('mustbeposted'))
+
 
 class TestDryApiFunctions(DefaultDrySiteTestCase):
 
@@ -124,6 +133,7 @@ class TestDryApiFunctions(DefaultDrySiteTestCase):
     def testObjectCreation(self):
         """Test api.Request() constructor."""
         mysite = self.get_site()
+        mysite._paraminfo['test'] = {'parameters': []}
         req = api.Request(site=mysite, action="test", foo="", bar="test")
         self.assertTrue(req)
         self.assertEqual(req.site, mysite)
@@ -549,6 +559,7 @@ class TestDryPageGenerator(TestCase):
         """Set up test case."""
         super(TestDryPageGenerator, self).setUp()
         mysite = self.get_site()
+        mysite._paraminfo['query'] = {'parameters': []}
         self.gen = api.PageGenerator(site=mysite,
                                      generator="links",
                                      titles="User:R'n'B")
@@ -781,11 +792,21 @@ class TestDryListGenerator(TestCase):
         """Set up test case."""
         super(TestDryListGenerator, self).setUp()
         mysite = self.get_site()
-        mysite._paraminfo['query+allpages'] = {
-            'prefix': 'ap',
-            'limit': {'max': 10},
-            'namespace': {'multi': True}
-        }
+        mysite._paraminfo.insert_modules({
+            'query': {
+                'param': {
+                    'list': {
+                        'sm': {
+                            'allpages': {
+                                'prefix': 'ap',
+                                'limit': {'max': 10},
+                                'namespace': {'multi': True}
+                            }
+                        }
+                    }
+                }
+            }
+        })
         mysite._paraminfo.query_modules_with_limits = set(['allpages'])
         self.gen = api.ListGenerator(listaction="allpages", site=mysite)
 

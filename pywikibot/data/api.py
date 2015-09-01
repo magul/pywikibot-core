@@ -641,10 +641,11 @@ class ParamInfo(Container):
                 for mod in set(module_batch) & self.root_modules:
                     params[mod + 'module'] = 1
 
-            # Request need ParamInfo to determine use_get
+            # Request need ParamInfo to determine use_get and write
             request = self.site._request(expiry=config.API_config_expiry,
                                          use_get=True,
                                          parameters=params)
+            request._write = False
             result = request.submit()
 
             normalized_result = self.normalize_paraminfo(result)
@@ -1417,52 +1418,6 @@ class Request(MutableMapping):
         self.action = parameters['action']
         self.update(parameters)
         self._warning_handler = None
-        # Actions that imply database updates on the server, used for various
-        # things like throttling or skipping actions when we're in simulation
-        # mode
-        self.write = self.action in (
-            "edit", "move", "rollback", "delete", "undelete",
-            "protect", "block", "unblock", "watch", "patrol",
-            "import", "userrights", "upload", "emailuser",
-            "createaccount", "setnotificationtimestamp",
-            "filerevert", "options", "purge", "revisiondelete",
-            "wbeditentity", "wbsetlabel", "wbsetdescription",
-            "wbsetaliases", "wblinktitles", "wbsetsitelink",
-            "wbcreateclaim", "wbremoveclaims", "wbsetclaimvalue",
-            "wbsetreference", "wbremovereferences", "wbsetclaim",
-        )
-        # Client side verification that the request is being performed
-        # by a logged in user, and warn if it isn't a config username.
-        if self.write:
-            if not hasattr(self.site, "_userinfo"):
-                raise Error(u"API write action attempted without userinfo")
-            assert('name' in self.site._userinfo)
-
-            if ip.is_IP(self.site._userinfo['name']):
-                raise Error(u"API write action attempted as IP %r"
-                            % self.site._userinfo['name'])
-
-            if not self.site.user():
-                pywikibot.warning(
-                    u"API write action by unexpected username commenced.\n"
-                    u"userinfo: %r" % self.site._userinfo)
-
-        # MediaWiki 1.23 allows assertion for any action,
-        # whereas earlier WMF wikis and others used an extension which
-        # could only allow assert for action=edit.
-        #
-        # When we can't easily check whether the extension is loaded,
-        # to avoid cyclic recursion in the Pywikibot codebase, assume
-        # that it is present, which will cause a API warning emitted
-        # to the logging (console) if it is not present, but will not
-        # otherwise be a problem.
-        # This situation is only tripped when one of the first actions
-        # on the site is a write action and the extension isn't installed.
-        if ((self.write and MediaWikiVersion(self.site.version()) >= MediaWikiVersion("1.23")) or
-                (self.action == 'edit' and
-                 self.site.has_extension('AssertEdit'))):
-            pywikibot.debug(u"Adding user assertion", _logger)
-            self["assert"] = 'user'  # make sure user is logged in
 
         if (self.site.protocol() == 'http' and (config.use_SSL_always or (
                 self.action == 'login' and config.use_SSL_onlogin)) and
@@ -1691,6 +1646,22 @@ class Request(MutableMapping):
         elif self._params['format'] != ["json"]:
             raise TypeError("Query format '%s' cannot be parsed."
                             % self._params['format'])
+        # MediaWiki 1.23 allows assertion for any action,
+        # whereas earlier WMF wikis and others used an extension which
+        # could only allow assert for action=edit.
+        #
+        # When we can't easily check whether the extension is loaded,
+        # to avoid cyclic recursion in the Pywikibot codebase, assume
+        # that it is present, which will cause a API warning emitted
+        # to the logging (console) if it is not present, but will not
+        # otherwise be a problem.
+        # This situation is only tripped when one of the first actions
+        # on the site is a write action and the extension isn't installed.
+        if ((self.write and MediaWikiVersion(self.site.version()) >= MediaWikiVersion('1.23')) or
+                (self.action == 'edit' and
+                 self.site.has_extension('AssertEdit'))):
+            pywikibot.debug(u'Adding user assertion', _logger)
+            self._params['assert'] = ['user']  # make sure user is logged in
 
         self.__defaulted = True
 
@@ -1768,13 +1739,56 @@ class Request(MutableMapping):
         return '%s.%s<%s->%r>' % (self.__class__.__module__, self.__class__.__name__,
                                   self.site, str(self))
 
-    def _simulate(self, action):
+    @property
+    def _paraminfo_modules(self):
+        """Generator to get the name of all modules used them."""
+        # Starting point won't be yield
+        modules = [self.site._paraminfo[self.action]]
+        while modules:
+            new_modules = set()
+            for module in modules:
+                yield module
+                for param in module['parameters']:
+                    if 'submodules' in param and param['name'] in self:
+                        # If the parameter is present it should check them too
+                        for param_value in self[param['name']]:
+                            new_modules.add('{0}+{1}'.format(module['path'],
+                                                             param_value))
+            self.site._paraminfo.fetch(new_modules)
+            modules = [self.site._paraminfo[path]
+                       for path in new_modules]
+
+    def _has_option(self, option):
+        """Check if the action or its submodules have that option set."""
+        return any(option in module for module in self._paraminfo_modules)
+
+    @property
+    def write(self):
+        """Whether this is a writing request."""
+        # Actions that imply database updates on the server, used for various
+        # things like throttling or skipping actions when we're in simulation
+        # mode
+        if not hasattr(self, '_write'):
+            if MediaWikiVersion(self.site.version()) >= MediaWikiVersion('1.15.0'):
+                self._write = self._has_option('writerights')
+            else:
+                # Most write actions also must be POSTed except for action=purge
+                # As that flag is available also in versions before 1.15 parsing
+                # action=help it's relying on that, avoid on login as enabling
+                # write requires the user to be logged in.
+                self._write = (self.action == 'purge' or
+                               (self._has_option('mustbeposted') and
+                                self.action != 'login'))
+
+        return self._write
+
+    def _simulate(self):
         """Simulate action."""
-        if action and config.simulate and (self.write or action in config.actions_to_block):
+        if config.simulate and (self.write or self.action in config.actions_to_block):
             pywikibot.output(
                 u'\03{lightyellow}SIMULATION: %s action blocked.\03{default}'
-                % action)
-            return {action: {'result': 'Success', 'nochange': ''}}
+                % self.action)
+            return {self.action: {'result': 'Success', 'nochange': ''}}
 
     def _is_wikibase_error_retryable(self, error):
         ERR_MSG = u'edit-already-exists'
@@ -1877,32 +1891,34 @@ class Request(MutableMapping):
         @return: a dict containing data retrieved from api.php
 
         """
+        # Client side verification that the request is being performed
+        # by a logged in user, and warn if it isn't a config username.
+        if self.write:
+            if not hasattr(self.site, '_userinfo'):
+                raise Error(u'API write action attempted without userinfo')
+            assert('name' in self.site._userinfo)
+
+            if ip.is_IP(self.site._userinfo['name']):
+                raise Error(u'API write action attempted as IP %r'
+                            % self.site._userinfo['name'])
+
+            if not self.site.user():
+                pywikibot.warning(
+                    u'API write action by unexpected username commenced.\n'
+                    u'userinfo: %r' % self.site._userinfo)
+
         self._add_defaults()
         if (not config.enable_GET_without_SSL and
                 self.site.protocol() != 'https' or
                 self.site.is_oauth_token_available()):  # work around T108182
             use_get = False
         elif self.use_get is None:
-            if self.action == 'query':
-                # for queries check the query module
-                modules = set()
-                for mod_type_name in ('list', 'prop', 'generator'):
-                    modules.update(self._params.get(mod_type_name, []))
-            else:
-                modules = set([self.action])
-            if modules:
-                self.site._paraminfo.fetch(modules)
-                use_get = all(['mustbeposted' not in self.site._paraminfo[mod]
-                               for mod in modules])
-            else:
-                # If modules is empty, just 'meta' was given, which doesn't
-                # require POSTs, and is required for ParamInfo
-                use_get = True
+            use_get = not self._has_option('mustbeposted')
         else:
             use_get = self.use_get
         while True:
             paramstring = self._http_param_string()
-            simulate = self._simulate(self.action)
+            simulate = self._simulate()
             if simulate:
                 return simulate
             if self.throttle:

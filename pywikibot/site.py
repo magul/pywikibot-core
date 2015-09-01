@@ -1383,12 +1383,16 @@ class Siteinfo(Container):
         try:
             request = self._site._request(
                 expiry=pywikibot.config.API_config_expiry if expiry is False else expiry,
+                use_get=True,
                 parameters=dict(
                     action='query',
                     meta='siteinfo',
                     siprop=props
                 )
             )
+            # This is not a writing request but causes recursion if it tries to
+            # automatically detect it.
+            request._write = False
             # With 1.25wmf5 it'll require continue or rawcontinue. As we don't
             # continue anyway we just always use continue.
             request['continue'] = True
@@ -6048,7 +6052,7 @@ class APISite(BaseSite):
         params = {'action': 'flow', 'page': page, 'token': token,
                   'submodule': 'new-topic', 'ntformat': format,
                   'nttopic': title, 'ntcontent': content}
-        req = self._request(parameters=params, use_get=False)
+        req = self._request(parameters=params)
         data = req.submit()
         return data['flow']['new-topic']['committed']['topiclist']
 
@@ -6072,7 +6076,7 @@ class APISite(BaseSite):
         params = {'action': 'flow', 'page': page, 'token': token,
                   'submodule': 'reply', 'repreplyTo': reply_to_uuid,
                   'repcontent': content, 'repformat': format}
-        req = self._request(parameters=params, use_get=False)
+        req = self._request(parameters=params)
         data = req.submit()
         return data['flow']['reply']['committed']['topic']
 
@@ -6095,7 +6099,7 @@ class APISite(BaseSite):
         params = {'action': 'flow', 'page': page, 'token': token,
                   'submodule': 'lock-topic', 'cotreason': reason,
                   'cotmoderationState': status}
-        req = self._request(parameters=params, use_get=False)
+        req = self._request(parameters=params)
         data = req.submit()
         return data['flow']['lock-topic']['committed']['topic']
 
