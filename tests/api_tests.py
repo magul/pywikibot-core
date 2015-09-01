@@ -125,6 +125,16 @@ class TestApiFunctions(DefaultSiteTestCase):
         self.assertFalse(r._has_option('writerights'))
         self.assertFalse(r._has_option('mustbeposted'))
 
+    def test_token_detection(self):
+        """Test the Request._add_tokens() method."""
+        mysite = self.get_site()
+        req = api.Request(site=mysite, action='edit')
+        self.assertIn('action', req)
+        self.assertNotIn('token', req)
+        req._add_tokens()
+        self.assertIn('action', req)
+        self.assertIn('token', req)
+
 
 class TestDryApiFunctions(DefaultDrySiteTestCase):
 
@@ -975,6 +985,27 @@ class TestBadTokenRecovery(TestCase):
         page.text = ('This page is testing whether pywikibot-core rerequests '
                      'a token when a badtoken error was received.')
         page.save(summary='Bad token test')
+
+
+class TestWikipedia(TestCase):
+
+    """Test for the English Wikipedia."""
+
+    family = 'wikipedia'
+    code = 'en'
+
+    def test_dyn_token_submodule(self):
+        """Test that it detects a token is needed in a submodule."""
+        # flow itself doesn't require a token but flow+reply does
+        req = api.Request(site=self.site, action='flow')
+        self.assertNotIn('token', req)
+        req._add_tokens()
+        self.assertNotIn('token', req)
+
+        req = api.Request(site=self.site, action='flow', submodule='reply')
+        self.assertNotIn('token', req)
+        req._add_tokens()
+        self.assertIn('token', req)
 
 
 if __name__ == '__main__':

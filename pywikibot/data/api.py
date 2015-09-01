@@ -1320,6 +1320,35 @@ class Request(MutableMapping):
 
     """
 
+    PRE_1_24_TOKENTYPES = {
+        # Core actions
+        'edit': 'edit',
+        'move': 'move',
+        'rollback': 'rollback',
+        'delete': 'delete',
+        'undelete': 'undelete',
+        'protect': 'protect',
+        'patrol': 'patrol',
+        'block': 'block',
+        'unblock': 'block',
+        'watch': 'watch',
+        'upload': 'edit',
+
+        # Echo actions
+        'echomarkread': 'edit',
+
+        # Wikibase actions
+        'wbeditentity': 'edit',
+        'wbcreateclaim': 'edit',
+        'wbsetclaimvalue': 'edit',
+        'wbsetreference': 'edit',
+        'wbsetqualifier': 'edit',
+        'wbremoveclaims': 'edit',
+        'wbremovereferences': 'edit',
+        'wblinktitles': 'edit',
+        'wbmergeitems': 'edit',
+    }
+
     # To make sure the default value of 'parameters' can be identified.
     _PARAM_DEFAULT = object()
 
@@ -1782,6 +1811,29 @@ class Request(MutableMapping):
 
         return self._write
 
+    @property
+    def _tokens(self):
+        """Get the tokens for the given module and used submodules."""
+        # 'tokentype' was introduced in paraminfo
+        # with commit fdddf94570efc33fd06f16c72d41636a45cf203a
+        tokens = {}
+        if MediaWikiVersion(self.site.version()) < MediaWikiVersion('1.24wmf19'):
+            if self.action in self.PRE_1_24_TOKENTYPES:
+                tokens['token'] = self.PRE_1_24_TOKENTYPES[self.action]
+        else:
+            for module in self._paraminfo_modules:
+                for param in module['parameters']:
+                    if 'tokentype' in param:
+                        # The parameter is a token parameter itself
+                        tokens[module['prefix'] + param['name']] = param['tokentype']
+        return tokens
+
+    def _add_tokens(self):
+        """Add required tokens to the request."""
+        for name, tokentype in self._tokens.items():
+            if name not in self._params:
+                self[name] = self.site.tokens[tokentype]
+
     def _simulate(self):
         """Simulate action."""
         if config.simulate and (self.write or self.action in config.actions_to_block):
@@ -1908,6 +1960,8 @@ class Request(MutableMapping):
                     u'userinfo: %r' % self.site._userinfo)
 
         self._add_defaults()
+        if self.write:
+            self._add_tokens()
         if (not config.enable_GET_without_SSL and
                 self.site.protocol() != 'https' or
                 self.site.is_oauth_token_available()):  # work around T108182

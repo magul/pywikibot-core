@@ -2141,8 +2141,7 @@ class APISite(BaseSite):
         """
         # TODO: ensure that the 'echomarkread' action
         # is supported by the site
-        kwargs = merge_unique_dicts(kwargs, action='echomarkread',
-                                    token=self.tokens['edit'])
+        kwargs = merge_unique_dicts(kwargs, action='echomarkread')
         req = self._simple_request(**kwargs)
         data = req.submit()
         try:
@@ -4523,12 +4522,11 @@ class APISite(BaseSite):
                 if not recreate:
                     raise
 
-        token = self.tokens['edit']
         if bot is None:
             bot = ("bot" in self.userinfo["rights"])
         self.lock_page(page)
         params = dict(action='edit', title=page,
-                      text=text, token=token, summary=summary, bot=bot,
+                      text=text, summary=summary, bot=bot,
                       recreate=recreate, createonly=createonly,
                       nocreate=nocreate, minor=minor,
                       notminor=not minor and notminor,
@@ -4693,13 +4691,11 @@ class APISite(BaseSite):
             raise NoPage(page,
                          "Cannot move page %(page)s because it "
                          "does not exist on %(site)s.")
-        token = self.tokens['move']
         self.lock_page(page)
         req = self._simple_request(action='move',
                                    noredirect=noredirect,
                                    reason=summary,
                                    movetalk=movetalk,
-                                   token=token,
                                    to=newtitle)
         req['from'] = oldtitle  # "from" is a python keyword
         try:
@@ -4793,7 +4789,6 @@ class APISite(BaseSite):
                 % page.title(asLink=True))
         parameters = merge_unique_dicts(kwargs, action='rollback',
                                         title=page,
-                                        token=self.tokens['rollback'],
                                         user=last_user)
         self.lock_page(page)
         req = self._simple_request(**parameters)
@@ -4836,10 +4831,8 @@ class APISite(BaseSite):
         @type reason: basestring
 
         """
-        token = self.tokens['delete']
         self.lock_page(page)
         req = self._simple_request(action='delete',
-                                   token=token,
                                    title=page,
                                    reason=reason)
         try:
@@ -4872,13 +4865,11 @@ class APISite(BaseSite):
         @type reason: basestring
 
         """
-        token = self.tokens['delete']
         self.lock_page(page)
 
         req = self._simple_request(action='undelete',
                                    title=page,
                                    reason=reason,
-                                   token=token,
                                    timestamps=revisions)
         try:
             req.submit()
@@ -4945,13 +4936,11 @@ class APISite(BaseSite):
         @type expiry: pywikibot.Timestamp, string in GNU timestamp format
             (including ISO 8601).
         """
-        token = self.tokens['protect']
         self.lock_page(page)
 
         protectList = [ptype + '=' + level for ptype, level in protections.items()
                        if level is not None]
         parameters = merge_unique_dicts(kwargs, action='protect', title=page,
-                                        token=token,
                                         protections=protectList, reason=reason,
                                         expiry=expiry)
 
@@ -5040,11 +5029,8 @@ class APISite(BaseSite):
             zip_longest(rcid, [], fillvalue='rcid'),
             zip_longest(combined_revid, [], fillvalue='revid'))
 
-        token = self.tokens['patrol']
-
         for idvalue, idtype in gen:
             req = self._request(parameters={'action': 'patrol',
-                                            'token': token,
                                             idtype: idvalue})
 
             try:
@@ -5104,11 +5090,10 @@ class APISite(BaseSite):
         @return: The data retrieved from the API request.
         @rtype: dict
         """
-        token = self.tokens['block']
         if expiry is False:
             expiry = 'never'
         req = self._simple_request(action='block', user=user.username,
-                                   expiry=expiry, reason=reason, token=token,
+                                   expiry=expiry, reason=reason,
                                    anononly=anononly, nocreate=nocreate,
                                    autoblock=autoblock, noemail=noemail,
                                    reblock=reblock)
@@ -5128,7 +5113,6 @@ class APISite(BaseSite):
         """
         req = self._simple_request(action='unblock',
                                    user=user.username,
-                                   token=self.tokens['block'],
                                    reason=reason)
 
         data = req.submit()
@@ -5147,7 +5131,6 @@ class APISite(BaseSite):
         # as the API now allows 'titles'.
         parameters = {'action': 'watch',
                       'title': page,
-                      'token': self.tokens['watch'],
                       'unwatch': unwatch}
         req = self._simple_request(**parameters)
         result = req.submit()
@@ -5235,8 +5218,7 @@ class APISite(BaseSite):
             # TODO: is there another way?
             try:
                 req = self._request(throttle=False,
-                                    parameters={'action': 'upload',
-                                                'token': self.tokens['edit']})
+                                    parameters={'action': 'upload'})
                 req.submit()
             except api.APIError as error:
                 if error.code == u'uploaddisabled':
@@ -5358,14 +5340,13 @@ class APISite(BaseSite):
             text = filepage.text
         if not text:
             text = comment
-        token = self.tokens['edit']
         result = None
         file_page_title = filepage.title(withNamespace=False)
         if _file_key and _offset is False:
             pywikibot.log('Reused already upload file using '
                           'filekey "{0}"'.format(_file_key))
             # TODO: Use sessionkey instead of filekey if necessary
-            final_request = self._simple_request(action='upload', token=token,
+            final_request = self._simple_request(action='upload',
                                                  filename=file_page_title,
                                                  comment=comment, text=text,
                                                  filekey=_file_key)
@@ -5384,7 +5365,7 @@ class APISite(BaseSite):
             with open(source_filename, 'rb') as f:
                 final_request = self._request(
                     throttle=throttle, parameters={
-                        'action': 'upload', 'token': token, 'text': text,
+                        'action': 'upload', 'text': text,
                         'filename': file_page_title, 'comment': comment})
                 if chunked_upload:
                     offset = _offset
@@ -5398,7 +5379,6 @@ class APISite(BaseSite):
                             throttle=throttle, mime=True,
                             parameters={
                                 'action': 'upload',
-                                'token': token,
                                 'stash': True,
                                 'filesize': filesize,
                                 'offset': offset,
@@ -5465,7 +5445,7 @@ class APISite(BaseSite):
                     % (self.user(), self))
             final_request = self._simple_request(
                 action='upload', filename=file_page_title,
-                url=source_url, comment=comment, text=text, token=token)
+                url=source_url, comment=comment, text=text)
         if not result:
             final_request['watch'] = watch
             final_request['ignorewarnings'] = ignore_all_warnings
@@ -6048,8 +6028,7 @@ class APISite(BaseSite):
         @return: The metadata of the new topic
         @rtype: dict
         """
-        token = self.tokens['csrf']
-        params = {'action': 'flow', 'page': page, 'token': token,
+        params = {'action': 'flow', 'page': page,
                   'submodule': 'new-topic', 'ntformat': format,
                   'nttopic': title, 'ntcontent': content}
         req = self._request(parameters=params)
@@ -6072,8 +6051,7 @@ class APISite(BaseSite):
         @return: Metadata returned by the API
         @rtype: dict
         """
-        token = self.tokens['csrf']
-        params = {'action': 'flow', 'page': page, 'token': token,
+        params = {'action': 'flow', 'page': page,
                   'submodule': 'reply', 'repreplyTo': reply_to_uuid,
                   'repcontent': content, 'repformat': format}
         req = self._request(parameters=params)
@@ -6095,8 +6073,7 @@ class APISite(BaseSite):
         @rtype: dict
         """
         status = 'lock' if lock else 'unlock'
-        token = self.tokens['csrf']
-        params = {'action': 'flow', 'page': page, 'token': token,
+        params = {'action': 'flow', 'page': page,
                   'submodule': 'lock-topic', 'cotreason': reason,
                   'cotmoderationState': status}
         req = self._request(parameters=params)
@@ -6347,7 +6324,6 @@ class DataSite(APISite):
             params['bot'] = 1
         if 'baserevid' in kwargs and kwargs['baserevid']:
             params['baserevid'] = kwargs['baserevid']
-        params['token'] = self.tokens['edit']
         for arg in kwargs:
             if arg in ['clear', 'data', 'exclude', 'summary']:
                 params[arg] = kwargs[arg]
@@ -6371,7 +6347,6 @@ class DataSite(APISite):
             params['value'] = json.dumps(claim._formatValue())
         if 'summary' in kwargs:
             params['summary'] = kwargs['summary']
-        params['token'] = self.tokens['edit']
         req = self._simple_request(**params)
         data = req.submit()
         claim.snak = data['claim']['id']
@@ -6405,7 +6380,6 @@ class DataSite(APISite):
             params['bot'] = 1
         if 'summary' in kwargs:
             params['summary'] = kwargs['summary']
-        params['token'] = self.tokens['edit']
         if snaktype == 'value':
             params['value'] = json.dumps(claim._formatValue())
 
@@ -6429,7 +6403,6 @@ class DataSite(APISite):
             raise NoPage(claim)
         params = {'action': 'wbsetclaim',
                   'claim': json.dumps(claim.toJSON()),
-                  'token': self.tokens['edit'],
                   'baserevid': claim.on_item.latest_revision_id,
                   }
         if 'bot' not in kwargs or kwargs['bot']:
@@ -6462,7 +6435,6 @@ class DataSite(APISite):
             params['baserevid'] = claim.on_item.latest_revision_id
         if bot:
             params['bot'] = 1
-        params['token'] = self.tokens['edit']
         # build up the snak
         if isinstance(source, list):
             sources = source
@@ -6518,7 +6490,6 @@ class DataSite(APISite):
                 hasattr(qualifier, 'hash') and
                 qualifier.hash is not None):
             params['snakhash'] = qualifier.hash
-        params['token'] = self.tokens['edit']
         # build up the snak
         if qualifier.getSnakType() == 'value':
             params['value'] = json.dumps(qualifier._formatValue())
@@ -6539,7 +6510,6 @@ class DataSite(APISite):
         if bot:
             params['bot'] = 1
         params['claim'] = '|'.join(claim.snak for claim in claims)
-        params['token'] = self.tokens['edit']
         for kwarg in kwargs:
             if kwarg in ['baserevid', 'summary']:
                 params[kwarg] = kwargs[kwarg]
@@ -6562,7 +6532,6 @@ class DataSite(APISite):
             params['bot'] = 1
         params['statement'] = claim.snak
         params['references'] = '|'.join(source.hash for source in sources)
-        params['token'] = self.tokens['edit']
         for kwarg in kwargs:
             if kwarg in ['baserevid', 'summary']:
                 params[kwarg] = kwargs[kwarg]
@@ -6587,7 +6556,6 @@ class DataSite(APISite):
             'totitle': page1.title(),
             'fromsite': page2.site.dbName(),
             'fromtitle': page2.title(),
-            'token': self.tokens['edit']
         }
         if bot:
             params['bot'] = 1
@@ -6609,7 +6577,6 @@ class DataSite(APISite):
             'action': 'wbmergeitems',
             'fromid': fromItem.getID(),
             'toid': toItem.getID(),
-            'token': self.tokens['edit']
         }
         for kwarg in kwargs:
             if kwarg in ['ignoreconflicts', 'summary']:
@@ -6631,7 +6598,6 @@ class DataSite(APISite):
             'action': 'wbcreateredirect',
             'from': from_item.getID(),
             'to': to_item.getID(),
-            'token': self.tokens['edit']
         }
         req = self._simple_request(**params)
         data = req.submit()

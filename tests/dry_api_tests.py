@@ -253,6 +253,9 @@ class DryWriteAssertTests(DefaultDrySiteTestCase):
         self.get_site()._paraminfo.insert_modules({
             'edit': {
                 'writerights': '',
+                'param': {
+                    'token': {'tokentype': 'csrf'},
+                },
             }
         })
 
@@ -286,10 +289,14 @@ class DryWriteAssertTests(DefaultDrySiteTestCase):
         site = self.get_site()
         site._userinfo = {'name': 'myusername', 'groups': []}
         site._username[0] = 'myusername'
+        site.tokens = {'csrf': 'csrf', 'patrol': 'patrol'}
 
         req = Request(site=site, action='edit')
         req._simulate = lambda: True
+        self.assertNotIn('token', req)
         req.submit()
+        self.assertIn('token', req)
+        self.assertEqual(req['token'], ['csrf'])
 
 
 class DryMimeTests(TestCase):

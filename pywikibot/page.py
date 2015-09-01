@@ -2928,7 +2928,6 @@ class User(Page):
         params = {
             'action': 'emailuser',
             'target': self.username,
-            'token': self.site.tokens['email'],
             'subject': subject,
             'text': text,
         }
