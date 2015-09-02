@@ -262,6 +262,14 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
 
     index = 0
     markerpos = len(text)
+
+    offset = 0
+    if not allowoverlap:
+        # Pre-calculate all the exception matches if overlap is disabled
+        exception_matches = []
+        for exception_regex in dontTouchRegexes:
+            exception_matches.extend(exception_regex.finditer(text))
+
     while True:
         if index > len(text):
             break
@@ -271,20 +279,38 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
             break
 
         # check which exception will occur next.
-        nextExceptionMatch = None
-        for dontTouchR in dontTouchRegexes:
-            excMatch = dontTouchR.search(text, index)
-            if excMatch and (
-                    nextExceptionMatch is None or
-                    excMatch.start() < nextExceptionMatch.start()):
-                nextExceptionMatch = excMatch
+        if allowoverlap:
+            # If overlap is allowed it may be that an exception occurs due to
+            # the newly added text. So we can't cache the exception regexes.
+            nextExceptionMatch = None
+            for dontTouchR in dontTouchRegexes:
+                excMatch = dontTouchR.search(text, index)
+                if excMatch and (
+                        nextExceptionMatch is None or
+                        excMatch.start() < nextExceptionMatch.start()):
+                    nextExceptionMatch = excMatch
 
-        if nextExceptionMatch is not None \
-                and nextExceptionMatch.start() <= match.start():
-            # an HTML comment or text in nowiki tags stands before the next
-            # valid match. Skip.
-            index = nextExceptionMatch.end()
+            if nextExceptionMatch is not None \
+                    and nextExceptionMatch.start() <= match.start():
+                index = nextExceptionMatch.end()
+                skip_exc = True
+            else:
+                skip_exc = False
         else:
+            # When overlap is not allowed we only need to move the found
+            # exceptions by the changes due to replacements
+            skip_exc = False
+            for exc_match in exception_matches:
+                # Get the longest exception match to skip
+                if (exc_match.start() + offset <= match.start() and
+                        exc_match.end() + offset >= match.start() and
+                        (skip_exc is False or skip_exc < exc_match.end())):
+                    skip_exc = exc_match.end()
+
+            if skip_exc is not False:
+                index = skip_exc + offset
+
+        if skip_exc is False:
             # We found a valid match. Replace it.
             if callable(new):
                 # the parameter new can be a function which takes the match
@@ -327,6 +353,8 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
                 replacement += new[last:]
 
             text = text[:match.start()] + replacement + text[match.end():]
+            # Change the offset by the different text length
+            offset += len(replacement) - (match.end() - match.start())
 
             # continue the search on the remaining text
             if allowoverlap:
