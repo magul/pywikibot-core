@@ -26,7 +26,6 @@ Furthermore, the following command line parameters are supported:
 
 -always           Always say yes, won't ask
 
-
 --- Examples ---
 
     python pwb.py lonelypages -enable:User:Bot/CheckBot -always
@@ -48,7 +47,10 @@ import sys
 
 import pywikibot
 from pywikibot import i18n, pagegenerators
-from pywikibot.bot import suggest_help, SingleSiteBot
+from pywikibot.bot import (
+    suggest_help, SingleSiteBot, NoRedirectPageBot, SettingsBot,
+    SettingsCallbackBot
+)
 
 # This is required for the text that is shown when you run this script
 # with the parameter -help.
@@ -73,6 +75,7 @@ class OrphanTemplate(object):
             name += '|' + parameters
         self.template = '{{' + name + '}}'
         self._names = frozenset(aliases)
+        self._site = site
 
         template_ns = site.namespaces[10]
         # TODO: Add redirects to self.names too
@@ -89,20 +92,15 @@ class OrphanTemplate(object):
             r')[\|\}]', re.I)
 
 
-# The orphan template names in the different languages.
-_templates = {
-    'ar': ('يتيمة', 'تاريخ={{نسخ:اسم_شهر}} {{نسخ:عام}}'),
-    'ca': ('Orfe', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}'),
-    'en': ('Orphan', 'date={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['wi']),
-    'it': ('O', '||mese={{subst:CURRENTMONTHNAME}} {{subst:CURRENTYEAR}}', ['a']),
-    'ja': ('孤立', '{{subst:DATE}}'),
-    'zh': ('Orphan/auto', '', ['orphan'], True),
-}
-
-
-class LonelyPagesBot(SingleSiteBot):
+class LonelyPagesBot(NoRedirectPageBot, SingleSiteBot, SettingsBot,
+                     SettingsCallbackBot):
 
     """Orphan page tagging bot."""
+
+    settings_page = 'pywikibot-lonelypages'
+    mandatory_settings = ['name', 'parameters']
+    optional_settings = ['aliases', 'subst']
+    settings_callback = OrphanTemplate
 
     def __init__(self, generator, **kwargs):
         self.availableOptions.update({
@@ -120,18 +118,15 @@ class LonelyPagesBot(SingleSiteBot):
             self.site, 'lonelypages-comment-add-template')
         self.commentdisambig = i18n.twtranslate(
             self.site, 'lonelypages-comment-add-disambig-template')
-        orphan_template = i18n.translate(self.site, _templates)
-        if orphan_template is not None:
-            try:
-                orphan_template = OrphanTemplate(self.site, *orphan_template)
-            except ValueError as e:
-                orphan_template = e
+        self.site.login()
+        try:
+            orphan_template = self.get_settings(self.site)
+        except ValueError as e:
+            orphan_template = e
         if orphan_template is None or isinstance(orphan_template, ValueError):
             err_message = 'Missing configuration for site %s' % self.site
             suggest_help(exception=orphan_template, additional_text=err_message)
             sys.exit(err_message)
-        else:
-            self._settings = orphan_template
         # DisambigPage part
         if self.getOption('disambigPage') is not None:
             self.disambigpage = pywikibot.Page(self.site, self.getOption('disambigPage'))
@@ -144,11 +139,6 @@ class LonelyPagesBot(SingleSiteBot):
                 pywikibot.output(u"%s is a redirect, don't use it!"
                                  % self.disambigpage.title())
                 self.options['disambigPage'] = None
-
-    @property
-    def settings(self):
-        """Return the settings for the configured site."""
-        return self._settings
 
     def enable_page(self):
         enable = self.getOption('enablePage')
@@ -174,12 +164,9 @@ class LonelyPagesBot(SingleSiteBot):
             return
         super(LonelyPagesBot, self).run()
 
-    def treat(self, page):
+    def treat_page(self):
         """Check if page is applicable and not marked and add template then."""
-        pywikibot.output(u"Checking %s..." % page.title())
-        if page.isRedirectPage():  # If redirect, skip!
-            pywikibot.output(u'%s is a redirect! Skip...' % page.title())
-            return
+        page = self.current_page
         refs = list(page.getReferences(total=1))
         if len(refs) > 0:
             pywikibot.output(u"%s isn't orphan! Skip..." % page.title())
