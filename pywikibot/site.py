@@ -1864,7 +1864,15 @@ class APISite(BaseSite):
 
         @rtype: bool
         """
-        auth_token = get_authentication(self.base_url(''))
+        try:
+            url = self.base_url('')
+        except Exception as e:
+            pywikibot.log(
+                '{0} is_oauth_token_available: base_url failed: {1}'.format(
+                    self, e))
+            return False
+
+        auth_token = get_authentication(url)
         return auth_token is not None and len(auth_token) == 4
 
     def login(self, sysop=False):
