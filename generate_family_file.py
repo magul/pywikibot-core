@@ -47,6 +47,7 @@ class FamilyFileGenerator(object):
     """Family file creator."""
 
     def __init__(self, url=None, name=None, dointerwiki=None):
+        """Constructor."""
         if url is None:
             url = raw_input("Please insert URL to wiki: ")
         if name is None:
@@ -59,10 +60,10 @@ class FamilyFileGenerator(object):
         self.langs = []  # [Wiki('https://wiki/$1'), ...]
 
     def run(self):
+        """Run generator."""
         print("Generating family file from %s" % self.base_url)
 
         w = Wiki(self.base_url)
-        self.wikis[w.iwpath] = w
         print()
         print("==================================")
         print("api url: %s" % w.api)
@@ -70,11 +71,18 @@ class FamilyFileGenerator(object):
         print("==================================")
         print()
 
-        self.getlangs(w)
+        if not w.articlepath:
+            print('article path not found; skipping interwikis')
+            self.wikis[w.api] = w
+        else:
+            self.wikis[w.iwpath] = w
+            self.getlangs(w)
+
         self.getapis()
         self.writefile()
 
     def getlangs(self, w):
+        """Populate langs from interwikimap."""
         print("Determining other languages...", end="")
         try:
             self.langs = w.langs
@@ -84,6 +92,8 @@ class FamilyFileGenerator(object):
             print(e, "; continuing...")
 
         if len([lang for lang in self.langs if lang['url'] == w.iwpath]) == 0:
+            print('Interwiki matrix doesnt include this site; '
+                  'manually adding as code %s' % w.lang)
             self.langs.append({u'language': w.lang,
                                u'local': u'',
                                u'prefix': w.lang,
@@ -113,6 +123,7 @@ class FamilyFileGenerator(object):
                               if wiki[u'url'] == w.iwpath]
 
     def getapis(self):
+        """Populate wikis from langs."""
         print("Loading wikis... ")
         for lang in self.langs:
             print("  * %s... " % (lang[u'prefix']), end="")
@@ -126,6 +137,7 @@ class FamilyFileGenerator(object):
                 print("in cache")
 
     def writefile(self):
+        """Write family module."""
         fn = "pywikibot/families/%s_family.py" % self.name
         print("Writing %s... " % fn)
         try:

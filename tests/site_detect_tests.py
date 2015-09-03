@@ -11,14 +11,48 @@ __version__ = '$Id$'
 
 from requests.exceptions import Timeout
 
+from pywikibot.comms.http import fetch
 from pywikibot.exceptions import ServerError
-from pywikibot.site_detect import MWSite
+from pywikibot.site_detect import MWSite, WikiHTMLPageParser
 from pywikibot.tools import MediaWikiVersion, PY2
 
 from tests.aspects import unittest, TestCase
 
 if not PY2:
     basestring = (str,)
+
+
+class TestHTMLParser(TestCase):
+
+    """Test MediaWiki HTML parser."""
+
+    net = True
+
+    def _test_site(self, url):
+        """Parse HTML."""
+        try:
+            r = fetch(url)
+        except (ServerError, Timeout) as e:
+            raise unittest.SkipTest('{0} problems: {1}'.format(url, e))
+
+        wp = WikiHTMLPageParser(url)
+        wp.feed(r.content)
+        self.assertIsNotNone(wp.server)
+        self.assertIsNotNone(wp.scriptpath)
+        self.assertIsNotNone(wp.lang)
+        self.assertIsNotNone(wp.version)
+        return wp
+
+    def test_private_api(self):
+        """Test private wiki."""
+        wp = self._test_site('http://www.bebaskanpengetahuan.org/wiki/')
+        self.assertEqual(wp.lang, 'id')
+        self.assertGreater(wp.version, MediaWikiVersion('1.23'))
+
+    def test_public_wiki(self):
+        """Test public wiki."""
+        wp = self._test_site('http://en.battlestarwiki.org/wiki/')
+        self.assertEqual(wp.lang, 'en')
 
 
 class TestWikiSiteDetection(TestCase):
@@ -140,6 +174,7 @@ class InterWikiMapDetection(TestWikiSiteDetection):
                     else:
                         try:
                             self.assertIsInstance(version, MediaWikiVersion)
+                            self.assertIsNotNone(site.articlepath)
                             self.passes[url] = site
                         except AssertionError as error:
                             print('failed to parse version of ' + url)
@@ -194,6 +229,11 @@ class SiteDetectionTestCase(TestWikiSiteDetection):
         self.assertSite('https://wiki.gentoo.org/wiki/$1')
         self.assertSite('http://wiki.arabeyes.org/$1')
         self.assertSite('http://tfwiki.net/wiki/$1')
+        self.assertAllPass()
+
+    def test_private_api(self):
+        """Test private api URL."""
+        self.assertSite('http://www.bebaskanpengetahuan.org/w/api.php')
         self.assertAllPass()
 
     def test_detect_failure(self):

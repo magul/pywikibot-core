@@ -49,8 +49,19 @@ class MWSite(object):
         @raises Timeout: a timeout occurred while loading the site
         @raises RuntimeError: Version not found or version less than 1.14
         """
+        self.server = None
+        self.scriptpath = None
+
         if fromurl.endswith("$1"):
             fromurl = fromurl[:-2]
+        elif fromurl.endswith('api.php'):
+            parsed_url = urlparse(fromurl)
+            self.server = '{0}://{1}'.format(
+                parsed_url.scheme, parsed_url.netloc)
+            self.scriptpath = parsed_url.path
+
+            fromurl = fromurl[:-7] + 'index.php'
+
         r = fetch(fromurl)
         if r.status == 503:
             raise ServerError('Service Unavailable')
@@ -67,9 +78,10 @@ class MWSite(object):
         wp.feed(data)
 
         self.version = wp.version
-        self.server = wp.server
-        self.scriptpath = wp.scriptpath
+        self.server = self.server or wp.server
+        self.scriptpath = self.scriptpath or wp.scriptpath
         self.articlepath = None
+        self.lang = wp.lang
 
         try:
             self._parse_pre_117(data)
@@ -127,6 +139,8 @@ class MWSite(object):
         if self.version is None:
             try:
                 d = fetch(self.api + '?version&format=json').content
+                if 'apihighlimits' in d:
+                    self.version = '1.14.0+detected'
                 try:
                     d = json.loads(d)
                 except ValueError:
@@ -197,6 +211,7 @@ class WikiHTMLPageParser(HTMLParser):
         self._parsed_url = None
         self.server = None
         self.scriptpath = None
+        self.lang = None
 
     def set_version(self, value):
         """Set highest version."""
@@ -213,7 +228,7 @@ class WikiHTMLPageParser(HTMLParser):
             return
 
         if script_name == 'load':
-            self.set_version(MediaWikiVersion('1.17.0'))
+            self.set_version(MediaWikiVersion('1.17.0+detected'))
             if self._parsed_url:
                 # A Resource Loader link is less reliable than other links.
                 # Resource Loader can load resources from a different site.
@@ -267,3 +282,5 @@ class WikiHTMLPageParser(HTMLParser):
                 self.set_api_url(attrs['href'])
         elif tag == 'script' and 'src' in attrs:
             self.set_api_url(attrs['src'])
+        elif tag == 'html' and 'lang' in attrs:
+            self.lang = attrs['lang']
