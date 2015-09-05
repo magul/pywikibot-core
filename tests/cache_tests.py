@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """API Request cache tests."""
 #
-# (C) Pywikibot team, 2012-2014
+# (C) Pywikibot team, 2014-2015
 #
 # Distributed under the terms of the MIT license.
 #
@@ -10,11 +10,98 @@ from __future__ import unicode_literals
 __version__ = '$Id$'
 #
 
+from pywikibot.enums import LoginStatus
 from pywikibot.site import BaseSite
+
 import scripts.maintenance.cache as cache
 
 from tests import _cache_dir
 from tests.aspects import unittest, TestCase
+
+
+class TestLoginStatusEnum(TestCase):
+
+    """Test cases for LoginStatus class."""
+
+    net = False
+
+    def test_parse_fake_repr(self):
+        """Test old LoginStatus fake repr stored in the cache."""
+        parsed = LoginStatus._parse_repr('LoginStatus(AS_USER)')
+        self.assertEqual(parsed[0], LoginStatus.AS_USER)
+        self.assertEqual(parsed[1], 'LoginStatus(AS_USER)')
+
+    def test_parse_repr(self):
+        """Test LoginStatus enum repr."""
+        expect = '<LoginStatus.AS_USER: 0>'
+        self.assertEqual(repr(LoginStatus.AS_USER), expect)
+
+        parsed = LoginStatus._parse_repr(expect)
+        self.assertEqual(parsed[0], LoginStatus.AS_USER)
+        self.assertEqual(parsed[1], expect)
+
+    def test_parse_repr_wrong_start(self):
+        """Test missing LoginStatus at start."""
+        self.assertRaises(RuntimeError, LoginStatus._parse_repr, 'foo')
+        self.assertRaises(RuntimeError,
+                          LoginStatus._parse_repr, 'foo<LoginStatus: >')
+
+    def test_parse_repr_wrong_end(self):
+        """Test LoginStatus end not detected."""
+        self.assertRaises(ValueError,
+                          LoginStatus._parse_repr, '<LoginStatus.: ')
+
+    def test_parse_repr_unknown(self):
+        """Test unknown LoginStatus."""
+        self.assertRaises(KeyError,
+                          LoginStatus._parse_repr, '<LoginStatus.BLAH: 0>')
+
+
+class TestCacheKey(TestCase):
+
+    """Test cases for cache keys."""
+
+    net = False
+
+    def test_site_and_params(self):
+        """Test old cache entry key with only Site() and params."""
+        entry = cache.CacheEntry('dummy', 'dummy')
+        entry.key = "Site(wikipedia:en)[('foo'), ('bar')]"
+        (site, username, login_status, params) = entry.parse_key()
+        self.assertEqual(site, 'APISite(wikipedia:en)')
+        self.assertIsNone(username)
+        self.assertIsNone(login_status)
+        self.assertEqual(params, "[('foo'), ('bar')]")
+
+    def test_site_old_user_and_params(self):
+        """Test cache entry key with only Site(), old User() and params."""
+        entry = cache.CacheEntry('dummy', 'dummy')
+        entry.key = "Site(wikipedia:en)User(User:abc)[('foo'), ('bar')]"
+        (site, username, login_status, params) = entry.parse_key()
+        self.assertEqual(site, 'APISite(wikipedia:en)')
+        self.assertEqual(username, 'abc')
+        self.assertIsNone(login_status)
+        self.assertEqual(params, "[('foo'), ('bar')]")
+
+    def test_site_user_and_params(self):
+        """Test cache entry key with only Site(), User() and params."""
+        entry = cache.CacheEntry('dummy', 'dummy')
+        entry.key = "Site(wikipedia:en)User(abc)[('foo'), ('bar')]"
+        (site, username, login_status, params) = entry.parse_key()
+        self.assertEqual(site, 'APISite(wikipedia:en)')
+        self.assertEqual(username, 'abc')
+        self.assertIsNone(login_status)
+        self.assertEqual(params, "[('foo'), ('bar')]")
+
+    def test_site_loginstatus_and_params(self):
+        """Test cache entry key with only Site(), LoginStatus() and params."""
+        entry = cache.CacheEntry('dummy', 'dummy')
+        entry.key = "Site(wikipedia:en)LoginStatus(NOT_LOGGED_IN)[('foo')]"
+        (site, username, login_status, params) = entry.parse_key()
+        self.assertEqual(site, 'APISite(wikipedia:en)')
+        self.assertIsNone(username)
+        self.assertEqual(login_status, LoginStatus.NOT_LOGGED_IN)
+        self.assertEqual(params, "[('foo')]")
 
 
 class RequestCacheTests(TestCase):

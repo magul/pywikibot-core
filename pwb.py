@@ -155,6 +155,17 @@ if not requests:
     print("Try running 'pip install requests'.")
     sys.exit(1)
 
+try:
+    import enum
+except ImportError as e:
+    print("ImportError: %s" % e)
+    enum = None
+
+if not enum:
+    print("Python module enum is required.")
+    print("Try running 'pip install enum34'.")
+    sys.exit(1)
+
 del requests
 
 if len(sys.argv) > 1 and sys.argv[1][0] != '-':
