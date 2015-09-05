@@ -39,7 +39,7 @@ from pywikibot.tools import (
     merge_unique_dicts,
 )
 from pywikibot.comms.http import get_authentication
-from pywikibot.enums import LoginStatus
+from pywikibot.enums import BuiltinNamespace, LoginStatus
 from pywikibot.tools.ip import is_IP
 from pywikibot.throttle import Throttle
 from pywikibot.data import api
@@ -114,25 +114,6 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
     If only one of canonical_name and custom_name are available, both
     properties will have the same value.
     """
-
-    MEDIA = -2
-    SPECIAL = -1
-    MAIN = 0
-    TALK = 1
-    USER = 2
-    USER_TALK = 3
-    PROJECT = 4
-    PROJECT_TALK = 5
-    FILE = 6
-    FILE_TALK = 7
-    MEDIAWIKI = 8
-    MEDIAWIKI_TALK = 9
-    TEMPLATE = 10
-    TEMPLATE_TALK = 11
-    HELP = 12
-    HELP_TALK = 13
-    CATEGORY = 14
-    CATEGORY_TALK = 15
 
     # These are the MediaWiki built-in names for MW 1.14+.
     # Namespace prefixes are always case-insensitive, but the
@@ -438,6 +419,11 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
             namespaces = Namespace.builtin_namespaces()
 
         return NamespacesDict._resolve(identifiers, namespaces)
+
+
+# Set Namespace.FOO to be BuiltinNamespace.FOO for each builtin namespace
+for item in BuiltinNamespace:
+    setattr(Namespace, item.name, item)
 
 
 class NamespacesDict(Mapping, SelfCallMixin):

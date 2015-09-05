@@ -10,6 +10,8 @@ from __future__ import unicode_literals
 __version__ = '$Id$'
 
 from collections import Iterable
+
+from pywikibot.enums import BuiltinNamespace
 from pywikibot.site import Namespace, NamespacesDict
 from tests.aspects import unittest, TestCase, AutoDeprecationTestCase
 
@@ -56,6 +58,16 @@ class TestNamespaceObject(TestCase):
     """Test cases for Namespace class."""
 
     net = False
+
+    def test_enums(self):
+        """Test builtin namespace enum in Namespace."""
+        self.assertEqual(BuiltinNamespace.MAIN, 0)
+        self.assertEqual(Namespace.MAIN, BuiltinNamespace.MAIN)
+        self.assertEqual(Namespace.MEDIA, -2)
+        self.assertGreater(Namespace.MAIN, Namespace.MEDIA)
+        self.assertLess(Namespace.MEDIA, Namespace.MAIN)
+        self.assertEqual(Namespace.CATEGORY, 14)
+        self.assertGreater(Namespace.CATEGORY, Namespace.HELP_TALK)
 
     def testNamespaceTypes(self):
         """Test cases for methods manipulating Namespace names."""
