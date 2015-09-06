@@ -584,8 +584,9 @@ class WikidataQuery(object):
 
         try:
             resp = http.fetch(url)
-        except:
-            pywikibot.warning(u"Failed to retrieve %s" % url)
+        except Exception as e:
+            pywikibot.warning(
+                'Failed to retrieve {0}: {1}'.format(url, e))
             raise
 
         data = resp.content

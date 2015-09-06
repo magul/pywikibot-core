@@ -473,10 +473,13 @@ class ReferencesRobot(Bot):
             pywikibot.output(u'PDF done.')
         except ValueError:
             pywikibot.output(u'pdfinfo value error.')
+            pywikibot.exception()
         except OSError:
             pywikibot.output(u'pdfinfo OS error.')
-        except:  # Ignore errors
+            pywikibot.exception()
+        except Exception:  # Ignore errors
             pywikibot.output(u'PDF processing error.')
+            pywikibot.exception()
             pass
         finally:
             urlobj.close()

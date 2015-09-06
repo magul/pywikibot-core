@@ -1464,8 +1464,7 @@ class Subject(interwiki_graph.Subject):
                     f.write("\n")
                     f.close()
                 # FIXME: What errors are we catching here?
-                # except: should be avoided!!
-                except:
+                except Exception:
                     # raise
                     pywikibot.output(
                         'File autonomous_problems.dat open or corrupted! '
@@ -2599,7 +2598,7 @@ def main(*args):
         bot.run()
     except KeyboardInterrupt:
         dumpFileName = bot.dump(append)
-    except:
+    except Exception:
         dumpFileName = bot.dump(append)
         raise
     finally:

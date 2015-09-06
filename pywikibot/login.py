@@ -105,7 +105,7 @@ sysopnames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
                 family_usernames = config.usernames[self.site.family.name]
                 self.username = family_usernames.get(self.site.code, None)
                 self.username = self.username or family_usernames['*']
-            except:
+            except KeyError:
                 raise NoUsername(u"""\
 ERROR: Username for %(fam_name)s:%(wiki_code)s is undefined.
 If you have an account for that site, please add a line to user-config.py:

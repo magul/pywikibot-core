@@ -211,7 +211,7 @@ class ScriptWUIBot(pywikibot.botirc.IRCBot):
         # (simple 'thread' for more sophisticated code use 'threading')
         try:
             thread.start_new_thread(main_script, (self.refs[page_title], rev, params))
-        except:
+        except Exception:
             # (done according to subster in trunk and submit in rewrite/.../data/api.py)
             # TODO: is this error handling here needed at all??!?
             pywikibot.exception(tb=True)  # secure traceback print (from api.py submit)
@@ -248,7 +248,7 @@ def main_script(page, rev=None, params=NotImplemented):  # pylint: disable=unuse
         code = page.getOldVersion(rev)  # crontab; scheduled
     try:
         exec(code)
-    except:
+    except Exception:
         # (done according to subster in trunk and submit in rewrite/.../data/api.py)
         pywikibot.exception(tb=True)  # secure traceback print (from api.py submit)
 
@@ -323,7 +323,7 @@ def main(*args):
     bot = ScriptWUIBot(site, chan, site.user() + "_WUI", "irc.wikimedia.org")
     try:
         bot.start()
-    except:
+    except BaseException:
         bot.t.cancel()
         raise
 

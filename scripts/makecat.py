@@ -278,5 +278,5 @@ try:
 finally:
     try:
         excludefile.close()
-    except:
+    except Exception:
         pass
