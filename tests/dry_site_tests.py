@@ -12,7 +12,7 @@ __version__ = '$Id$'
 
 import pywikibot
 from pywikibot.tools import deprecated
-from pywikibot.site import must_be, need_version
+from pywikibot.site import must_be, need_version, LoginStatus
 from pywikibot.comms.http import user_agent
 from pywikibot.exceptions import UnknownSite
 
@@ -34,20 +34,40 @@ class TestDrySite(DefaultDrySiteTestCase):
         """Test logged_in() method."""
         x = self.get_site()
 
+        not_logged_in_statuses = [LoginStatus.NOT_ATTEMPTED,
+                                  LoginStatus.IN_PROGRESS,
+                                  LoginStatus.NOT_LOGGED_IN]
+
+        logged_in_statuses = [LoginStatus.AS_USER,
+                              LoginStatus.AS_SYSOP]
+
         x._userinfo = {'name': None, 'groups': []}
         x._username = ['normal_user', 'sysop_user']
 
-        self.assertFalse(x.logged_in(True))
-        self.assertFalse(x.logged_in(False))
+        for x._loginstatus in not_logged_in_statuses + logged_in_statuses:
+            self.assertFalse(x.logged_in(True))
+            self.assertFalse(x.logged_in(False))
 
         x._userinfo['name'] = 'normal_user'
-        self.assertFalse(x.logged_in(True))
-        self.assertTrue(x.logged_in(False))
+
+        for x._loginstatus in not_logged_in_statuses:
+            self.assertFalse(x.logged_in(True))
+            self.assertFalse(x.logged_in(False))
+
+        for x._loginstatus in logged_in_statuses:
+            self.assertFalse(x.logged_in(True))
+            self.assertTrue(x.logged_in(False))
 
         x._userinfo['name'] = 'sysop_user'
         x._userinfo['groups'] = ['sysop']
-        self.assertTrue(x.logged_in(True))
-        self.assertFalse(x.logged_in(False))
+
+        for x._loginstatus in not_logged_in_statuses:
+            self.assertFalse(x.logged_in(True))
+            self.assertFalse(x.logged_in(False))
+
+        for x._loginstatus in logged_in_statuses:
+            self.assertTrue(x.logged_in(True))
+            self.assertFalse(x.logged_in(False))
 
     def test_user_agent(self):
         """Test different variants of user agents."""
