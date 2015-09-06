@@ -296,10 +296,8 @@ def create_user_config(args=None, force=False):
 
         pywikibot.output(u"'%s' written." % _fnc)
     except Exception:
-        try:
+        if os.path.exists(_fnc):
             os.remove(_fnc)
-        except Exception:
-            pass
         raise
 
 
