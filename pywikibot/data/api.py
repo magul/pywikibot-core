@@ -9,7 +9,6 @@ from __future__ import unicode_literals
 
 __version__ = '$Id$'
 
-from collections import Container, MutableMapping
 from email.mime.nonmultipart import MIMENonMultipart
 import datetime
 import hashlib
@@ -25,6 +24,7 @@ import re
 import traceback
 import time
 
+from collections import Container, MutableMapping, Iterable, Mapping
 from warnings import warn
 
 import pywikibot
@@ -114,6 +114,54 @@ class APIError(Error):
                     for key, val in self.other.items()))
 
         return "%(code)s: %(info)s" % self.__dict__
+
+    def make_specific(self, name, errors, error_data, default_mapping=None):
+        """
+        Try to create a more specific exception class.
+
+        @param name: The name used in the message on unknown error codes.
+        @type name: str
+        @param errors: The dict of error messages. The keys are the error codes
+            supported. The value is either the string message used in an
+            C{Error} instance, the exception class or a tuple of an exception
+            class and parameter mapping (overwriting C{default_mapping}).
+        @type errors: dict
+        @param error_data: The error data which is either formatted into the
+            string or as parameters to the error class.
+        @type error_data: dict
+        @param default_mapping: The parameter mapping used when the message is
+            an exception instance. It maps the old parameter used in the error
+            data to any new parameter. Any entry in the data which is not in the
+            mapping won't be included. If the mapping is just an iterable it'll
+            use the same name for the old and new parameter and just remove
+            the rest.
+        @type default_mapping: iterable or None
+        @return: The more specific exception for this error. If there is no
+            entry for the code it'll return itself.
+        @rtype: exception (usually APIError or Error)
+        """
+        if self.code in errors:
+            error_entry = errors[self.code]
+            if isinstance(error_entry, basestring):
+                return Error(error_entry % error_data)
+            else:
+                if isinstance(error_entry, Iterable):
+                    error_entry, mapping = error_entry
+                else:
+                    if default_mapping:
+                        mapping = default_mapping
+                    else:
+                        mapping = list(error_data)
+                if not isinstance(mapping, Mapping):
+                    mapping = dict((arg, arg) for arg in mapping)
+                new_args = dict((new, error_data[old])
+                                for old, new in mapping.items())
+                return error_entry(**new_args)
+        else:
+            pywikibot.debug("{0}: Unexpected error code '{1}' "
+                            "received.".format(name, self.code),
+                            _logger)
+            return self
 
 
 class UploadWarning(APIError):

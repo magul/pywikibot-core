@@ -26,7 +26,7 @@ import json
 import copy
 import mimetypes
 
-from collections import Iterable, Container, namedtuple, Mapping
+from collections import Iterable, Container, Mapping
 from warnings import warn
 
 import pywikibot
@@ -1623,6 +1623,23 @@ class NonMWAPISite(BaseSite):
             raise NotImplementedError('The attribute %s has not been on '
                                       'site %s implemented yet.'
                                       % (attr, self.netloc))
+
+
+# Must be placed outside the class as it can't be accessed otherwise
+def _create_movepage_locked(new_page, page):
+    """
+    Handle creating of LockedPage for movepage.
+
+    LockedPage can be raised both if "from" or "to" page are locked for the
+    user. Both pages locked is not considered as it's improbable.
+    """
+    if new_page.exists():
+        # we assume "from" is locked unless proven otherwise
+        for prot in new_page.protection().values():
+            if prot[0] not in new_page.site._userinfo['groups']:
+                page = new_page
+                break
+    return LockedPage(page)
 
 
 class APISite(BaseSite):
@@ -4492,22 +4509,15 @@ class APISite(BaseSite):
                         u"editpage: received '%s' even though bot is logged in"
                         % err.code,
                         _logger)
-                if err.code in self._ep_errors:
-                    if isinstance(self._ep_errors[err.code], basestring):
-                        errdata = {
-                            'site': self,
-                            'title': page.title(withSection=False),
-                            'user': self.user(),
-                            'info': err.info
-                        }
-                        raise Error(self._ep_errors[err.code] % errdata)
-                    else:
-                        raise self._ep_errors[err.code](page)
-                pywikibot.debug(
-                    u"editpage: Unexpected error code '%s' received."
-                    % err.code,
-                    _logger)
-                raise
+                errdata = {
+                    'site': self,
+                    'title': page.title(withSection=False),
+                    'user': self.user(),
+                    'info': err.info,
+                    'page': page,
+                }
+                raise err.make_specific('editpage', self._ep_errors, errdata,
+                                        ('page', ))
             assert "edit" in result and "result" in result["edit"], result
             if result["edit"]["result"] == "Success":
                 self.unlock_page(page)
@@ -4567,7 +4577,6 @@ class APISite(BaseSite):
                 pywikibot.log(str(result))
                 return False
 
-    OnErrorExc = namedtuple('OnErrorExc', 'exception on_new_page')
     # catalog of move errors for use in error messages
     _mv_errors = {
         "noapiwrite": "API editing not enabled on %(site)s wiki",
@@ -4582,10 +4591,10 @@ class APISite(BaseSite):
 "User %(user)s is not authorized to move pages on %(site)s wiki",
         "immobilenamespace":
 "Pages in %(oldnamespace)s namespace cannot be moved on %(site)s wiki",
-        "articleexists": OnErrorExc(exception=ArticleExistsConflict, on_new_page=True),
+        'articleexists': ArticleExistsConflict,
         # "protectedpage" can happen in both directions.
-        "protectedpage": OnErrorExc(exception=LockedPage, on_new_page=None),
-        "protectedtitle": OnErrorExc(exception=LockedNoPage, on_new_page=True),
+        'protectedpage': (_create_movepage_locked, ('new_page', 'page')),
+        'protectedtitle': LockedNoPage,
         "nonfilenamespace":
 "Cannot move a file to %(newnamespace)s namespace on %(site)s wiki",
         "filetypemismatch":
@@ -4640,38 +4649,18 @@ class APISite(BaseSite):
                     u"movepage: received '%s' even though bot is logged in"
                     % err.code,
                     _logger)
-            if err.code in self._mv_errors:
-                on_error = self._mv_errors[err.code]
-                if hasattr(on_error, 'exception'):
-                    # LockedPage can be raised both if "from" or "to" page
-                    # are locked for the user.
-                    # Both pages locked is not considered
-                    # (a double failure has low probability)
-                    if issubclass(on_error.exception, LockedPage):
-                        # we assume "from" is locked unless proven otherwise
-                        failed_page = page
-                        if newpage.exists():
-                            for prot in self.page_restrictions(newpage).values():
-                                if prot[0] not in self._userinfo['groups']:
-                                    failed_page = newpage
-                                    break
-                    else:
-                        failed_page = newpage if on_error.on_new_page else page
-                    raise on_error.exception(failed_page)
-                else:
-                    errdata = {
-                        'site': self,
-                        'oldtitle': oldtitle,
-                        'oldnamespace': self.namespace(page.namespace()),
-                        'newtitle': newtitle,
-                        'newnamespace': self.namespace(newlink.namespace),
-                        'user': self.user(),
-                    }
-                    raise Error(on_error % errdata)
-            pywikibot.debug(u"movepage: Unexpected error code '%s' received."
-                            % err.code,
-                            _logger)
-            raise
+            errdata = {
+                'site': self,
+                'oldtitle': oldtitle,
+                'oldnamespace': self.namespace(page.namespace()),
+                'newtitle': newtitle,
+                'newnamespace': self.namespace(newlink.namespace),
+                'user': self.user(),
+                'page': page,
+                'new_page': newpage,
+            }
+            raise err.make_specific('movepage', self._mv_errors, errdata,
+                                    {'new_page': 'page'})
         finally:
             self.unlock_page(page)
         if "move" not in result:
@@ -4731,12 +4720,7 @@ class APISite(BaseSite):
                 'title': page.title(withSection=False),
                 'user': self.user(),
             }
-            if err.code in self._rb_errors:
-                raise Error(self._rb_errors[err.code] % errdata)
-            pywikibot.debug(u"rollback: Unexpected error code '%s' received."
-                            % err.code,
-                            _logger)
-            raise
+            raise err.make_specific('rollback', self._rb_errors, errdata)
         finally:
             self.unlock_page(page)
 
@@ -4776,12 +4760,7 @@ class APISite(BaseSite):
                 'title': page.title(withSection=False),
                 'user': self.user(),
             }
-            if err.code in self._dl_errors:
-                raise Error(self._dl_errors[err.code] % errdata)
-            pywikibot.debug(u"delete: Unexpected error code '%s' received."
-                            % err.code,
-                            _logger)
-            raise
+            raise err.make_specific('delete', self._dl_errors, errdata)
         finally:
             self.unlock_page(page)
 
@@ -4814,12 +4793,7 @@ class APISite(BaseSite):
                 'title': page.title(withSection=False),
                 'user': self.user(),
             }
-            if err.code in self._dl_errors:
-                raise Error(self._dl_errors[err.code] % errdata)
-            pywikibot.debug(u"delete: Unexpected error code '%s' received."
-                            % err.code,
-                            _logger)
-            raise
+            raise err.make_specific('delete', self._dl_errors, errdata)
         finally:
             self.unlock_page(page)
 
@@ -4889,12 +4863,7 @@ class APISite(BaseSite):
                 'site': self,
                 'user': self.user(),
             }
-            if err.code in self._protect_errors:
-                raise Error(self._protect_errors[err.code] % errdata)
-            pywikibot.debug(u"protect: Unexpected error code '%s' received."
-                            % err.code,
-                            _logger)
-            raise
+            raise err.make_specific('protect', self._protect_errors, errdata)
         finally:
             self.unlock_page(page)
 
@@ -4986,12 +4955,7 @@ class APISite(BaseSite):
                     'user': self.user(),
                 }
                 errdata[idtype] = idvalue
-                if err.code in self._patrol_errors:
-                    raise Error(self._patrol_errors[err.code] % errdata)
-                pywikibot.debug(u"protect: Unexpected error code '%s' received."
-                                % err.code,
-                                _logger)
-                raise
+                raise err.make_specific('patrol', self._patrol_errors, errdata)
 
             yield result['patrol']
 

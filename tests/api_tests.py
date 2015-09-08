@@ -25,6 +25,7 @@ from tests.aspects import (
     TestCase,
     DefaultSiteTestCase,
     DefaultDrySiteTestCase,
+    PatchingTestCase,
 )
 from tests.utils import allowed_failure, FakeLoginManager, PatchedHttp
 
@@ -954,6 +955,62 @@ class TestBadTokenRecovery(TestCase):
         page.text = ('This page is testing whether pywikibot-core rerequests '
                      'a token when a badtoken error was received.')
         page.save(summary='Bad token test')
+
+
+class TestAPIErrorMakeSpecific(PatchingTestCase):
+
+    """Test C{APIError.make_specific}."""
+
+    dry = True
+
+    @classmethod
+    def setUpClass(cls):
+        """Create dummy error dict."""
+        super(TestAPIErrorMakeSpecific, cls).setUpClass()
+        cls.error_dict = {
+            'str': 'Hello %(str)s',
+            'exc': cls._exc,
+            'mapall': (cls._exc, {'str': 'strmap', 'int': 'intmap'}),
+            'mapone': (cls._exc, {'str': 'strmap'}),
+            'mapiter': (cls._exc, ['str'])
+        }
+
+    @classmethod
+    def _exc(cls, **kwargs):
+        """Return the parameters unaltered."""
+        return kwargs
+
+    @PatchingTestCase.patched(pywikibot, 'debug')
+    def _debug(self, msg, logger):
+        """Patched debug method."""
+        self._msg = msg
+        self._logger = logger
+
+    def _create(self, code):
+        """Create a new exception instance using the _ErrorDict class."""
+        self._api_error = api.APIError(code, '')
+        return self._api_error.make_specific('test', self.error_dict,
+                                             {'str': code, 'int': 42})
+
+    def test_make_specific(self):
+        """Test _ErrorDict class."""
+        str_error = self._create('str')
+        self.assertEqual(str_error.unicode, 'Hello str')
+        self.assertIsInstance(str_error, pywikibot.Error)
+        self.assertEqual(self._create('exc'), {'str': 'exc', 'int': 42})
+        self.assertEqual(self._create('mapall'),
+                         {'strmap': 'mapall', 'intmap': 42})
+        self.assertEqual(self._create('mapone'), {'strmap': 'mapone'})
+        self.assertEqual(self._create('mapiter'), {'str': 'mapiter'})
+
+        self.assertFalse(hasattr(self, '_msg'))
+        self.assertFalse(hasattr(self, '_logger'))
+
+        unknown_error = self._create('unknown')
+        self.assertIs(unknown_error, self._api_error)
+        self.assertEqual(self._msg,
+                         "test: Unexpected error code 'unknown' received.")
+        self.assertEqual(self._logger, 'data.api')
 
 
 if __name__ == '__main__':
