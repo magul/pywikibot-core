@@ -42,6 +42,8 @@ before_script:
   - pip install -r dev-requirements.txt
 
 script:
+  - TEST_MODULE_LIST=(${PYWIKIBOT_TEST_MODULES//,/ })
+
   # Install security packages for requests to support HTTPS in site_detect
   - if [[ "$PYSETUP_TEST_EXTRAS" != '1' ]]; then
       pip install mwoauth -r requests-requirements.txt ;
@@ -88,12 +90,14 @@ script:
   - python -c "import setuptools; print(setuptools.__version__)"
 
   - if [[ "$USE_NOSE" == "1" ]]; then
+      TEST_SUITE="$(for i in ${!TEST_MODULE_LIST[@]}; do echo -n " --tests tests.${TEST_MODULE_LIST[i]}_tests"; done)" ;
+      if [[ "$TEST_SUITE" == "" ]]; then TEST_SUITE="--tests tests"; fi ;
       nosetests --version ;
       if [[ "$SITE_ONLY" == "1" ]]; then
         echo "Running site tests only code ${LANGUAGE} on family ${FAMILY}" ;
-        python setup.py nosetests --tests tests --verbosity=2 -a "family=$FAMILY,code=$LANGUAGE" ;
+        python setup.py nosetests $TEST_SUITE --verbosity=2 -a "family=$FAMILY,code=$LANGUAGE" ;
       else
-        python setup.py nosetests --tests tests --verbosity=2 ;
+        python setup.py nosetests $TEST_SUITE --verbosity=2 ;
       fi ;
     else
       python setup.py test ;
