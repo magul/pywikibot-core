@@ -30,7 +30,7 @@ from tests.aspects import (
     DefaultSiteTestCase,
     DefaultDrySiteTestCase,
 )
-from tests.utils import allowed_failure, FakeLoginManager, PatchedHttp
+from tests.utils import FakeLoginManager, PatchedHttp
 
 if not PY2:
     from urllib.parse import unquote_to_bytes
@@ -556,10 +556,9 @@ class TestDryPageGenerator(TestCase):
 
     dry = True
 
-    # api.py sorts 'pages' using the string key, which is not a
-    # numeric comparison.
-    titles = ("Broadcaster (definition)", "Wiktionary", "Broadcaster.com",
-              "Wikipedia:Disambiguation")
+    # Ordered ascending using the page id
+    titles = ('Wikipedia:Disambiguation', 'Wiktionary', 'Broadcaster.com',
+              'Broadcaster (definition)')
 
     def setUp(self):
         """Set up test case."""
@@ -717,7 +716,6 @@ class TestPropertyGenerator(TestCase):
             count += 1
         self.assertEqual(len(links), count)
 
-    @allowed_failure
     def test_many_continuations_limited(self):
         """Test PropertyGenerator with many limited props."""
         mainpage = self.get_mainpage()
@@ -740,12 +738,9 @@ class TestPropertyGenerator(TestCase):
             self.assertIn('pageid', pagedata)
             count += 1
         self.assertEqual(len(links), count)
-        # FIXME: AssertionError: 30 != 6150
 
-    @allowed_failure
     def test_two_continuations_limited(self):
         """Test PropertyGenerator with many limited props and continuations."""
-        # FIXME: test fails
         mainpage = self.get_mainpage()
         links = list(self.site.pagelinks(mainpage, total=30))
         titles = [l.title(withSection=False)
@@ -762,7 +757,6 @@ class TestPropertyGenerator(TestCase):
             self.assertIn('pageid', pagedata)
             count += 1
         self.assertEqual(len(links), count)
-        # FIXME: AssertionError: 30 != 11550
 
     # FIXME: test disabled as it takes longer than 10 minutes
     def _test_two_continuations_limited_long_test(self):

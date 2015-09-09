@@ -5,6 +5,23 @@
 #
 # Distributed under the terms of the MIT license.
 #
+##############################################
+#
+# update_nested_dict() function
+# Posted on Stack Overflow [1], available under CC-BY-SA 3.0 [2]
+#
+# Question: "Update value of a nested dictionary of varying depth" [3]
+# by jay_t [4], answered [5] by Alex Martelli [6].
+#
+# [1] https://stackoverflow.com
+# [2] https://creativecommons.org/licenses/by-sa/3.0/
+# [3] https://stackoverflow.com/questions/3232943
+# [4] http://stackoverflow.com/users/340212/jay-t
+# [5] http://stackoverflow.com/a/3233356
+# [6] https://stackoverflow.com/users/85185
+#
+##############################################
+
 from __future__ import absolute_import, print_function, unicode_literals
 __version__ = '$Id$'
 
@@ -102,11 +119,13 @@ Please upgrade to Python 2.7+ or Python 3.3+, or run:
         try:
             from ordereddict import OrderedDict
         except ImportError:
-            class OrderedDict(NotImplementedClass):
-
-                """OrderedDict not found."""
-
-                pass
+            """OrderedDict not found."""
+            warn('pywikibot support of Python 2.6 relies on OrderedDict'
+                 'for many features.'
+                 'Please upgrade to Python 2.7+ or Python 3.3+, or run:'
+                 '"pip install ordereddict" or "pip install future>=0.15.0"',
+                 RuntimeWarning)
+            raise
 
         try:
             from counter import Counter
@@ -1034,6 +1053,17 @@ def merge_unique_dicts(*args, **kwargs):
                          '{0}'.format(', '.join(sorted(unicode(key) for key in conflicts))))
     return result
 
+
+def update_nested_dict(orig_dict, new_dict):
+    """Update value of a nested dictionary of varying depth."""
+    for key, val in new_dict.items():
+        if isinstance(val, collections.Mapping):
+            orig_dict[key] = update_nested_dict(orig_dict.get(key, {}), val)
+        elif isinstance(val, list):
+            orig_dict[key] = orig_dict.get(key, []) + val
+        else:
+            orig_dict[key] = new_dict[key]
+    return orig_dict
 
 # Decorators
 #

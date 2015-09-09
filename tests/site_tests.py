@@ -897,6 +897,13 @@ class TestSiteGenerators(DefaultSiteTestCase):
             cnt += 1
         self.assertLessEqual(cnt, 5)
 
+    def test_ancientpages(self):
+        """Test the site.ancientpages() method."""
+        mysite = self.get_site()
+        wl = list(mysite.ancientpages(total=20))
+        self.assertLessEqual(len(wl), 20)
+        self.assertTrue(all(isinstance(data, tuple) for data in wl))
+
 
 class TestImageUsage(DefaultSiteTestCase):
 
@@ -2518,10 +2525,10 @@ class TestPagePreloading(DefaultSiteTestCase):
             if count > 5:
                 break
 
-    @allowed_failure
     def test_preload_langlinks_normal(self):
         """Test preloading continuation works."""
-        # FIXME: test fails
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T112006')
         mysite = self.get_site()
         mainpage = self.get_mainpage()
         count = 0
@@ -2538,10 +2545,10 @@ class TestPagePreloading(DefaultSiteTestCase):
             if count >= 6:
                 break
 
-    @allowed_failure
     def test_preload_langlinks_count(self):
         """Test preloading continuation works."""
-        # FIXME: test fails
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T112006')
         mysite = self.get_site()
         mainpage = self.get_mainpage()
         count = 0
@@ -2580,7 +2587,6 @@ class TestPagePreloading(DefaultSiteTestCase):
 
         self.assertEqual(len(links), count)
 
-    @allowed_failure
     def test_preload_templates(self):
         """Test preloading templates works."""
         mysite = self.get_site()
