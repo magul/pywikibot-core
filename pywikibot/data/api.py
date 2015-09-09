@@ -3202,8 +3202,10 @@ def update_page(page, pagedict, props=[]):
             coords.append(coord)
         page._coords = coords
 
-    if "pageprops" in pagedict:
-        page._pageprops = pagedict['pageprops']
+    if 'pageprops' in props:
+        page._pageprops = pagedict.get('pageprops', {})
+    else:
+        assert 'pageprops' not in pagedict
 
     if 'preload' in pagedict:
         page._preloadedtext = pagedict['preload']
