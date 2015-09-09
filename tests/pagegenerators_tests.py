@@ -31,6 +31,7 @@ from tests.aspects import (
     DeprecationTestCase,
     WikidataTestCase,
     DefaultSiteTestCase,
+    DefaultWikibaseClientTestCase,
     RecentChangesTestCase,
 )
 from tests.thread_tests import GeneratorIntersectTestCase
@@ -432,9 +433,18 @@ class TestDequePreloadingGenerator(DefaultSiteTestCase):
         self.assertTrue(pages_out[1].isTalkPage())
 
 
-class TestPreloadingItemGenerator(WikidataTestCase):
+class TestPreloadingItemGenerator(DefaultWikibaseClientTestCase):
 
     """Test preloading item generator."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Verify that P31 exists."""
+        super(TestPreloadingItemGenerator, cls).setUpClass()
+        P31 = pywikibot.Page(cls.site, 'Property:P31')
+        if not P31.exists():
+            raise unittest.SkipTest(
+                'Property:P31 does not exist on %s' % cls.site)
 
     def test_non_item_gen(self):
         """Test TestPreloadingItemGenerator with ReferringPageGenerator."""

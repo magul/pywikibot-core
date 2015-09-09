@@ -38,6 +38,7 @@ from tests.aspects import (
     DefaultDrySiteTestCase,
     WikimediaDefaultSiteTestCase,
     WikidataTestCase,
+    DefaultWikibaseClientTestCase,
     DefaultWikidataClientTestCase,
     AlteredDefaultSiteTestCase,
 )
@@ -2622,7 +2623,7 @@ class TestPagePreloading(DefaultSiteTestCase):
                 break
 
 
-class TestDataSitePreloading(WikidataTestCase):
+class TestDataSitePreloading(DefaultWikibaseClientTestCase):
 
     """Test DataSite.preloaditempages for repo pages."""
 

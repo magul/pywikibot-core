@@ -6652,34 +6652,31 @@ class DataSite(APISite):
     @deprecated("pywikibot.WikibasePage")
     def get_item(self, source, **params):
         """Get the data for multiple Wikibase items."""
+        assert set(params) <= set(['props'])
+        props = params.get('props')
+
         if isinstance(source, int) or \
            isinstance(source, basestring) and source.isdigit():
             ids = 'q' + str(source)
-            params = merge_unique_dicts(params, action='wbgetentities', ids=ids)
-            wbrequest = self._simple_request(**params)
-            wbdata = wbrequest.submit()
-            assert 'success' in wbdata, \
-                "API wbgetentities response lacks 'success' key"
-            assert wbdata['success'] == 1, "API 'success' key is not 1"
-            assert 'entities' in wbdata, \
-                "API wbgetentities response lacks 'entities' key"
-
-            if ids.upper() in wbdata['entities']:
-                ids = ids.upper()
-
-            assert ids in wbdata['entities'], \
-                "API wbgetentities response lacks %s key" % ids
-
-            return wbdata['entities'][ids]
+            return self.get_entity({'ids': ids}, props=props)
         else:
             # not implemented yet
             raise NotImplementedError
 
+    @deprecated('get_entity(.., props=props)')
     def loadcontent(self, identification, *props):
         """
         Fetch the current content of a Wikibase item.
 
-        This is called loadcontent since
+        DEPRECATED. See get_entity.
+        """
+        entity = self.get_entity(identification, props=props)
+        return {entity['id']: entity}
+
+    def get_entity(self, identification, props=None, _expiry=None):
+        """
+        Fetch the current content of a Wikibase item.
+
         wbgetentities does not support fetching old
         revisions. Eventually this will get replaced by
         an actual loadrevisions.
@@ -6693,11 +6690,17 @@ class DataSite(APISite):
                                     # an empty string ('&props=') but it should
                                     # result in a missing entry.
                                     props=props if props else False)
-        req = self._simple_request(**params)
+        req = self._request(expiry=_expiry, parameters=params)
         data = req.submit()
         if 'success' not in data:
             raise api.APIError(data['errors'])
-        return data['entities']
+
+        assert len(data['entities']) == 1
+
+        # the IDs returned from the API can be upper or lowercase, depending
+        # on the version. See for more information:
+        # https://phabricator.wikimedia.org/T55894
+        return data['entities'].popitem()[1]
 
     def preloaditempages(self, pagelist, groupsize=50):
         """Yield ItemPages with content prefilled.
@@ -6734,6 +6737,7 @@ class DataSite(APISite):
                 item._content = data['entities'][qid]
                 yield item
 
+    @deprecated('PropertyPage.type')
     def getPropertyType(self, prop):
         """
         Obtain the type of a property.
@@ -6741,24 +6745,18 @@ class DataSite(APISite):
         This is used specifically because we can cache
         the value for a much longer time (near infinite).
         """
-        params = dict(
-            action='wbgetentities',
-            ids=prop.getID(),
-            props='datatype',
-        )
         expiry = datetime.timedelta(days=365 * 100)
         # Store it for 100 years
-        req = self._request(expiry=expiry, parameters=params)
-        data = req.submit()
 
-        # the IDs returned from the API can be upper or lowercase, depending
-        # on the version. See for more information:
-        # https://bugzilla.wikimedia.org/show_bug.cgi?id=53894
-        # https://lists.wikimedia.org/pipermail/wikidata-tech/2013-September/000296.html
+        data = self.get_entity(
+            identification={'ids': prop.getID()},
+            props=('datatype', ),
+            _expiry=expiry
+        )
         try:
-            dtype = data['entities'][prop.getID()]['datatype']
+            dtype = data['datatype']
         except KeyError:
-            dtype = data['entities'][prop.getID().lower()]['datatype']
+            dtype = data['datatype']
 
         return dtype
 
