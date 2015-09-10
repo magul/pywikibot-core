@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 __version__ = '$Id$'
 
-from pywikibot import config
 from pywikibot import family
 
 # The Wikidata family
@@ -32,10 +31,9 @@ class Family(family.WikimediaFamily):
             '_default': ((u'/doc', ), ['wikidata']),
         }
 
-        # Disable cosmetic changes
-        config.cosmetic_changes_disable.update({
-            'wikidata': ('wikidata', 'test')
-        })
+    def cosmetic_changes_enabled(self, code):
+        """Disable cosmetic changes on Wikidata."""
+        return False
 
     def shared_data_repository(self, code, transcluded=False):
         """

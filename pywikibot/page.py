@@ -1082,23 +1082,58 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if not force and not self.botMayEdit():
             raise pywikibot.OtherPageSaveError(
                 self, "Editing restricted by {{bots}} template")
+
+        if apply_cosmetic_changes is None:
+            # If implicitly enabled, apply_cosmetic_changes remains as None
+            # so that the implicit status can be used in exception handling.
+            if not self._cosmetic_changes_enabled():
+                apply_cosmetic_changes = False
+
+        if apply_cosmetic_changes is not False:
+            processor = None
+            try:
+                processor = CosmeticChangesToolkit.from_page(
+                    self, ignore=CANCEL_MATCH)
+            except NotImplementedError:
+                # Only raise if cc was explicitly requested
+                if apply_cosmetic_changes:
+                    raise
+            except Exception as e:
+                if apply_cosmetic_changes:
+                    raise
+                pywikibot.warning(
+                    'Exception loading cosmetic changes: {0}'.format(e))
+            if processor:
+                pywikibot.log('Cosmetic changes for {0} enabled.'.format(self))
+                try:
+                    new = processor.change(self.text)
+                except Exception as e:
+                    if apply_cosmetic_changes:
+                        raise
+                    pywikibot.warning(
+                        'Exception applying cosmetic changes: {0}'.format(e))
+                else:
+                    if new != self.text:
+                        self.text = new
+                    from pywikibot import i18n
+                    summary += i18n.twtranslate(
+                        self.site, 'cosmetic_changes-append')
+
         if async:
             pywikibot.async_request(self._save, summary=summary, minor=minor,
                                     watch=watch, botflag=botflag,
                                     async=async, callback=callback,
-                                    cc=apply_cosmetic_changes, **kwargs)
+                                    **kwargs)
         else:
             self._save(summary=summary, minor=minor, watch=watch,
                        botflag=botflag, async=async, callback=callback,
-                       cc=apply_cosmetic_changes, **kwargs)
+                       **kwargs)
 
-    def _save(self, summary, minor, watch, botflag, async, callback,
-              cc, **kwargs):
+    @deprecated_args(cc=None)
+    def _save(self, summary, minor, watch, botflag, async, callback, **kwargs):
         """Helper function for save()."""
         err = None
         link = self.title(asLink=True)
-        if cc or cc is None and config.cosmetic_changes:
-            summary = self._cosmetic_changes_hook(summary) or summary
         try:
             done = self.site.editpage(self, summary=summary, minor=minor,
                                       watch=watch, bot=botflag, **kwargs)
@@ -1119,40 +1154,19 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if callback:
             callback(self, err)
 
-    def _cosmetic_changes_hook(self, comment):
+    def _cosmetic_changes_enabled(self):
+        """Return True if cosmetic changes is enabled for this page."""
         if self.isTalkPage() or \
            pywikibot.calledModuleName() in config.cosmetic_changes_deny_script:
-            return
-        family = self.site.family.name
-        if config.cosmetic_changes_mylang_only:
-            cc = ((family == config.family and
-                   self.site.lang == config.mylang) or
-                  family in list(config.cosmetic_changes_enable.keys()) and
-                  self.site.lang in config.cosmetic_changes_enable[family])
-        else:
-            cc = True
-        cc = (cc and not
-              (family in list(config.cosmetic_changes_disable.keys()) and
-               self.site.lang in config.cosmetic_changes_disable[family]))
-        if not cc:
-            return
+            return False
 
-        # cc depends on page directly and via several other imports
-        old = self.text
-        pywikibot.log(u'Cosmetic changes for %s-%s enabled.'
-                      % (family, self.site.lang))
-        ccToolkit = CosmeticChangesToolkit(self.site,
-                                           redirect=self.isRedirectPage(),
-                                           namespace=self.namespace(),
-                                           pageTitle=self.title(),
-                                           ignore=CANCEL_MATCH)
-        self.text = ccToolkit.change(old)
-        if comment and \
-           old.strip().replace('\r\n',
-                               '\n') != self.text.strip().replace('\r\n', '\n'):
-            from pywikibot import i18n
-            comment += i18n.twtranslate(self.site, 'cosmetic_changes-append')
-            return comment
+        if not self.site.cosmetic_changes_enabled():
+            return False
+
+        if not isinstance(self, Page):
+            return False
+
+        return True
 
     @deprecated_args(comment='summary')
     def put(self, newtext, summary=u'', watchArticle=None, minorEdit=True,

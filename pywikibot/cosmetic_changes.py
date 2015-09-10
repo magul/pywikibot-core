@@ -236,10 +236,31 @@ class CosmeticChangesToolkit:
         )
 
     @classmethod
-    def from_page(cls, page, diff, ignore):
-        """Create toolkit based on the page."""
-        return cls(page.site, diff=diff, namespace=page.namespace(),
-                   pageTitle=page.title(), ignore=ignore)
+    def from_page(cls, page, diff=False, ignore=CANCEL_ALL):
+        """
+        Create toolkit based on the page.
+
+        Subclasses of BasePage, other than Page, are not supported.
+
+        @raises ValueError: page is not a BasePage
+        @raises NotImplementedError: page is not a Page
+        @return: new CosmeticChangesToolkit processor for the page
+        @rtype: CosmeticChangesToolkit
+        """
+        from pywikibot.page import BasePage, Page
+        if not isinstance(page, BasePage):
+            raise ValueError('{0} is not a BasePage'.format(page))
+
+        if not isinstance(page, Page):
+            raise NotImplementedError(
+                'Cosmetic changes on {0} is not supported'.format(
+                    page.__class__))
+
+        return cls(page.site, diff=diff,
+                   namespace=page.namespace(),
+                   redirect=page.isRedirectPage(),
+                   pageTitle=page.title(),
+                   ignore=ignore)
 
     def safe_execute(self, method, text):
         """Execute the method and catch exceptions if enabled."""

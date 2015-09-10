@@ -129,6 +129,13 @@ class TestWikibaseSaveTest(WikibaseTestCase):
         item = pywikibot.ItemPage(repo, 'Q6')
         self.assertRaises(pywikibot.PageNotSaved, item.save)
 
+    def test_itempage_cc(self):
+        """Test ItemPage save with cosmetic changes explicitly enabled."""
+        repo = self.get_repo()
+        item = pywikibot.ItemPage(repo, 'Q6')
+        self.assertRaises(
+            NotImplementedError, item.save, apply_cosmetic_changes=True)
+
 
 if __name__ == '__main__':
     try:

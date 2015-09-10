@@ -1273,6 +1273,24 @@ class Family(object):
         """Return the shared image repository, if any."""
         return (None, None)
 
+    def cosmetic_changes_enabled(self, code):
+        """Return True if cosmetic changes are enabled."""
+        if not config.cosmetic_changes:
+            return False
+
+        family = self.name
+        if config.cosmetic_changes_mylang_only:
+            cc = ((family == config.family and code == config.mylang) or
+                  family in list(config.cosmetic_changes_enable.keys()) and
+                  code in config.cosmetic_changes_enable[family])
+        else:
+            cc = True
+        cc = (cc and not
+              (family in list(config.cosmetic_changes_disable.keys()) and
+               code in config.cosmetic_changes_disable[family]))
+
+        return cc
+
     def shared_data_repository(self, code, transcluded=False):
         """Return the shared Wikibase repository, if any."""
         return (None, None)
