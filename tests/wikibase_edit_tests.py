@@ -13,6 +13,8 @@ __version__ = '$Id$'
 import time
 import pywikibot
 
+from pywikibot.page import ItemPage
+
 from tests.aspects import unittest, WikibaseTestCase
 
 
@@ -25,6 +27,11 @@ class TestWikibaseWriteGeneral(WikibaseTestCase):
 
     user = True
     write = True
+
+    def test_create_empty(self):
+        """Test creating an empty item."""
+        item = ItemPage(self.repo)
+        item.save()
 
     def test_label_set(self):
         """Test setting an English label."""

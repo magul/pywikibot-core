@@ -1129,14 +1129,22 @@ class BasePage(UnicodeMixin, ComparableMixin):
                        botflag=botflag, async=async, callback=callback,
                        **kwargs)
 
+    def _save_hook(self, summary=None, minor=None, watch=None,
+                   bot=None, async=None, **kwargs):
+        """Helper for _save()."""
+        return self.site.editpage(self, sumary=summary, minor=minor,
+                                  watch=watch, bot=bot, **kwargs)
+
     @deprecated_args(cc=None)
     def _save(self, summary, minor, watch, botflag, async, callback, **kwargs):
         """Helper function for save()."""
         err = None
         link = self.title(asLink=True)
         try:
-            done = self.site.editpage(self, summary=summary, minor=minor,
-                                      watch=watch, bot=botflag, **kwargs)
+            done = self._save_hook(summary=summary, minor=minor, watch=watch,
+                                   bot=botflag, async=async, **kwargs)
+            # Wikibase new pages change title after creation
+            link = self.title(asLink=True)
             if not done:
                 pywikibot.warning(u"Page %s not saved" % link)
                 raise pywikibot.PageNotSaved(self)
@@ -3176,6 +3184,11 @@ class WikibasePage(BasePage):
         self.repo = self.site
         self.id = self._link.title
 
+        self.aliases = {}
+        self.labels = {}
+        self.descriptions = {}
+        self.claims = {}
+
     def _defined_by(self, singular=False):
         """
         Internal function to provide the API parameters to identify the entity.
@@ -3556,6 +3569,36 @@ class WikibasePage(BasePage):
         if lazy_loading_id or self.id == '-1':
             self.__init__(self.site, title=updates['entity']['id'])
 
+    def save(self, summary=None, watch=None, minor=None, botflag=None,
+             force=False, async=False, callback=None,
+             apply_cosmetic_changes=None, **kwargs):
+        """
+        Save the current entity.
+
+        The WikibasePage.save passes all parameters to BasePage.save.
+        It differs only in that minor defaults to None, as Wikibase
+        does not implement the minor flag in wbeditentity.
+        """
+        super(WikibasePage, self).save(
+            summary, watch, minor, botflag, force, async, callback,
+            apply_cosmetic_changes=None, **kwargs
+        )
+
+    def _save_hook(self, summary=None, minor=None, watch=None,
+                   bot=None, async=None, **kwargs):
+        """
+        Helper function for save().
+
+        Invoked by BasePage._save.
+
+        @rtype: True
+        """
+        if watch or minor:
+            warn('watch and minor are not supported by WikibasePage.save.',
+                 UserWarning, 3 if not async else None)
+        self.editEntity(summary=summary, bot=bot, **kwargs)
+        return True
+
     def editLabels(self, labels, **kwargs):
         """
         Edit entity labels.
@@ -3631,6 +3674,7 @@ class ItemPage(WikibasePage):
         if title is None or title == '-1':
             super(ItemPage, self).__init__(site, u'-1', ns=ns)
             assert self.id == '-1'
+            self.sitelinks = {}
             return
 
         super(ItemPage, self).__init__(site, title, ns=ns)
@@ -3646,6 +3690,8 @@ class ItemPage(WikibasePage):
                 % self._link.title)
 
         assert self.id == self._link.title
+
+        self.sitelinks = {}
 
     def title(self, **kwargs):
         """
