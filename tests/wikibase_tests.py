@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Tests for the Wikidata parts of the page module."""
 #
-# (C) Pywikibot team, 2008-2014
+# (C) Pywikibot team, 2013-2015
 #
 # Distributed under the terms of the MIT license.
 #
@@ -521,19 +521,101 @@ class TestRedirects(WikidataTestCase):
     """Test redirect and non-redirect items."""
 
     def test_normal_item(self):
+        """Test ItemPage redirect methods with non-redirect."""
         wikidata = self.get_repo()
         item = pywikibot.ItemPage(wikidata, 'Q1')
+        self.assertEqual(item.id, 'Q1')
+        self.assertFalse(item.isRedirectPage())
+        self.assertRaises(pywikibot.IsNotRedirectPage, item.getRedirectTarget)
+        item.get(get_redirect=True)
+        self.assertEqual(item.id, 'Q1')
         self.assertFalse(item.isRedirectPage())
         self.assertRaises(pywikibot.IsNotRedirectPage, item.getRedirectTarget)
 
-    def test_redirect_item(self):
+    def test_redirect_item_with_get(self):
+        """Test ItemPage redirect methods with non-redirect."""
         wikidata = self.get_repo()
         item = pywikibot.ItemPage(wikidata, 'Q10008448')
+
         item.get(get_redirect=True)
+        self.assertEqual(item._id, 'Q10008448')
+        self.assertEqual(item.id, 'Q10008448')
+        self.assertTrue(hasattr(item, '_content'))
+        self.assertFalse(hasattr(item, 'claims'))
+        self.assertFalse(hasattr(item, 'sitelinks'))
+
+        self.assertTrue(hasattr(item, '_isredir'))
+        self.assertTrue(hasattr(item, '_redirtarget'))
+
+        preloaded_target = item._redirtarget
+        self.assertTrue(hasattr(preloaded_target, '_content'))
+        self.assertTrue(hasattr(preloaded_target, 'claims'))
+        self.assertTrue(hasattr(preloaded_target, 'sitelinks'))
+        self.assertEqual(preloaded_target._id, 'Q8422626')
+        self.assertEqual(preloaded_target.id, 'Q8422626')
+
         target = pywikibot.ItemPage(wikidata, 'Q8422626')
+
         self.assertTrue(item.isRedirectPage())
+        self.assertEqual(item._id, 'Q10008448')
+        self.assertEqual(item.id, 'Q10008448')
         self.assertEqual(item.getRedirectTarget(), target)
+        self.assertEqual(item._id, 'Q10008448')
+        self.assertEqual(item.id, 'Q10008448')
+
         self.assertIsInstance(item.getRedirectTarget(), pywikibot.ItemPage)
+
+        # .get() does not need to be called on target, as its
+        # data was already fetched while getting the redirect.
+        target = item.getRedirectTarget()
+        self.assertIs(target, preloaded_target)
+        self.assertTrue(hasattr(target, '_content'))
+        self.assertTrue(hasattr(target, 'claims'))
+        self.assertFalse(hasattr(item, 'sitelinks'))
+
+    def test_redirect_item_without_get(self):
+        """Test ItemPage redirect methods with non-redirect."""
+        item = pywikibot.ItemPage(self.repo, 'Q10008448')
+        self.assertFalse(hasattr(item, '_content'))
+
+        expected_target = pywikibot.ItemPage(self.repo, 'Q8422626')
+
+        # When get() is not called, the redirect methods should
+        # fallback to using pageprops and API `redirects`, and not
+        # use get() so _content will not be created.
+        self.assertTrue(item.isRedirectPage())
+        self.assertEqual(item._id, 'Q10008448')
+        self.assertFalse(hasattr(item, '_content'))
+        self.assertFalse(hasattr(item, 'claims'))
+        self.assertFalse(hasattr(item, 'sitelinks'))
+
+        target = item.getRedirectTarget()
+
+        self.assertIsInstance(target, pywikibot.ItemPage)
+        self.assertEqual(target, expected_target)
+
+        self.assertFalse(hasattr(item, '_content'))
+        self.assertFalse(hasattr(item, 'claims'))
+        self.assertFalse(hasattr(target, '_content'))
+        self.assertFalse(hasattr(target, 'claims'))
+        self.assertFalse(hasattr(item, 'sitelinks'))
+
+    def test_redirect_item_base_methods(self):
+        """Test BasePage methods with a redirect ItemPage."""
+        item = ItemPage(self.repo, 'Q10008448')
+        self.assertFalse(hasattr(item, 'claims'))
+        self.assertTrue(item.exists())
+        self.assertFalse(hasattr(item, 'claims'))
+        self.assertTrue(item.isRedirectPage())
+        self.assertEqual(item.id, 'Q10008448')
+        self.assertEqual(item.getID(), 'Q10008448')
+        self.assertEqual(item.id, 'Q10008448')
+        self.assertIsInstance(item.latest_revision_id, int)
+        self.assertEqual(item.id, 'Q10008448')
+        self.assertRaises(NotImplementedError, item.toJSON)
+        self.assertFalse(hasattr(item, 'claims'))
+
+        # get with default get_redirect=False
         self.assertRaises(pywikibot.IsRedirectPage, item.get)
 
 

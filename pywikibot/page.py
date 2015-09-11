@@ -347,18 +347,19 @@ class BasePage(UnicodeMixin, ComparableMixin):
         exceptions that should be caught by the calling code:
 
         @exception NoPage:         The page does not exist
-        @exception IsRedirectPage: The page is a redirect. The argument of the
-                                   exception is the title of the page it
-                                   redirects to.
+        @exception IsRedirectPage: The page is a redirect.
+            The exception includes the page it redirects to.???
         @exception SectionError:   The section does not exist on a page with
                                    a # link
 
         @param force:           reload all page attributes, including errors.
+        @type force: bool
         @param get_redirect:    return the redirect text, do not follow the
                                 redirect, do not raise an exception.
+        @type get_redirect: bool
         @param sysop:           if the user has a sysop account, use it to
                                 retrieve this page
-
+        @type sysop: bool
         """
         if force:
             del self.latest_revision_id
@@ -1445,10 +1446,9 @@ class BasePage(UnicodeMixin, ComparableMixin):
     def getRedirectTarget(self):
         """Return a Page object for the target this Page redirects to.
 
-        If this page is not a redirect page, will raise an IsNotRedirectPage
-        exception. This method also can raise a NoPage exception.
-
         @rtype: pywikibot.Page
+        @raise IsNotRedirectPage: the page is a not a redirect
+        @raise NoPage: the redirect target does not exist
         """
         return self.site.getredirtarget(self)
 
@@ -3277,11 +3277,13 @@ class WikibasePage(BasePage):
         """
         Determine if an entity exists in the data repository.
 
+        Does not raise IsRedirectPage.
+
         @return: bool
         """
         if not hasattr(self, '_content'):
             try:
-                self.get()
+                self.get(get_redirect=True)
                 return True
             except pywikibot.NoPage:
                 return False
@@ -3359,6 +3361,10 @@ class WikibasePage(BasePage):
                 self.id = item_index
 
             self._content = data[item_index]
+
+        # 'pageid' is not provided by early versions of Wikibase.
+        if 'pageid' in self._content:
+            self._pageid = self._content['pageid']
 
         if 'lastrevid' in self._content:
             self.latest_revision_id = self._content['lastrevid']
@@ -3606,6 +3612,9 @@ class WikibasePage(BasePage):
         @param data: Data to be saved
         @type data: dict, or None to save the current content of the entity.
         """
+        if hasattr(self, '_redirtarget'):
+            raise NotImplementedError('editEntity can not save redirects')
+
         if hasattr(self, '_revid'):
             baserevid = self.latest_revision_id
         else:
@@ -3799,10 +3808,18 @@ class ItemPage(WikibasePage):
                              redirect, do not raise an exception.
         @type get_redirect: bool
         @param args: values of props
+
+        @raise NoPage:         The page does not exist
+        @raise IsRedirectPage: The page is a redirect.
+            The exception includes the page it redirects to.???
         """
         data = super(ItemPage, self).get(force=force, *args, **kwargs)
 
         if self.isRedirectPage() and not get_redirect:
+            for key in self._content_keys:
+                if hasattr(self, key):
+                    delattr(self, key)
+
             raise pywikibot.IsRedirectPage(self)
 
         # sitelinks
@@ -3814,17 +3831,76 @@ class ItemPage(WikibasePage):
 
         data['claims'] = self.claims
         data['sitelinks'] = self.sitelinks
+
+        if 'redirects' in self._content:
+            redirects = self._content['redirects']
+            target = ItemPage(self.repo, redirects['to'])
+
+            # Move the _content to the target, without the redirect
+            target._content = self._content
+            del target._content['redirects']
+
+            # Recreate _content using normal page metadata
+            self.site.loadpageinfo(self)
+            self._content = {
+                'id': self.id,
+                'title': redirects['from'],
+                'type': 'wikibase-item',
+                'pageid': self._pageid,
+                'lastrevid': self.latest_revision_id,
+                'modified': self._timestamp,
+                'ns': self.site.item_namespace.id,
+            }
+
+            # Move the attributes set during .get() to the target
+            for key in self._content_keys:
+                if hasattr(self, key):
+                    setattr(target, key, getattr(self, key))
+                    delattr(self, key)
+
+            self.set_redirect_target(target,
+                                     save=False, force=True)
+
         return data
+
+    def _known_redirect_status(self):
+        """
+        Return redirect status if item redirect status has been fetched.
+
+        @return: bool if status is known
+        @rtype: bool
+        @raise AttributeError: redirect status is not known
+        """
+        if hasattr(self, '_isredir'):
+            return self._isredir
+
+        if hasattr(self, '_content'):
+            self._isredir = 'redirects' in self._content
+            return self._isredir
+
+        raise AttributeError('redirect status must be fetched')
 
     def getRedirectTarget(self):
         """Return the redirect target for this page."""
-        target = super(ItemPage, self).getRedirectTarget()
+        # If .get was called, it will have set _redirtarget
+        if hasattr(self, '_redirtarget'):
+            target = self._redirtarget
+        else:
+            # Fallback to using default Page approach,
+            # using pageprops or an API call.
+            target = super(ItemPage, self).getRedirectTarget()
+
         cmodel = target.content_model
         if cmodel != 'wikibase-item':
             raise pywikibot.Error(u'%s has redirect target %s with content '
                                   u'model %s instead of wikibase-item' %
                                   (self, target, cmodel))
-        return self.__class__(target.site, target.title(), target.namespace())
+
+        if not isinstance(self._redirtarget, ItemPage):
+            self._redirtarget = self.__class__(
+                target.site, target.title(), target.namespace())
+
+        return self._redirtarget
 
     def toJSON(self, diffto=None):
         """
@@ -3836,8 +3912,13 @@ class ItemPage(WikibasePage):
         @param diffto: JSON containing claim data
         @type diffto: dict
 
-        @return: dict
+        @rtype: dict
+        @raises NotImplementedError: item is a redirect
         """
+        if self.isRedirectPage():
+            raise NotImplementedError(
+                'ItemPage.toJSON does not support redirects')
+
         data = super(ItemPage, self).toJSON(diffto=diffto)
 
         self._diff_to('sitelinks', 'site', 'title', diffto, data)
@@ -3973,30 +4054,47 @@ class ItemPage(WikibasePage):
         """
         Make the item redirect to another item.
 
-        You need to define an extra argument to make this work, like save=True
+        If save=False, the item can not be saved later using save() or
+        editEntity().
 
         @param target_page: target of the redirect, this argument is required.
         @type target_page: pywikibot.Item or string
         @param force: if true, it sets the redirect target even the page
             is not redirect.
         @type force: bool
+
+        @raise IsNotRedirectPage: existing Item that is not a redirect; use
+            force to bypass this exception
+        @raise NotImplementedError: keep_section or create are enabled
         """
+        if keep_section or create:
+            raise NotImplementedError
+
         if isinstance(target_page, basestring):
             target_page = pywikibot.ItemPage(self.repo, target_page)
         elif self.repo != target_page.repo:
             raise pywikibot.InterwikiRedirectPage(self, target_page)
-        if self.exists() and not self.isRedirectPage() and not force:
+
+        if not force and self.exists() and not self.isRedirectPage():
             raise pywikibot.IsNotRedirectPage(self)
-        if not save or keep_section or create:
-            raise NotImplementedError
+
+        self._isredir = True
+        self._redirtarget = target_page
+
+        # TODO: implement saving redirects using save()
+        if not save:
+            return
+
         self.repo.set_redirect_target(
             from_item=self, to_item=target_page)
 
     def isRedirectPage(self):
         """Return True if item is a redirect, False if not or not existing."""
-        if hasattr(self, '_content') and not hasattr(self, '_isredir'):
-            self._isredir = self.id != self._content.get('id', self.id)
-            return self._isredir
+        try:
+            return self._known_redirect_status()
+        except AttributeError:
+            pass
+
         return super(ItemPage, self).isRedirectPage()
 
 
