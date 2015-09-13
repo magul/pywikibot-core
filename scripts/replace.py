@@ -141,20 +141,25 @@ import codecs
 import collections
 import re
 import time
-import sys
 import warnings
 
 import pywikibot
 
-from pywikibot import i18n, textlib, pagegenerators, Bot
+from pywikibot import i18n, textlib, pagegenerators
 from pywikibot import editor as editarticle
 
 # Imports predefined replacements tasks from fixes.py
 from pywikibot import fixes
+from pywikibot.tools import chars
 
-from pywikibot.tools import chars, deprecated_args
+from pywikibot.bot import (
+    AutomaticTWSummaryBot,
+    ExistingPageBot,
+    MultipleSitesBot,
+)
+from pywikibot.tools import PY2, deprecated_args, issue_deprecation_warning
 
-if sys.version_info[0] > 2:
+if not PY2:
     basestring = (str, )
 
 # This is required for the text that is shown when you run this script
@@ -465,14 +470,15 @@ class XmlDumpReplacePageGenerator(object):
         return False
 
 
-class ReplaceRobot(Bot):
+class ReplaceRobot(ExistingPageBot, MultipleSitesBot):
 
     """A bot that can do text replacements."""
 
-    @deprecated_args(acceptall='always')
+    @deprecated_args(acceptall='always', editSummary='summary',
+                     articles=None, exctitles=None)
     def __init__(self, generator, replacements, exceptions={},
                  always=False, allowoverlap=False, recursive=False,
-                 addedCat=None, sleep=None, summary='', site=None, **kwargs):
+                 addedCat=None, sleep=None, summary='', **kwargs):
         """
         Constructor.
 
@@ -513,7 +519,6 @@ class ReplaceRobot(Bot):
         """
         super(ReplaceRobot, self).__init__(generator=generator,
                                            always=always,
-                                           site=site,
                                            **kwargs)
 
         for i, replacement in enumerate(replacements):
@@ -535,7 +540,11 @@ class ReplaceRobot(Bot):
             if isinstance(addedCat, pywikibot.Category):
                 self.addedCat = addedCat
             else:
-                self.addedCat = pywikibot.Category(self.site, addedCat)
+                issue_deprecation_warning('addedCat of type str',
+                                          'type Page',
+                                          depth=2)
+                site = pywikibot.Site()
+                self.addedCat = pywikibot.Category(site, addedCat)
 
         self.sleep = sleep
         self.summary = summary
@@ -612,7 +621,7 @@ class ReplaceRobot(Bot):
             new_text = textlib.replaceExcept(
                 new_text, replacement.old_regex, replacement.new,
                 exceptions + get_exceptions(replacement.exceptions or {}),
-                allowoverlap=self.allowoverlap, site=self.site)
+                allowoverlap=self.allowoverlap, site=page.site)
             if old_text != new_text:
                 applied.add(replacement)
 
@@ -635,8 +644,24 @@ class ReplaceRobot(Bot):
         if not isinstance(err, Exception):
             self.changed_pages += 1
 
+    @property
+    def summary_parameters(self):
+        """
+        Dummy AutomaticTWSummaryBot hook.
+
+        @raises: NotImplementedError
+        """
+        raise NotImplementedError(
+            'AutomaticTWSummaryBot hook summary_parameters not implemented '
+            'by {0}'.format(self.__class__))
+
     def generate_summary(self, applied_replacements):
         """Generate a summary message for the replacements."""
+        # If this is a AutomaticTWSummaryBot, the summary will be
+        # provided by TWN, in conjunction with summary_parameters
+        if isinstance(self, AutomaticTWSummaryBot) and not self.summary:
+            return None
+
         # all replacements which are merged into the default message
         default_summaries = set()
         # all message parts
@@ -662,26 +687,25 @@ class ReplaceRobot(Bot):
         semicolon = self.site.mediawiki_message('semicolon-separator')
         return semicolon.join(summary_messages)
 
-    def run(self):
-        """Start the bot."""
-        # Run the generator which will yield Pages which might need to be
-        # changed.
-        for page in self.generator:
+    def treat_page(self):
+        """Treat a page."""
+        page = self.current_page
+        if True:
             if self.isTitleExcepted(page.title()):
                 pywikibot.output(
                     u'Skipping %s because the title is on the exceptions list.'
                     % page.title(asLink=True))
-                continue
+                return
             try:
                 # Load the page's text from the wiki
                 original_text = page.get(get_redirect=True)
                 if not page.canBeEdited():
                     pywikibot.output(u"You can't edit page %s"
                                      % page.title(asLink=True))
-                    continue
+                    return
             except pywikibot.NoPage:
                 pywikibot.output(u'Page %s not found' % page.title(asLink=True))
-                continue
+                return
             applied = set()
             new_text = original_text
             while True:
@@ -742,26 +766,13 @@ class ReplaceRobot(Bot):
                 if choice == 'a':
                     self.options['always'] = True
                 if choice == 'y':
-                    page.put_async(new_text, self.generate_summary(applied),
-                                   callback=self.count_changes)
+                    self.put_current(new_text, self.generate_summary(applied),
+                                     callback=self.count_changes, async=True)
                 # choice must be 'N'
                 break
             if self.getOption('always') and new_text != original_text:
-                try:
-                    page.put(new_text, self.generate_summary(applied), callback=self.count_changes)
-                except pywikibot.EditConflict:
-                    pywikibot.output(u'Skipping %s because of edit conflict'
-                                     % (page.title(),))
-                except pywikibot.SpamfilterError as e:
-                    pywikibot.output(
-                        u'Cannot change %s because of blacklist entry %s'
-                        % (page.title(), e.url))
-                except pywikibot.LockedPage:
-                    pywikibot.output(u'Skipping %s (locked page)'
-                                     % (page.title(),))
-                except pywikibot.PageNotSaved as error:
-                    pywikibot.output(u'Error putting page: %s'
-                                     % (error.args,))
+                self.put_current(new_text, self.generate_summary(applied),
+                                 callback=self.count_changes)
 
 
 def prepareRegexForMySQL(pattern):

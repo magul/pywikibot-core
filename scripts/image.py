@@ -49,60 +49,24 @@ import re
 
 import pywikibot
 
-from pywikibot import i18n, pagegenerators, Bot
+from pywikibot import pagegenerators
+
+from pywikibot.bot import AutomaticTWSummaryBot
+from pywikibot.page import Page
+from pywikibot.tools import deprecated_args, issue_deprecation_warning
 
 from scripts.replace import ReplaceRobot as ReplaceBot
+from scripts.replace import Replacement
 
 
-class ImageRobot(ReplaceBot):
+class ImageRobot(AutomaticTWSummaryBot, ReplaceBot):
 
     """This bot will replace or remove all occurrences of an old image."""
 
-    # Summary messages for replacing images
-    msg_replace = {
-        'ar': u'روبوت - استبدال الصورة %s مع %s',
-        'de': u'Bot: Ersetze Bild %s durch %s',
-        'en': u'Bot: Replacing image %s with %s',
-        'es': u'Robot - Reemplazando imagen %s por %s',
-        'fa': u'ربات: جایگزین کردن تصویر %s با %s',
-        'fr': u'Bot: Remplace image %s par %s',
-        'he': u'בוט: מחליף את התמונה %s בתמונה %s',
-        'it': u"Bot: Sostituisco l'immagine %s con %s",
-        'ja': u'ロボットによる：画像置き換え %s から %s へ',
-        'ko': u'로봇 - 그림 %s을 %s로 치환',
-        'lt': u'robotas: vaizdas %s keičiamas į %s',
-        'nn': u'robot: erstatta biletet %s med %s',
-        'no': u'robot: erstatter bildet %s med %s',
-        'nl': u'Bot: afbeelding %s vervangen door %s',
-        'pl': u'Robot zamienia obraz %s na %s',
-        'pt': u'Bot: Alterando imagem %s para %s',
-        'ru': u'Бот: Замена файла %s на %s',
-        'zh': u'機器人：取代圖像 %s 至 %s',
-    }
-
-    # Summary messages for removing images
-    msg_remove = {
-        'ar': u'روبوت - إزالة الصورة %s',
-        'de': u'Bot: Entferne Bild %s',
-        'en': u'Robot: Removing image %s',
-        'es': u'Robot - Retirando imagen %s',
-        'fa': u'ربات: برداشتن تصویر %s',
-        'fr': u'Bot: Enleve image %s',
-        'he': u'בוט: מסיר את התמונה %s',
-        'it': u"Bot: Rimuovo l'immagine %s",
-        'ja': u'ロボットによる：画像削除 %s',
-        'ko': u'로봇 - %s 그림을 제거',
-        'lt': u'robotas: Šalinamas vaizdas %s',
-        'nl': u'Bot: afbeelding %s verwijderd',
-        'no': u'robot: fjerner bildet %s',
-        'nn': u'robot: fjerna biletet %s',
-        'pl': u'Robot usuwa obraz %s',
-        'pt': u'Bot: Alterando imagem %s',
-        'ru': u'Бот: удалил файл %s',
-        'zh': u'機器人：移除圖像 %s',
-    }
-
-    def __init__(self, generator, old_image, new_image=None, **kwargs):
+    @deprecated_args(oldImage='old_image_page', old_image='old_image_page',
+                     newImage='new_image')
+    def __init__(self, generator, old_image_page, new_image=None, summary='',
+                 always=False, loose=False, **kwargs):
         """
         Constructor.
 
@@ -119,17 +83,32 @@ class ImageRobot(ReplaceBot):
             'loose': False,
         })
 
-        Bot.__init__(self, generator=generator, **kwargs)
+        if not isinstance(old_image_page, pywikibot.Page):
+            issue_deprecation_warning(
+                'old_image as a string',
+                'old_image_page as Page',
+                2)
 
+            old_image = old_image_page
+            site = pywikibot.Site()
+            old_image_page = Page(site, old_image)
+        else:
+            old_image = old_image_page.title(withNamespace=False)
+
+        self.old_image_page = old_image_page
         self.old_image = old_image
         self.new_image = new_image
 
-        if not self.getOption('summary'):
-            self.options['summary'] = i18n.translate(
-                self.site, self.msg_replace,
-                (self.old_image, self.new_image) if self.new_image
-                else self.old_image,
-                fallback=True)
+        if self.new_image:
+            self.summary_key = 'image-replace'
+        else:
+            self.summary_key = 'image-remove'
+
+        super(ImageRobot, self).__init__(generator, replacements=[],
+                                         always=always,
+                                         summary=summary,
+                                         loose=loose,
+                                         **kwargs)
 
         # regular expression to find the original template.
         # {{vfd}} does the same thing as {{Vfd}}, so both will be found.
@@ -139,7 +118,7 @@ class ImageRobot(ReplaceBot):
 
         replacements = []
 
-        namespace = self.site.namespaces[6]
+        namespace = old_image_page.site.namespaces.FILE
         if namespace.case == 'first-letter':
             case = re.escape(self.old_image[0].upper() +
                              self.old_image[0].lower())
@@ -160,16 +139,28 @@ class ImageRobot(ReplaceBot):
             if not self.getOption('loose'):
                 replacements.append((image_regex,
                                      u'[[%s:%s\\g<parameters>]]'
-                                     % (self.site.namespaces.FILE,
+                                     % (namespace.canonical_name,
                                         self.new_image)))
             else:
                 replacements.append((image_regex, self.new_image))
         else:
             replacements.append((image_regex, ''))
 
-        super(ImageRobot, self).__init__(self.generator, replacements,
-                                         always=self.getOption('always'),
-                                         summary=self.getOption('summary'))
+        self.replacements = [Replacement.from_compiled(a, b)
+                             for (a, b) in replacements]
+
+    @property
+    def summary_parameters(self):
+        """Provide TWN parameters."""
+        if self.new_image:
+            return {
+                'old': self.old_image,
+                'new': self.new_image,
+            }
+        else:
+            return {
+                'file': self.old_image,
+            }
 
 
 def main(*args):
@@ -205,7 +196,7 @@ def main(*args):
         old_imagepage = pywikibot.FilePage(site, old_image)
         gen = pagegenerators.FileLinksGenerator(old_imagepage)
         preloadingGen = pagegenerators.PreloadingGenerator(gen)
-        bot = ImageRobot(preloadingGen, old_image, new_image, **options)
+        bot = ImageRobot(preloadingGen, old_imagepage, new_image, **options)
         bot.run()
         return True
     else:

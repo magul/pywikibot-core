@@ -118,9 +118,14 @@ from warnings import warn
 
 import pywikibot
 
-from pywikibot import i18n, pagegenerators, xmlreader, Bot
+from pywikibot import pagegenerators, xmlreader
+
+from pywikibot.bot import AutomaticTWSummaryBot
 from pywikibot.exceptions import ArgumentDeprecationWarning
+from pywikibot.tools import deprecated_args
+
 from scripts.replace import ReplaceRobot as ReplaceBot
+from scripts.replace import Replacement
 
 
 class XmlDumpTemplatePageGenerator(object):
@@ -170,11 +175,13 @@ class XmlDumpTemplatePageGenerator(object):
                 yield page
 
 
-class TemplateRobot(ReplaceBot):
+class TemplateRobot(AutomaticTWSummaryBot, ReplaceBot):
 
     """This bot will replace, remove or subst all occurrences of a template."""
 
-    def __init__(self, generator, templates, **kwargs):
+    @deprecated_args(editSummary='summary', acceptAll='always')
+    def __init__(self, generator, templates, subst=False, remove=False,
+                 summary='', always=False, addedCat=None):
         """
         Constructor.
 
@@ -192,27 +199,26 @@ class TemplateRobot(ReplaceBot):
             'addedCat': None,
         })
 
-        Bot.__init__(self, generator=generator, **kwargs)
+        super(TemplateRobot, self).__init__(
+            generator, replacements=[],
+            always=always,
+            addedCat=addedCat,
+            summary=summary,
+            subst=subst,
+            remove=remove)
 
         self.templates = templates
 
+        site = pywikibot.Site()
+
         # get edit summary message if it's empty
         if not self.getOption('summary'):
-            comma = self.site.mediawiki_message('comma-separator')
-            params = {'list': comma.join(self.templates.keys()),
-                      'num': len(self.templates)}
-
-            site = self.site
-
             if self.getOption('remove'):
-                self.options['summary'] = i18n.twntranslate(
-                    site, 'template-removing', params)
+                self.summary_key = 'template-removing'
             elif self.getOption('subst'):
-                self.options['summary'] = i18n.twntranslate(
-                    site, 'template-substituting', params)
+                self.summary_key = 'template-substituting'
             else:
-                self.options['summary'] = i18n.twntranslate(
-                    site, 'template-changing', params)
+                self.summary_key = 'template-changing'
 
         # regular expression to find the original template.
         # {{vfd}} does the same thing as {{Vfd}}, so both will be found.
@@ -222,7 +228,7 @@ class TemplateRobot(ReplaceBot):
 
         replacements = []
         exceptions = {}
-        namespace = self.site.namespaces[10]
+        namespace = site.namespaces.TEMPLATE
         for old, new in self.templates.items():
             if namespace.case == 'first-letter':
                 pattern = '[' + \
@@ -248,7 +254,7 @@ class TemplateRobot(ReplaceBot):
             elif self.getOption('remove'):
                 replacements.append((templateRegex, ''))
             else:
-                template = pywikibot.Page(self.site, new, ns=10)
+                template = pywikibot.Page(site, new, ns=10)
                 if not template.exists():
                     pywikibot.warning(u'Template "%s" does not exist.' % new)
                     if not pywikibot.input_yn('Do you want to proceed anyway?',
@@ -257,11 +263,17 @@ class TemplateRobot(ReplaceBot):
                 replacements.append((templateRegex,
                                      r'{{%s\g<parameters>}}' % new))
 
-        super(TemplateRobot, self).__init__(
-            generator, replacements, exceptions,
-            always=self.getOption('always'),
-            addedCat=self.getOption('addedCat'),
-            summary=self.getOption('summary'))
+        self.replacements = [Replacement.from_compiled(a, b)
+                             for (a, b) in replacements]
+        self.exceptions = exceptions
+
+    @property
+    def summary_parameters(self):
+        """Provide TWN parameters."""
+        comma = self.site.mediawiki_message('comma-separator')
+        params = {'list': comma.join(self.templates.keys()),
+                  'num': len(self.templates)}
+        return params
 
 
 def main(*args):

@@ -1881,7 +1881,7 @@ class AutomaticTWSummaryBot(CurrentPageBot):
 
     def put_current(self, *args, **kwargs):
         """Defining a summary if not already defined and then call original."""
-        if 'summary' not in kwargs:
+        if 'summary' not in kwargs or kwargs['summary'] is None:
             from pywikibot import i18n
             if self.summary_key is None:
                 raise ValueError('The summary_key must be set.')
