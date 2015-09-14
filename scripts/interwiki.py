@@ -1112,8 +1112,8 @@ u'WARNING: %s is in namespace %i, but %s is in namespace %i. Follow it anyway?'
                                  % (page, self.originPage))
                 return True
             elif (page.title() != self.originPage.title() and
-                  self.originPage.site.nocapitalize and
-                  page.site.nocapitalize):
+                  self.originPage.namespace.case == 'case-sensitive' and
+                  page.namespace.case == 'case-sensitive'):
                 pywikibot.output(
                     u"NOTE: Ignoring %s for %s in wiktionary mode because both "
                     u"languages are uncapitalized."
