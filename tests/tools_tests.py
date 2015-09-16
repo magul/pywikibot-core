@@ -489,6 +489,66 @@ class TestFilterUnique(TestCase):
         self.assertRaises(StopIteration, next, deduper)
 
 
+class TestFrozenDict(TestCase):
+
+    """Test the FrozenDict class."""
+
+    net = False
+
+    def setUp(self):
+        """Create default dict and expectation."""
+        super(TestFrozenDict, self).setUp()
+        self.expected = {'a': 'b'}
+        self.tested_dict = tools.FrozenDict(self.expected)
+
+    def tearDown(self):
+        """Verify that the dict hasn't changed."""
+        super(TestFrozenDict, self).tearDown()
+        self.assertIsNot(self.tested_dict, self.expected)
+        self.assertEqual(self.tested_dict, self.expected)
+
+    def test_update(self):
+        """Verify that the update method is raising TypeError."""
+        self.assertRaises(TypeError, self.tested_dict.update, {'a': 'b'})
+        self.assertRaises(TypeError, self.tested_dict.update, {'a': 'c'})
+        self.assertRaises(TypeError, self.tested_dict.update, {'d': 'e'})
+
+    def test_setitem(self):
+        """Verify that the set operator is raising TypeError."""
+        self.assertRaises(TypeError, self.tested_dict.__setitem__, 'a', 'b')
+        self.assertRaises(TypeError, self.tested_dict.__setitem__, 'a', 'c')
+        self.assertRaises(TypeError, self.tested_dict.__setitem__, 'd', 'e')
+
+    def test_pop(self):
+        """Verify that the pop method is raising TypeError or KeyError."""
+        self.assertRaises(TypeError, self.tested_dict.pop, 'a')
+        self.assertRaises(KeyError, self.tested_dict.pop, 'd')
+
+    def test_delitem(self):
+        """Verify that the del operator is raising TypeError or KeyError."""
+        self.assertRaises(TypeError, self.tested_dict.__delitem__, 'a')
+        self.assertRaises(KeyError, self.tested_dict.__delitem__, 'd')
+
+    def test_popitem_invalid(self):
+        """Verify that the popitem method is raising TypeError if not empty."""
+        self.assertRaises(TypeError, self.tested_dict.popitem)
+
+    def test_popitem_empty(self):
+        """Test that popitem is raising the same as an empty dict raises."""
+        self.expected = {}
+        self.tested_dict = tools.FrozenDict({})
+        try:
+            dict().popitem()
+        except Exception as expected:
+            self.assertRaises(expected.__class__, self.tested_dict.popitem)
+
+    def test_setdefault(self):
+        """Verify that setdefault is working and raising TypeError."""
+        self.assertEqual(self.tested_dict.setdefault('a', 'b'), 'b')
+        self.assertEqual(self.tested_dict.setdefault('a', 'c'), 'b')
+        self.assertRaises(TypeError, self.tested_dict.setdefault, 'd', 'e')
+
+
 if __name__ == '__main__':
     try:
         unittest.main()
