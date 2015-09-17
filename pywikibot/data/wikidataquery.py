@@ -19,10 +19,11 @@ import hashlib
 import time
 import tempfile
 
-import pywikibot
-from pywikibot.comms import http
-from pywikibot.page import ItemPage, PropertyPage, Claim
 from pywikibot import config
+
+from pywikibot.comms import http
+from pywikibot.exceptions import ServerError
+from pywikibot.logging import warning
 
 
 def listify(x):
@@ -217,7 +218,8 @@ class Query():
 
         @return: the int ID of the item
         """
-        if isinstance(item, ItemPage) or isinstance(item, PropertyPage):
+        from pywikibot.page import WikibasePage
+        if isinstance(item, WikibasePage):
             return item.getID(numeric=True)
         else:
             return int(item)
@@ -323,6 +325,7 @@ class Tree(Query):
         """
         # check sensible things coming in, as we lose info once we do
         # type conversion
+        from pywikibot.page import ItemPage, PropertyPage
         if not self.isOrContainsOnlyTypes(item, [int, ItemPage]):
             raise TypeError("The item paramter must contain or be integer IDs "
                             "or page.ItemPages")
@@ -446,6 +449,7 @@ def fromClaim(claim):
     @type claim: L{pywikibot.page.Claim}
     @rtype: L{Query}
     """
+    from pywikibot.page import Claim
     if not isinstance(claim, Claim):
         raise TypeError("claim must be a page.Claim")
 
@@ -534,8 +538,8 @@ class WikidataQuery():
                     try:
                         data = pickle.load(f)
                     except pickle.UnpicklingError:
-                        pywikibot.warning(u"Couldn't read cached data from %s"
-                                          % cacheFile)
+                        warning('Could not read cached data from {0}'.format(
+                            cacheFile))
                         data = None
 
                 return data
@@ -566,7 +570,7 @@ class WikidataQuery():
             try:
                 pickle.dump(data, f, protocol=config.pickle_protocol)
             except IOError:
-                pywikibot.warning(u"Failed to write cache file %s" % cacheFile)
+                warning('Failed to write cache file {0}'.format(cacheFile))
 
     def getDataFromHost(self, queryStr):
         """
@@ -579,21 +583,21 @@ class WikidataQuery():
         try:
             resp = http.fetch(url)
         except:
-            pywikibot.warning(u"Failed to retrieve %s" % url)
+            warning('Failed to retrieve {0}'.format(url))
             raise
 
         data = resp.content
         if not data:
-            pywikibot.warning('No data received for %s' % url)
-            raise pywikibot.ServerError('No data received for %s' % url)
+            warning('No data received for {0}'.format(url))
+            raise ServerError('No data received for {0}'.format(url))
 
         try:
             data = json.loads(data)
         except ValueError:
-            pywikibot.warning(
+            warning(
                 'Data received for %s but no JSON could be decoded: %r'
                 % (url, data))
-            raise pywikibot.ServerError(
+            raise ServerError(
                 'Data received for %s but no JSON could be decoded: %r'
                 % (url, data))
 
