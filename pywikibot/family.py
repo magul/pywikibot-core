@@ -30,9 +30,9 @@ import pywikibot
 from pywikibot import config2 as config
 from pywikibot.tools import (
     deprecated, deprecated_args, issue_deprecation_warning,
-    FrozenDict,
 )
 from pywikibot.exceptions import UnknownFamily, FamilyMaintenanceWarning
+from pywikibot.tools.collections import ProxyDict
 
 logger = logging.getLogger("pywiki.wiki.family")
 
@@ -1321,10 +1321,7 @@ class Family(object):
         data = dict((code, None)
                     for code in self.interwiki_removals)
         data.update(self.interwiki_replacements)
-        return FrozenDict(data,
-                          'Family.obsolete not updatable; '
-                          'use Family.interwiki_removals '
-                          'and Family.interwiki_replacements')
+        return ProxyDict(data)
 
     @obsolete.setter
     def obsolete(self, data):
@@ -1530,7 +1527,7 @@ class WikimediaFamily(Family):
     def interwiki_replacements(self):
         rv = self.code_aliases.copy()
         rv.update(self.interwiki_replacement_overrides)
-        return FrozenDict(rv)
+        return ProxyDict(rv)
 
     def shared_image_repository(self, code):
         return ('commons', 'commons')

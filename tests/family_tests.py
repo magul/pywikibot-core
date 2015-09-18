@@ -9,6 +9,8 @@ from __future__ import unicode_literals
 
 __version__ = '$Id$'
 
+from collections import Mapping
+
 from pywikibot.family import Family, SingleSiteFamily
 from pywikibot.exceptions import UnknownFamily
 from pywikibot.tools import PY2
@@ -104,7 +106,7 @@ class TestFamily(TestCase):
     def test_get_obsolete_wp(self):
         """Test three types of obsolete codes."""
         family = Family.load('wikipedia')
-        self.assertIsInstance(family.obsolete, dict)
+        self.assertIsInstance(family.obsolete, Mapping)
         # redirected code (see site tests test_alias_code_site)
         self.assertEqual(family.obsolete['dk'], 'da')
         # closed/locked site (see site tests test_locked_site)
@@ -135,8 +137,8 @@ class TestFamily(TestCase):
     def test_obsolete_readonly(self):
         """Test obsolete result not updatable."""
         family = Family.load('test')
-        self.assertRaises(TypeError, family.obsolete.update, {})
-        self.assertRaises(TypeError, family.obsolete.__setitem__, 'a', 'b')
+        self.assertFalse(hasattr(family.obsolete, 'update'))
+        self.assertFalse(hasattr(family.obsolete, '__setitem__'))
 
     def test_WikimediaFamily_obsolete_readonly(self):
         """Test WikimediaFamily obsolete is readonly."""
