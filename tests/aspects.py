@@ -274,23 +274,51 @@ class TestTimerMixin(TestCaseBase):
         super(TestTimerMixin, self).tearDown()
 
 
-def require_modules(*required_modules):
-    """Require that the given list of modules can be imported."""
-    def test_requirement(obj):
+class RequirementDecorator(object):
+
+    """Utility class to write decorators which require something."""
+
+    @classmethod
+    def decorator(cls, *args, **kwargs):
+        """Create new instance and return decorate method."""
+        return cls(*args, **kwargs).decorate
+
+    def decorate(self, obj):
         """Test the requirement and return an optionally decorated object."""
+        reason = self.test_requirement()
+        if reason:
+            return unittest.skip(reason)(obj)
+        else:
+            return obj
+
+    def test_requirement(self):
+        """Test whether the requirement is met and return the reason if not."""
+        raise NotImplementedError()
+
+
+class CheckModules(RequirementDecorator):
+
+    """Require that the given list of modules can be imported."""
+
+    def __init__(self, *modules):
+        """Create new decorator instance requiring the given modules."""
+        self.required_modules = modules
+
+    def test_requirement(self):
+        """Test that the required modules can be imported."""
         missing = []
-        for required_module in required_modules:
+        for required_module in self.required_modules:
             try:
                 __import__(required_module, globals(), locals(), [], 0)
             except ImportError:
                 missing += [required_module]
         if missing:
-            return unittest.skip('{0} not installed'.format(
-                ', '.join(missing)))(obj)
+            return '{0} not installed'.format(', '.join(missing))
         else:
-            return obj
+            return None
 
-    return test_requirement
+
+require_modules = CheckModules.decorator
 
 
 class DisableSiteMixin(TestCaseBase):
@@ -417,8 +445,6 @@ class CheckHostnameMixin(TestCaseBase):
 
     """Check the hostname is online before running tests."""
 
-    _checked_hostnames = {}
-
     @classmethod
     def setUpClass(cls):
         """
@@ -431,21 +457,38 @@ class CheckHostnameMixin(TestCaseBase):
         if not hasattr(cls, 'sites'):
             return
 
+        hostnames = []
         for key, data in cls.sites.items():
             if 'hostname' not in data:
                 raise Exception('%s: hostname not defined for %s'
                                 % (cls.__name__, key))
-            hostname = data['hostname']
+            hostnames += [data['hostname']]
 
-            if hostname in cls._checked_hostnames:
-                if isinstance(cls._checked_hostnames[hostname], Exception):
-                    raise unittest.SkipTest(
-                        '%s: hostname %s failed (cached): %s'
-                        % (cls.__name__, hostname,
-                           cls._checked_hostnames[hostname]))
-                elif cls._checked_hostnames[hostname] is False:
-                    raise unittest.SkipTest('%s: hostname %s failed (cached)'
-                                            % (cls.__name__, hostname))
+        reason = CheckHostname(*hostnames).test_requirement()
+        if reason is not None:
+            raise unittest.SkipTest('{0}: {1}'.format(cls.__name__, reason))
+
+
+class CheckHostname(RequirementDecorator):
+
+    """Require that the given list of hostnames can be accessed."""
+
+    _checked_hostnames = {}
+
+    def __init__(self, *hostnames):
+        """Create new instance with the given hostnames."""
+        self.hostnames = hostnames
+
+    def test_requirement(self):
+        """Iterate over each hostname and test their availability."""
+        for hostname in self.hostnames:
+
+            if hostname in self._checked_hostnames:
+                if isinstance(self._checked_hostnames[hostname], Exception):
+                    return 'hostname {0} failed (cached): {1}'.format(
+                        hostname, self._checked_hostnames[hostname])
+                elif self._checked_hostnames[hostname] is False:
+                    return 'hostname {0} failed (cached)'.format(hostname)
                 else:
                     continue
 
@@ -462,19 +505,22 @@ class CheckHostnameMixin(TestCaseBase):
                     if r.status not in [200, 301, 302, 303, 307, 308]:
                         raise ServerError('HTTP status: %d' % r.status)
             except Exception as e2:
-                pywikibot.error('%s: accessing %s caused exception:'
-                                % (cls.__name__, hostname))
+                pywikibot.error(
+                    'accessing {0} caused exception:'.format(hostname))
                 pywikibot.exception(e2, tb=True)
                 e = e2
                 pass
 
             if e:
-                cls._checked_hostnames[hostname] = e
-                raise unittest.SkipTest(
-                    '%s: hostname %s failed: %s'
-                    % (cls.__name__, hostname, e))
+                self._checked_hostnames[hostname] = e
+                return 'hostname {0} failed: {1}'.format(hostname, e)
 
-            cls._checked_hostnames[hostname] = True
+            self._checked_hostnames[hostname] = True
+
+        return None
+
+
+check_hostnames = CheckHostname.decorator
 
 
 class SiteWriteMixin(TestCaseBase):

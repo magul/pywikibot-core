@@ -14,17 +14,18 @@ import sys
 
 from pywikibot.data.wikistats import WikiStats, csv
 
-from tests.aspects import unittest, TestCase
+from tests.aspects import unittest, check_hostnames, TestCase
 
 if sys.version_info[0] == 3:
     basestring = (str, )
 
 
+@check_hostnames('https://wikistats.wmflabs.org/api.php')
 class WikiStatsTestCase(TestCase):
 
     """Test WikiStats dump."""
 
-    hostname = 'https://wikistats.wmflabs.org/api.php'
+    net = True
 
     def test_sort(self):
         """Test sorted results."""
