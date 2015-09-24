@@ -3623,7 +3623,7 @@ class WikibasePage(BasePage):
 
         @rtype: long
         """
-        if not hasattr(self, '_revid'):
+        if not hasattr(self, '_revid') or not self._revid:
             self.get()
         return self._revid
 
