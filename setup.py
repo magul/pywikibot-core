@@ -65,6 +65,7 @@ extra_deps = {
     'security': ['requests[security]'],
     'mwoauth': ['mwoauth>=0.2.4'],
     'html': ['BeautifulSoup4'],
+    'jsondump': ['ijson'],
 }
 
 if PY2:

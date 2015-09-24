@@ -76,6 +76,9 @@ irc ; python_version > '2.6'
 # textlib.py and patrol.py
 mwparserfromhell>=0.3.3 ; python_version <= '3.4'
 
+# core wikibase component jsondump.py
+ijson
+
 # The mysql generator in pagegenerators depends on either oursql or MySQLdb
 # pywikibot prefers oursql.  Both are Python 2 only; T89976.
 oursql ; python_version < '3'
