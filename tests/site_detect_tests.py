@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
-from requests.exceptions import Timeout
+from requests.exceptions import Timeout, SSLError
 
 from pywikibot.exceptions import ServerError
 from pywikibot.site_detect import MWSite
@@ -85,7 +85,7 @@ class TestWikiSiteDetection(TestCase):
         self._urls_tested.add(url)
         try:
             site = MWSite(url)
-        except (ServerError, Timeout) as e:
+        except (ServerError, Timeout, SSLError) as e:
             self.skips[url] = e
             return
         except Exception as e:
