@@ -10,31 +10,31 @@ These parameters are supported to specify which pages titles to print:
 
 -format  Defines the output format.
 
-         Can be a custom string according to python string.format() notation or
-         can be selected by a number from following list (1 is default format):
-         1 - u'{num:4d} {page.title}'
-             --> 10 PageTitle
+         Can be a custom string according to pywikibot.formatter.color_format()
+         notation or can be selected by a number from following (default 1):
+         1 - u'{num:4d} {page}'
+             -->   10 PageTitle
 
-         2 - u'{num:4d} {[[page.title]]}'
-             --> 10 [[PageTitle]]
+         2 - u'{num:4d} {[[page]]}'
+             -->   10 [[PageTitle]]
 
-         3 - u'{page.title}'
+         3 - u'{page}'
              --> PageTitle
 
-         4 - u'{[[page.title]]}'
+         4 - u'{[[page]]}'
              --> [[PageTitle]]
 
-         5 - u'{num:4d} \03{{lightred}}{page.loc_title:<40}\03{{default}}'
-             --> 10 PageTitle (colorised in lightred)
+         5 - u'{num:4d} {lightred}{loc_title:<40}{default}'
+             -->   10 PageTitle (colorised in lightred)
 
-         6 - u'{num:4d} {page.loc_title:<40} {page.can_title:<40}'
-             --> 10 localised_Namespace:PageTitle canonical_Namespace:PageTitle
+         6 - u'{num:4d} {loc_title:<40} {can_title:<40}'
+             -->   10 localised_Namespace:PageTitle canonical_Namespace:PageTitle
 
-         7 - u'{num:4d} {page.loc_title:<40} {page.trs_title:<40}'
-             --> 10 localised_Namespace:PageTitle outputlang_Namespace:PageTitle
+         7 - u'{num:4d} {loc_title:<40} {trs_title:<40}'
+             -->   10 localised_Namespace:PageTitle outputlang_Namespace:PageTitle
              (*) requires "outputlang:lang" set.
 
-         num is the sequential number of the listed page.
+         num is the sequential number of the listed page starting from 1.
 
 -outputlang   Language for translation of namespaces.
 
@@ -51,8 +51,7 @@ These parameters are supported to specify which pages titles to print:
          If not specified, it defaults to config.textfile_encoding.
 
 
-Custom format can be applied to the following items extrapolated from a
-    page object:
+Custom format can be applied to the following items:
 
     site: obtained from page._link._site.
 
@@ -70,6 +69,9 @@ Custom format can be applied to the following items extrapolated from a
     trs_title: obtained from page._link.ns_title(onsite=onsite).
         If selected format requires trs_title, outputlang must be set.
 
+As the script is using L{pywikibot.tools.formatter.color_format}, it is not
+necessary to escape color fields using two curly brackets and it is not
+necessary to prefix them using C{\03}.
 
 &params;
 """
@@ -88,33 +90,31 @@ import os
 import pywikibot
 from pywikibot import config2 as config
 from pywikibot.pagegenerators import GeneratorFactory, parameterHelp
+from pywikibot.tools.formatter import color_format
 
 docuReplacements = {'&params;': parameterHelp}
 
 
 class Formatter(object):
 
-    """Structure with Page attributes exposed for formatting from cmd line."""
+    """Formatter handling each entry."""
 
     fmt_options = {
-        '1': u"{num:4d} {page.title}",
-        '2': u"{num:4d} [[{page.title}]]",
-        '3': u"{page.title}",
-        '4': u"[[{page.title}]]",
-        '5': u"{num:4d} \03{{lightred}}{page.loc_title:<40}\03{{default}}",
-        '6': u"{num:4d} {page.loc_title:<40} {page.can_title:<40}",
-        '7': u"{num:4d} {page.loc_title:<40} {page.trs_title:<40}",
+        1: '{num:4d} {title}',
+        2: '{num:4d} [[{title}]]',
+        3: '{title}',
+        4: '[[{title}]]',
+        5: '{num:4d} {lightred}{loc_title:<40}{default}',
+        6: '{num:4d} {loc_title:<40} {can_title:<40}',
+        7: '{num:4d} {loc_title:<40} {trs_title:<40}',
     }
 
-    # Identify which formats need outputlang
-    fmt_need_lang = [k for k, v in fmt_options.items() if 'trs_title' in v]
-
-    def __init__(self, page, outputlang=None, default='******'):
+    def __init__(self, fmt, outputlang=None, default='******'):
         """
-        Constructor.
+        Create a new instance to format entries.
 
-        @param page: the page to be formatted.
-        @type page: Page object.
+        @param fmt: The format number or a format string..
+        @type fmt: int or string
         @param outputlang: language code in which namespace before title should
             be translated.
 
@@ -126,34 +126,37 @@ class Formatter(object):
             namespace is found when outputlang is not None.
 
         """
-        self.site = page._link.site
-        self.title = page._link.title
-        self.loc_title = page._link.canonical_title()
-        self.can_title = page._link.ns_title()
-        self.outputlang = outputlang
-        if outputlang is not None:
-            # Cache onsite in case of translations.
-            if not hasattr(self, "onsite"):
-                self.onsite = pywikibot.Site(outputlang, self.site.family)
-            try:
-                self.trs_title = page._link.ns_title(onsite=self.onsite)
-            # Fallback if no corresponding namespace is found in onsite.
-            except pywikibot.Error:
-                self.trs_title = u'%s:%s' % (default, page._link.title)
-
-    def output(self, num=None, fmt=1):
-        """Output formatted string."""
-        fmt = self.fmt_options.get(fmt, fmt)
-        # If selected format requires trs_title, outputlang must be set.
-        if (fmt in self.fmt_need_lang or
-                'trs_title' in fmt and
-                self.outputlang is None):
+        try:
+            fmt = int(fmt)
+        except ValueError:
+            self.fmt = fmt
+        else:
+            self.fmt = self.fmt_options[fmt]
+        if outputlang is None and '{trs_title' in self.fmt:
             raise ValueError(
                 u"Required format code needs 'outputlang' parameter set.")
-        if num is None:
-            return fmt.format(page=self)
+        self.outputlang = outputlang
+        self.default = default
+
+    def output(self, num, page):
+        """Output formatted string."""
+        if self.outputlang is not None:
+            # Cache onsite in case of translations.
+            onsite = pywikibot.Site(self.outputlang, page.site.family)
+            try:
+                trs_title = page._link.ns_title(onsite=onsite)
+            # Fallback if no corresponding namespace is found in onsite.
+            except pywikibot.Error:
+                trs_title = u'%s:%s' % (self.default, page._link.title)
+            optional_values = {'onsite': onsite, 'trs_title': trs_title}
         else:
-            return fmt.format(num=num, page=self)
+            optional_values = {}
+
+        return color_format(self.fmt, num=num, site=page.site,
+                            title=page._link.title,
+                            loc_title=page._link.canonical_title(),
+                            can_title=page._link.ns_title(),
+                            **optional_values)
 
 
 def main(*args):
@@ -217,10 +220,10 @@ def main(*args):
     gen = genFactory.getCombinedGenerator()
     if gen:
         i = 0
+        page_fmt = Formatter(fmt, outputlang)
         for i, page in enumerate(gen, start=1):
             if not notitle:
-                page_fmt = Formatter(page, outputlang)
-                pywikibot.stdout(page_fmt.output(num=i, fmt=fmt))
+                pywikibot.stdout(page_fmt.output(i, page))
             if page_get:
                 try:
                     pywikibot.output(page.text, toStdout=True)
