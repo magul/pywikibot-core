@@ -54,6 +54,11 @@ class WeblibTestMementoWebCite(MementoTestCase, weblib_tests.TestWebCite):
     timegate_uri = 'http://timetravel.mementoweb.org/webcite/timegate/'
     hostname = timegate_uri
 
+    def testWebCiteOlder(self):
+        """Test WebCite using memento."""
+        # This method is here so that it isn't considered an expected failure
+        super(WeblibTestMementoWebCite, self).testWebCiteOlder()
+
 
 class TestMementoWebCite(MementoTestCase):
 

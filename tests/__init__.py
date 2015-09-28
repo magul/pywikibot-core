@@ -153,9 +153,6 @@ disabled_tests = {
     'site_detect': [
         'test_IWM',  # very slow and tests include unnecessary sites
     ],
-    'weblib': [
-        'testWebCiteOlder',  # fails. T110640
-    ],
 }
 
 
