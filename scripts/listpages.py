@@ -50,6 +50,9 @@ These parameters are supported to specify which pages titles to print:
          valid python encoding: utf-8, etc.).
          If not specified, it defaults to config.textfile_encoding.
 
+-listify Make a list of all of the articles that are in a category and saves into 
+         a page given by -dir:dir_name. If no dir is specified, current directory will be used.
+
 
 Custom format can be applied to the following items extrapolated from a
     page object:
@@ -155,6 +158,37 @@ class Formatter(object):
         else:
             return fmt.format(num=num, page=self)
 
+class Listing_Categories(object):
+
+    def __init__(self, catTitle, base_dir=None, subCats=False, talkPages=False,
+        recurse=False, encoding=config.textfile_encoding):
+        """Constructor."""
+        self.site = pywikibot.Site()
+        self.cat = pywikibot.Category(self.site, catTitle)
+        self.subCats = subCats
+        self.talkPages = talkPages
+        self.recurse = recurse
+        self.base_dir=base_dir
+        self.listString=""
+        self.encoding=encoding
+
+    def run(self):
+        """writing list into file."""
+        setOfArticles = set(self.cat.articles(recurse=self.recurse))
+        if self.subCats:
+            setOfArticles = setOfArticles.union(set(self.cat.subcategories()))
+        for article in setOfArticles:
+            if self.talkPages and not article.isTalkPage():
+                self.listString += "%s -- %s|talk\n" % (article.title(), article.toggleTalkPage().title())
+            else:
+                self.listString += "%s\n" % article.title()
+        if self.base_dir:
+            filename=pywikibot.input(u'Enter the name of the file')
+            filepath = os.path.join(self.base_dir, filename)
+            with open(filepath, mode='wb') as f:
+                f.write(self.listString.encode(self.encoding))
+
+
 
 def main(*args):
     """
@@ -172,6 +206,9 @@ def main(*args):
     page_get = False
     base_dir = None
     encoding = config.textfile_encoding
+    flag=1
+    recurse=False
+    talkPages=False
 
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
@@ -191,51 +228,74 @@ def main(*args):
             base_dir = arg.partition(':')[2] or '.'
         elif arg.startswith('-encode:'):
             encoding = arg.partition(':')[2]
+        elif arg.startswith('-listify'):
+            flag=0
+            base_dir=arg.partition(':')[2] or '.'
+        elif arg == '-recurse':
+            recurse = True
+        elif arg == '-talkpages':
+            talkPages = True
         else:
             genFactory.handleArg(arg)
+    
+        if base_dir:
+            base_dir = os.path.expanduser(base_dir)
+            if not os.path.isabs(base_dir):
+                base_dir = os.path.normpath(os.path.join(os.getcwd(), base_dir))
 
-    if base_dir:
-        base_dir = os.path.expanduser(base_dir)
-        if not os.path.isabs(base_dir):
-            base_dir = os.path.normpath(os.path.join(os.getcwd(), base_dir))
-
-        if not os.path.exists(base_dir):
-            pywikibot.output(u'Directory "%s" does not exist.' % base_dir)
-            choice = pywikibot.input_yn(
-                u'Do you want to create it ("No" to continue without saving)?')
-            if choice:
-                os.makedirs(base_dir, mode=0o744)
-            else:
+            if not os.path.exists(base_dir):
+                pywikibot.output(u'Directory "%s" does not exist.' % base_dir)
+                choice = pywikibot.input_yn(
+                    u'Do you want to create it ("No" to continue without saving)?')
+                if choice:
+                    os.makedirs(base_dir, mode=0o744)
+                else:
+                    base_dir = None
+            elif not os.path.isdir(base_dir):
+                # base_dir is a file.
+                pywikibot.warning(u'Not a directory: "%s"\n'
+                                  u'Skipping saving ...'
+                                  % base_dir)
                 base_dir = None
-        elif not os.path.isdir(base_dir):
-            # base_dir is a file.
-            pywikibot.warning(u'Not a directory: "%s"\n'
-                              u'Skipping saving ...'
-                              % base_dir)
-            base_dir = None
+    if flag==1:            
 
-    gen = genFactory.getCombinedGenerator()
-    if gen:
-        i = 0
-        for i, page in enumerate(gen, start=1):
-            if not notitle:
-                page_fmt = Formatter(page, outputlang)
-                pywikibot.stdout(page_fmt.output(num=i, fmt=fmt))
-            if page_get:
-                try:
-                    pywikibot.output(page.text, toStdout=True)
-                except pywikibot.Error as err:
-                    pywikibot.output(err)
-            if base_dir:
-                filename = os.path.join(base_dir, page.title(as_filename=True))
-                pywikibot.output(u'Saving %s to %s' % (page.title(), filename))
-                with open(filename, mode='wb') as f:
-                    f.write(page.text.encode(encoding))
-        pywikibot.output(u"%i page(s) found" % i)
-        return True
+        gen = genFactory.getCombinedGenerator()
+        if gen:
+            i = 0
+            for i, page in enumerate(gen, start=1):
+                if not notitle:
+                    page_fmt = Formatter(page, outputlang)
+                    pywikibot.stdout(page_fmt.output(num=i, fmt=fmt))
+                if page_get:
+                    try:
+                        pywikibot.output(page.text, toStdout=True)
+                    except pywikibot.Error as err:
+                        pywikibot.output(err)
+                if base_dir:
+                    filename = os.path.join(base_dir, page.title(as_filename=True))
+                    pywikibot.output(u'Saving %s to %s' % (page.title(), filename))
+                    with open(filename, mode='wb') as f:
+                        f.write(page.text.encode(encoding))
+            pywikibot.output(u"%i page(s) found" % i)
+            return True
+        else:
+            pywikibot.bot.suggest_help(missing_generator=True)
+            return False
     else:
-        pywikibot.bot.suggest_help(missing_generator=True)
-        return False
+        cat=pywikibot.input("Enter the category")
+        bot = Listing_Categories(cat, base_dir,subCats=True,
+            talkPages=talkPages, recurse=recurse, encoding=encoding)
+        if bot:
+            pywikibot.Site().login()
+
+            try:
+                bot.run()
+            except pywikibot.Error:
+                pywikibot.error("Fatal error:", exc_info=True)
+            return True
+        else:
+            pywikibot.bot.suggest_help(missing_action=True)
+            return False
 
 
 if __name__ == "__main__":
