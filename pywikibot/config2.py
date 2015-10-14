@@ -357,7 +357,7 @@ def register_family_file(family_name, file_path):
 def register_families_folder(folder_path):
     """Register all family class files contained in a directory."""
     for file_name in os.listdir(folder_path):
-        if file_name.endswith("_family.py"):
+        if file_name.endswith("_family.py") and not file_name.startswith('anarchopedia'):
             family_name = file_name[:-len("_family.py")]
             register_family_file(family_name, os.path.join(folder_path, file_name))
 

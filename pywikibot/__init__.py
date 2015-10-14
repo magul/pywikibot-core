@@ -32,6 +32,9 @@ from pywikibot.logging import (
     critical, debug, error, exception, log, output, stdout, warning
 )
 
+# Error must exist, due to bot importing pagegenerators which imports i18n which needs Error
+from pywikibot.exceptions import Error
+
 from pywikibot import config2 as config
 from pywikibot.bot import (
     input, input_choice, input_yn, inputChoice, handle_args, showHelp, ui,
@@ -45,7 +48,7 @@ from pywikibot.bot_choice import (
 from pywikibot.data.api import UploadWarning as _UploadWarning
 from pywikibot.diff import PatchManager
 from pywikibot.exceptions import (
-    Error, InvalidTitle, BadTitle, NoPage, NoMoveTarget, SectionError,
+    InvalidTitle, BadTitle, NoPage, NoMoveTarget, SectionError,
     SiteDefinitionError, NoSuchSite, UnknownSite, UnknownFamily,
     UnknownExtension,
     NoUsername, UserBlocked,

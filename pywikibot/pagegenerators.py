@@ -331,6 +331,11 @@ class GeneratorFactory(object):
         @param site: Site for generator results.
         @type site: L{pywikibot.site.BaseSite}
         """
+        self._site = site
+        self._reset()
+
+    def _reset(self):
+        """Reset factory."""
         self.gens = []
         self._namespaces = []
         self.step = None
@@ -339,7 +344,6 @@ class GeneratorFactory(object):
         self.titlefilter_list = []
         self.claimfilter_list = []
         self.intersect = False
-        self._site = site
 
     @property
     def site(self):
@@ -834,6 +838,25 @@ class GeneratorFactory(object):
             return True
         else:
             return False
+
+    def generator(self, args):
+        """
+        Return a generator for only the provided arguments.
+
+        @param args: a list of arguments supported by the factory
+        @type args: list of str
+        @return: combined generator
+        @rtype: generator or None
+        """
+        self._reset()
+        for arg in args:
+            rv = self.handleArg(arg)
+            if not rv:
+                pywikibot.warning('Unknown argument \'%s\'' % arg)
+
+        gen = self.getCombinedGenerator()
+        self._reset()
+        return gen
 
 
 def AllpagesPageGenerator(start='!', namespace=0, includeredirects=True,

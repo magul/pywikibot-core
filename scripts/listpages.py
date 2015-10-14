@@ -74,7 +74,7 @@ Custom format can be applied to the following items extrapolated from a
 &params;
 """
 #
-# (C) Pywikibot team, 2008-2014
+# (C) Pywikibot team, 2008-2015
 #
 # Distributed under the terms of the MIT license.
 #
@@ -86,8 +86,15 @@ __version__ = '$Id$'
 import os
 
 import pywikibot
+
 from pywikibot import config2 as config
-from pywikibot.pagegenerators import GeneratorFactory, parameterHelp
+from pywikibot.bot import (
+    EverySitePageGeneratorBot,
+    QuietCurrentPageBot,
+    ExistingPageBot
+)
+
+from pywikibot.pagegenerators import parameterHelp
 
 docuReplacements = {'&params;': parameterHelp}
 
@@ -156,6 +163,70 @@ class Formatter(object):
             return fmt.format(num=num, page=self)
 
 
+class ListPageTitlesBot(EverySitePageGeneratorBot, QuietCurrentPageBot):
+
+    def __init__(self, fmt='1', lang=None, *args, **kwargs):
+        """Constructor."""
+        super(ListPageTitlesBot, self).__init__(*args, **kwargs)
+        self.fmt = fmt
+        self.lang = lang
+
+    def treat_page(self):
+        """Print page."""
+        page = self.current_page
+        fmt = self.fmt
+        i = self._treat_counter
+        outputlang = self.lang
+
+        page_fmt = Formatter(page, outputlang)
+        pywikibot.stdout(page_fmt.output(num=i, fmt=fmt))
+
+
+class SavePagesBot(ExistingPageBot):
+
+    def __init__(self, base_dir=None, encoding=None, *args, **kwargs):
+        """Constructor."""
+        super(SavePagesBot, self).__init__(*args, **kwargs)
+        self.base_dir = base_dir
+        self.encoding = encoding or config.textfile_encoding
+
+    def treat_page(self):
+        """Save page."""
+        base_dir = self.base_dir
+        encoding = self.encoding
+
+        page = self.current_page
+
+        family_name = page.site.family.name
+        code = page.site.code
+
+        site_dir = os.path.join(base_dir, family_name, code)
+        if not os.path.exists(site_dir):
+            os.makedirs(site_dir, mode=0o744)
+
+        filename = os.path.join(site_dir, page.title(as_filename=True))
+        pywikibot.output(u'Saving %s to %s' % (page.title(), filename))
+        with open(filename, mode='wb') as f:
+            f.write(page.text.encode(encoding))
+
+
+class ListPagesBot(ListPageTitlesBot, SavePagesBot):
+
+    def __init__(self, show_title=True, *args, **kwargs):
+        """Constructor."""
+        super(ListPagesBot, self).__init__(*args, **kwargs)
+        self.show_title = show_title
+
+    def treat_page(self):
+        if self.show_title:
+            ListPageTitlesBot.treat_page(self)
+
+        pywikibot.output(self.current_page.text, toStdout=True)
+
+        if self.base_dir:
+            SavePagesBot.treat_page(self)
+
+
 def main(*args):
     """
     Process command line arguments and invoke bot.
@@ -165,17 +236,18 @@ def main(*args):
     @param args: command line arguments
     @type args: list of unicode
     """
-    gen = None
+    # gen = None
     notitle = False
     fmt = '1'
-    outputlang = None
+    # outputlang = None
     page_get = False
     base_dir = None
     encoding = config.textfile_encoding
 
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
-    genFactory = GeneratorFactory()
+
+    generator_args = []
 
     for arg in local_args:
         if arg == '-notitle':
@@ -183,8 +255,8 @@ def main(*args):
         elif arg.startswith('-format:'):
             fmt = arg[len('-format:'):]
             fmt = fmt.replace(u'\\03{{', u'\03{{')
-        elif arg.startswith('-outputlang:'):
-            outputlang = arg[len('-outputlang:'):]
+        # elif arg.startswith('-outputlang:'):
+        #     outputlang = arg[len('-outputlang:'):]
         elif arg == '-get':
             page_get = True
         elif arg.startswith('-save'):
@@ -192,7 +264,7 @@ def main(*args):
         elif arg.startswith('-encode:'):
             encoding = arg.partition(':')[2]
         else:
-            genFactory.handleArg(arg)
+            generator_args.append(arg)
 
     if base_dir:
         base_dir = os.path.expanduser(base_dir)
@@ -214,28 +286,19 @@ def main(*args):
                               % base_dir)
             base_dir = None
 
-    gen = genFactory.getCombinedGenerator()
-    if gen:
-        i = 0
-        for i, page in enumerate(gen, start=1):
-            if not notitle:
-                page_fmt = Formatter(page, outputlang)
-                pywikibot.stdout(page_fmt.output(num=i, fmt=fmt))
-            if page_get:
-                try:
-                    pywikibot.output(page.text, toStdout=True)
-                except pywikibot.Error as err:
-                    pywikibot.output(err)
-            if base_dir:
-                filename = os.path.join(base_dir, page.title(as_filename=True))
-                pywikibot.output(u'Saving %s to %s' % (page.title(), filename))
-                with open(filename, mode='wb') as f:
-                    f.write(page.text.encode(encoding))
-        pywikibot.output(u"%i page(s) found" % i)
-        return True
+    if generator_args and (not notitle or page_get or base_dir):
+        if page_get or base_dir:
+            bot = ListPagesBot(fmt=fmt, show_title=not notitle,
+                               base_dir=base_dir, encoding=encoding,
+                               families='all', codes='all',
+                               generator_args=generator_args)
+        else:
+            bot = ListPageTitlesBot(fmt=fmt,
+                                    families='all', codes='all',
+                                    generator_args=generator_args)
+        bot.run()
     else:
-        pywikibot.bot.suggest_help(missing_generator=True)
-        return False
+        pywikibot.showHelp()
 
 
 if __name__ == "__main__":

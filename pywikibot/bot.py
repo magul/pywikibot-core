@@ -63,7 +63,9 @@ __version__ = '$Id$'
 # Note: all output goes thru python std library "logging" module
 
 import codecs
+import collections
 import datetime
+import itertools
 import json
 import logging
 import logging.handlers
@@ -79,6 +81,24 @@ from warnings import warn
 _logger = "bot"
 
 import pywikibot
+
+# comms.http needs this.
+# Command line parsing and help
+def calledModuleName():
+    """Return the name of the module calling this function.
+
+    This is required because the -help option loads the module's docstring
+    and because the module name will be used for the filename of the log.
+
+    @rtype: unicode
+    """
+    # get commandline arguments
+    called = pywikibot.argvu[0].strip()
+    if ".py" in called:  # could end with .pyc, .pyw, etc. on some platforms
+        # clip off the '.py?' filename extension
+        called = called[:called.rindex('.py')]
+    return os.path.basename(called)
+
 
 from pywikibot import backports
 from pywikibot import config
@@ -96,12 +116,18 @@ from pywikibot.logging import (
     debug, error, exception, log, output, stdout, warning,
 )
 from pywikibot.logging import critical  # noqa: unused
-from pywikibot.tools import deprecated, deprecated_args, PY2, PYTHON_VERSION
+from pywikibot.tools import (
+    deprecated, deprecated_args, PY2, PYTHON_VERSION,
+    StringTypes,
+)
 from pywikibot.tools._logging import (
     LoggingFormatter as _LoggingFormatter,
     RotatingFileHandler,
 )
 from pywikibot.tools.formatter import color_format
+
+# Loaded after others due to cyclic imports
+from pywikibot.pagegenerators import GeneratorFactory
 
 if not PY2:
     unicode = str
@@ -783,23 +809,6 @@ class InteractiveReplace(object):
         if self._current_match is None:
             raise ValueError('No current range')
         return self._current_match[3]
-
-
-# Command line parsing and help
-def calledModuleName():
-    """Return the name of the module calling this function.
-
-    This is required because the -help option loads the module's docstring
-    and because the module name will be used for the filename of the log.
-
-    @rtype: unicode
-    """
-    # get commandline arguments
-    called = pywikibot.argvu[0].strip()
-    if ".py" in called:  # could end with .pyc, .pyw, etc. on some platforms
-        # clip off the '.py?' filename extension
-        called = called[:called.rindex('.py')]
-    return os.path.basename(called)
 
 
 def handle_args(args=None, do_help=True):
@@ -1604,6 +1613,82 @@ class MultipleSitesBot(BaseBot):
         self._site = page.site
 
 
+class EverySiteBot(MultipleSitesBot):
+
+    """A bot class working on every known site."""
+
+    def __init__(self, families=None, codes=None, **kwargs):
+        """Constructor."""
+        if families is None or families == 'all':
+            self.families = sorted(config.family_files.keys())
+        elif isinstance(families, StringTypes):
+            self.families = [families]
+        else:
+            assert isinstance(families, collections.Iterable)
+            self.families = families
+
+        if codes is None or codes == 'all':
+            self.codes = None
+        elif isinstance(codes, basestring):
+            self.codes = [codes]
+        else:
+            assert isinstance(codes, collections.Iterable)
+            self.codes = codes
+
+        super(EverySiteBot, self).__init__(**kwargs)
+
+    def site_generator(self):
+        """Generate requested sites."""
+        for family_name in self.families:
+            fam = pywikibot.family.Family.load(family_name)
+
+            if self.codes:
+                codes = [code for code in self.codes if code in fam.langs]
+            else:
+                codes = sorted(fam.langs)
+
+            if fam == 'wikimediachapter':
+                codes = [code for code in codes if code != 'uk']
+
+            pywikibot.warning('Processing family: %s ; codes: %s'
+                              % (fam, codes))
+
+            for code in codes:
+                site = pywikibot.Site(code, fam)
+                pywikibot.warning('Processing site: %s' % site)
+                yield site
+
+    def run(self):
+        """Process all sites in generator."""
+        super(EverySiteBot, self).run()
+
+
+class EverySitePageGeneratorBot(EverySiteBot):
+
+    """A bot class working on every known site."""
+
+    def __init__(self, generator_args, families=None, codes=None, **kwargs):
+        """Constructor."""
+        super(EverySitePageGeneratorBot, self).__init__(families, codes, **kwargs)
+        self.generator_args = generator_args
+
+    @property
+    def generators(self):
+        for site in self.site_generator():
+            generator_factory = GeneratorFactory(site)
+            gen = generator_factory.generator(self.generator_args)
+            assert gen
+            yield gen
+
+    @property
+    def generator(self):
+        return itertools.chain.from_iterable(self.generators)
+
+    def run(self):
+        """Process all sites in generator."""
+        super(EverySitePageGeneratorBot, self).run()
+
+
 class CurrentPageBot(BaseBot):
 
     """
@@ -1653,6 +1738,19 @@ class CurrentPageBot(BaseBot):
                      ignore_save_related_errors=ignore_save_related_errors,
                      ignore_server_errors=ignore_server_errors,
                      **kwargs)
+
+
+class QuietCurrentPageBot(CurrentPageBot):
+
+    def treat(self, page):
+        """Set page to current page and treat that page."""
+        self._current_page = page
+        self.treat_page()
+
+    @deprecated_args(comment='summary')
+    def userPut(self, page, *args, **kwargs):
+        self._current_page = page
+        return super(QuietCurrentPageBot, self).userPut(page, *args, **kwargs)
 
 
 class AutomaticTWSummaryBot(CurrentPageBot):
