@@ -148,23 +148,23 @@ class TestWikibaseTypes(WikidataTestCase):
     def test_WbQuantity(self):
         q = pywikibot.WbQuantity(amount=1234, error=1)
         self.assertEqual(q.toWikibase(),
-                         {'amount': 1234, 'lowerBound': 1233,
-                          'upperBound': 1235, 'unit': '1', })
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235', 'unit': '1', })
         q = pywikibot.WbQuantity(amount=5, error=(2, 3))
         self.assertEqual(q.toWikibase(),
-                         {'amount': 5, 'lowerBound': 2, 'upperBound': 7,
-                          'unit': '1', })
+                         {'amount': '+5', 'lowerBound': '+2',
+                          'upperBound': '+7', 'unit': '1', })
         q = pywikibot.WbQuantity(amount=0.044405586)
-        q_dict = {'amount': 0.044405586, 'lowerBound': 0.044405586,
-                  'upperBound': 0.044405586, 'unit': '1', }
+        q_dict = {'amount': '+0.044405586', 'lowerBound': '+0.044405586',
+                  'upperBound': '+0.044405586', 'unit': '1', }
         self.assertEqual(q.toWikibase(), q_dict)
         # test other WbQuantity methods
         self.assertEqual("%s" % q,
                          '{\n'
-                         '    "amount": %(val)r,\n'
-                         '    "lowerBound": %(val)r,\n'
+                         '    "amount": "+%(val)r",\n'
+                         '    "lowerBound": "+%(val)r",\n'
                          '    "unit": "1",\n'
-                         '    "upperBound": %(val)r\n'
+                         '    "upperBound": "+%(val)r"\n'
                          '}' % {'val': 0.044405586})
         self.assertEqual("%r" % q,
                          "WbQuantity(amount=%(val)s, "
@@ -177,9 +177,10 @@ class TestWikibaseTypes(WikidataTestCase):
                                                u'lowerBound': u'0',
                                                u'upperBound': u'1',
                                                u'unit': u'1'})
+        # note that the bounds are inputted as INT but are returned as FLOAT
         self.assertEqual(q.toWikibase(),
-                         {'amount': 0.0229, 'lowerBound': 0, 'upperBound': 1,
-                          'unit': '1', })
+                         {'amount': '+0.0229', 'lowerBound': '+0.0',
+                          'upperBound': '+1.0', 'unit': '1', })
 
         # test WbQuantity error handling
         self.assertRaises(ValueError, pywikibot.WbQuantity, amount=None,

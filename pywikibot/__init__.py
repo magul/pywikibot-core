@@ -508,10 +508,25 @@ class WbQuantity(object):
         self.lowerBound = self.amount - lowerError
 
     def toWikibase(self):
-        """Convert the data to a JSON object for the Wikibase API."""
-        json = {'amount': self.amount,
-                'upperBound': self.upperBound,
-                'lowerBound': self.lowerBound,
+        """
+        Convert the data to a JSON object for the Wikibase API.
+
+        In order to send cleanly formatted quantities to Wikidata
+        (diffs and editing), numbers should not be send as floats or
+        ints, but strings with sign. For positive numbers 14.1
+        is returned as '+14.1' and -14.1 yields '-14.1'.
+        """
+        def preformat(number):
+            #'{0:+}'.format(self.amount) not possible in Py2.6
+            if number < 0:
+                num_str = '-{0}'.format(str(number))
+            else:
+                num_str = '+{0}'.format(str(number))
+            return num_str
+
+        json = {'amount': preformat(self.amount),
+                'upperBound': preformat(self.upperBound),
+                'lowerBound': preformat(self.lowerBound),
                 'unit': self.unit
                 }
         return json
