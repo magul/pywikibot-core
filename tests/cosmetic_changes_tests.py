@@ -11,7 +11,7 @@ __version__ = '$Id$'
 
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit
 
-from tests.aspects import unittest, TestCase
+from tests.aspects import unittest, TestCase, AutoDeprecationTestCase
 
 
 class TestCosmeticChanges(TestCase):
@@ -186,6 +186,13 @@ class TestDryCosmeticChanges(TestCosmeticChanges):
                          self.cct.fixReferences('<ref />'))
         self.assertEqual('',
                          self.cct.fixReferences('<ref> \n</ref>'))
+
+
+class TestDryCosmeticChanges(TestCosmeticChanges, AutoDeprecationTestCase):
+
+    """Test cosmetic_changes deprecated methods not requiring a live wiki."""
+
+    dry = True
 
     def test_fixTypo(self):
         """Test fixTypo method."""

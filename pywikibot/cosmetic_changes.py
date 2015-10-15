@@ -71,9 +71,13 @@ except ImportError:
 import pywikibot
 
 from pywikibot import config, textlib
-from pywikibot.tools import deprecate_arg, first_lower, first_upper
-from pywikibot.tools import MediaWikiVersion
-
+from pywikibot.tools import (
+    deprecated,
+    deprecate_arg,
+    first_lower,
+    first_upper,
+    MediaWikiVersion,
+)
 
 # This is from interwiki.py;
 # move it to family file and implement global instances
@@ -231,7 +235,8 @@ class CosmeticChangesToolkit(object):
             self.fixHtml,
             self.fixReferences,
             self.fixStyle,
-            self.fixTypo,
+            self.fixCubedTypo,
+            self.fixDegreesTypo,
 
             self.fixArabicLetters,
             self.fix_ISBN,
@@ -467,6 +472,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def cleanUpLinks(self, text):
+        """Normalise wikilinks in text."""
         # helper function which works on one link and either returns it
         # unmodified, or returns a replacement.
         def handleOneLink(match):
@@ -593,6 +599,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def resolveHtmlEntities(self, text):
+        """Replace html entities with unicode."""
         ignore = [
             38,     # Ampersand (&amp;)
             39,     # Single quotation mark (&quot;) - Bugzilla 24093
@@ -673,6 +680,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def replaceDeprecatedTemplates(self, text):
+        """Remove or replace deprecated templates in L{deprecatedTemplates}."""
         exceptions = ['comment', 'math', 'nowiki', 'pre']
         if self.site.family.name in deprecatedTemplates and \
            self.site.code in deprecatedTemplates[self.site.family.name]:
@@ -694,6 +702,8 @@ class CosmeticChangesToolkit(object):
 
     # from fixes.py
     def fixSyntaxSave(self, text):
+        """Convert externals links to the wiki with internal links."""
+
         def replace_link(match):
             replacement = '[[' + match.group('link')
             if match.group('title'):
@@ -755,6 +765,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def fixHtml(self, text):
+        """Replace html tags with wikitext equivalent."""
         def replace_header(match):
             depth = int(match.group(1))
             return r'{0} {1} {0}'.format('=' * depth, match.group(2))
@@ -785,6 +796,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def fixReferences(self, text):
+        """Normalise Cite tags."""
         # See also https://en.wikipedia.org/wiki/User:AnomieBOT/source/tasks/OrphanReferenceFixer.pm
         exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
                       'startspace']
@@ -801,6 +813,7 @@ class CosmeticChangesToolkit(object):
         return text
 
     def fixStyle(self, text):
+        """Replace wikitext table class 'prettytable' with 'wikitable'."""
         exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
                       'startspace']
         # convert prettytable to wikitable class
@@ -810,14 +823,20 @@ class CosmeticChangesToolkit(object):
                                          r'\1wikitable\2', exceptions)
         return text
 
-    def fixTypo(self, text):
+    def fixCubedTypo(self, text):
+        """Change <number> ccm -> <number> cm³."""
         exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
                       'startspace', 'gallery', 'hyperlink', 'interwiki', 'link']
         # change <number> ccm -> <number> cm³
         text = textlib.replaceExcept(text, r'(\d)\s*(?:&nbsp;)?ccm',
                                      r'\1&nbsp;cm³', exceptions,
                                      site=self.site)
-        # Solve wrong Nº sign with °C or °F
+        return text
+
+    def fixDegreesTypo(self, text):
+        """Solve wrong Nº sign with °C or °F."""
+        exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
+                      'startspace', 'gallery', 'hyperlink', 'interwiki', 'link']
         # additional exception requested on fr-wiki for this stuff
         pattern = re.compile(u'«.*?»', re.UNICODE)
         exceptions.append(pattern)
@@ -828,7 +847,13 @@ class CosmeticChangesToolkit(object):
                                      site=self.site)
         return text
 
+    @deprecated
+    def fixTypo(self, text):
+        """Invokes L{fixCubedTypo} and L{fixDegreesTypo}."""
+        return self.fixCubedTypo(self.fixDegreesTypo(text))
+
     def fixArabicLetters(self, text):
+        """Fix Arabic letters."""
         if self.site.code not in ['ckb', 'fa']:
             return
         exceptions = [
