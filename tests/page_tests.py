@@ -24,7 +24,7 @@ from pywikibot.tools import (
 
 from tests.aspects import (
     unittest, TestCase, DefaultSiteTestCase, SiteAttributeTestCase,
-    DefaultDrySiteTestCase, DeprecationTestCase,
+    DefaultDrySiteTestCase, DeprecationTestCase, WikidataTestCase,
 )
 
 
@@ -962,6 +962,82 @@ class HtmlEntity(TestCase):
         self.assertEqual(pywikibot.page.html2unicode('A&#7f;O'), 'A&#7f;O')
         self.assertEqual(pywikibot.page.html2unicode('&#7f'), '&#7f')
         self.assertEqual(pywikibot.page.html2unicode('&#x70&#x79;'), '&#x70y')
+
+class TestFromJsonMethods(WikidataTestCase):
+
+    """
+    Test the fromJSON methods for claim, qualifier, reference
+
+    The tests make sure that the objects created from JSON are correctly
+    classified as claim (isReference=False, isQualifier=False), as
+    qualifier and as reference.
+    """
+
+    sites = {
+        'wikidata': {
+            'family': 'wikidata',
+            'code': 'wikidata',
+        }
+    }
+
+    def test_reference_from_json(self):
+        """
+        Create reference from JSON. Check isReference, isQualifier are correct.
+        """
+        repo = self.get_repo()
+        ref_json = {'hash': '123',
+                    'property': 'P31',
+                    'datavalue': {'type': 'wikibase-entityid',
+                    'value': {'numeric-id': 5, 'entity-type': 'item'}},
+                    'snaktype': 'value',
+                    'datatype': 'wikibase-item',
+                    'snaks': {'P31': [{'property': 'P31',
+                                       'datavalue': {'type': 'wikibase-entityid',
+                                       'value': {'numeric-id': 5,
+                                       'entity-type': 'item'}},
+                                       'snaktype': 'value',
+                                       'datatype': 'wikibase-item'}]}}
+        source_claim_dict = pywikibot.Claim.referenceFromJSON(repo, ref_json)
+        self.assertEqual(source_claim_dict["P31"][0].isReference, True)
+        self.assertEqual(source_claim_dict["P31"][0].isQualifier, False)
+
+    def test_claim_from_json(self):
+        """
+        Create claim from JSON. Check isReference, isQualifier are correct.
+        """
+        repo = self.get_repo()
+        claim_json = {'type': 'statement',
+                      'mainsnak': {'snaktype': 'value',
+                                   'datavalue': {'type': 'wikibase-entityid',
+                                                 'value': {'numeric-id': 5,
+                                                           'entity-type': 'item'}},
+                                   'datatype': 'wikibase-item',
+                                   'property': 'P31'},
+                      'rank': 'normal'}
+        claim_obj = pywikibot.Claim.fromJSON(repo, claim_json)
+        self.assertEqual(claim_obj.isReference, False)
+        self.assertEqual(claim_obj.isQualifier, False)
+
+    def test_qualifier_from_json(self):
+        """
+        Create qualifier from JSON. Check isReference, isQualifier are correct.
+        """
+        repo = self.get_repo()
+        qual_json = {'hash': '123',
+                     'property': 'P31',
+                     'datavalue': {'type': 'wikibase-entityid',
+                     'value': {'numeric-id': 5, 'entity-type': 'item'}},
+                     'snaktype': 'value',
+                     'datatype': 'wikibase-item',
+                     'snaks': {'P31': [{'property': 'P31',
+                                       'datavalue': {'type': 'wikibase-entityid',
+                                       'value': {'numeric-id': 5,
+                                       'entity-type': 'item'}},
+                                       'snaktype': 'value',
+                                       'datatype': 'wikibase-item'}]}}
+        qual_from_json = pywikibot.Claim.qualifierFromJSON(repo, qual_json)
+        self.assertEqual(qual_from_json.isReference, False)
+        self.assertEqual(qual_from_json.isQualifier, True)
 
 
 if __name__ == '__main__':
