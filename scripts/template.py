@@ -171,6 +171,9 @@ class TemplateRobot(ReplaceBot):
 
     """This bot will replace, remove or subst all occurrences of a template."""
 
+    NAVIBLOCK = ('(?:[Nn]a[vw]i(?:[Bb]loc?k|gacipanelaro)|'
+                 '[Bb]loco de (?:nabegaçon|navegação))')
+
     def __init__(self, generator, templates, **kwargs):
         """
         Constructor.
@@ -233,6 +236,10 @@ class TemplateRobot(ReplaceBot):
                                        r':|[mM][sS][gG]:)?' + pattern +
                                        r'(?P<parameters>\s*\|.+?|) *}}',
                                        re.DOTALL)
+            blockRegex = re.compile(r'(?P<head>\{\{ *%s.*?\| *)%s'
+                                    r'(?P<tail>.*?}})' % (self.NAVIBLOCK,
+                                                          pattern),
+                                    re.DOTALL)
 
             if self.getOption('subst') and self.getOption('remove'):
                 replacements.append((templateRegex,
@@ -244,6 +251,7 @@ class TemplateRobot(ReplaceBot):
                 exceptions['inside-tags'] = ['ref', 'gallery']
             elif self.getOption('remove'):
                 replacements.append((templateRegex, ''))
+                replacements.append((blockRegex, r'\g<head>\g<tail>'))
             else:
                 template = pywikibot.Page(self.site, new, ns=10)
                 if not template.exists():
@@ -253,6 +261,8 @@ class TemplateRobot(ReplaceBot):
                         continue
                 replacements.append((templateRegex,
                                      r'{{%s\g<parameters>}}' % new))
+                replacements.append((blockRegex,
+                                     r'\g<head>%s\g<tail>' % new))
 
         super(TemplateRobot, self).__init__(
             generator, replacements, exceptions,
