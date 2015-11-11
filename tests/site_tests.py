@@ -2842,6 +2842,24 @@ class TestDataSiteSearchEntities(WikidataTestCase):
                           'invalidlanguage')
 
 
+class TestNoRepoConnectedToSite(TestCase):
+
+    """Test NoConnectedRepoExeption."""
+
+    sites = {
+        'wowwikitest': {
+            'family': 'wowwiki',
+            'code': 'en',
+        }
+    }
+
+    def test_no_site_repo(self):
+        """Test exception is raised on known Site with no connected repo."""
+        site = pywikibot.Site('en', 'wowwiki')
+        self.assertRaises(pywikibot.exceptions.NoConnectedRepoException,
+                          site.get_data_repository)
+
+
 class TestSametitleSite(TestCase):
 
     """Test APISite.sametitle on sites with known behaviour."""

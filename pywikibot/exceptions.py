@@ -523,6 +523,13 @@ class EntityTypeUnknownException(WikiBaseError):
     pass
 
 
+class NoConnectedRepoException(WikiBaseError, SiteDefinitionError):
+
+    """There is no data repository connected to this site."""
+
+    pass
+
+
 @__deprecated
 class DeprecatedPageNotFoundError(Error):
 

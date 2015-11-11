@@ -60,6 +60,7 @@ from pywikibot.exceptions import (
     NoCreateError,
     UserBlocked,
     EntityTypeUnknownException,
+    NoConnectedRepoException,
 )
 from pywikibot.family import WikimediaFamily
 from pywikibot.throttle import Throttle
@@ -2713,6 +2714,20 @@ class APISite(BaseSite):
         if bool(code or fam):
             return pywikibot.Site(code, fam, self.username())
 
+    def get_data_repository(self):
+        """Return the data repository connected to this site.
+
+        @return: The data repository
+        @raises: NoConnectedRepoException if no repository is connected
+        @rtype: DataSite
+        """
+        this_data_repository = self.data_repository()
+        if this_data_repository is not None:
+            return this_data_repository
+        else:
+            raise NoConnectedRepoException()
+
+    @deprecated('get_data_repository')
     def data_repository(self):
         """
         Return the data repository connected to this site.
@@ -2723,7 +2738,7 @@ class APISite(BaseSite):
         def handle_warning(mod, warning):
             return (mod == 'query' and
                     warning == "Unrecognized value for parameter 'meta': "
-                               "wikibase")
+                    "wikibase")
 
         req = self._simple_request(action='query', meta='wikibase')
         req._warning_handler = handle_warning
@@ -2740,6 +2755,8 @@ class APISite(BaseSite):
                 return None
         else:
             assert 'warnings' in data
+            pywikibot.warning('Site "{0}" has no wikibase client '
+                              'configured'.format(self))
             return None
 
     def is_image_repository(self):
