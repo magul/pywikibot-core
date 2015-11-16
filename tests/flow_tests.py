@@ -8,7 +8,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.exceptions import NoPage
-from pywikibot.flow import Board, Topic, Post
+from pywikibot.flow import Board, Topic, Post, FlowRevision
 from pywikibot.tools import UnicodeType as unicode
 
 from tests.aspects import (
@@ -112,6 +112,18 @@ class TestFlowLoading(TestMediaWikiFlowSandbox):
         post = Post(topic, 'sh6wgoagna97q0ia')
         self.assertEqual(post.uuid, 'sh6wgoagna97q0ia')
 
+    def test_revision_uuid(self):
+        """Test retrieval of Flow revision UUID.
+
+        This doesn't really "load" anything from the API. It just tests
+        the property to make sure the UUID passed to the constructor is
+        stored properly.
+        """
+        topic = Topic(self.site, 'Topic:Sh6wgo5tu3qui1w2')
+        post = Post(topic, 'sh6wgoagna97q0ia')
+        revision = post.revisions()[-1]
+        self.assertEqual(revision.uuid, 'sh6wgoagna97q0ia')
+
     def test_post_contents(self):
         """Test retrieval of Flow post contents."""
         # Load
@@ -141,6 +153,31 @@ class TestFlowLoading(TestMediaWikiFlowSandbox):
         self.assertIsInstance(html, unicode)
         self.assertNotEqual(html, 'something')
         self.assertIn('html', post._content)
+
+    def test_revision_contents(self):
+        """Test retrieval of Flow revision contents."""
+        # Load
+        topic = Topic(self.site, 'Topic:Sh6wgo5tu3qui1w2')
+        post = Post(topic, 'sh6wgoagna97q0ia')
+        revision = post.current_revision
+        # Wikitext
+        wikitext = revision.get(format='wikitext')
+        self.assertIn('wikitext', revision._content)
+        self.assertNotIn('html', revision._content)
+        self.assertIsInstance(wikitext, unicode)
+        self.assertNotEqual(wikitext, '')
+        # HTML
+        html = revision.get(format='html')
+        self.assertIn('html', revision._content)
+        self.assertIn('wikitext', revision._content)
+        self.assertIsInstance(html, unicode)
+        self.assertNotEqual(html, '')
+        # Cached
+        revision._content['html'] = 'something'
+        html = revision.get(format='html')
+        self.assertIsInstance(html, unicode)
+        self.assertEqual(html, 'something')
+        self.assertIn('html', revision._content)
 
     def test_topiclist(self):
         """Test loading of topiclist."""
@@ -182,6 +219,19 @@ class TestFlowFactoryErrors(TestCase):
         self.assertRaises(NoPage, Post.fromJSON, fake_topic, 'abc',
                           {'posts': [], 'revisions': []})
 
+        # FlowRevision.fromJSON
+        self.assertRaises(TypeError, FlowRevision.fromJSON, board, 'abc', {})
+        self.assertRaises(TypeError, FlowRevision.fromJSON, real_topic, 1234, {})
+        self.assertRaises(TypeError, FlowRevision.fromJSON, real_topic, 'abc', [])
+        self.assertRaises(NoPage, FlowRevision.fromJSON, fake_topic, 'abc',
+                          {'revisions': []})
+
+        # FlowRevision.fromHistoryJSON
+        self.assertRaises(TypeError, FlowRevision.fromHistoryJSON, board, {})
+        self.assertRaises(TypeError, FlowRevision.fromHistoryJSON, real_topic, [])
+        self.assertRaises(NoPage, FlowRevision.fromHistoryJSON, fake_topic,
+                          {'revisionId': 'abc'})
+
     def test_invalid_data(self):
         """Test invalid "API" data."""
         board = Board(self.site, 'Talk:Pywikibot test')
@@ -211,3 +261,15 @@ class TestFlowFactoryErrors(TestCase):
         self.assertRaises(AssertionError, Post.fromJSON, real_topic, 'abc',
                           {'posts': {'abc': ['123']},
                            'revisions': {'123': {'content': 789}}})
+
+        # FlowRevision.fromJSON
+        self.assertRaises(ValueError, FlowRevision.fromJSON, real_topic, 'abc', {})
+        self.assertRaises(ValueError, FlowRevision.fromJSON, real_topic, 'abc',
+                          {'stuff': 'blah'})
+        self.assertRaises(AssertionError, FlowRevision.fromJSON, real_topic, 'abc',
+                          {'revisions': {'abc': {'content': 123}}})
+
+        # FlowRevision.fromHistoryJSON
+        self.assertRaises(ValueError, FlowRevision.fromHistoryJSON, real_topic, {})
+        self.assertRaises(AssertionError, FlowRevision.fromHistoryJSON, real_topic,
+                          {'revisionId': 'abc', 'content': 123})

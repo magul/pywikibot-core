@@ -14,6 +14,9 @@ from pywikibot.tools import UnicodeType as unicode
 from tests.aspects import TestCase
 
 
+MODERATION_REASON = 'Pywikibot test'
+
+
 class TestFlowCreateTopic(TestCase):
 
     """Test the creation of Flow topics."""
@@ -28,7 +31,7 @@ class TestFlowCreateTopic(TestCase):
         """Test creation of topic."""
         content = 'If you can read this, the Flow code in Pywikibot works!'
         board = Board(self.site, 'Talk:Pywikibot test')
-        topic = board.new_topic('Pywikibot test', content, 'wikitext')
+        topic = board.new_topic(MODERATION_REASON, content, 'wikitext')
         first_post = topic.replies()[0]
         wikitext = first_post.get(format='wikitext')
         self.assertIn('wikitext', first_post._content)
@@ -167,13 +170,13 @@ class TestFlowLockTopic(TestCase):
         # Setup
         topic = Topic(self.site, 'Topic:Sn12rdih4iducjsd')
         if topic.is_locked:
-            topic.unlock()
+            topic.unlock(MODERATION_REASON)
         self.assertFalse(topic.is_locked)
         # Lock topic
-        topic.lock('Pywikibot test')
+        topic.lock(MODERATION_REASON)
         self.assertTrue(topic.is_locked)
         # Unlock topic
-        topic.unlock('Pywikibot test')
+        topic.unlock(MODERATION_REASON)
         self.assertFalse(topic.is_locked)
 
 
@@ -192,13 +195,13 @@ class TestFlowHide(TestCase):
         # Setup
         topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
         if topic.is_moderated:
-            topic.restore('Pywikibot test')
+            topic.restore(MODERATION_REASON)
         self.assertFalse(topic.is_moderated)
         # Hide
-        topic.hide('Pywikibot test')
+        topic.hide(MODERATION_REASON)
         self.assertTrue(topic.is_moderated)
         # Restore
-        topic.restore('Pywikibot test')
+        topic.restore(MODERATION_REASON)
         self.assertFalse(topic.is_moderated)
 
     def test_hide_post(self):
@@ -207,13 +210,18 @@ class TestFlowHide(TestCase):
         topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
         post = Post(topic, 'sq1qvoig1az8w7cd')
         if post.is_moderated:
-            post.restore('Pywikibot test')
+            post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
         # Hide
-        post.hide('Pywikibot test')
+        post.hide(MODERATION_REASON)
         self.assertTrue(post.is_moderated)
+        self.assertEqual(post.current_revision.moderation_state, 'hide',
+                         'Revision has bad moderation state.')
+        self.assertEqual(post.current_revision.moderation_reason,
+                         MODERATION_REASON,
+                         'Revision has wrong moderation reason.')
         # Restore
-        post.restore('Pywikibot test')
+        post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
 
 
@@ -233,13 +241,13 @@ class TestFlowDelete(TestCase):
         # Setup
         topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
         if topic.is_moderated:
-            topic.restore('Pywikibot test')
+            topic.restore(MODERATION_REASON)
         self.assertFalse(topic.is_moderated)
         # Delete
-        topic.delete_mod('Pywikibot test')
+        topic.delete_mod(MODERATION_REASON)
         self.assertTrue(topic.is_moderated)
         # Restore
-        topic.restore('Pywikibot test')
+        topic.restore(MODERATION_REASON)
         self.assertFalse(topic.is_moderated)
 
     def test_delete_post(self):
@@ -248,13 +256,18 @@ class TestFlowDelete(TestCase):
         topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
         post = Post(topic, 'sq1qvoig1az8w7cd')
         if post.is_moderated:
-            post.restore('Pywikibot test')
+            post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
         # Delete
-        post.delete('Pywikibot test')
+        post.delete(MODERATION_REASON)
         self.assertTrue(post.is_moderated)
+        self.assertEqual(post.current_revision.moderation_state, 'delete',
+                         'Revision has bad moderation state.')
+        self.assertEqual(post.current_revision.moderation_reason,
+                         MODERATION_REASON,
+                         'Revision has wrong moderation reason.')
         # Restore
-        post.restore('Pywikibot test')
+        post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
 
 
@@ -269,34 +282,39 @@ class TestFlowSuppress(TestCase):
     write = True
     sysop = True
 
+    def test_suppress_topic(self):
+        """Suppress and restore a test topic."""
+        # Setup
+        topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
+        if topic.is_moderated:
+            topic.restore(MODERATION_REASON)
+        self.assertFalse(topic.is_moderated)
+        # Suppress
+        topic.suppress(MODERATION_REASON)
+        self.assertTrue(topic.is_moderated)
+        # Restore
+        topic.restore(MODERATION_REASON)
+        self.assertFalse(topic.is_moderated)
+
     def test_suppress_post(self):
         """Suppress and restore a test post."""
         # Setup
         topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
         post = Post(topic, 'sq1qvoig1az8w7cd')
         if post.is_moderated:
-            post.restore('Pywikibot test')
+            post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
         # Suppress
-        post.suppress('Pywikibot test')
+        post.suppress(MODERATION_REASON)
         self.assertTrue(post.is_moderated)
+        self.assertEqual(post.current_revision.moderation_state, 'suppress',
+                         'Revision has bad moderation state.')
+        self.assertEqual(post.current_revision.moderation_reason,
+                         MODERATION_REASON,
+                         'Revision has wrong moderation reason.')
         # Restore
-        post.restore('Pywikibot test')
+        post.restore(MODERATION_REASON)
         self.assertFalse(post.is_moderated)
-
-    def test_suppress_topic(self):
-        """Suppress and restore a test topic."""
-        # Setup
-        topic = Topic(self.site, 'Topic:Sl4svodmrhzmpjjh')
-        if topic.is_moderated:
-            topic.restore('Pywikibot test')
-        self.assertFalse(topic.is_moderated)
-        # Suppress
-        topic.suppress('Pywikibot test')
-        self.assertTrue(topic.is_moderated)
-        # Restore
-        topic.restore('Pywikibot test')
-        self.assertFalse(topic.is_moderated)
 
 
 class TestFlowEditFailure(TestCase):
