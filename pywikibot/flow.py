@@ -13,7 +13,7 @@ import logging
 
 from pywikibot.exceptions import NoPage, UnknownExtension, LockedPage
 from pywikibot.page import BasePage
-from pywikibot.tools import PY2
+from pywikibot.tools import PY2, ComparableMixin
 
 if not PY2:
     unicode = str
@@ -221,12 +221,35 @@ class Topic(FlowPage):
     @property
     def is_locked(self):
         """Whether this topic is locked."""
-        return self.root._current_revision['isLocked']
+        return self.root._data['isLocked']
 
     @property
     def is_moderated(self):
         """Whether this topic is moderated."""
         return self.root._current_revision['isModerated']
+
+    def flow_revisions(self, format='wikitext', force=False):
+        """Return this topic's Flow revisions.
+
+        @param format: Content format to return contents in
+        @type format: str ('wikitext', 'html', or 'fixed-html')
+        @param force: Whether to reload from the API instead of using the cache
+        @type force: bool
+        @return: This topic's revisions
+        @rtype: list of FlowRevisions
+        """
+        if format not in ('wikitext', 'html', 'fixed-html'):
+            raise ValueError('Invalid content format.')
+
+        if hasattr(self, '_flow_revisions') and not force:
+            return self._flow_revisions
+
+        revision_list = self.site.load_topic_history(self, format)
+
+        self._flow_revisions = [FlowRevision.fromHistoryJSON(self, revision)
+                                for revision in revision_list]
+
+        return self._flow_revisions
 
     def replies(self, format='wikitext', force=False):
         """A list of replies to this topic's root post.
@@ -309,32 +332,65 @@ class Topic(FlowPage):
 
 
 # Flow non-page-like objects
-class Post(object):
+class FlowObject(ComparableMixin):
 
-    """A post to a Flow discussion topic."""
+    """A non-Page Flow object."""
 
     def __init__(self, page, uuid):
-        """
-        Constructor.
+        """Constructor.
 
         @param page: Flow topic
         @type page: Topic
-        @param uuid: UUID of a Flow post
+        @param uuid: UUID of a Flow object
         @type uuid: unicode
 
         @raises TypeError: incorrect types of parameters
+        @raises NoPage: topic does not exist
         """
         if not isinstance(page, Topic):
             raise TypeError('Page must be a Topic object')
         if not page.exists():
             raise NoPage(page, 'Topic must exist: %s')
         if not isinstance(uuid, basestring):
-            raise TypeError('Post UUID must be a string')
+            raise TypeError('Flow object UUID must be a string')
 
         self._page = page
         self._uuid = uuid
 
-        self._content = {}
+    def _cmpkey(self):
+        return (self.uuid)
+
+    @property
+    def uuid(self):
+        """Return the UUID of the object.
+
+        @return: UUID of the object
+        @rtype: unicode
+        """
+        return self._uuid
+
+    @property
+    def site(self):
+        """Return the site associated with the object.
+
+        @return: Site associated with the object
+        @rtype: Site
+        """
+        return self._page.site
+
+    @property
+    def page(self):
+        """Return the page associated with the object.
+
+        @return: Page associated with the object
+        @rtype: FlowPage
+        """
+        return self._page
+
+
+class Post(FlowObject):
+
+    """A post to a Flow discussion topic."""
 
     @classmethod
     def fromJSON(cls, page, post_uuid, data):
@@ -372,17 +428,18 @@ class Post(object):
         if self.uuid not in data['posts']:
             raise ValueError('Post not found in supplied data.')
 
-        current_revision_id = data['posts'][self.uuid][0]
-        if current_revision_id not in data['revisions']:
-            raise ValueError('Current revision of post'
-                             'not found in supplied data.')
+        if hasattr(self, '_current_revision'):
+            self._current_revision._set_data(data)
+        else:
+            current_revision_id = data['posts'][self.uuid][0]
+            if current_revision_id not in data['revisions']:
+                raise ValueError('Current revision of post'
+                                 'not found in supplied data.')
 
-        self._current_revision = data['revisions'][current_revision_id]
-        if 'content' in self._current_revision:
-            content = self._current_revision.pop('content')
-            assert isinstance(content, dict)
-            assert isinstance(content['content'], unicode)
-            self._content[content['format']] = content['content']
+            self._data = data['revisions'][current_revision_id]
+            self._current_revision = FlowRevision.fromJSON(self.page,
+                                                           current_revision_id,
+                                                           data)
 
     def _load(self, format='wikitext', load_from_topic=False):
         """Load and cache the Post's data using the given content format."""
@@ -392,41 +449,27 @@ class Post(object):
             data = self.site.load_post_current_revision(self.page, self.uuid,
                                                         format)
         self._set_data(data)
+        return self._data
+
+    @property
+    def _content(self):
+        """Mirror of the post FlowRevision content dict."""
+        if hasattr(self, '_current_revision'):
+            return self._current_revision._content
+        else:
+            return {}
+
+    @property
+    def current_revision(self):
+        """The FlowRevision corresponding to this post's current revision."""
+        if not hasattr(self, '_current_revision'):
+            self._load()
         return self._current_revision
-
-    @property
-    def uuid(self):
-        """Return the UUID of the post.
-
-        @return: UUID of the post
-        @rtype: unicode
-        """
-        return self._uuid
-
-    @property
-    def site(self):
-        """Return the site associated with the post.
-
-        @return: Site associated with the post
-        @rtype: Site
-        """
-        return self._page.site
-
-    @property
-    def page(self):
-        """Return the page associated with the post.
-
-        @return: Page associated with the post
-        @rtype: FlowPage
-        """
-        return self._page
 
     @property
     def is_moderated(self):
         """Whether this post is moderated."""
-        if not hasattr(self, '_current_revision'):
-            self._load()
-        return self._current_revision['isModerated']
+        return self.current_revision['isModerated']
 
     def get(self, format='wikitext', force=False, sysop=False):
         """Return the contents of the post in the given format.
@@ -446,7 +489,30 @@ class Post(object):
 
         if format not in self._content or force:
             self._load(format)
-        return self._content[format]
+        return self._current_revision.get(format=format)
+
+    def revisions(self, format='wikitext', force=False):
+        """Return this post's revisions.
+
+        @param format: Content format to return contents in
+        @type format: str ('wikitext', 'html', or 'fixed-html')
+        @param force: Whether to reload from the API instead of using the cache
+        @type force: bool
+        @return: This post's revisions
+        @rtype: list of FlowRevisions
+        """
+        if format not in ('wikitext', 'html', 'fixed-html'):
+            raise ValueError('Invalid content format.')
+
+        if hasattr(self, '_revisions') and not force:
+            return self._revisions
+
+        revision_list = self.site.load_post_history(self, format)
+
+        self._revisions = [FlowRevision.fromHistoryJSON(self.page, revision)
+                           for revision in revision_list]
+
+        return self._revisions
 
     def replies(self, format='wikitext', force=False):
         """Return this post's replies.
@@ -466,10 +532,10 @@ class Post(object):
 
         # load_from_topic workaround due to T106733
         # (replies not returned by view-post)
-        if not hasattr(self, '_current_revision') or force:
+        if not hasattr(self, '_data') or force:
             self._load(format, load_from_topic=True)
 
-        reply_uuids = self._current_revision['replies']
+        reply_uuids = self._data['replies']
         self._replies = [Post(self.page, uuid) for uuid in reply_uuids]
 
         return self._replies
@@ -488,12 +554,12 @@ class Post(object):
         if self.page.is_locked:
             raise LockedPage(self.page, 'Topic %s is locked.')
 
-        reply_url = self._current_revision['actions']['reply']['url']
+        reply_url = self._data['actions']['reply']['url']
         parsed_url = urlparse(reply_url)
         params = parse_qs(parsed_url.query)
         reply_to = params['topic_postId']
         if self.uuid == reply_to:
-            del self._current_revision
+            del self._data
             del self._replies
         data = self.site.reply_to_post(self.page, reply_to, content, format)
         post = Post(self.page, data['post-id'])
@@ -535,3 +601,126 @@ class Post(object):
         """
         self.site.restore_post(self, reason)
         self._load()
+
+
+class FlowRevision(FlowObject):
+
+    """A revision of a Flow object."""
+
+    def __init__(self, page, uuid):
+        """Constructor.
+
+        @param page: Flow topic
+        @type page: Topic
+        @param uuid: UUID of a Flow revision
+        @type uuid: unicode
+
+        @raises TypeError: incorrect types of parameters
+        @raises NoPage: topic does not exist
+        """
+        super(FlowRevision, self).__init__(page, uuid)
+
+        self._content = {}
+
+    @classmethod
+    def fromJSON(cls, page, uuid, data):
+        """
+        Create a FlowRevision object using the data returned from the API call.
+
+        @param page: A Flow topic
+        @type page: Topic
+        @param uuid: The UUID of the revision
+        @type uuid: unicode
+        @param data: The JSON data returned from the API
+        @type data: dict
+
+        @return: A FlowRevision object
+        @raises TypeError: data is not a dict
+        @raises ValueError: data is missing required entries
+        """
+        revision = cls(page, uuid)
+        revision._set_data(data)
+
+        return revision
+
+    @classmethod
+    def fromHistoryJSON(cls, page, data):
+        """
+        Create a FlowRevision object using data from the history API calls.
+
+        @param page: A Flow topic
+        @type page: Topic
+        @param data: The JSON data returned from the API
+        @type data: dict
+
+        @return: A FlowRevision object
+        @raises TypeError: data is not a dict
+        @raises ValueError: data is missing required entries
+        """
+        if not isinstance(page, Topic):
+            raise TypeError('Page must be a Topic object')
+        if not isinstance(data, dict):
+            raise TypeError('Illegal revision data (must be a dictionary).')
+        if 'revisionId' not in data:
+            raise ValueError('Illegal revision data (missing required data).')
+        uuid = data['revisionId']
+        full_data = {'revisions': {uuid: data}}
+
+        return cls.fromJSON(page, uuid, full_data)
+
+    def _set_data(self, data):
+        """Set internal data and cache content.
+
+        @param data: The data to store internally
+        @type data: dict
+        @raises TypeError: data is not a dict
+        @raises ValueError: missing data entries or revision not found
+        """
+        if not isinstance(data, dict):
+            raise TypeError('Illegal revision data (must be a dictionary).')
+        if 'revisions' not in data:
+            raise ValueError('Illegal revision data (missing required data).')
+        if self.uuid not in data['revisions']:
+            raise ValueError('Revision not found in supplied data.')
+
+        self._data = data['revisions'][self.uuid]
+        if 'content' in self._data:
+            content = self._data.pop('content')
+            assert isinstance(content, dict)
+            assert isinstance(content['content'], unicode)
+            self._content[content['format']] = content['content']
+
+    def _load(self, format='wikitext', load_from_topic=True):
+        """Load and cache the revision's data using the given content format."""
+        if load_from_topic:
+            data = self.page._load(format=format, force=True)
+        else:
+            # TODO: Load single revision (T103055)
+            # data = self.site.load_flow_revision(self.page, self.uuid,
+            #                                     format)
+            raise NotImplementedError
+        try:
+            self._set_data(data)
+            return self._data
+        except ValueError:
+            raise NotImplementedError('Revision not current (see T103055)')
+
+    def get(self, format='wikitext', sysop=False):
+        """Return the contents of the post in the given format.
+
+        @param sysop: Whether to load using sysop rights.
+        @type sysop: bool
+        @param format: Content format to return contents in
+        @type format: unicode
+        @return: The contents of the post in the given content format
+        @rtype: unicode
+        @raises NotImplementedError: use of 'sysop'
+        """
+        if sysop:
+            raise NotImplementedError
+
+        if format not in self._content:
+            self._load(format)
+        if format not in self._content:
+            raise NotImplementedError('Content format probably not supported.')
+        return self._content[format]
