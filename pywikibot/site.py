@@ -6727,6 +6727,42 @@ class APISite(BaseSite):
         data = req.submit()
         return data['flow']['view-post']['result']['topic']
 
+    @need_extension('Flow')
+    def load_topic_history(self, page, format):
+        """Load the revision history of a Flow topic.
+
+        @param page: A Flow topic
+        @type page: Topic
+        @param format: The content format used for the returned content
+        @type format: unicode (either 'wikitext', 'html', or 'fixed-html')
+        @return: The topic's revision history
+        @rtype: list
+        """
+        req = self._simple_request(action='flow', page=page, vthformat=format,
+                                   submodule='view-topic-history')
+        data = req.submit()
+        result = data['flow']['view-topic-history']['result']['topic']
+        return result['revisions']
+
+    @need_extension('Flow')
+    def load_post_history(self, post, format):
+        """Load the revision history of a Flow post.
+
+        @param post: A Flow post
+        @type post: Post
+        @param format: The content format used for the returned content
+        @type format: unicode (either 'wikitext', 'html', or 'fixed-html')
+        @return: The post's revision history
+        @rtype: list
+        """
+        page = post.page
+        uuid = post.uuid
+        req = self._simple_request(action='flow', submodule='view-post-history',
+                                   page=page, vphpostId=uuid, vphformat=format)
+        data = req.submit()
+        result = data['flow']['view-post-history']['result']['topic']
+        return result['revisions']
+
     @must_be('user')
     @need_extension('Flow')
     def create_new_topic(self, page, title, content, format):
