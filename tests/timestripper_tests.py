@@ -11,6 +11,7 @@ __version__ = '$Id$'
 
 import datetime
 
+from pywikibot import Timestamp
 from pywikibot.textlib import TimeStripper, tzoneFixedOffset
 
 from tests.aspects import unittest, TestCase
@@ -79,6 +80,49 @@ class TestTimeStripperWithNoDigitsAsMonths(TestCase):
                           None)
                          )
 
+    def test_first_match(self):
+        """Test that first pattern matches."""
+        txtWithOneMatch = u'this string has 3000, 1999 and 3000 in it'
+        txtWithTwoMatch = u'this string has 1998, 1999 and 3000 in it'
+        txtWithNoMatch = u'this string has no match'
+        pat = self.ts.pyearR
+
+        self.assertEqual(self.ts.first_match(txtWithOneMatch, pat),
+                         (u'this string has 3000, @@ and 3000 in it',
+                          {'year': u'1999'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithTwoMatch, pat),
+                         (u'this string has @@, @@ and 3000 in it',
+                          {'year': u'1998'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithNoMatch, pat),
+                         (txtWithNoMatch,
+                          None)
+                         )
+
+        txtWithOneMatch = u'this string has XXX, YYY and février in it'
+        txtWithTwoMatch = u'this string has XXX, mars and février in it'
+        txtWithThreeMatch = u'this string has avr, mars and février in it'
+        txtWithNoMatch = u'this string has no match'
+        pat = self.ts.pmonthR
+
+        self.assertEqual(self.ts.first_match(txtWithOneMatch, pat),
+                         (u'this string has XXX, YYY and @@ in it',
+                          {'month': u'février'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithTwoMatch, pat),
+                         (u'this string has XXX, @@ and février in it',
+                          {'month': u'mars'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithThreeMatch, pat),
+                         (u'this string has @@, mars and février in it',
+                          {'month': u'avr'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithNoMatch, pat),
+                         (txtWithNoMatch,
+                          None)
+                         )
+
     def test_hour(self):
         """Test that correct hour is matched."""
         txtHourInRange = u'7 février 2010 à 23:00 (CET)'
@@ -86,6 +130,8 @@ class TestTimeStripperWithNoDigitsAsMonths(TestCase):
 
         self.assertNotEqual(self.ts.timestripper(txtHourInRange), None)
         self.assertEqual(self.ts.timestripper(txtHourOutOfRange), None)
+        self.assertNotEqual(self.ts.timestripper(txtHourInRange, False), None)
+        self.assertEqual(self.ts.timestripper(txtHourOutOfRange, False), None)
 
 
 class TestTimeStripperWithDigitsAsMonths(TestCase):
@@ -127,6 +173,31 @@ class TestTimeStripperWithDigitsAsMonths(TestCase):
                           None)
                          )
 
+    def test_first_match(self):
+        """Test that first pattern matches."""
+        txtWithOneMatch = u'this string has XX. YY. 12. in it'
+        txtWithTwoMatch = u'this string has XX. 1. 12. in it'
+        txtWithThreeMatch = u'this string has 1. 1. 12. in it'
+        txtWithNoMatch = u'this string has no match'
+        pat = self.ts.pmonthR
+
+        self.assertEqual(self.ts.first_match(txtWithOneMatch, pat),
+                         (u'this string has XX. YY. @@ in it',
+                          {'month': u'12.'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithTwoMatch, pat),
+                         (u'this string has XX. 1. @@ in it',
+                          {'month': u'12.'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithThreeMatch, pat),
+                         (u'this string has @@ @@ 12. in it',
+                          {'month': u'1.'})
+                         )
+        self.assertEqual(self.ts.first_match(txtWithNoMatch, pat),
+                         (txtWithNoMatch,
+                          None)
+                         )
+
 
 class TestTimeStripperLanguage(TestCase):
 
@@ -136,7 +207,7 @@ class TestTimeStripperLanguage(TestCase):
         'cswiki': {
             'family': 'wikipedia',
             'code': 'cs',
-            'match': u'3. 2. 2011, 19:48 (UTC) 7. 2. 2010 19:48 (UTC)',
+            'match': u'3. 2. 2011 19:48 (UTC) 7. 2. 2010 19:48 (UTC)',
         },
         'enwiki': {
             'family': 'wikipedia',
@@ -190,33 +261,50 @@ class TestTimeStripperLanguage(TestCase):
     def test_timestripper_match(self, key):
         """Test that correct date is matched."""
         self.ts = TimeStripper(self.get_site(key))
-
         tzone = tzoneFixedOffset(self.ts.site.siteinfo['timeoffset'],
                                  self.ts.site.siteinfo['timezone'])
 
         txtMatch = self.sites[key]['match']
-
         res = datetime.datetime(2010, 2, 7, 19, 48, tzinfo=tzone)
-
         self.assertEqual(self.ts.timestripper(txtMatch), res)
 
         if 'match2' not in self.sites[key]:
             return
 
         txtMatch = self.sites[key]['match2']
-
         res = datetime.datetime(2008, 9, 12, 16, 41, tzinfo=tzone)
-
         self.assertEqual(self.ts.timestripper(txtMatch), res)
 
         if 'match3' not in self.sites[key]:
             return
 
         txtMatch = self.sites[key]['match3']
-
         res = datetime.datetime(2014, 8, 14, 21, 18, tzinfo=tzone)
-
         self.assertEqual(self.ts.timestripper(txtMatch), res)
+
+    def test_timestripper_first_match(self, key):
+        """Test that correct first date is matched."""
+        self.ts = TimeStripper(self.get_site(key))
+        tzone = tzoneFixedOffset(self.ts.site.siteinfo['timeoffset'],
+                                 self.ts.site.siteinfo['timezone'])
+
+        txtMatch = self.sites[key]['match']
+        res = Timestamp(2011, 2, 3, 19, 48, tzinfo=tzone)
+        self.assertEqual(self.ts.timestripper(txtMatch, lastmatch=False), res)
+
+        if 'match2' not in self.sites[key]:
+            return
+
+        txtMatch = self.sites[key]['match2']
+        res = Timestamp(2001, 9, 15, 16, 41, tzinfo=tzone)
+        self.assertEqual(self.ts.timestripper(txtMatch, lastmatch=False), res)
+
+        if 'match3' not in self.sites[key]:
+            return
+
+        txtMatch = self.sites[key]['match3']
+        res = Timestamp(2011, 8, 13, 21, 18, tzinfo=tzone)
+        self.assertEqual(self.ts.timestripper(txtMatch, lastmatch=False), res)
 
     def test_timestripper_nomatch(self, key):
         """Test that correct date is not matched."""
@@ -228,12 +316,14 @@ class TestTimeStripperLanguage(TestCase):
             txtNoMatch = u'3 March 2011 19:48 (UTC) 7 March 2010 19:48 (UTC)'
 
         self.assertEqual(self.ts.timestripper(txtNoMatch), None)
+        self.assertEqual(self.ts.timestripper(txtNoMatch, False), None)
 
         if 'nomatch1' not in self.sites[key]:
             return
 
         txtNoMatch = self.sites[key]['nomatch1']
         self.assertEqual(self.ts.timestripper(txtNoMatch), None)
+        self.assertEqual(self.ts.timestripper(txtNoMatch, False), None)
 
 
 class TestTimeStripperDoNotArchiveUntil(TestCase):

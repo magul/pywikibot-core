@@ -1789,12 +1789,37 @@ class TimeStripper(object):
         else:
             return (txt, None)
 
-    def timestripper(self, line):
+    def first_match(self, txt, pat):
+        """Take the leftmost match."""
+        m = None
+        if pat == self.pmonthR and self.is_digit_month:
+            for cnt, m in enumerate(pat.finditer(txt)):
+                if cnt == 1:
+                    break
+        else:
+            m = pat.search(txt)
+        if m:
+            marker = self.findmarker(txt)
+            if pat == self.pdayR:
+                txt = txt.replace(m.group('day'), marker)
+            elif pat == self.pmonthR:
+                txt = txt.replace(m.group('month'), marker)
+            else:
+                txt = pat.sub(marker, txt)
+            return (txt, m.groupdict())
+        else:
+            return (txt, None)
+
+    def timestripper(self, line, lastmatch=True):
         """
         Find timestamp in line and convert it to time zone aware datetime.
 
         All the following items must be matched, otherwise None is returned:
         -. year, month, hour, time, day, minute, tzinfo
+
+        @param lastmatch: match the rightmost timestamp if True,
+            else match the first occurrence.
+        @type lastmatch: bool
         @return: A timestamp found on the given line
         @rtype: pywikibot.Timestamp
         """
@@ -1818,7 +1843,10 @@ class TimeStripper(object):
 
         line = self.fix_digits(line)
         for pat in self.patterns:
-            line, matchDict = self.last_match_and_replace(line, pat)
+            if lastmatch:
+                line, matchDict = self.last_match_and_replace(line, pat)
+            else:
+                line, matchDict = self.first_match(line, pat)
             if matchDict:
                 dateDict.update(matchDict)
 
