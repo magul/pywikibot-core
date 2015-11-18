@@ -1795,6 +1795,8 @@ class TimeStripper(object):
 
         All the following items must be matched, otherwise None is returned:
         -. year, month, hour, time, day, minute, tzinfo
+        @return: A timestamp found on the given line
+        @rtype: pywikibot.Timestamp
         """
         # match date fields
         dateDict = dict()
@@ -1846,7 +1848,7 @@ class TimeStripper(object):
             # find timezone
             dateDict['tzinfo'] = self.tzinfo
 
-            timestamp = datetime.datetime(**dateDict)
+            timestamp = pywikibot.Timestamp(**dateDict)
         else:
             timestamp = None
 
