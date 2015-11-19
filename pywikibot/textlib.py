@@ -428,16 +428,27 @@ def isDisabled(text, index, tags=['*']):
     For the tags parameter, see L{removeDisabledParts}.
     """
     # Find a marker that is not already in the text.
-    marker = findmarker(text)
+    marker = generate_marker(text)
     text = text[:index] + marker + text[index:]
     text = removeDisabledParts(text, tags)
     return (marker not in text)
 
 
+@deprecated('generate_marker')
 def findmarker(text, startwith=u'@@', append=None):
     """Find a string which is not part of text."""
     if not append:
         append = u'@'
+    return _generate_marker(text, startwith, append)
+
+
+def generate_marker(text, base='@'):
+    """Find a string which is not part of text."""
+    assert len(base) == 1
+    return _generate_marker(text, base * 2, base)
+
+
+def _generate_marker(text, startwith, append):
     mymarker = startwith
     while mymarker in text:
         mymarker += append
@@ -831,7 +842,7 @@ def removeLanguageLinksAndSeparator(text, site=None, marker='', separator=''):
 
     """
     if separator:
-        mymarker = findmarker(text, u'@L@')
+        mymarker = generate_marker(text, '%')
         newtext = removeLanguageLinks(text, site, mymarker)
         mymarker = expandmarker(newtext, mymarker, separator)
         return newtext.replace(mymarker, marker)
@@ -848,7 +859,7 @@ def replaceLanguageLinks(oldtext, new, site=None, addOnly=False,
     function).
     """
     # Find a marker that is not already in the text.
-    marker = findmarker(oldtext)
+    marker = generate_marker(oldtext)
     if site is None:
         site = pywikibot.Site()
     separator = site.family.interwiki_text_separator
@@ -1065,7 +1076,7 @@ def removeCategoryLinksAndSeparator(text, site=None, marker='', separator=''):
     if site is None:
         site = pywikibot.Site()
     if separator:
-        mymarker = findmarker(text, u'@C@')
+        mymarker = generate_marker(text, '§')
         newtext = removeCategoryLinks(text, site, mymarker)
         mymarker = expandmarker(newtext, mymarker, separator)
         return newtext.replace(mymarker, marker)
@@ -1132,7 +1143,7 @@ def replaceCategoryLinks(oldtext, new, site=None, addOnly=False):
         category(s) given will be added (and so they won't replace anything).
     """
     # Find a marker that is not already in the text.
-    marker = findmarker(oldtext)
+    marker = generate_marker(oldtext)
     if site is None:
         site = pywikibot.Site()
     if site.sitename == 'wikipedia:de' and '{{Personendaten' in oldtext:
@@ -1386,16 +1397,16 @@ def extract_templates_and_params_regex(text, remove_disabled_parts=True,
         thistxt = text
 
     # marker for inside templates or parameters
-    marker1 = findmarker(thistxt)
+    marker1 = generate_marker(thistxt)
 
     # marker for links
-    marker2 = findmarker(thistxt, u'##', u'#')
+    marker2 = generate_marker(thistxt, '#')
 
     # marker for math
-    marker3 = findmarker(thistxt, u'%%', u'%')
+    marker3 = generate_marker(thistxt, '%')
 
     # marker for value parameter
-    marker4 = findmarker(thistxt, u'§§', u'§')
+    marker4 = generate_marker(thistxt, '§')
 
     result = []
     Rmath = re.compile(r'<math>[^<]+</math>')
@@ -1748,10 +1759,10 @@ class TimeStripper(object):
         self.tzinfo = tzoneFixedOffset(self.site.siteinfo['timeoffset'],
                                        self.site.siteinfo['timezone'])
 
-    @deprecated('module function')
+    @deprecated('generate_marker')
     def findmarker(self, text, base=u'@@', delta='@'):
         """Find a string which is not part of text."""
-        return findmarker(text, base, delta)
+        return _generate_marker(text, base, delta)
 
     def fix_digits(self, line):
         """Make non-latin digits like Persian to latin to parse."""
@@ -1772,7 +1783,7 @@ class TimeStripper(object):
             cnt += 1
 
         if m:
-            marker = findmarker(txt)
+            marker = generate_marker(txt)
             # month and day format might be identical (e.g. see bug 69315),
             # avoid to wipe out day, after month is matched.
             # replace all matches but the last two
