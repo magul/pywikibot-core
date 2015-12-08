@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Http backend layer, formerly providing a httplib2 wrapper."""
 from __future__ import absolute_import, unicode_literals
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2016
 
 __version__ = '$Id$'
 __docformat__ = 'epytext'
@@ -53,6 +53,7 @@ class HttpRequest(UnicodeMixin):
             self.charset = None
 
         self.callbacks = callbacks
+        self.auth = kwargs.pop('auth', None)
 
         self.args = [uri, method, body, headers]
         self.kwargs = kwargs

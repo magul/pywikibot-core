@@ -27,14 +27,8 @@ import sys
 
 from distutils.version import StrictVersion
 from string import Formatter
-from warnings import warn
 
 import requests
-
-try:
-    import requests_oauthlib
-except ImportError as e:
-    requests_oauthlib = e
 
 if sys.version_info[0] > 2:
     from http import cookiejar as cookielib
@@ -52,7 +46,7 @@ from pywikibot.comms import threadedhttp
 from pywikibot.exceptions import (
     FatalServerError, Server504Error, Server414Error
 )
-from pywikibot.logging import critical, debug, error, log, warning
+from pywikibot.logging import critical, debug, log, warning
 from pywikibot.tools import (
     deprecated,
     deprecate_arg,
@@ -327,31 +321,8 @@ def request(site=None, uri=None, method='GET', params=None, body=None,
 
     headers['user-agent'] = user_agent(site, format_string)
 
-    r = fetch(baseuri, method, params, body, headers, **kwargs)
+    r = fetch(baseuri, method, params, body, headers, auth=site.oauth, **kwargs)
     return r.content
-
-
-def get_authentication(uri):
-    """
-    Retrieve authentication token.
-
-    @param uri: the URI to access
-    @type uri: str
-    @return: authentication token
-    @rtype: None or tuple of two str
-    """
-    parsed_uri = requests.utils.urlparse(uri)
-    netloc_parts = parsed_uri.netloc.split('.')
-    netlocs = [parsed_uri.netloc] + ['.'.join(['*'] + netloc_parts[i + 1:])
-                                     for i in range(len(netloc_parts))]
-    for path in netlocs:
-        if path in config.authenticate:
-            if len(config.authenticate[path]) in [2, 4]:
-                return config.authenticate[path]
-            else:
-                warn('Invalid authentication tokens for %s '
-                     'set in `config.authenticate`' % path)
-    return None
 
 
 def _http_process(session, http_request):
@@ -362,15 +333,7 @@ def _http_process(session, http_request):
     headers = http_request.headers
     if PY2 and headers:
         headers = dict((key, str(value)) for key, value in headers.items())
-    auth = get_authentication(uri)
-    if auth is not None and len(auth) == 4:
-        if isinstance(requests_oauthlib, ImportError):
-            warn('%s' % requests_oauthlib, ImportWarning)
-            error('OAuth authentication not supported: %s'
-                  % requests_oauthlib)
-            auth = None
-        else:
-            auth = requests_oauthlib.OAuth1(*auth)
+    auth = http_request.auth
     timeout = config.socket_timeout
     try:
         ignore_validation = http_request.kwargs.pop(
@@ -378,8 +341,10 @@ def _http_process(session, http_request):
         # Note that the connections are pooled which mean that a future
         # HTTPS request can succeed even if the certificate is invalid and
         # verify=True, when a request with verify=False happened before
-        response = session.request(method, uri, params=params, data=body,
-                                   headers=headers, auth=auth, timeout=timeout,
+#        if auth is not None:
+#            session.cookies = requests.cookies.RequestsCookieJar(policy=None)
+        response = session.request(method, uri, params=params, data=body, headers=headers,
+                                   auth=auth, timeout=timeout,
                                    verify=not ignore_validation)
     except Exception as e:
         http_request.data = e

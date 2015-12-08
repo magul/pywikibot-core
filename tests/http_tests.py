@@ -7,6 +7,8 @@
 #
 from __future__ import absolute_import, unicode_literals
 
+__version__ = '$Id$'
+
 import json
 import re
 import warnings
@@ -89,42 +91,6 @@ class HttpRequestURI(DeprecationTestCase):
         self.assertIn('<html lang="mul"', r)
         self.assertOneDeprecationParts(
             'Invoking http.request without argument site', 'http.fetch()')
-
-
-class TestGetAuthenticationConfig(TestCase):
-
-    """Test http.get_authentication."""
-
-    net = False
-
-    def setUp(self):
-        """Set up test by configuring config.authenticate."""
-        super(TestGetAuthenticationConfig, self).setUp()
-        self._authenticate = config.authenticate
-        config.authenticate = {
-            'zh.wikipedia.beta.wmflabs.org': ('1', '2'),
-            '*.wikipedia.beta.wmflabs.org': ('3', '4', '3', '4'),
-            '*.beta.wmflabs.org': ('5', '6'),
-            '*.wmflabs.org': ('7', '8', '8'),
-        }
-
-    def tearDown(self):
-        """Tear down test by resetting config.authenticate."""
-        super(TestGetAuthenticationConfig, self).tearDown()
-        config.authenticate = self._authenticate
-
-    def test_url_based_authentication(self):
-        """Test url-based authentication info."""
-        pairs = {
-            'https://zh.wikipedia.beta.wmflabs.org': ('1', '2'),
-            'https://en.wikipedia.beta.wmflabs.org': ('3', '4', '3', '4'),
-            'https://wiki.beta.wmflabs.org': ('5', '6'),
-            'https://beta.wmflabs.org': None,
-            'https://wmflabs.org': None,
-            'https://www.wikiquote.org/': None,
-        }
-        for url, auth in pairs.items():
-            self.assertEqual(http.get_authentication(url), auth)
 
 
 class HttpsCertificateTestCase(TestCase):

@@ -34,7 +34,6 @@ from warnings import warn
 import pywikibot
 import pywikibot.family
 
-from pywikibot.comms.http import get_authentication
 from pywikibot.data import api
 from pywikibot.echo import Notification
 from pywikibot.exceptions import (
@@ -719,7 +718,7 @@ class BaseSite(ComparableMixin):
 
     """Site methods that are independent of the communication interface."""
 
-    def __init__(self, code, fam=None, user=None, sysop=None):
+    def __init__(self, code, fam=None, user=None, sysop=None, oauth=None):
         """
         Constructor.
 
@@ -727,10 +726,14 @@ class BaseSite(ComparableMixin):
         @type code: str
         @param fam: wiki family name (optional)
         @type fam: str or Family
-        @param user: bot user name (optional)
+        @param user: bot user name (optional); if oauth is used, it shall
+            contain the expected username
         @type user: str
         @param sysop: sysop account user name (optional)
         @type sysop: str
+        @param oauth: a tuple or list of the format:
+            (consumer_key, consumer_secret, access_key, acess_secret)
+        @type oauth: tuple or list
         """
         if code.lower() != code:
             # Note the Site function in __init__ also emits a UserWarning
@@ -1826,9 +1829,9 @@ class RemovedSite(BaseSite):
 
     """Site removed from a family."""
 
-    def __init__(self, code, fam, user=None, sysop=None):
+    def __init__(self, code, fam, user=None, sysop=None, oauth=None):
         """Constructor."""
-        super(RemovedSite, self).__init__(code, fam, user, sysop)
+        super(RemovedSite, self).__init__(code, fam, user, sysop, oauth)
 
 
 class NonMWAPISite(BaseSite):
@@ -1858,15 +1861,16 @@ class APISite(BaseSite):
     Do not instantiate directly; use pywikibot.Site function.
     """
 
-    def __init__(self, code, fam=None, user=None, sysop=None):
+    def __init__(self, code, fam=None, user=None, sysop=None, oauth=None):
         """Constructor."""
-        BaseSite.__init__(self, code, fam, user, sysop)
+        super(APISite, self).__init__(code, fam, user, sysop, oauth=oauth)
         self._msgcache = {}
         self._loginstatus = LoginStatus.NOT_ATTEMPTED
         self._siteinfo = Siteinfo(self)
         self._paraminfo = api.ParamInfo(self)
         self._interwikimap = _InterwikiMap(self)
         self.tokens = TokenWallet(self)
+        self.oauth = oauth
 
     def __getstate__(self):
         """Remove TokenWallet before pickling, for security reasons."""
@@ -2035,8 +2039,7 @@ class APISite(BaseSite):
 
         @rtype: bool
         """
-        auth_token = get_authentication(self.base_url(''))
-        return auth_token is not None and len(auth_token) == 4
+        return self.oauth is not None
 
     def login(self, sysop=False):
         """
@@ -2058,8 +2061,8 @@ class APISite(BaseSite):
             )
         # There are several ways that the site may already be
         # logged in, and we do not need to hit the server again.
-        # logged_in() is False if _userinfo exists, which means this
-        # will have no effect for the invocation from api.py
+        # logged_in() is False if _userinfo does not exists, which means
+        # this will have no effect for the invocation from api.py
         if self.logged_in(sysop):
             self._loginstatus = (LoginStatus.AS_SYSOP
                                  if sysop else LoginStatus.AS_USER)
@@ -2069,15 +2072,33 @@ class APISite(BaseSite):
         self._loginstatus = LoginStatus.IN_PROGRESS
         try:
             self.getuserinfo(force=True)
-            if self.userinfo['name'] == self._username[sysop] and \
-               self.logged_in(sysop):
+            if (self.userinfo['name'] == self._username[sysop] and
+                    self.logged_in(sysop)):
                 return
         # May occur if you are not logged in (no API read permissions).
         except api.APIError:
             pass
+
+        # Login is needed.
+        loginMan = api.LoginManager(site=self, sysop=sysop,
+                                    user=self._username[sysop])
+
+        # Login with OAuth if possible.
+        if self.oauth:
+            try:
+                loginMan.login_oauth()
+            except (ValueError, TypeError) as err:
+                raise err
+
+        # Check user identity when OAuth enabled.
         if self.is_oauth_token_available():
+            self.getuserinfo(force=True)
             if sysop:
                 raise NoUsername('No sysop is permitted with OAuth')
+            # Login via OAuth successful.
+            elif self.userinfo['name'] == self._username[sysop]:
+                self._loginstatus = LoginStatus.AS_USER
+                return
             elif self.userinfo['name'] != self._username[sysop]:
                 raise NoUsername('Logged in on %(site)s via OAuth as '
                                  '%(wrong)s, but expect as %(right)s'
@@ -2086,10 +2107,10 @@ class APISite(BaseSite):
                                     'right': self._username[sysop]})
             else:
                 raise NoUsername('Logging in on %s via OAuth failed' % self)
-        loginMan = api.LoginManager(site=self, sysop=sysop,
-                                    user=self._username[sysop])
+
+        # Login with standard password.
         if loginMan.login(retry=True):
-            self._username[sysop] = loginMan.username
+            self._username[sysop] = loginMan.username  # TODO: is this needed?
             self.getuserinfo(force=True)
             self._loginstatus = (LoginStatus.AS_SYSOP
                                  if sysop else LoginStatus.AS_USER)

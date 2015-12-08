@@ -50,6 +50,8 @@ import stat
 import sys
 import types
 
+from requests.utils import urlparse
+
 from locale import getdefaultlocale
 from warnings import warn
 
@@ -260,6 +262,29 @@ ignore_file_security_warnings = False
 # Note that these headers will be sent with all requests,
 # not just MediaWiki API calls.
 extra_headers = {}
+
+
+def get_authentication(uri):
+    """
+    Retrieve authentication token from config file.
+
+    @param uri: the URI to access
+    @type uri: str
+    @return: authentication token
+    @rtype: None or tuple of two str
+    """
+    parsed_uri = urlparse(uri)
+    netloc_parts = parsed_uri.netloc.split('.')
+    netlocs = [parsed_uri.netloc] + ['.'.join(['*'] + netloc_parts[i + 1:])
+                                     for i in range(len(netloc_parts))]
+    for path in netlocs:
+        if path in authenticate:
+            if len(authenticate[path]) in [2, 4]:
+                return authenticate[path]
+            else:
+                warn('Invalid authentication tokens for %s '
+                     'set in `config.authenticate`' % path)
+    return None
 
 
 def user_home_path(path):
