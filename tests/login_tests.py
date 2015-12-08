@@ -11,18 +11,23 @@ e.g. used to test password-file based login.
 #
 from __future__ import absolute_import, unicode_literals
 
+__version__ = '$Id$'
+
 from collections import defaultdict
+
 try:
     import unittest.mock as mock
 except ImportError:
     import mock
 
+from pywikibot import config
 from pywikibot.exceptions import NoUsername
 from pywikibot.login import LoginManager
 
 from tests.aspects import (
     unittest,
     DefaultDrySiteTestCase,
+    TestCase,
 )
 
 
@@ -37,6 +42,7 @@ class FakeSite(object):
 
     code = "~FakeCode"
     family = FakeFamily
+    oauth = 'Some data'
 
 
 FakeUsername = "~FakeUsername"
@@ -185,6 +191,40 @@ class TestPasswordFile(DefaultDrySiteTestCase):
             """, '~FakePassword')
         self.assertEqual(obj.login_name, "~FakeUsername@~FakeSuffix")
 
+
+class TestGetAuthenticationConfig(TestCase):
+    # TODO: move in config2.tests
+
+    """Test pywikibot.get_authentication."""
+
+    net = False
+
+    def setUp(self):
+        """Set up test by configuring config.authenticate."""
+        self._authenticate = config.authenticate
+        config.authenticate = {
+            'zh.wikipedia.beta.wmflabs.org': ('1', '2'),
+            '*.wikipedia.beta.wmflabs.org': ('3', '4', '3', '4'),
+            '*.beta.wmflabs.org': ('5', '6'),
+            '*.wmflabs.org': ('7', '8', '8'),
+        }
+
+    def tearDown(self):
+        """Tear down test by resetting config.authenticate."""
+        config.authenticate = self._authenticate
+
+    def test_url_based_authentication(self):
+        """Test url-based authentication info."""
+        pairs = {
+            'https://zh.wikipedia.beta.wmflabs.org': ('1', '2'),
+            'https://en.wikipedia.beta.wmflabs.org': ('3', '4', '3', '4'),
+            'https://wiki.beta.wmflabs.org': ('5', '6'),
+            'https://beta.wmflabs.org': None,
+            'https://wmflabs.org': None,
+            'https://www.wikiquote.org/': None,
+        }
+        for url, auth in pairs.items():
+            self.assertEqual(config.get_authentication(url), auth)
 
 if __name__ == '__main__':  # pragma: no cover
     unittest.main()
