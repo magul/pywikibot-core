@@ -27,7 +27,12 @@ import pywikibot
 
 from pywikibot import config
 from pywikibot.exceptions import NoUsername
-from pywikibot.tools import deprecated_args, normalize_username, PY2
+from pywikibot.tools import deprecated, deprecated_args, normalize_username, PY2
+
+try:
+    import requests_oauthlib
+except ImportError as e:
+    requests_oauthlib = e
 
 if not PY2:
     unicode = basestring = str
@@ -120,6 +125,14 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
         if getattr(config, 'password_file', ''):
             self.readPassword()
 
+        if self.site.oauth is None:
+            # try to get auth token from config file, if not explicitly passed.
+            try:
+                self.site.oauth = config.get_authentication(
+                    self.site.family.base_url(self.site.code, ''))
+            except KeyError:  # code not in family.langs
+                pass
+
     def check_user_exists(self):
         """
         Check that the username exists on the site.
@@ -177,6 +190,7 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
             # No bot policies on other sites
             return True
 
+    @deprecated('login_to_site')
     def getCookie(self, remember=True, captcha=None):
         """
         Login to the site.
@@ -186,23 +200,22 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
 
         Returns cookie data if successful, None otherwise.
         """
-        # NOT IMPLEMENTED - see data/api.py for implementation
+        # NOT IMPLEMENTED
+        # replaced by login_to_site - see data/api.py for implementation
 
-    def storecookiedata(self, data):
+    def login_to_site(self):
+        """Login to the site."""
+        # THIS IS OVERRIDDEN IN data/api.py
+        raise NotImplementedError
+
+    def storecookiedata(self, data=None):
         """
         Store cookie data.
-
-        The argument data is the raw data, as returned by getCookie().
 
         Returns nothing.
         """
         # THIS IS OVERRIDDEN IN data/api.py
-        filename = config.datafilepath('pywikibot.lwp')
-        pywikibot.debug(u"Storing cookies to %s" % filename,
-                        _logger)
-        f = open(filename, 'w')
-        f.write(data)
-        f.close()
+        raise NotImplementedError
 
     def readPassword(self):
         """
@@ -278,6 +291,34 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
                     warn('Invalid password format', _PasswordFileWarning)
         password_f.close()
 
+    def login_oauth(self, retry=False):
+        """
+        Attempt to log into the server.
+
+        @param retry: infinitely retry if the API returns an unknown error
+        @type retry: bool
+
+        @raises NoUsername: Username is not recognised by the site.
+        """
+        if self.site.oauth is not None:
+            if len(self.site.oauth) != 4:
+                raise TypeError('Site %s: oauth token has incorrect format'
+                                % self)
+            if self.username is None:
+                raise ValueError('Site %s: user expected when using OAuth'
+                                 % self)
+            if isinstance(requests_oauthlib, ImportError):
+                warn('%s' % requests_oauthlib, ImportWarning)
+                pywikibot.error('OAuth authentication not supported: %s'
+                                % requests_oauthlib)
+                self.site.oauth = None
+            else:
+                self.site.oauth = requests_oauthlib.OAuth1(*self.site.oauth)
+                self.storecookiedata()
+                return True
+
+        return False
+
     def login(self, retry=False):
         """
         Attempt to log into the server.
@@ -302,7 +343,7 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
         pywikibot.output(u"Logging in to %(site)s as %(name)s"
                          % {'name': self.login_name, 'site': self.site})
         try:
-            cookiedata = self.getCookie()
+            self.login_to_site()
         except pywikibot.data.api.APIError as e:
             pywikibot.error(u"Login failed (%s)." % e.code)
             if e.code == 'NotExists':
@@ -317,7 +358,7 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
                 return self.login(retry=True)
             else:
                 return False
-        self.storecookiedata(cookiedata)
+        self.storecookiedata()
         pywikibot.log(u"Should be logged in now")
 #        # Show a warning according to the local bot policy
 #   FIXME: disabled due to recursion; need to move this to the Site object after

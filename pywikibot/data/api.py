@@ -2999,15 +2999,24 @@ class LoginManager(login.LoginManager):
 
     """Supply getCookie() method to use API interface."""
 
+    @deprecated('login_to_site')
     def getCookie(self, remember=True, captchaId=None, captchaAnswer=None):
         """Login to the site.
 
         Parameters are all ignored.
 
         Note, this doesn't actually return or do anything with cookies.
-        The threadedhttp module takes care of all the cookie stuff,
+        The http module takes care of all the cookie stuff,
         this just has a legacy name for now and should be renamed in the
         future.
+
+        @return: empty string if successful, throws exception on failure
+
+        """
+        raise NotImplementedError
+
+    def login_to_site(self):
+        """Login to the site.
 
         @return: empty string if successful, throws exception on failure
 
@@ -3050,8 +3059,8 @@ class LoginManager(login.LoginManager):
                 break
         raise APIError(code=login_result["login"]["result"], info="")
 
-    def storecookiedata(self, data):
-        """Ignore data; cookies are set by threadedhttp module."""
+    def storecookiedata(self, data=None):
+        """Ignore data; cookies are set by http module."""
         http.cookie_jar.save()
 
     def get_login_token(self):

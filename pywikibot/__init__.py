@@ -722,7 +722,7 @@ _sites = {}
 _url_cache = {}  # The code/fam pair for each URL
 
 
-def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
+def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None, oauth=None):
     """A factory method to obtain a Site object.
 
     Site objects are cached and reused by this method.
@@ -734,7 +734,8 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
     @type code: string
     @param fam: family name or object (override config.family)
     @type fam: string or Family
-    @param user: bot user name to use on this site (override config.usernames)
+    @param user: bot user name to use on this site (override config.usernames);
+        if oauth is used, it shall contain the expected username
     @type user: unicode
     @param sysop: sysop user to use on this site (override config.sysopnames)
     @type sysop: unicode
@@ -744,8 +745,11 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
     @param url: Instead of code and fam, does try to get a Site based on the
         URL. Still requires that the family supporting that URL exists.
     @type url: string
+    @param oauth: a tuple or list of the format:
+        (consumer_key, consumer_secret, access_key, acess_secret)
+        it overrides config.authenticate
+    @type oauth: tuple or list
     @rtype: pywikibot.site.APISite
-
     """
     # Either code and fam or only url
     if url and (code or fam):
@@ -811,9 +815,9 @@ def Site(code=None, fam=None, user=None, sysop=None, interface=None, url=None):
         warning('Site called with interface=%s' % interface.__name__)
 
     user = normalize_username(user)
-    key = '%s:%s:%s:%s' % (interface.__name__, fam, code, user)
+    key = '%s:%s:%s:%s:%s' % (interface.__name__, fam, code, user, oauth)
     if key not in _sites or not isinstance(_sites[key], interface):
-        _sites[key] = interface(code=code, fam=fam, user=user, sysop=sysop)
+        _sites[key] = interface(code=code, fam=fam, user=user, sysop=sysop, oauth=oauth)
         debug(u"Instantiated %s object '%s'"
               % (interface.__name__, _sites[key]), _logger)
 
