@@ -3541,7 +3541,7 @@ class WikibasePage(BasePage):
             return site.dbName()
         return site
 
-    def editEntity(self, data=None, **kwargs):
+    def editEntity(self, data=None, async=False, **kwargs):
         """
         Edit an entity using Wikibase wbeditentity API.
 
@@ -3553,7 +3553,13 @@ class WikibasePage(BasePage):
 
         @param data: Data to be saved
         @type data: dict, or None to save the current content of the entity.
+        @param async: if True, launch a separate thread to edit asynchronously
+        @type async: bool
         """
+        if async:
+            pywikibot.async_request(self.editEntity, data, **kwargs)
+            return
+
         if hasattr(self, '_revid'):
             baserevid = self.latest_revision_id
         else:
