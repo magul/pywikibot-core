@@ -83,6 +83,7 @@ Options (may be omitted):
   -locale:LOCALE  switch to locale LOCALE
   -namespace:NS   only archive pages from a given namespace
   -page:PAGE      archive a single PAGE, default ns is a user talk page
+  -level:#        specify a heading level to be archived (default: 2)
   -salt:SALT      specify salt
 """
 #
@@ -262,14 +263,18 @@ class DiscussionThread(object):
 
     It represents something that is of the form:
 
-    == Title of thread ==
+    =+ Title of thread =+
 
     Thread content here. ~~~~
     :Reply, etc. ~~~~
+
+    (The plus sign here indicates one or more equal signs. Number of equal
+    signs corresponds to the level of the header.)
     """
 
-    def __init__(self, title, now, timestripper):
+    def __init__(self, title, now, timestripper, level=2):
         self.title = title
+        self.level = level
         self.now = now
         self.ts = timestripper
         self.code = self.ts.site.code
@@ -299,7 +304,9 @@ class DiscussionThread(object):
             self.content.encode('utf-8')) + 12
 
     def to_text(self):
-        return u"== %s ==\n\n%s" % (self.title, self.content)
+        header_markup = self.level * '='
+        return ((header_markup + ' %s ' + header_markup + '\n\n%s')
+                % (self.title, self.content))
 
     def should_be_archived(self, archiver):
         algo = archiver.get_attr('algo')
@@ -326,11 +333,12 @@ class DiscussionPage(pywikibot.Page):
     Feed threads to it and run an update() afterwards.
     """
 
-    def __init__(self, source, archiver, params=None):
+    def __init__(self, source, archiver, params=None, level=2):
         super(DiscussionPage, self).__init__(source)
         self.threads = []
         self.full = False
         self.archiver = archiver
+        self.level = level
         # for testing purposes we allow archiver to be None and we are able
         # to create the a DiscussionPage in this way:
         # >>> import pywikibot as py
@@ -361,14 +369,16 @@ class DiscussionPage(pywikibot.Page):
         lines = self.get().split('\n')
         found = False  # Reading header
         cur_thread = None
+        header_markup = self.level * '='
+        regex = '^' + header_markup + ' *([^=].*?) *' + header_markup + ' *$'
         for line in lines:
-            thread_header = re.search('^== *([^=].*?) *== *$', line)
+            thread_header = re.search(regex, line)
             if thread_header:
                 found = True  # Reading threads now
                 if cur_thread:
                     self.threads.append(cur_thread)
                 cur_thread = DiscussionThread(thread_header.group(1), self.now,
-                                              self.timestripper)
+                                              self.timestripper, self.level)
             else:
                 if found:
                     cur_thread.feed_line(line)
@@ -421,7 +431,7 @@ class PageArchiver(object):
 
     algo = 'none'
 
-    def __init__(self, page, tpl, salt, force=False):
+    def __init__(self, page, tpl, salt, force=False, level=2):
         self.attributes = {
             'algo': ['old(24h)', False],
             'archive': ['', False],
@@ -432,9 +442,10 @@ class PageArchiver(object):
         self.salt = salt
         self.force = force
         self.site = page.site
+        self.level = level
         self.tpl = pywikibot.Page(self.site, tpl)
         self.timestripper = TimeStripper(site=self.site)
-        self.page = DiscussionPage(page, self)
+        self.page = DiscussionPage(page, self, level=self.level)
         self.load_config()
         self.comment_params = {
             'from': self.page.title(),
@@ -501,7 +512,7 @@ class PageArchiver(object):
                 u"Archive page %s does not start with page title (%s)!"
                 % (archive, self.page.title()))
         if title not in self.archives:
-            self.archives[title] = DiscussionPage(archive, self, params)
+            self.archives[title] = DiscussionPage(archive, self, params, self.level)
         return self.archives[title].feed_thread(thread, max_archive_size)
 
     def analyze_page(self):
@@ -600,6 +611,7 @@ def main(*args):
     filename = None
     pagename = None
     namespace = None
+    level = 2
     salt = None
     force = False
     calc = None
@@ -633,6 +645,8 @@ def main(*args):
             pagename = v
         for v in if_arg_value(arg, '-namespace'):
             namespace = v
+        for v in if_arg_value(arg, '-level'):
+            level = int(v)
         for v in if_arg_value(arg, '-sleep'):
             sleep = int(v)
         if not arg.startswith('-'):
@@ -683,7 +697,7 @@ def main(*args):
             # Catching exceptions, so that errors in one page do not bail out
             # the entire process
             try:
-                archiver = PageArchiver(pg, a, salt, force)
+                archiver = PageArchiver(pg, a, salt, force, level=level)
                 archiver.run()
             except ArchiveBotSiteConfigError as e:
                 # no stack trace for errors originated by pages on-site
