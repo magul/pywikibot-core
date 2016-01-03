@@ -6,7 +6,7 @@ This module also includes functions to load families, which are
 groups of wikis on the same topic in different languages.
 """
 #
-# (C) Pywikibot team, 2008-2015
+# (C) Pywikibot team, 2008-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -4219,7 +4219,7 @@ class APISite(BaseSite):
 
     def logevents(self, logtype=None, user=None, page=None, namespace=None,
                   start=None, end=None, reverse=False, tag=None,
-                  step=None, total=None):
+                  step=None, total=None, action_filter=None):
         """Iterate all log entries.
 
         @param logtype: only iterate entries of this type (see wiki
@@ -4250,6 +4250,16 @@ class APISite(BaseSite):
         @type step: int
         @param total: maximum number of events to iterate
         @type total: int
+        @param action_filter: filter of single or multiple action types
+            according to available leaction types for a given letype.
+
+            Sample: logtype='block', action_filter=('block', 'reblock')
+            retrieves all block events of given action types which in result
+            excludes 'unblock' action.
+
+            Note: Don't use this filter with action filtering by logtype
+            parameter.
+        @type action_filter: str or list/tuple of str
         @rtype: iterable
 
         @raises KeyError: the namespace identifier was not resolved
@@ -4267,7 +4277,10 @@ class APISite(BaseSite):
                     MediaWikiVersion('1.17')):
                 legen.request['leaction'] = logtype
             else:
-                legen.request['letype'] = logtype.split('/')[0]
+                letype, sep, leaction = logtype.partition('/')
+                if action_filter is None and leaction:
+                    action_filter = [leaction]
+                legen.request['letype'] = letype
         if user is not None:
             legen.request["leuser"] = user
         if page is not None:
@@ -4283,8 +4296,17 @@ class APISite(BaseSite):
         if tag:
             # Supported in version 1.16+; earlier sites will cause APIError
             legen.request['letag'] = tag
-
-        return legen
+        if isinstance(action_filter, str):
+            action_filter = [action_filter]
+        for le in legen:
+            if not action_filter:
+                yield le
+            else:
+                assert isinstance(action_filter, (list, tuple))
+                if le.action() in action_filter:
+                    yield le
+                else:  # adjust counter
+                    legen.count -= 1
 
     @deprecated('APISite.logevents()')
     @deprecated_args(repeat=None)

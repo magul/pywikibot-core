@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Test logentries module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -51,10 +51,15 @@ class TestLogentriesBase(TestCase):
             'family': 'lyricwiki',
             'code': 'en',
             'target': None,
+        },
+        'aged': {  # mw < 1.17
+            'family': 'battlestarwiki',
+            'code': 'en',
+            'target': None,
         }
     }
 
-    def _get_logentry(self, logtype):
+    def _get_logentry(self, logtype, action_filter=None):
         """Retrieve a single log entry."""
         if self.site_key == 'old':
             # This is an assertion as the tests don't make sense with newer
@@ -62,7 +67,8 @@ class TestLogentriesBase(TestCase):
             # isn't run on an older wiki.
             self.assertLess(MediaWikiVersion(self.site.version()),
                             MediaWikiVersion('1.20'))
-        return next(iter(self.site.logevents(logtype=logtype, total=1)))
+        return next(iter(self.site.logevents(logtype=logtype, total=1,
+                                             action_filter=action_filter)))
 
     def _test_logevent(self, logtype):
         """Test a single logtype entry."""
@@ -172,6 +178,22 @@ class TestLogentryParams(TestLogentriesBase):
         self.assertIsInstance(logentry.flags(), list)
         # There are no flags for unblock action
         self.assertEqual(logentry.flags(), [])
+        # Check that there are no empty strings
+        self.assertTrue(all(logentry.flags()))
+        if logentry.expiry() is not None:
+            self.assertIsInstance(logentry.expiry(), pywikibot.Timestamp)
+            self.assertIsInstance(logentry.duration(), datetime.timedelta)
+            self.assertEqual(logentry.timestamp() + logentry.duration(),
+                             logentry.expiry())
+        else:
+            self.assertIsNone(logentry.duration())
+
+    def test_BlockEntry_hide_unblock(self, key):
+        """Test BlockEntry methods for  action filter."""
+        logentry = self._get_logentry('block',
+                                      action_filter=('block', 'reblock'))
+        self.assertIn(logentry.action(), ('block', 'reblock'))
+        self.assertIsInstance(logentry.flags(), list)
         # Check that there are no empty strings
         self.assertTrue(all(logentry.flags()))
         if logentry.expiry() is not None:
