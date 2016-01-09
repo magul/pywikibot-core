@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Module containing various formatting related utilities."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -14,6 +14,7 @@ import math
 
 from string import Formatter
 
+from pywikibot.exceptions import Error
 from pywikibot.logging import output
 from pywikibot.tools import PY2, UnicodeType
 from pywikibot.userinterfaces.terminal_interface_base import colors
@@ -61,6 +62,67 @@ class SequenceOutputter(object):
     def output(self):
         """Output the text of the current sequence."""
         output(self.format_list())
+
+
+class PagelistFormatter(object):
+
+    """Structure with Page attributes exposed for formatting from cmd line."""
+
+    fmt_options = {
+        '1': "{num:4d} {page.title}",
+        '2': "{num:4d} [[{page.title}]]",
+        '3': "{page.title}",
+        '4': "[[{page.title}]]",
+        '5': "{num:4d} \03{{lightred}}{page.loc_title:<40}\03{{default}}",
+        '6': "{num:4d} {page.loc_title:<40} {page.can_title:<40}",
+        '7': "{num:4d} {page.loc_title:<40} {page.trs_title:<40}",
+    }
+
+    # Identify which formats need outputlang
+    fmt_need_lang = [k for k, v in fmt_options.items() if 'trs_title' in v]
+
+    def __init__(self, page, onsite=None, default='******'):
+        """
+        Constructor.
+
+        @param page: the page to be formatted.
+        @type page: Page object.
+        @param onsite: site in which namespace before title should
+            be translated.
+
+            Page ns will be searched in onsite and, if found, its custom name
+            will be used in page.title().
+
+        @type onsite: Site or None, if no translation is wanted.
+        @param default: default string to be used if no corresponding
+            namespace is found when onsite is not None.
+        """
+        super(PagelistFormatter, self).__init__()
+        self.site = page._link.site
+        self.title = page._link.title
+        self.loc_title = page._link.canonical_title()
+        self.can_title = page._link.ns_title()
+        self.onsite = onsite
+        if onsite is not None:
+            try:
+                self.trs_title = page._link.ns_title(onsite=onsite)
+            # Fallback if no corresponding namespace is found in onsite.
+            except Error:
+                self.trs_title = '{0}:{1}'.format(default, page._link.title)
+
+    def output(self, num=None, fmt='3'):
+        """Output formatted string."""
+        fmt = self.fmt_options.get(fmt, fmt)
+        # If selected format requires trs_title, onsite must be set.
+        if (fmt in self.fmt_need_lang or
+                'trs_title' in fmt and
+                self.onsite is None):
+            raise ValueError(
+                'Required format code needs "onsite" parameter set.')
+        if num is None:
+            return fmt.format(page=self)
+        else:
+            return fmt.format(num=num, page=self)
 
 
 class _ColorFormatter(Formatter):
