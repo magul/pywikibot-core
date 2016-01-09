@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Tests for the C{pywikibot.tools.formatter} module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,6 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 #
+import pywikibot
 from pywikibot.tools import formatter
 from pywikibot.tools import UnicodeMixin
 
@@ -19,6 +20,8 @@ class TestListOutputter(TestCase):
 
     """Test ListFormatter class."""
 
+    family = 'wikipedia'
+    code = 'en'
     net = False
 
     def test_SequenceOutputter(self):
@@ -30,6 +33,23 @@ class TestListOutputter(TestCase):
         self.assertEqual(outputter.format_list(), '\n(1 1 foo)\n(2 1 bar)\n')
         outputter.format_string = '{item}'
         self.assertEqual(outputter.format_list(), '\nfoo\nbar\n')
+
+    def test_PagelistFormatter(self):
+        """Test format method."""
+        site = self.get_site()
+        page = pywikibot.Page(site, 'foo')
+        outputter = formatter.PagelistFormatter(page)
+        self.assertEqual(outputter.output(), 'Foo')
+        self.assertEqual(outputter.output(10, '1'), '  10 Foo')
+        self.assertEqual(outputter.output(11, '2'), '  11 [[Foo]]')
+        self.assertEqual(outputter.output(12, '3'), 'Foo')
+        self.assertEqual(outputter.output(13, '4'), '[[Foo]]')
+        self.assertEqual(outputter.output(14, '5'),
+                         '  14 \x03{lightred}Foo' + ' ' * 37 + '\x03{default}')
+        self.assertEqual(outputter.output(15, '6'),
+                         '  15 Foo' + ' ' * 37 + ' Foo' + ' ' * 37)
+        self.assertEqual(outputter.output(17, '{num} *{{{{{page.title}}}}}*'),
+                         '17 *{{Foo}}*')
 
 
 class TestColorFormat(TestCase):
