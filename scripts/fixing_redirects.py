@@ -7,6 +7,15 @@ Can be using with:
 &params;
 
 -featured         Run over featured pages (for some wikimedia wikis only)
+-always           If True, the user won't be prompted before changes
+                  are made.
+-nolinktext       If True, won't use the old link as new linktext.
+                  This option will disable the default behaviour and let
+                  [[old title]] be rewritten directly to [[new title]]
+                  unless a blend link is used or the new title has a section.
+                  Default behaviour is to use the old link as a new
+                  linktext, i.e. [[old title]] will be rewritten to
+                  [[new title|old title]].
 
 Run fixing_redirects.py -help to see all the command-line
 options -file, -ref, -links, ...
@@ -50,6 +59,15 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
     ignore_server_errors = True
     summary_key = 'fixing_redirects-fixing'
 
+    def __init__(self, generator, **kwargs):
+        """Constructor."""
+        self.availableOptions.update({
+            'always': False,
+            'nolinktext': False,
+        })
+        super(FixingRedirectBot, self).__init__(**kwargs)
+        self.generator = generator
+
     def replace_links(self, text, linkedPage, targetPage):
         """Replace all source links by target."""
         mysite = pywikibot.Site()
@@ -81,7 +99,9 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
             page_title = m.group('title')
             link_text = m.group('label')
 
-            if not link_text:
+            if ((not link_text and not self.getOption('nolinktext')) or
+                    (not link_text and m.group('linktrail')) or
+                    targetPage.section()):
                 # or like this: [[page_title]]trailing_chars
                 link_text = page_title
             if m.group('section') is None:
@@ -94,13 +114,14 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
                     'Skipping.'.format(section, targetPage))
                 continue
             trailing_chars = m.group('linktrail')
-            if trailing_chars:
+            if (link_text and trailing_chars):
                 link_text += trailing_chars
 
             # remove preleading ":"
-            if link_text[0] == ':':
+            if link_text and link_text[0] == ':':
                 link_text = link_text[1:]
-            if link_text[0].isupper() or link_text[0].isdigit():
+            if ((link_text and (link_text[0].isupper() or link_text[0].isdigit())) or
+                    (not link_text and (page_title[0].isupper() or page_title[0].isdigit()))):
                 new_page_title = targetPage.title()
             else:
                 new_page_title = first_lower(targetPage.title())
@@ -109,11 +130,11 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
             if new_page_title[0] == ':':
                 new_page_title = new_page_title[1:]
 
-            if (new_page_title == link_text and not section):
+            if (link_text and new_page_title == link_text and not section):
                 newlink = "[[%s]]" % new_page_title
             # check if we can create a link with trailing characters instead of a
             # pipelink
-            elif (len(new_page_title) <= len(link_text) and
+            elif (link_text and len(new_page_title) <= len(link_text) and
                   firstcap(link_text[:len(new_page_title)]) ==
                   firstcap(new_page_title) and
                   re.sub(re.compile(linktrail), '',
@@ -121,6 +142,8 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
                   not section):
                 newlink = "[[%s]]%s" % (link_text[:len(new_page_title)],
                                         link_text[len(new_page_title):])
+            elif not link_text:
+                newlink = "[[%s%s]]" % (new_page_title, section)
             else:
                 newlink = "[[%s%s|%s]]" % (new_page_title, section, link_text)
             text = text[:m.start()] + newlink + text[m.end():]
@@ -178,6 +201,7 @@ def main(*args):
     @type args: list of unicode
     """
     featured = False
+    options = {}
     gen = None
 
     # Process global args and prepare generator args parser
@@ -187,6 +211,10 @@ def main(*args):
     for arg in local_args:
         if arg == '-featured':
             featured = True
+        elif arg == '-nolinktext':
+            options['nolinktext'] = True
+        elif arg == '-always':
+            options['always'] = True
         elif genFactory.handleArg(arg):
             pass
 
@@ -217,7 +245,7 @@ def main(*args):
         if gen:
             gen = mysite.preloadpages(gen)
     if gen:
-        bot = FixingRedirectBot(generator=gen)
+        bot = FixingRedirectBot(gen, **options)
         bot.run()
         return True
     else:
