@@ -241,19 +241,6 @@ class Issue10254TestCase(DefaultDrySiteTestCase):
         l = Link(title, self.site)
         self.assertEqual(l.title, 'Li̍t-sṳ́')
 
-    @unittest.skipIf(PYTHON_VERSION != (2, 6, 6), 'Python 2.6.6-only test')
-    def test_py266_bug_exception(self):
-        """Test Python issue 10254 causes an exception."""
-        pywikibot.page.unicodedata = __import__('unicodedata')
-        title = 'Li̍t-sṳ́'
-        with self.assertRaisesRegex(
-                UnicodeError,
-                re.escape('Link(%r, %s): combining characters detected, which '
-                          'are not supported by Pywikibot on Python 2.6.6. '
-                          'See https://phabricator.wikimedia.org/T102461'
-                          % (title, self.site))):
-            Link(title, self.site)
-
 
 # ---- The first set of tests are explicit links, starting with a ':'.
 
