@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Miscellaneous helper functions (not wiki-dependent)."""
 #
-# (C) Pywikibot team, 2008-2017
+# (C) Pywikibot team, 2008-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -103,57 +103,9 @@ class NotImplementedClass(object):
             '%s: %s' % (self.__class__.__name__, self.__doc__))
 
 
-if PYTHON_VERSION < (2, 7):
-    try:
-        import future.backports.misc
-    except ImportError:
-        warn("""
-pywikibot support of Python 2.6 relies on package future for many features.
-Please upgrade to Python 2.7+ or Python 3.3+, or run:
-    "pip install future>=0.15.0"
-""", RuntimeWarning)
-        try:
-            from ordereddict import OrderedDict
-        except ImportError:
-            class OrderedDict(NotImplementedClass):
-
-                """OrderedDict not found."""
-
-                pass
-
-        try:
-            from counter import Counter
-        except ImportError:
-            class Counter(NotImplementedClass):
-
-                """Counter not found."""
-
-                pass
-        count = None
-    else:
-        Counter = future.backports.misc.Counter
-        OrderedDict = future.backports.misc.OrderedDict
-
-        try:
-            count = future.backports.misc.count
-        except AttributeError:
-            warn('Please update the "future" package to at least version '
-                 '0.15.0 to use its count.', RuntimeWarning, 2)
-            count = None
-        del future
-
-    if count is None:
-        def count(start=0, step=1):
-            """Backported C{count} to support keyword arguments and step."""
-            while True:
-                yield start
-                start += step
-
-
-else:
-    Counter = collections.Counter
-    OrderedDict = collections.OrderedDict
-    count = itertools.count
+Counter = collections.Counter
+OrderedDict = collections.OrderedDict
+count = itertools.count
 
 
 def has_module(module):

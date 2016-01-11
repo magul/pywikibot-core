@@ -4,6 +4,7 @@ Release history
 Current release
 ---------------
 
+* Desupport Python 2.6
 * PendingDeprecationWarning: support for py2.6 and py3.3 will be dropped
 * Bugfixes and improvements
 * Localisation updates

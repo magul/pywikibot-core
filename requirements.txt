@@ -30,8 +30,6 @@ idna>=2.0.0 ; python_full_version < '2.7.9'
 # https://github.com/eliben/pycparser/issues/147
 pycparser != 2.14
 
-future>=0.15.0 ; python_full_version < '2.7.3'
-
 ipaddr>=2.1.10 ; python_version < '3'
 
 unicodedata2>=7.0.0-2 ; python_version < '3'
@@ -45,15 +43,13 @@ mwoauth>=0.2.4,!=0.3.1
 git+https://github.com/nlhepler/pydot#egg=pydot-1.0.29
 
 # wikistats.py and scripts
-unicodecsv!=0.14.0 ; python_version < '2.7'
-unicodecsv ; python_version < '3' and python_version >= '2.7'
+unicodecsv ; python_version < '3'
 
 # cosmetic_changes and scripts/isbn
 python-stdnum
 
 # GUI
-Pillow<3.5.0 ; python_version < '2.7'
-Pillow ; python_version >= '2.7'
+Pillow
 
 # core pagegenerators
 google >= 1.7
@@ -62,9 +58,6 @@ sseclient
 # scripts/script_wui.py:
 crontab
 
-# scipts/replicate_wiki.py and scripts/editarticle.py
-argparse ; python_version < '2.7'
-
 # scripts/flickrripper.py
 # On Python 2, flickrapi 1.4.x or 2.x may be used.  Only 2.x works on Python 3.
 # The following automatically selects 2.x on all Python versions, which depends
@@ -72,12 +65,11 @@ argparse ; python_version < '2.7'
 #   pkg_resources.VersionConflict: (requests 1.2.3 (/usr/lib/python2.7/site-packages), Requirement.parse('requests>=2.2.1'))
 # If you see that on Python 2, change this to flickrapi==1.4.5
 # On Python 3, force pip to install requests 2.2.1, or remove flickrapi below.
-flickrapi>=1.4.5,<2 ; python_version < '2.7'
 flickrapi<2.3.1 ; python_version == '3.3'
-flickrapi ; python_version >= '2.7' and python_version != '3.3'
+flickrapi ; python_version != '3.3'
 
 # incomplete core component botirc
-irc ; python_version > '2.6'
+irc
 
 # textlib.py and patrol.py
 mwparserfromhell>=0.3.3

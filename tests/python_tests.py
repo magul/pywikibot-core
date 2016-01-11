@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests Python features."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2018
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -46,8 +46,7 @@ class PythonTestCase(TestCase):
 
     net = False
 
-    @expected_failure_if((2, 7, 0) <= PYTHON_VERSION < (2, 7, 2) or
-                         PYTHON_VERSION == (2, 6, 6))
+    @expected_failure_if((2, 7, 0) <= PYTHON_VERSION < (2, 7, 2))
     def test_issue_10254(self):
         """Test Python issue #10254."""
         # Python 2.6.6, 2.7.0 and 2.7.1 have a bug in this routine.
