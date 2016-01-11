@@ -47,10 +47,6 @@ script_deps = {
     'patrol': ['mwparserfromhell'],
 }
 
-if PYTHON_VERSION < (2, 7):
-    script_deps['replicate_wiki'] = ['argparse']
-    script_deps['editarticle'] = ['argparse']
-
 if PY2:
     script_deps['data_ingestion'] = ['unicodecsv']
 
