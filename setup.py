@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Installer script for Pywikibot 2.0 framework."""
 #
-# (C) Pywikibot team, 2009-2015
+# (C) Pywikibot team, 2009-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -20,13 +20,12 @@ except ImportError:
 
 PYTHON_VERSION = sys.version_info[:3]
 PY2 = (PYTHON_VERSION[0] == 2)
-PY26 = (PYTHON_VERSION < (2, 7))
 
 versions_required_message = """
 Pywikibot not available on:
 %s
 
-Pywikibot is only supported under Python 2.6.5+, 2.7.2+ or 3.3+
+Pywikibot is only supported under Python 2.7.2+ or 3.3+
 """
 
 
@@ -34,8 +33,7 @@ def python_is_supported():
     """Check that Python is supported."""
     # Any change to this must be copied to pwb.py
     return (PYTHON_VERSION >= (3, 3, 0) or
-            (PY2 and PYTHON_VERSION >= (2, 7, 2)) or
-            (PY26 and PYTHON_VERSION >= (2, 6, 5)))
+            (PY2 and PYTHON_VERSION >= (2, 7, 2)))
 
 
 if not python_is_supported():
@@ -47,7 +45,6 @@ dependencies = ['requests']
 
 # the irc module has no Python 2.6 support since 10.0
 irc_dep = 'irc==8.9' if sys.version_info < (2, 7) else 'irc'
-csv_dep = 'unicodecsv!=0.14.0' if PYTHON_VERSION < (2, 7) else 'unicodecsv'
 
 extra_deps = {
     # Core library dependencies
@@ -67,7 +64,7 @@ extra_deps = {
 if PY2:
     # Additional core library dependencies which are only available on Python 2
     extra_deps.update({
-        'csv': [csv_dep],
+        'csv': ['unicodecsv'],
         'MySQL': ['oursql'],
         'unicode7': ['unicodedata2>=7.0.0-2'],
     })
@@ -86,8 +83,7 @@ script_deps = {
 # and will be first packaged for Fedora Core 21.
 # flickrapi 1.4.x does not run on Python 3, and setuptools can only
 # select flickrapi 2.x for Python 3 installs.
-script_deps['flickrripper.py'].append(
-    'flickrapi>=1.4.5,<2' if PY26 else 'flickrapi')
+script_deps['flickrripper.py'].append('flickrapi')
 
 # lunatic-python is only available for Linux
 if sys.platform.startswith('linux'):
@@ -114,12 +110,6 @@ if PYTHON_VERSION < (2, 7, 3):
         sys.modules['unittest'] = unittest2
 
 if sys.version_info[0] == 2:
-    if PY26:
-        script_deps['replicate_wiki.py'] = ['argparse']
-        dependencies.append('future>=0.15.0')  # provides collections backports
-
-        dependencies += extra_deps['unicode7']  # T102461 workaround
-
     # tools.ip does not have a hard dependency on an IP address module,
     # as it falls back to using regexes if one is not available.
     # The functional backport of py3 ipaddress is acceptable:
