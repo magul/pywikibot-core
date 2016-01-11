@@ -4,6 +4,7 @@ Release history
 Current release
 ---------------
 
+* Desupport Python 2.6
 * Bugfixes and improvements
 * Localisation updates
 
