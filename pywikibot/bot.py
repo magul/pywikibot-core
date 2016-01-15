@@ -1090,6 +1090,8 @@ def writeToCommandLogFile():
     This can be used by user later to track errors or report bugs.
     """
     modname = calledModuleName()
+    if modname not in config.log:
+        return
     # put quotation marks around all parameters
     args = [modname] + [u'"%s"' % s for s in pywikibot.argvu[1:]]
     command_log_filename = config.datafilepath('logs', 'commands.log')
