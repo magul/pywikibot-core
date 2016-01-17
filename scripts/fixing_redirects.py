@@ -28,8 +28,8 @@ from pywikibot import pagegenerators
 from pywikibot.bot import (SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
                            AutomaticTWSummaryBot, suggest_help)
 from pywikibot.textlib import does_text_contain_section
-from pywikibot.tools.formatter import color_format
 from pywikibot.tools import first_lower, first_upper as firstcap
+from pywikibot.tools.formatter import color_format
 
 # This is required for the text that is shown when you run this script
 # with the parameter -help.
@@ -97,17 +97,15 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
             if trailing_chars:
                 link_text += trailing_chars
 
-            # remove preleading ":"
-            if link_text[0] == ':':
-                link_text = link_text[1:]
-            if link_text[0].isupper() or link_text[0].isdigit():
+            if ((link_text[0].isupper() or link_text[0].isdigit()) or
+                    (link_text[0] == ':' and (link_text[1].isupper() or link_text[1].isdigit()))):
                 new_page_title = targetPage.title()
             else:
                 new_page_title = first_lower(targetPage.title())
 
-            # remove preleading ":"
-            if new_page_title[0] == ':':
-                new_page_title = new_page_title[1:]
+            # [[:Category:page_title]]
+            if page_title[0] == ':' and linkedPage.isCategory():
+                new_page_title = ":%s" % new_page_title
 
             if (new_page_title == link_text and not section):
                 newlink = "[[%s]]" % new_page_title
@@ -121,8 +119,10 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
                   not section):
                 newlink = "[[%s]]%s" % (link_text[:len(new_page_title)],
                                         link_text[len(new_page_title):])
+            elif new_page_title[0] == ':':
+                newlink = "[[:%s%s|%s]]" % (firstcap(new_page_title[1:]), section, link_text)
             else:
-                newlink = "[[%s%s|%s]]" % (new_page_title, section, link_text)
+                newlink = "[[%s%s|%s]]" % (firstcap(new_page_title), section, link_text)
             text = text[:m.start()] + newlink + text[m.end():]
             continue
         return text
