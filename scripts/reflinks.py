@@ -523,7 +523,7 @@ class ReferencesRobot(Bot):
                 f = None
 
                 try:
-                    f = requests.get(ref.url, headers=headers, timeout=60)
+                    f = requests.get(ref.url, headers=headers, timeout=60, stream=True)
 
                     # Try to get Content-Type from server
                     contentType = f.headers.get('content-type')
@@ -582,7 +582,20 @@ class ReferencesRobot(Bot):
                             new_text = new_text.replace(match.group(), repl)
                         continue
 
-                    linkedpagetext = f.content
+                    # Read the first 1,000,000 bytes (0.95 MB)
+                    # Stop if </title> is found
+                    content_size = 0
+                    linkedpagetext = ''
+                    for chunk in f.iter_content(1000):
+                        content_size += len(chunk)
+                        linkedpagetext += chunk
+                        if re.search('</title>', chunk):
+                            content_size = 0
+                            break
+                        if content_size == 1000000:
+                            content_size = 0
+                            break
+                    f.response.close()
                 except UnicodeError:
                     # example : http://www.adminet.com/jo/20010615¦/ECOC0100037D.html
                     # in [[fr:Cyanure]]
