@@ -159,6 +159,10 @@ from pywikibot import editor as editarticle
 # Imports predefined replacements tasks from fixes.py
 from pywikibot import fixes
 
+from pywikibot.bot_choice import QuitKeyboardInterrupt
+
+from pywikibot.pagegenerators import XMLDumpOldPageGenerator
+
 from pywikibot.tools import chars, deprecated_args
 from pywikibot.tools.formatter import color_format
 
@@ -377,100 +381,30 @@ class ReplacementListEntry(ReplacementBase):
         self.fix_set._compile_exceptions(use_regex, flags)
 
 
-class XmlDumpReplacePageGenerator(object):
+class XmlDumpReplacePageGenerator(XMLDumpOldPageGenerator):
 
-    """
-    Iterator that will yield Pages that might contain text to replace.
+    """Iterator that will yield Pages from XML file."""
 
-    These pages will be retrieved from a local XML dump file.
-    Arguments:
-        * xmlFilename  - The dump's path, either absolute or relative
-        * xmlStart     - Skip all articles in the dump before this one
-        * replacements - A list of 2-tuples of original text (as a
-                         compiled regular expression) and replacement
-                         text (as a string).
-        * exceptions   - A dictionary which defines when to ignore an
-                         occurrence. See docu of the ReplaceRobot
-                         constructor below.
-    """
-
-    def __init__(self, xmlFilename, xmlStart, replacements, exceptions, site):
+    def __init__(self, *args, **kwargs):
         """Constructor."""
-        self.xmlFilename = xmlFilename
-        self.replacements = replacements
-        self.exceptions = exceptions
-        self.xmlStart = xmlStart
-        self.skipping = bool(xmlStart)
-
-        self.excsInside = []
-        if "inside-tags" in self.exceptions:
-            self.excsInside += self.exceptions['inside-tags']
-        if "inside" in self.exceptions:
-            self.excsInside += self.exceptions['inside']
-        from pywikibot import xmlreader
-        if site:
-            self.site = site
-        else:
-            self.site = pywikibot.Site()
-        dump = xmlreader.XmlDump(self.xmlFilename)
-        self.parser = dump.parse()
+        super(XmlDumpReplacePageGenerator, self).__init__(*args, **kwargs)
 
     def __iter__(self):
-        """Iterator method."""
+        """Iterator method to display where to resume on KeyboardInterrupt."""
         try:
-            for entry in self.parser:
-                if self.skipping:
-                    if entry.title != self.xmlStart:
-                        continue
-                    self.skipping = False
-                if not self.isTitleExcepted(entry.title) \
-                        and not self.isTextExcepted(entry.text):
-                    new_text = entry.text
-                    for replacement in self.replacements:
-                        # This doesn't do an actual replacement but just
-                        # checks if at least one does apply
-                        new_text = textlib.replaceExcept(
-                            new_text, replacement.old_regex, replacement.new,
-                            self.excsInside, self.site)
-                    if new_text != entry.text:
-                        yield pywikibot.Page(self.site, entry.title)
+            while True:
+                entry = self.next()
+                yield entry
+        except StopIteration:
+            pass
         except KeyboardInterrupt:
             try:
-                if not self.skipping:
-                    pywikibot.output(
-                        u'To resume, use "-xmlstart:%s" on the command line.'
-                        % entry.title)
+                pywikibot.output(
+                    '\n\nTo resume, use "-xmlstart:%s" on the command line.\n'
+                    % entry.title())
+                raise QuitKeyboardInterrupt()
             except NameError:
                 pass
-
-    def isTitleExcepted(self, title):
-        """
-        Return True iff one of the exceptions applies for the given title.
-
-        @rtype: bool
-        """
-        if "title" in self.exceptions:
-            for exc in self.exceptions['title']:
-                if exc.search(title):
-                    return True
-        if "require-title" in self.exceptions:
-            for req in self.exceptions['require-title']:
-                if not req.search(title):  # if not all requirements are met:
-                    return True
-
-        return False
-
-    def isTextExcepted(self, text):
-        """
-        Return True iff one of the exceptions applies for the given text.
-
-        @rtype: bool
-        """
-        if "text-contains" in self.exceptions:
-            for exc in self.exceptions['text-contains']:
-                if exc.search(text):
-                    return True
-        return False
 
 
 class ReplaceRobot(Bot):
@@ -686,7 +620,7 @@ class ReplaceRobot(Bot):
                 continue
             try:
                 # Load the page's text from the wiki
-                original_text = page.get(get_redirect=True)
+                original_text = page.text
                 if not page.canBeEdited():
                     pywikibot.output(u"You can't edit page %s"
                                      % page.title(asLink=True))
@@ -1080,8 +1014,8 @@ def main(*args):
             xmlStart
         except NameError:
             xmlStart = None
-        gen = XmlDumpReplacePageGenerator(xmlFilename, xmlStart,
-                                          replacements, exceptions, site)
+        gen = XmlDumpReplacePageGenerator(xmlFilename,
+                                          start=xmlStart, site=site)
     elif useSql:
         whereClause = 'WHERE (%s)' % ' OR '.join(
             ["old_text RLIKE '%s'" % prepareRegexForMySQL(old_regexp.pattern)
