@@ -82,7 +82,7 @@ right parameter.
 # (C) Kyle/Orgullomoore, 2006-2007 (newimage.py)
 # (C) Siebrand Mazeland, 2007-2010
 # (C) Filnik, 2007-2011
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -471,21 +471,7 @@ duplicatesRegex = {
 
 # Category with the licenses and / or with subcategories with the other
 # licenses.
-category_with_licenses = {
-    'commons': u'Category:License tags',
-    'meta': 'Category:License templates',
-    'ar': u'تصنيف:قوالب حقوق الصور',
-    'de': u'Kategorie:Vorlage:Lizenz für Bilder',
-    'en': 'Category:Wikipedia file copyright templates',
-    'fa': u'رده:الگو:حق تکثیر پرونده',
-    'ga': u'Catagóir:Clibeanna cóipchirt d\'íomhánna',
-    'it': u'Categoria:Template Licenze copyright',
-    'ja': u'Category:画像の著作権表示テンプレート',
-    'ko': u'분류:위키백과 그림 저작권 틀',
-    'ta': u'Category:காப்புரிமை வார்ப்புருக்கள்',
-    'ur': u'زمرہ:ویکیپیڈیا سانچہ جات حقوق تصاویر',
-    'zh': u'Category:版權申告模板',
-}
+category_with_licenses = 'Q4481876'
 
 # Page where is stored the message to send as email to the users
 emailPageWithText = {
@@ -1173,13 +1159,12 @@ class checkImagesBot(object):
 
     def load_licenses(self):
         """Load the list of the licenses."""
-        catName = i18n.translate(self.site, category_with_licenses)
-        if not catName:
+        cat = self.site.page_from_repository(category_with_licenses)
+        if not cat:
             raise pywikibot.Error(
-                u'No licenses allowed provided, add that option to the code to '
-                u'make the script working correctly')
+                'No licenses allowed provided. Add that category to wikibase '
+                'make the script working correctly')
         pywikibot.output(u'\nLoading the allowed licenses...\n')
-        cat = pywikibot.Category(self.site, catName)
         list_licenses = list(cat.articles())
         if self.site.code == 'commons':
             no_licenses_to_skip = pywikibot.Category(self.site,
