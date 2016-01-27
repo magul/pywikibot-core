@@ -23,7 +23,7 @@ Usage:
 
 """
 #
-# (C) Pywikibot team, 2008-2014
+# (C) Pywikibot team, 2008-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -109,12 +109,8 @@ class CategoryRedirectBot(pywikibot.Bot):
     def get_cat_title(self):
         """Specify the category title."""
         if self.getOption('tiny'):
-            repo = self.site.data_repository()
-            dp = pywikibot.ItemPage(repo, self.tiny_cat_redirect_cat)
-            try:
-                self.cat_title = dp.getSitelink(self.site)
-            except pywikibot.NoPage:
-                self.cat_title = None
+            page = self.site.page_from_repository(self.tiny_cat_redirect_cat)
+            self.cat_title = page.title() if page is not None else None
         else:
             self.cat_title = pywikibot.translate(self.site,
                                                  self.cat_redirect_cat,
