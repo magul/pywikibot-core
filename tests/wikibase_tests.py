@@ -1458,6 +1458,18 @@ class TestUnconnectedClient(TestCase):
                                'no data repository',
                                self.wdp.data_item)
 
+    def test_has_data_repository(self, key):
+        """Test that site has no data repository."""
+        site = self.get_site(key)
+        self.assertFalse(site.has_data_repository)
+
+    def test_page_from_repository_fails(self, key):
+        """Test that page_from_repository method fails."""
+        site = self.get_site(key)
+        dummy_item = 'Q1'
+        self.assertRaises(pywikibot.UnknownExtension,
+                          site.page_from_repository, dummy_item)
+
 
 class TestJSON(WikidataTestCase):
 
