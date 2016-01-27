@@ -48,7 +48,7 @@ L{CurrentPageBot} and automatically defines the summary when C{put_current} is
 used.
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1129,31 +1129,15 @@ def open_webbrowser(page):
     i18n.input('pywikibot-enter-finished-browser')
 
 
-class BaseBot(object):
+class OptionHandler(object):
 
-    """
-    Generic Bot to be subclassed.
+    """Class to get and set options."""
 
-    This class provides a run() method for basic processing of a
-    generator one page at a time.
-
-    If the subclass places a page generator in self.generator,
-    Bot will process each page in the generator, invoking the method treat()
-    which must then be implemented by subclasses.
-
-    If the subclass does not set a generator, or does not override
-    treat() or run(), NotImplementedError is raised.
-    """
-
-    # Bot configuration.
+    # Handler configuration.
     # Only the keys of the dict can be passed as init options
     # The values are the default values
     # Extend this in subclasses!
-    availableOptions = {
-        'always': False,  # By default ask for confirmation when putting a page
-    }
-
-    _current_page = None
+    availableOptions = {}
 
     def __init__(self, **kwargs):
         """
@@ -1162,13 +1146,7 @@ class BaseBot(object):
         @param kwargs: bot options
         @type kwargs: dict
         """
-        if 'generator' in kwargs:
-            self.generator = kwargs.pop('generator')
-
         self.setOptions(**kwargs)
-
-        self._treat_counter = 0
-        self._save_counter = 0
 
     def setOptions(self, **kwargs):
         """
@@ -1200,6 +1178,43 @@ class BaseBot(object):
             return self.options.get(option, self.availableOptions[option])
         except KeyError:
             raise pywikibot.Error(u'%s is not a valid bot option.' % option)
+
+
+class BaseBot(OptionHandler):
+
+    """
+    Generic Bot to be subclassed.
+
+    This class provides a run() method for basic processing of a
+    generator one page at a time.
+
+    If the subclass places a page generator in self.generator,
+    Bot will process each page in the generator, invoking the method treat()
+    which must then be implemented by subclasses.
+
+    If the subclass does not set a generator, or does not override
+    treat() or run(), NotImplementedError is raised.
+    """
+
+    _current_page = None
+
+    def __init__(self, **kwargs):
+        """
+        Only accept options defined in availableOptions.
+
+        @param kwargs: bot options
+        @type kwargs: dict
+        """
+        self.availableOptions.update({
+            'always': False,  # By default ask for confirmation when putting a page
+        })
+        if 'generator' in kwargs:
+            self.generator = kwargs.pop('generator')
+
+        super(BaseBot, self).__init__(**kwargs)
+
+        self._treat_counter = 0
+        self._save_counter = 0
 
     @property
     def current_page(self):
