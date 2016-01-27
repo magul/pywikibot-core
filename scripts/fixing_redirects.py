@@ -198,15 +198,9 @@ def main(*args):
         return
 
     if featured:
-        repo = mysite.data_repository()
-        if repo:
-            dp = pywikibot.ItemPage(repo, featured_articles)
-            try:
-                ref = pywikibot.Category(mysite, dp.getSitelink(mysite))
-            except pywikibot.NoPage:
-                pass
-            else:
-                gen = ref.articles(namespaces=0, content=True)
+        ref = mysite.page_from_repository(featured_articles)
+        if ref is not None:
+            gen = ref.articles(namespaces=0, content=True)
         if not gen:
             suggest_help(
                 unknown_parameters=['-featured'],
