@@ -56,8 +56,8 @@ This script understands various command-line arguments:
 #
 # (C) Maxim Razin, 2005
 # (C) Leonardo Gregianin, 2005-2008
-# (C) xqt, 2009-2014
-# (C) Pywikibot team, 2005-2015
+# (C) xqt, 2009-2016
+# (C) Pywikibot team, 2005-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -99,12 +99,9 @@ def BACK(site, name, hide):  # pylint: disable=unused-argument
 
 
 def DATA(site, name, hide):
-    dp = pywikibot.ItemPage(site.data_repository(), name)
-    try:
-        title = dp.getSitelink(site)
-    except pywikibot.NoPage:
+    cat = site.page_from_repository(name)
+    if cat is None:
         return
-    cat = pywikibot.Category(site, title)
     if isinstance(hide, dict):
         hide = hide.get(site.code)
     for article in cat.articles(endsort=hide):
