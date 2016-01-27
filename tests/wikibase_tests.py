@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the Wikidata parts of the page module."""
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1236,6 +1236,18 @@ class TestUnconnectedClient(TestCase):
         self.assertRaisesRegex(pywikibot.WikiBaseError,
                                'no transcluded data',
                                self.wdp.data_item)
+
+    def test_has_data_repository(self, key):
+        """Test that site has no data repository."""
+        site = self.get_site(key)
+        self.assertFalse(site.has_data_repository)
+
+    def test_page_from_repository_fails(self, key):
+        """Test that page_from_repository method fails."""
+        site = self.get_site(key)
+        dummy_item = 'Q1'
+        self.assertRaises(pywikibot.UnknownExtension,
+                          site.page_from_repository, dummy_item)
 
 
 class TestJSON(WikidataTestCase):

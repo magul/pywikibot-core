@@ -6,7 +6,7 @@ This module also includes functions to load families, which are
 groups of wikis on the same topic in different languages.
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -2788,6 +2788,29 @@ class APISite(BaseSite):
     def is_data_repository(self):
         """Return True if its data repository is itself."""
         return self is self.data_repository()
+
+    def page_from_repository(self, item):
+        """
+        Return a Page for this site object specified by wikibase item.
+
+        @param item: id number of item, "Q###",
+        @type item: str
+        @return: Page, or Category object given by wikibase item number
+            for this site object.
+        @rtype: pywikibot.Page or None
+        """
+        if not self.has_data_repository:
+            raise UnknownExtension('Wikibase is not implemented for %s.' % self)
+        repo = self.data_repository()
+        dp = pywikibot.ItemPage(repo, item)
+        try:
+            page_title = dp.getSitelink(self)
+        except pywikibot.NoPage:
+            return
+        page = pywikibot.Page(self, page_title)
+        if page.namespace() == Namespace.CATEGORY:
+            page = pywikibot.Category(page)
+        return page
 
     def nice_get_address(self, title):
         """Return shorter URL path to retrieve page titled 'title'."""
