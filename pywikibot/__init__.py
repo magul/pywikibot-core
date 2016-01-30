@@ -149,11 +149,10 @@ class Timestamp(datetime.datetime):
 
     Use Site.getcurrenttime() for the current time; this is more reliable
     than using Timestamp.utcnow().
-
     """
-
     mediawikiTSFormat = "%Y%m%d%H%M%S"
     ISO8601Format = "%Y-%m-%dT%H:%M:%SZ"
+    prettyFormat = '%Y-%m-%d %H:%M:%S'
 
     def clone(self):
         """Clone this instance."""
@@ -189,6 +188,16 @@ class Timestamp(datetime.datetime):
 
     toISOformat = redirect_func(isoformat, old_name='toISOformat',
                                 class_name='Timestamp')
+
+    def pretty_format(self):
+        """
+        Convert object to an pretty timestamp string.
+
+        This is the same as ISO 8601 except 'T' and 'Z' are left for better
+        readability.
+        @note: similar to compat's apispec.uniso()
+        """
+        return self.strftime(self.prettyFormat)
 
     def totimestampformat(self):
         """Convert object to a MediaWiki internal timestamp."""
