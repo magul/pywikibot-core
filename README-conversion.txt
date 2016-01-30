@@ -120,6 +120,22 @@ The following changes have occurred in the User object:
 
 - contributions(): returns a pywikibot.Timestamp object instead of a Mediawiki one
 
+== apispec library and Blocks objects ==
+
+Some apispec functionality could be replaced other methods:
+
+    iso() -> Timestamp.isoformat()
+    uniso() -> Timestamp.pretty_format()
+    dt() -> Timestamp.totimestampformat()
+    duration() -> BlockEntry.duration()
+
+    Blocks.empty() -> (* obsolete parameter cleanup *)
+    Blocks.query() -> site.blocks() or site.logevents('block')
+    Blocks.IPsortkey() -> (* sort key, not needed * )
+    Blocks.allblocks() ->  site.blocks() or site.logevents('block')
+    Blocks.user() -> site.blocks(user=user)
+    Blocks.IP() -> site.blocks(iprange=IP)
+
 === Command-line arguments ===
 
 Scripts that supported unnamed arguments as titles of pages on which to work,
