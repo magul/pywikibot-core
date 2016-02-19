@@ -12,14 +12,16 @@ Syntax:
 
 where action can be one of these:
 
-double         Fix redirects which point to other redirects.
-do             Shortcut action command is "do".
+double         Fix redirects which point to other redirects. If a redirect
+do             loop is found and -delete option is set, it either deletes the
+               page or marks it for deletion depending on whether the account
+               has admin rights. Shortcut action command is "do".
 
 broken         Tries to fix redirect which point to nowhere by using the last
 br             moved target of the destination page. If this fails and the
-               -delete option is set, it either deletes the page or marks it for
-               deletion depending on whether the account has admin rights. It
-               will mark the redirect not for deletion if there is no speedy
+               -delete option is set, it either deletes the page or marks it
+               for deletion depending on whether the account has admin rights.
+               It will mark the redirect not for deletion if there is no speedy
                deletion template available. Shortcut action command is "br".
 
 both           Both of the above. Retrieves redirect pages from live wiki,
@@ -61,7 +63,8 @@ and arguments can be:
 
 -delete        Prompt the user whether broken redirects should be deleted (or
                marked for deletion if the account has no admin rights) instead
-               of just skipping them.
+               of just skipping them. Also delete redirect loops if double
+               redirects action is selected.
 
 -always        Don't prompt you for each replacement.
 
@@ -568,10 +571,26 @@ class RedirectRobot(Bot):
                 pywikibot.warning(
                     u"Redirect target section %s doesn't exist."
                     % newRedir.title(asLink=True))
-            except (pywikibot.CircularRedirect,
-                    pywikibot.InterwikiRedirectPage) as e:
+            except pywikibot.CircularRedirect as e:
+                # TODO does not only find circular redirects but also
+                # redirects to circular redirects.!
                 pywikibot.exception(e)
-                pywikibot.output(u"Skipping %s." % newRedir)
+                if self.getOption('delete'):
+                    if len(list(newRedir.revisions(total=2))) == 1:
+                        if self.user_confirm(
+                            '{0} forms a redirect loop. {1}'
+                            'Do you want to delete it?'.format(redir, newRedir)):
+                            self.delete_redirect(newRedir,
+                                                 'redirect-remove-loop')
+                    else:
+                         pywikibot.output(
+                             '%s has a version history. Skipping.' % newRedir)
+                else:
+                    pywikibot.output('Skipping %s.' % newRedir)
+                break
+            except pywikibot.InterwikiRedirectPage as e:
+                pywikibot.exception(e)
+                pywikibot.output('Skipping interwiki redirect %s.' % newRedir)
                 break
             except pywikibot.BadTitle as e:
                 # str(e) is in the format 'BadTitle: [[Foo]]'
