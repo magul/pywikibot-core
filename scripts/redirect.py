@@ -84,8 +84,8 @@ import sys
 
 import pywikibot
 
-from pywikibot import i18n, xmlreader, Bot
-from pywikibot.bot import OptionHandler
+from pywikibot import i18n, xmlreader
+from pywikibot.bot import OptionHandler, SingleSiteBot
 from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot.tools.formatter import color_format
 from pywikibot.tools import issue_deprecation_warning
@@ -116,7 +116,7 @@ class RedirectGenerator(OptionHandler):
         'xml': None,
     }
 
-    def __init__(self, **kwargs):
+    def __init__(self, action, **kwargs):
         """Constructor."""
         super(RedirectGenerator, self).__init__(**kwargs)
         self.site = pywikibot.Site()
@@ -129,6 +129,16 @@ class RedirectGenerator(OptionHandler):
         self.api_number = self.getOption('total')
         self.api_until = self.getOption('until')
         self.xmlFilename = self.getOption('xml')
+        self.action = action
+
+    def __iter__(self):
+        """Run the generator selected by 'action' parameter."""
+        if self.action == 'double':
+            return self.retrieve_double_redirects()
+        elif self.action == 'broken':
+            return self.retrieve_broken_redirects()
+        elif self.action == 'both':
+            return self.get_redirects_via_api(maxlen=2)
 
     def get_redirects_from_dump(self, alsoGetPageTitles=False):
         """
@@ -389,7 +399,7 @@ class RedirectGenerator(OptionHandler):
                 continue
 
 
-class RedirectRobot(Bot):
+class RedirectRobot(SingleSiteBot):
 
     """Redirect bot."""
 
@@ -406,11 +416,9 @@ class RedirectRobot(Bot):
         self.action = args[0]
         self.exiting = False
 
-    def delete_broken_redirects(self):
-        """Process all broken redirects."""
-        # get reason for deletion text
-        for redir_name in self.generator.retrieve_broken_redirects():
-            self.delete_1_broken_redirect(redir_name)
+    def init_page(self, page):
+        """Overwrite super class method."""
+        pass
 
     def delete_1_broken_redirect(self, redir_name):
         """Treat one broken redirect."""
@@ -536,11 +544,6 @@ class RedirectRobot(Bot):
                         targetPage.title(asLink=True),
                         "Won't delete anything."
                         if self.getOption('delete') else "Skipping."))
-
-    def fix_double_redirects(self):
-        """Process double redirects."""
-        for redir_name in self.generator.retrieve_double_redirects():
-            self.fix_1_double_redirect(redir_name)
 
     def fix_1_double_redirect(self, redir_name):
         """Treat one double redirect."""
@@ -697,34 +700,25 @@ class RedirectRobot(Bot):
                         % (redir.title(), error))
             break
 
-    def fix_double_or_delete_broken_redirects(self):
-        """Process all redirects for 'both' action."""
-        # TODO: part of this should be moved to generator, the rest merged into
-        # self.run()
-        count = 0
-        for (redir_name, code, target, final)\
-                in self.generator.get_redirects_via_api(maxlen=2):
+    def treat(self, page):
+        """Run the script method selected by 'action' parameter."""
+        if self.action == 'double':
+            self.fix_1_double_redirect(page)
+        elif self.action == 'broken':
+            self.delete_1_broken_redirect(page)
+        elif self.action == 'both':
+            redir_name, code, target, final = page
             if code == 1:
-                continue
+                return
             elif code == 0:
                 self.delete_1_broken_redirect(redir_name)
-                count += 1
             else:
                 self.fix_1_double_redirect(redir_name)
-                count += 1
-            if self.getOption('total') and count >= self.getOption('total'):
-                break
-
-    def run(self):
-        """Run the script method selected by 'action' parameter."""
-        # TODO: make all generators return a redirect type indicator,
-        #       thus make them usable with 'both'
-        if self.action == 'double':
-            self.fix_double_redirects()
-        elif self.action == 'broken':
-            self.delete_broken_redirects()
-        elif self.action == 'both':
-            self.fix_double_or_delete_broken_redirects()
+        if (self.getOption('total') and
+                self._treat_counter >= self.getOption('total')):
+            pywikibot.output('\nTotal amount of pages exceeded. '
+                             'Terminating script.')
+            self.quit()
 
 
 def main(*args):
@@ -804,7 +798,7 @@ def main(*args):
         pywikibot.bot.suggest_help(missing_action=True)
     else:
         pywikibot.Site().login()
-        options['generator'] = RedirectGenerator(**gen_options)
+        options['generator'] = RedirectGenerator(action, **gen_options)
         bot = RedirectRobot(action, **options)
         bot.run()
 
