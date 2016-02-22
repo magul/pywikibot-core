@@ -15,7 +15,7 @@ This script understands various command-line arguments:
 
 """
 #
-# (C) Pywikibot team, 2009-2015
+# (C) Pywikibot team, 2009-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -99,8 +99,7 @@ def main(*args):
 
     gen = genFactory.getCombinedGenerator()
     if gen:
-        preloadingGen = pagegenerators.PreloadingGenerator(gen)
-        bot = bot_class(generator=preloadingGen, **options)
+        bot = bot_class(generator=gen, **options)
         pywikibot.Site().login()
         bot.run()
         return True
