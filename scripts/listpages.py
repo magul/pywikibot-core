@@ -42,6 +42,8 @@ These parameters are supported to specify which pages titles to print:
 
 -get     Page content is printed.
 
+-getusers     List of editors for each page is to be printed
+
 -save    Save Page content to a file named as page.title(as_filename=True).
          Directory can be set with -save:dir_name
          If no dir is specified, current direcory will be used.
@@ -180,6 +182,7 @@ def main(*args):
     fmt = '1'
     outputlang = None
     page_get = False
+    users_get = False
     base_dir = None
     encoding = config.textfile_encoding
     page_target = None
@@ -200,6 +203,8 @@ def main(*args):
             outputlang = arg[len('-outputlang:'):]
         elif arg == '-get':
             page_get = True
+        elif arg == '-getusers':
+            users_get = True
         elif arg.startswith('-save'):
             base_dir = arg.partition(':')[2] or '.'
         elif arg.startswith('-encode:'):
@@ -258,6 +263,14 @@ def main(*args):
                     pywikibot.output(page.text, toStdout=True)
                 except pywikibot.Error as err:
                     pywikibot.output(err)
+            if users_get:
+                user_set = set()
+                for rev in page.revisions():
+                    user_set.add(rev.user)
+
+                for user_name in user_set:
+                    pywikibot.output(user_name)
+
             if base_dir:
                 filename = os.path.join(base_dir, page.title(as_filename=True))
                 pywikibot.output(u'Saving %s to %s' % (page.title(), filename))
