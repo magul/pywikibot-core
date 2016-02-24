@@ -12,6 +12,9 @@ These command line parameters can be used to specify which pages to work on:
 
 Furthermore, the following command line parameters are supported:
 
+-sql              Retrieve information from a SQL live database (see
+                  https://wikitech.wikimedia.org/wiki/Help:Toolforge/Database).
+
 -xml              Retrieve information from a local XML dump (pages-articles
                   or pages-meta-current, see https://download.wikimedia.org).
                   Argument can also be given as "-xml:filename".
