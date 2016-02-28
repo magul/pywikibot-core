@@ -130,7 +130,6 @@ def getversiondict():
     return cache
 
 
-@deprecated('getversion_svn_setuptools')
 def svn_rev_info(path):
     """Fetch information about the current revision of an Subversion checkout.
 
@@ -236,7 +235,6 @@ def getversion_svn_setuptools(path=None):
     return (tag, rev, date, hsh)
 
 
-@deprecated('getversion_svn_setuptools')
 def getversion_svn(path=None):
     """Get version info for a Subversion checkout.
 
