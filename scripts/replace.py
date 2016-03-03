@@ -698,13 +698,13 @@ class ReplaceRobot(Bot):
                 continue
             applied = set()
             new_text = original_text
+            last_text = None
             while True:
                 if self.isTextExcepted(new_text):
                     pywikibot.output(u'Skipping %s because it contains text '
                                      u'that is on the exceptions list.'
                                      % page.title(asLink=True))
                     break
-                last_text = None
                 while new_text != last_text:
                     last_text = new_text
                     new_text = self.apply_replacements(last_text, applied,
@@ -733,7 +733,7 @@ class ReplaceRobot(Bot):
                     break
                 choice = pywikibot.input_choice(
                     u'Do you want to accept these changes?',
-                    [('Yes', 'y'), ('No', 'n'), ('Edit', 'e'),
+                    [('Yes', 'y'), ('No', 'n'), ('Edit', 'e'), ('edit Latest', 'l'),
                      ('open in Browser', 'b'), ('all', 'a')],
                     default='N')
                 if choice == 'e':
@@ -742,6 +742,14 @@ class ReplaceRobot(Bot):
                     # if user didn't press Cancel
                     if as_edited and as_edited != new_text:
                         new_text = as_edited
+                    continue
+                if choice == 'l':
+                    editor = editarticle.TextEditor()
+                    as_edited = editor.edit(new_text)
+                    # if user didn't press Cancel
+                    if as_edited and as_edited != new_text:
+                        new_text = as_edited
+                        last_text = as_edited
                     continue
                 if choice == 'b':
                     pywikibot.bot.open_webbrowser(page)
@@ -752,6 +760,7 @@ class ReplaceRobot(Bot):
                                          % page.title())
                         break
                     new_text = original_text
+                    last_text = None
                     continue
                 if choice == 'a':
                     self.options['always'] = True
