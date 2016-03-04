@@ -53,6 +53,7 @@ import types
 from locale import getdefaultlocale
 from warnings import warn
 
+from pywikibot import __release__
 from pywikibot.logging import error, output, warning
 from pywikibot.tools import PY2
 
@@ -227,7 +228,7 @@ password_file = None
 # edit summary to use if not supplied by bot script
 # WARNING: this should NEVER be used in practice, ALWAYS supply a more
 #          relevant summary for bot edits
-default_edit_summary = u'Pywikibot v.2'
+default_edit_summary = 'Pywikibot ' + __release__
 
 # What permissions to use to set private files to it
 # such as password file.
