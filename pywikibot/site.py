@@ -6,7 +6,7 @@ This module also includes functions to load families, which are
 groups of wikis on the same topic in different languages.
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -6981,8 +6981,6 @@ class APISite(BaseSite):
         @rtype: list of pywikibot.Page objects
         """
         self.login(sysop=sysop)
-        if not total:
-            total = pywikibot.config.special_page_limit
         expiry = None if force else pywikibot.config.API_config_expiry
         gen = api.PageGenerator(site=self, generator='watchlistraw',
                                 expiry=expiry, gwrlimit=total)

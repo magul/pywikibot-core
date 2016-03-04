@@ -33,7 +33,7 @@ build paths relative to base_dir:
 """
 #
 # (C) Rob W.W. Hooft, 2003
-# (C) Pywikibot team, 2003-2016
+# (C) Pywikibot team, 2003-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -93,7 +93,8 @@ class _ConfigurationDeprecationWarning(UserWarning):
 
 _private_values = ['authenticate', 'proxy', 'db_password']
 _deprecated_variables = ['use_SSL_onlogin', 'use_SSL_always',
-                         'available_ssl_project', 'fake_user_agent']
+                         'available_ssl_project', 'fake_user_agent',
+                         'special_page_limit']
 
 # ############# ACCOUNT SETTINGS ##############
 
@@ -637,9 +638,7 @@ noisysleep = 3.0
 # at least 1 second.
 maxlag = 5
 
-# Maximum of pages which can be retrieved by special pages. Increase this if
-# you heavily use redirect.py with action "double", and especially if you're
-# running solve_disambiguation.py with the -primary argument.
+# DEPRECATED. Don't use it.
 special_page_limit = 500
 
 # Maximum of pages which can be retrieved at one time from wiki server.
