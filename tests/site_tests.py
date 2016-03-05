@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Tests for the site module."""
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -2814,18 +2814,18 @@ class TestDataSiteSearchEntities(WikidataTestCase):
     def test_general(self):
         """Test basic search_entities functionality."""
         datasite = self.get_repo()
-        pages = datasite.search_entities('abc', 'en', limit=50)
+        pages = datasite.search_entities('abc', 'en', total=50)
         self.assertGreater(len(list(pages)), 0)
         self.assertLessEqual(len(list(pages)), 50)
         pages = datasite.search_entities('alphabet', 'en', type='property',
-                                         limit=50)
+                                         total=50)
         self.assertGreater(len(list(pages)), 0)
         self.assertLessEqual(len(list(pages)), 50)
 
     def test_continue(self):
         """Test that continue parameter in search_entities works."""
         datasite = self.get_repo()
-        kwargs = {'limit': 50}
+        kwargs = {'total': 50}
         pages = datasite.search_entities('Rembrandt', 'en', **kwargs)
         kwargs['continue'] = 1
         pages_continue = datasite.search_entities('Rembrandt', 'en', **kwargs)

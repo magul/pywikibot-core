@@ -6,7 +6,7 @@ This module also includes functions to load families, which are
 groups of wikis on the same topic in different languages.
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1899,7 +1899,7 @@ class APISite(BaseSite):
         constructor.
 
         @param gen_class: the type of generator to construct (must be
-            a subclass of pywikibot.data.api.QueryGenerator)
+            a subclass of pywikibot.data.api._RequestWrapper)
         @param type_arg: query type argument to be passed to generator's
             constructor unchanged (not all types require this)
         @type type_arg: str
@@ -1912,15 +1912,18 @@ class APISite(BaseSite):
             items in total
         @type total: int
         @return: iterable with parameters set
-        @rtype: QueryGenerator
+        @rtype: _RequestWrapper
         @raises KeyError: a namespace identifier was not resolved
         @raises TypeError: a namespace identifier has an inappropriate
             type such as NoneType or bool
         """
-        # TODO: Support parameters/simple modes?
-        req_args = {'site': self, 'parameters': args}
+        req_args = {'site': self}
         if 'g_content' in args:
             req_args['g_content'] = args.pop('g_content')
+        if 'parameters' in args:
+            req_args.update(args)
+        else:
+            req_args['parameters'] = args
         if type_arg is not None:
             gen = gen_class(type_arg, **req_args)
         else:
@@ -7579,7 +7582,8 @@ class DataSite(APISite):
         result = self.editEntity({}, data, bot=bot, **kwargs)
         return pywikibot.ItemPage(self, result['entity']['id'])
 
-    def search_entities(self, search, language, limit=None, **kwargs):
+    @deprecated_args(limit='total')
+    def search_entities(self, search, language, total=None, **kwargs):
         """
         Search for pages or properties that contain the given text.
 
@@ -7587,9 +7591,9 @@ class DataSite(APISite):
         @type search: str
         @param language: Language to search in.
         @type language: str
-        @param limit: Maximum number of pages to retrieve in total, or None in
+        @param total: Maximum number of pages to retrieve in total, or None in
             case of no limit.
-        @type limit: int or None
+        @type total: int or None
         @return: 'search' list from API output.
         @rtype: api.APIGenerator
         """
@@ -7607,8 +7611,8 @@ class DataSite(APISite):
                 del kwargs['site']
 
         parameters = dict(search=search, language=language, **kwargs)
-        gen = api.APIGenerator('wbsearchentities', data_name='search',
-                               site=self, parameters=parameters)
-        if limit is not None:
-            gen.set_maximum_items(limit)
+        gen = self._generator(api.APIGenerator,
+                              type_arg='wbsearchentities',
+                              data_name='search',
+                              total=total, parameters=parameters)
         return gen

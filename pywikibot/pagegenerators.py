@@ -14,7 +14,7 @@ These parameters are supported to specify which pages titles to print:
 &params;
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -2752,7 +2752,7 @@ def WikibaseSearchItemPageGenerator(text, language=None, total=None, site=None):
         language = site.lang
     repo = site.data_repository()
 
-    data = repo.search_entities(text, language, limit=total)
+    data = repo.search_entities(text, language, total=total)
     for item in data:
         yield pywikibot.ItemPage(repo, item['id'])
 
