@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Interface to Mediawiki's api.php."""
 #
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -37,8 +37,8 @@ from pywikibot.exceptions import (
     Server504Error, Server414Error, FatalServerError, NoUsername, Error
 )
 from pywikibot.tools import (
-    MediaWikiVersion, deprecated, itergroup, ip, PY2, getargspec,
-    UnicodeType
+    MediaWikiVersion, deprecated, deprecated_args, itergroup, ip, PY2,
+    getargspec, UnicodeType
 )
 from pywikibot.tools.formatter import color_format
 
@@ -2332,25 +2332,7 @@ class CachedRequest(Request):
         return self._data
 
 
-class _RequestWrapper(object):
-
-    """A wrapper class to handle the usage of the C{parameters} parameter."""
-
-    def _clean_kwargs(self, kwargs, **mw_api_args):
-        """Clean kwargs, define site and request class."""
-        if 'site' not in kwargs:
-            warn('{0} invoked without a site'.format(self.__class__.__name__),
-                 RuntimeWarning, 3)
-            kwargs['site'] = pywikibot.Site()
-        assert(not hasattr(self, 'site') or self.site == kwargs['site'])
-        self.site = kwargs['site']
-        self.request_class = kwargs['site']._request_class(kwargs)
-        kwargs = self.request_class.clean_kwargs(kwargs)
-        kwargs['parameters'].update(mw_api_args)
-        return kwargs
-
-
-class APIGenerator(_RequestWrapper):
+class APIGenerator(object):
 
     """Iterator that handle API responses containing lists.
 
@@ -2360,8 +2342,8 @@ class APIGenerator(_RequestWrapper):
     after iterating that many values.
     """
 
-    def __init__(self, action, continue_name='continue', limit_name='limit',
-                 data_name='data', **kwargs):
+    @deprecated_args(continue_name=None)
+    def __init__(self, action, limit_name='limit', data_name='data', **kwargs):
         """
         Construct an APIGenerator object.
 
@@ -2376,33 +2358,82 @@ class APIGenerator(_RequestWrapper):
         @type limit_name: str
         @param data_name: Name of the data in API response.
         @type data_name: str
+        @ivar limit: total amount of items yielded by this iterator
+        @type limit: int
+        @ivar query_limit: max amount of items retrieved by api per step
+        @type query_limit: int
         """
-        kwargs = self._clean_kwargs(kwargs, action=action)
+        if not hasattr(self, 'site'):
+            kwargs = self._clean_kwargs(kwargs, action=action)
 
-        self.continue_name = continue_name
+        if MediaWikiVersion(self.site.version()) < MediaWikiVersion('1.21'):
+            self.continue_name = 'query-continue'
+        else:
+            self.continue_name = 'continue'
+
         self.limit_name = limit_name
         self.data_name = data_name
 
-        self.query_increment = 50
+        self.query_limit = 50
         self.limit = None
+        self.api_limit = None
+
         self.starting_offset = kwargs['parameters'].pop(self.continue_name, 0)
         self.request = self.request_class(**kwargs)
         self.request[self.limit_name] = self.query_increment
+
+    @property
+    @deprecated('query_limit')
+    def query_increment(self):
+        """
+        Get query_limit.
+
+        DEPRECATED: Use query_limit instead.
+        """
+        return self.query_limit
+
+    @query_increment.setter
+    @deprecated('query_limit')
+    def query_increment(self, value):
+        """
+        Set query_limit.
+
+        DEPRECATED: Use query_limit instead.
+        """
+        self.query_limit = value
+
+    def _clean_kwargs(self, kwargs, **mw_api_args):
+        """Clean kwargs, define site and request class."""
+        if 'site' not in kwargs:
+            warn('{0} invoked without a site'.format(self.__class__.__name__),
+                 RuntimeWarning, 3)
+            kwargs['site'] = pywikibot.Site()
+        assert(not hasattr(self, 'site') or self.site == kwargs['site'])
+        self.site = kwargs['site']
+        self.request_class = kwargs['site']._request_class(kwargs)
+        kwargs = self.request_class.clean_kwargs(kwargs)
+        kwargs['parameters'].update(mw_api_args)
+        return kwargs
 
     def set_query_increment(self, value):
         """
         Set the maximum number of items to be retrieved per API query.
 
-        If not called, the default is 50.
+        If not called, the default is to ask for "max" items and let the
+        API decide how many to send.
 
         @param value: The value of maximum number of items to be retrieved
             per API request to set.
         @type value: int
         """
-        self.query_increment = int(value)
-        self.request[self.limit_name] = self.query_increment
+        limit = int(value)
+        # don't update if limit is greater than maximum allowed by API
+        if self.api_limit is None:
+            self.query_limit = limit
+        else:
+            self.query_limit = min(self.api_limit, limit)
         pywikibot.debug(u"%s: Set query_increment to %i."
-                        % (self.__class__.__name__, self.query_increment),
+                        % (self.__class__.__name__, self.query_limit),
                         _logger)
 
     def set_maximum_items(self, value):
@@ -2412,15 +2443,16 @@ class APIGenerator(_RequestWrapper):
         If not called, most queries will continue as long as there is
         more data to be retrieved from the API.
 
+        If set to -1 (or any negative value), the "limit" parameter will be
+        omitted from the request. For some request types (such as
+        prop=revisions), this is necessary to signal that only current
+        revision is to be returned.
+
         @param value: The value of maximum number of items to be retrieved
             in total to set.
         @type value: int
         """
         self.limit = int(value)
-        if self.limit < self.query_increment:
-            self.request[self.limit_name] = self.limit
-            pywikibot.debug(u"%s: Set request item limit to %i"
-                            % (self.__class__.__name__, self.limit), _logger)
         pywikibot.debug(u"%s: Set limit (maximum_items) to %i."
                         % (self.__class__.__name__, self.limit), _logger)
 
@@ -2431,6 +2463,7 @@ class APIGenerator(_RequestWrapper):
         """
         offset = self.starting_offset
         n = 0
+        self.request[self.limit_name] = min(self.query_limit, self.limit)
         while True:
             self.request[self.continue_name] = offset
             pywikibot.debug(u"%s: Request: %s" % (self.__class__.__name__,
@@ -2456,7 +2489,7 @@ class APIGenerator(_RequestWrapper):
                 break
 
 
-class QueryGenerator(_RequestWrapper):
+class QueryGenerator(APIGenerator):
 
     """Base class for iterators that handle responses to API action=query.
 
@@ -2569,38 +2602,6 @@ class QueryGenerator(_RequestWrapper):
         #     "templates":{"tlcontinue":"310820|828|Namespace_detect"}}
         # self.continuekey is a list
         self.continuekey = self.modules
-
-    def set_query_increment(self, value):
-        """Set the maximum number of items to be retrieved per API query.
-
-        If not called, the default is to ask for "max" items and let the
-        API decide how many to send.
-
-        """
-        limit = int(value)
-
-        # don't update if limit is greater than maximum allowed by API
-        if self.api_limit is None:
-            self.query_limit = limit
-        else:
-            self.query_limit = min(self.api_limit, limit)
-        pywikibot.debug(u"%s: Set query_limit to %i."
-                        % (self.__class__.__name__, self.query_limit),
-                        _logger)
-
-    def set_maximum_items(self, value):
-        """Set the maximum number of items to be retrieved from the wiki.
-
-        If not called, most queries will continue as long as there is
-        more data to be retrieved from the API.
-
-        If set to -1 (or any negative value), the "limit" parameter will be
-        omitted from the request. For some request types (such as
-        prop=revisions), this is necessary to signal that only current
-        revision is to be returned.
-
-        """
-        self.limit = int(value)
 
     def _update_limit(self):
         """Set query limit for self.module based on api response."""
