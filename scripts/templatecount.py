@@ -10,6 +10,18 @@ Syntax: python templatecount.py command [arguments]
 
 Command line options:
 
+-all          Counts the number of times all templates are transcluded and tag
+              the result to a given page
+
+-limit:<num>  It only displays <num> templates with the highest count of
+              transclusions. Without this option all templates will be given.
+              (For -all option only)
+
+-min:<num>    It only displays templates with more than <num> transclusions.
+              Default is 500. (For -all option only)
+
+-start:<str>  Start counting templates here. (For -all option only)
+
 -count        Counts the number of times each template (passed in as an
               argument) is transcluded.
 
@@ -40,9 +52,13 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
+from collections import defaultdict
 import datetime
 
 import pywikibot
+from pywikibot import pagegenerators as pg
+from pywikibot.site import Namespace
+from pywikibot.tools import StringTypes
 
 templates = ['ref', 'note', 'ref label', 'note label', 'reflist']
 
@@ -126,6 +142,54 @@ class TemplateCountRobot(object):
         return templateDict
 
     @staticmethod
+    def count_all_templates(namespaces, limit=None, minimum=500, start='!'):
+        """
+        Display number of transclusions for all templates.
+
+        Displays the number of transcluded page in the given 'namespaces'
+        for each template which has more than 'minimum' transclusions.
+        Only show topmost 'limit' templates. Exclude subpage templates.
+
+        @param namespaces: list of namespace numbers
+        @type namespaces: list
+        @param limit: maximum amount of templates to be displayed
+        @type limit: int
+        @param minimum: minimum number of transclusions needed to be showed
+        @type minimum: int
+        """
+        templates = pg.AllpagesPageGenerator(start=start,
+                                             namespace=Namespace.TEMPLATE,
+                                             includeredirects=False)
+        templates = pg.RegexFilterPageGenerator(templates, '.*/', inverse=True)
+        gen = TemplateCountRobot.template_dict_generator(templates, namespaces)
+        count = 0
+        template_dict = defaultdict(list)
+        for template, transcludingArray in gen:
+            transcluded = len(transcludingArray)
+            if transcluded >= minimum:
+                count += 1
+                if limit is not None and count > limit:
+                    removed = template_dict.pop(minimum)
+                    count -= len(removed)
+                pywikibot.output('Add: {0} with {1} references'
+                                 ''.format(template, transcluded))
+                template_dict[transcluded].append(template.title())
+                minimum = min(template_dict.keys())
+
+        pywikibot.stdout('\nNumber of transclusions per template')
+        pywikibot.stdout('-' * 36)
+        dict_keys = template_dict.keys()
+        dict_keys.sort(reverse=True)
+        i = 0
+        for key in dict_keys:
+            for item in template_dict[key]:
+                i += 1
+                pywikibot.output('%5d - %5d: %-10s' % (i, key, item),
+                                 toStdout=True)
+        pywikibot.stdout('Report generated on {0}'
+                         ''.format(datetime.datetime.utcnow().isoformat()))
+
+    @staticmethod
     def template_dict_generator(templates, namespaces):
         """
         Yield transclusions of each template in 'templates'.
@@ -145,7 +209,9 @@ class TemplateCountRobot(object):
         mytpl = mysite.namespaces.TEMPLATE
         for template in templates:
             transcludingArray = []
-            gen = pywikibot.Page(mysite, template, ns=mytpl).getReferences(
+            if isinstance(template, StringTypes):
+                template = pywikibot.Page(mysite, template, ns=mytpl)
+            gen = template.getReferences(
                 namespaces=namespaces, onlyTemplateInclusion=True)
             for page in gen:
                 transcludingArray.append(page)
@@ -164,15 +230,25 @@ def main(*args):
     operation = None
     argsList = []
     namespaces = []
+    limit = None
+    minimum = 500
+    start = '!'
 
     for arg in pywikibot.handle_args(args):
-        if arg in ('-count', '-list'):
+        arg, sep, value = arg.partition(':')
+        if arg in ('-all', '-count', '-list'):
             operation = arg[1:]
-        elif arg.startswith('-namespace:'):
+        elif arg == '-limit':
+            limit = int(value)
+        elif arg == '-min':
+            minimum = int(value)
+        elif arg == '-start':
+            start = value
+        elif arg == '-namespace':
             try:
-                namespaces.append(int(arg[len('-namespace:'):]))
+                namespaces.append(int(value))
             except ValueError:
-                namespaces.append(arg[len('-namespace:'):])
+                namespaces.append(value)
         else:
             argsList.append(arg)
 
@@ -183,14 +259,15 @@ def main(*args):
     robot = TemplateCountRobot()
     if not argsList:
         argsList = templates
-
-    if 'reflist' in argsList:
+    if 'reflist' in argsList or operation == 'all':
         pywikibot.output(
-            u'NOTE: it will take a long time to count "reflist".')
+            'NOTE: it will take a long time to count {0}.'
+            ''.format('all templates' if operation == 'all' else '"reflist"'))
+        labels = [('yes', 'y'), ('no', 'n')]
+        if operation != 'all':
+            labels.append(('skip', 's'))
         choice = pywikibot.input_choice(
-            u'Proceed anyway?',
-            [('yes', 'y'), ('no', 'n'), ('skip', 's')], 'y',
-            automatic_quit=False)
+            'Proceed anyway?', labels, 'y', automatic_quit=False)
         if choice == 's':
             argsList.remove('reflist')
         elif choice == 'n':
@@ -200,6 +277,8 @@ def main(*args):
         robot.countTemplates(argsList, namespaces)
     elif operation == "list":
         robot.listTemplates(argsList, namespaces)
+    elif operation == 'all':
+        robot.count_all_templates(namespaces, limit, minimum, start)
 
 if __name__ == "__main__":
     main()
