@@ -3610,8 +3610,13 @@ class APISite(BaseSite):
                 % category.title())
         cmtitle = category.title(withSection=False).encode(self.encoding())
         cmargs = dict(type_arg="categorymembers",
-                      gcmtitle=cmtitle,
-                      gcmprop="ids|title|sortkey")
+                      gcmtitle=cmtitle)
+        cmprop = ['ids', 'title']
+        if MediaWikiVersion(self.version()) < MediaWikiVersion('1.17'):
+            cmprop.append('sortkey')
+        else:
+            cmprop.append('sortkeyprefix')
+        cmargs['gcmprop'] = cmprop
         if sortby in ["sortkey", "timestamp"]:
             cmargs["gcmsort"] = sortby
         elif sortby:
@@ -3687,12 +3692,18 @@ class APISite(BaseSite):
             raise ValueError("categorymembers: "
                              "invalid combination of 'sortby' and 'endtime'")
         if startsort and sortby != "timestamp":
-            cmargs["gcmstartsortkey"] = startsort
+            if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.18'):
+                cmargs['gcmstartsortkeyprefix'] = startsort
+            else:
+                cmargs['gcmstartsortkey'] = startsort
         elif startsort:
             raise ValueError("categorymembers: "
                              "invalid combination of 'sortby' and 'startsort'")
         if endsort and sortby != "timestamp":
-            cmargs["gcmendsortkey"] = endsort
+            if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.18'):
+                cmargs['gcmendsortkeyprefix'] = endsort
+            else:
+                cmargs['gcmendsortkey'] = endsort
         elif endsort:
             raise ValueError("categorymembers: "
                              "invalid combination of 'sortby' and 'endsort'")
