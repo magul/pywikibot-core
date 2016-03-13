@@ -5852,8 +5852,8 @@ class APISite(BaseSite):
     @deprecate_arg('imagepage', 'filepage')
     def upload(self, filepage, source_filename=None, source_url=None,
                comment=None, text=None, watch=False, ignore_warnings=False,
-               chunk_size=0, _file_key=None, _offset=0, _verify_stash=None,
-               report_success=None):
+               chunk_size=0, async=False, _file_key=None, _offset=0,
+               _verify_stash=None, report_success=None):
         """
         Upload a file to the wiki.
 
@@ -5884,6 +5884,9 @@ class APISite(BaseSite):
             will only upload in chunks, if the version number is 1.20 or higher
             and the chunk size is positive but lower than the file size.
         @type chunk_size: int
+        @param async: Make potentially large file operations asynchronous
+            on the server side when possible.
+        @type async: bool
         @param _file_key: Reuses an already uploaded file using the filekey. If
             None (default) it will upload the file.
         @type _file_key: str or None
@@ -5978,6 +5981,7 @@ class APISite(BaseSite):
         file_page_title = filepage.title(withNamespace=False)
         file_size = None
         offset = _offset
+        async = async and MediaWikiVersion(self.version()) >= MediaWikiVersion('1.21')
         # make sure file actually exists
         if source_filename:
             if os.path.isfile(source_filename):
@@ -6052,7 +6056,7 @@ class APISite(BaseSite):
             final_request = self._simple_request(action='upload', token=token,
                                                  filename=file_page_title,
                                                  comment=comment, text=text,
-                                                 filekey=_file_key)
+                                                 async=async, filekey=_file_key)
         elif source_filename:
             # TODO: Dummy value to allow also Unicode names, see bug T75661
             mime_filename = 'FAKE-NAME'
@@ -6070,24 +6074,37 @@ class APISite(BaseSite):
                     if offset > 0:
                         pywikibot.log('Continuing upload from byte '
                                       '{0}'.format(offset))
+
+                    poll = False
                     while True:
-                        f.seek(offset)
-                        chunk = f.read(chunk_size)
-                        req = self._request(
-                            throttle=throttle, mime=True,
-                            parameters={
-                                'action': 'upload',
-                                'token': token,
-                                'stash': True,
-                                'filesize': filesize,
-                                'offset': offset,
-                                'filename': file_page_title,
-                                'ignorewarnings': ignore_all_warnings})
-                        req.mime_params['chunk'] = (chunk,
-                                                    ("application", "octet-stream"),
-                                                    {'filename': mime_filename})
-                        if _file_key:
-                            req['filekey'] = _file_key
+                        if poll:
+                            # run a poll; not possible in first iteration
+                            assert _file_key
+                            req = self._simple_request(
+                                action='upload',
+                                token=token,
+                                filekey=_file_key,
+                                checkstatus=True)
+                        else:
+                            f.seek(offset)
+                            chunk = f.read(chunk_size)
+                            req = self._request(
+                                throttle=throttle, mime=True,
+                                parameters={
+                                    'action': 'upload',
+                                    'token': token,
+                                    'stash': True,
+                                    'filesize': filesize,
+                                    'offset': offset,
+                                    'filename': file_page_title,
+                                    'async': async,
+                                    'ignorewarnings': ignore_all_warnings})
+                            req.mime_params['chunk'] = (chunk,
+                                                        ("application", "octet-stream"),
+                                                        {'filename': mime_filename})
+                            if _file_key:
+                                req['filekey'] = _file_key
+
                         try:
                             data = req.submit()['upload']
                             self._uploaddisabled = False
@@ -6098,8 +6115,10 @@ class APISite(BaseSite):
                             raise error
                         if 'nochange' in data:  # in simulation mode
                             break
-                        _file_key = data['filekey']
-                        if 'warnings' in data and not ignore_all_warnings:
+                        # Polls may not contain file key in response
+                        _file_key = data.get('filekey', _file_key)
+                        if data['result'] == 'Warning':
+                            assert 'warnings' in data and not ignore_all_warnings
                             if callable(ignore_warnings):
                                 restart = False
                                 if 'offset' not in data:
@@ -6125,27 +6144,37 @@ class APISite(BaseSite):
                                     continue
                                 else:
                                     return False
+
                             result = data
                             if 'offset' not in result:
                                 result['offset'] = 0
                             break
-                        throttle = False
-                        if 'offset' in data:
-                            new_offset = int(data['offset'])
-                            if offset + len(chunk) != new_offset:
-                                pywikibot.log('Old offset: {0}; Returned '
-                                              'offset: {1}; Chunk size: '
-                                              '{2}'.format(offset, new_offset,
-                                                           len(chunk)))
-                                pywikibot.warning('Unexpected offset.')
-                            offset = new_offset
-                        else:
-                            pywikibot.warning('Offset was not supplied.')
-                            offset += len(chunk)
-                        if data['result'] != 'Continue':  # finished
+                        elif data['result'] == 'Continue':
+                            throttle = False
+                            poll = False
+                            if 'offset' in data:
+                                new_offset = int(data['offset'])
+                                if offset + len(chunk) != new_offset:
+                                    pywikibot.log('Old offset: {0}; Returned '
+                                                  'offset: {1}; Chunk size: '
+                                                  '{2}'.format(offset, new_offset,
+                                                               len(chunk)))
+                                    pywikibot.warning('Unexpected offset.')
+                                offset = new_offset
+                            else:
+                                pywikibot.warning('Offset was not supplied.')
+                                offset += len(chunk)
+                        elif data['result'] == 'Poll':
+                            poll = True
+                            pywikibot.log('Waiting for server to '
+                                          'assemble chunks.')
+                        elif data['result'] == 'Success':  # finished
                             pywikibot.log('Finished uploading last chunk.')
                             final_request['filekey'] = _file_key
+                            final_request['async'] = async
                             break
+                        else:
+                            raise Error("Unrecognized result: %s" % data['result'])
                 else:  # not chunked upload
                     if _file_key:
                         final_request['filekey'] = _file_key
@@ -6166,64 +6195,85 @@ class APISite(BaseSite):
             final_request = self._simple_request(
                 action='upload', filename=file_page_title,
                 url=source_url, comment=comment, text=text, token=token)
-        if not result:
-            final_request['watch'] = watch
-            final_request['ignorewarnings'] = ignore_all_warnings
-            try:
-                result = final_request.submit()
-                self._uploaddisabled = False
-            except api.APIError as error:
-                # TODO: catch and process foreseeable errors
-                if error.code == u'uploaddisabled':
-                    self._uploaddisabled = True
-                raise error
-            result = result["upload"]
-            pywikibot.debug(result, _logger)
 
-        if 'warnings' in result and not ignore_all_warnings:
-            if 'filekey' in result:
-                _file_key = result['filekey']
-            elif 'sessionkey' in result:
-                # TODO: Probably needs to be reflected in the API call above
-                _file_key = result['sessionkey']
-                pywikibot.warning('Using sessionkey instead of filekey.')
-            else:
-                _file_key = None
-                pywikibot.warning('No filekey defined.')
-            if not report_success:
-                if 'offset' not in result:
-                    result['offset'] = True
-                if ignore_warnings(create_warnings_list(result)):
-                    return self.upload(
-                        filepage, source_filename, source_url, comment, text,
-                        watch, True, chunk_size, _file_key,
-                        result['offset'], report_success=False)
+        while True:
+            if not result:
+                final_request['watch'] = watch
+                final_request['ignorewarnings'] = ignore_all_warnings
+                try:
+                    result = final_request.submit()
+                    self._uploaddisabled = False
+                except api.APIError as error:
+                    # TODO: catch and process foreseeable errors
+                    if error.code == u'uploaddisabled':
+                        self._uploaddisabled = True
+                    raise error
+                result = result["upload"]
+                pywikibot.debug(result, _logger)
+
+            if "result" not in result:
+                raise Error(u"Upload: unrecognized response: %s" % result)
+            elif result['result'] == 'Warning':
+                assert 'warnings' in result and not ignore_all_warnings
+                if 'filekey' in result:
+                    _file_key = result['filekey']
+                elif 'sessionkey' in result:
+                    # TODO: Probably needs to be reflected in the API call above
+                    _file_key = result['sessionkey']
+                    pywikibot.warning('Using sessionkey instead of filekey.')
                 else:
-                    return False
-            warn('When ignore_warnings=False in APISite.upload will change '
-                 'from raising an UploadWarning into behaving like being a '
-                 'callable returning False.', DeprecationWarning, 3)
-            if len(result['warnings']) > 1:
-                warn('The upload returned {0} warnings: '
-                     '{1}'.format(len(result['warnings']),
-                                  ', '.join(result['warnings'])),
-                     UserWarning, 3)
-            warning = list(result["warnings"].keys())[0]
-            message = result["warnings"][warning]
-            raise api.UploadWarning(warning, upload_warnings[warning]
-                                    % {'msg': message},
-                                    file_key=_file_key,
-                                    offset=result.get('offset', False))
-        elif "result" not in result:
-            pywikibot.output(u"Upload: unrecognized response: %s" % result)
-        if result["result"] == "Success":
-            if report_success:
-                pywikibot.output(u"Upload successful.")
-            # If we receive a nochange, that would mean we're in simulation
-            # mode, don't attempt to access imageinfo
-            if "nochange" not in result:
-                filepage._load_file_revisions([result["imageinfo"]])
-        return result['result'] == 'Success'
+                    _file_key = None
+                    pywikibot.warning('No filekey defined.')
+                if not report_success:
+                    if 'offset' not in result:
+                        result['offset'] = True
+                    if ignore_warnings(create_warnings_list(result)):
+                        return self.upload(
+                            filepage, source_filename, source_url, comment, text,
+                            watch, True, chunk_size, async, _file_key,
+                            result['offset'], report_success=False)
+                    else:
+                        return False
+                warn('When ignore_warnings=False in APISite.upload will change '
+                     'from raising an UploadWarning into behaving like being a '
+                     'callable returning False.', DeprecationWarning, 3)
+                if len(result['warnings']) > 1:
+                    warn('The upload returned {0} warnings: '
+                         '{1}'.format(len(result['warnings']),
+                                      ', '.join(result['warnings'])),
+                         UserWarning, 3)
+                warning = list(result["warnings"].keys())[0]
+                message = result["warnings"][warning]
+                raise api.UploadWarning(warning, upload_warnings[warning]
+                                        % {'msg': message},
+                                        file_key=_file_key,
+                                        offset=result.get('offset', False))
+            elif result["result"] == "Poll":
+                # Polling is meaningless without a file key
+                assert _file_key
+                pywikibot.log('Waiting for upload to be published.')
+                result = None
+                final_request = self._simple_request(
+                    action='upload',
+                    token=token,
+                    filekey=_file_key,
+                    checkstatus=True)
+                continue
+            elif result["result"] == "Success":
+                if report_success:
+                    pywikibot.output(u"Upload successful.")
+                # If we receive a nochange, that would mean we're in simulation
+                # mode, don't attempt to access imageinfo
+                if "nochange" not in result:
+                    filepage._load_file_revisions([result["imageinfo"]])
+                return True
+            else:
+                raise Error("Unrecognized result: %s" % data['result'])
+
+            # Fail-safe: Don't rerun final_request unless explicitly continued.
+            # If the code reaches here, the result isn't 'Success' anyways,
+            # so returning False.
+            return False
 
     @deprecated_args(number='total',
                      repeat=None,
