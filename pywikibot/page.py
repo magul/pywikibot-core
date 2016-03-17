@@ -4186,6 +4186,7 @@ class PropertyPage(WikibasePage, Property):
         if force or not hasattr(self, '_content'):
             WikibasePage.get(self, force)
         self._type = self._content['datatype']
+        return WikibasePage.get(self)
 
     def newClaim(self, *args, **kwargs):
         """
