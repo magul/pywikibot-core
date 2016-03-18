@@ -203,7 +203,11 @@ parameterHelp = u"""\
 
 -subpage:n        Filters pages to only those that have depth n
                   i.e. a depth of 0 filters out all pages that are subpages, and
-                  a depth of 1 filters out all pages that are subpages of subpages.
+                  a depth of 1 filters out all pages that are subpages of
+                  subpages. Some namespace doesn't have suppages. To filter
+                  'fake' subpages you may use -depth-1 for the filter value i.e.
+                  -1 for the depth of 0 which filters all quasi-subpages,
+                  -2 filters all apparently subpages of quasi-subpages.
 
 -titleregex       A regular expression that needs to match the article title
                   otherwise the page won't be returned.
@@ -1475,15 +1479,23 @@ def SubpageFilterGenerator(generator, max_depth=0, show_filtered=False):
 
     @param generator: A generator object
     @type generator: any generator or iterator
-    @param max_depth: Max depth of subpages to yield, at least zero
+    @param max_depth: Max depth of subpages to yield, at least zero.
+        If max_depth < 0 it uses abs(max_depth)-1 and forces 'fake' subpage
+        to be filtered if subpages isn't given for page's namespace.
     @type max_depth: int
     @param show_filtered: Output a message for each page not yielded
     @type show_filtered: bool
+    @param force: Also filter 'fake' subpages if suppages is not set for
+        this namespace.
+    @type force: bool
     """
-    assert max_depth >= 0, 'Max subpage depth must be at least 0'
-
     for page in generator:
-        if page.depth <= max_depth:
+        depth = len(list(re.finditer('/', page.title())))
+        if not page._namespace_obj.subpages and max_depth >= 0:
+            depth = 0
+        elif max_depth < 0:
+            max_depth = -max_depth - 1
+        if depth <= max_depth:
             yield page
         else:
             if show_filtered:

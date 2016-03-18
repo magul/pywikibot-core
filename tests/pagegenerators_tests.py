@@ -326,6 +326,26 @@ class SubpageFilterGeneratorTestCase(TestCase):
         )
         self.assertPagelistTitles(gen, titles=expect_3, site=site)
 
+    def test_subpage_filter_force(self):
+        """Test SubpageFilterGenerator for no subpages."""
+        site = self.get_site()
+        test_cat = pywikibot.Category(site, 'Subpage testing')
+
+        gen = CategorizedPageGenerator(test_cat)
+        gen = pagegenerators.SubpageFilterGenerator(gen, -1)
+        expect_0 = tuple()
+        self.assertPagelistTitles(gen, titles=expect_0, site=site)
+
+        gen = CategorizedPageGenerator(test_cat)
+        gen = pagegenerators.SubpageFilterGenerator(gen, -4)
+        expect_3 = (
+            '/home/test',
+            'User:Sn1per/ProtectTest1/test',
+            'User:Sn1per/ProtectTest1/test/test',
+            'User:Sn1per/sandbox',
+        )
+        self.assertPagelistTitles(gen, titles=expect_3, site=site)
+
 
 class TestRepeatingGenerator(RecentChangesTestCase):
 

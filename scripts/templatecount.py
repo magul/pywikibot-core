@@ -160,7 +160,8 @@ class TemplateCountRobot(object):
         templates = pg.AllpagesPageGenerator(start=start,
                                              namespace=Namespace.TEMPLATE,
                                              includeredirects=False)
-        templates = pg.RegexFilterPageGenerator(templates, '.*/', inverse=True)
+        templates = pg.SubpageFilterGenerator(templates, max_depth=-1,
+                                              show_filtered=True)
         gen = TemplateCountRobot.template_dict_generator(templates, namespaces)
         count = 0
         template_dict = defaultdict(list)
