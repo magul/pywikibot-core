@@ -22,7 +22,7 @@ Command line options:
                wikipedia, user, etc. namespaces.
 """
 # (C) Daniel Herding, 2007
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -56,20 +56,13 @@ class MisspellingRobot(DisambiguationRobot):
 
     """Spelling bot."""
 
-    misspellingTemplate = {
-        'de': ('Falschschreibung', 'Obsolete Schreibung'),
+    misspellingTemplates = {
+        'wikipedia:de': ('Falschschreibung', 'Obsolete Schreibung'),
     }
 
     # Optional: if there is a category, one can use the -start
     # parameter.
-    misspellingCategory = {
-        'da': u'Omdirigeringer af fejlstavninger',  # only contains date redirects at the moment
-        'de': ('Kategorie:Wikipedia:Falschschreibung',
-               'Kategorie:Wikipedia:Obsolete Schreibung'),
-        'en': u'Redirects from misspellings',
-        'hu': u'Átirányítások hibás névről',
-        'nl': u'Categorie:Wikipedia:Redirect voor spelfout',
-    }
+    misspellingCategories = ('Q8644265', 'Q9195708')
 
     def __init__(self, always, firstPageTitle, main_only):
         """Constructor."""
@@ -83,18 +76,18 @@ class MisspellingRobot(DisambiguationRobot):
 
         @rtype: generator
         """
-        mylang = self.site.code
-        if mylang in self.misspellingCategory:
-            categories = self.misspellingCategory[mylang]
-            if isinstance(categories, basestring):
-                categories = (categories, )
+        categories = []
+        for item in self.misspellingCategories:
+            cat = self.site.page_from_repository(item)
+            if cat:
+                categories.append(pywikibot.Category(cat))
+        if categories:
             generators = (
                 pagegenerators.CategorizedPageGenerator(
-                    pywikibot.Category(self.site, misspellingCategoryTitle),
-                    recurse=True, start=firstPageTitle)
-                for misspellingCategoryTitle in categories)
-        elif mylang in self.misspellingTemplate:
-            templates = self.misspellingTemplate[mylang]
+                    cat, recurse=True, start=firstPageTitle)
+                for cat in categories)
+        elif self.site.sitename in self.misspellingTemplates:
+            templates = self.misspellingTemplates[self.site.sitename]
             if isinstance(templates, basestring):
                 templates = (templates, )
             generators = (
@@ -127,10 +120,12 @@ class MisspellingRobot(DisambiguationRobot):
         if disambPage.isRedirectPage():
             self.alternatives.append(disambPage.getRedirectTarget().title())
             return True
-        if self.misspellingTemplate.get(disambPage.site.code) is not None:
+        if self.misspellingTemplates.get(disambPage.site.sitename) is not None:
             for template, params in disambPage.templatesWithParams():
-                if (template.title(withNamespace=False) ==
-                        self.misspellingTemplate[disambPage.site.code]):
+                templates = self.misspellingTemplates[disambPage.site.sitename]
+                if isinstance(templates, basestring):
+                    templates = (templates, )
+                if template.title(withNamespace=False) in templates:
                     # The correct spelling is in the last paramter.
                     correctSpelling = params[-1]
                     # On de.wikipedia, there are some cases where the
