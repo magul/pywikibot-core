@@ -865,7 +865,8 @@ class CosmeticChangesToolkit(object):
     def fixArabicLetters(self, text):
         """Fix arabic and persian letters."""
         if self.site.code not in ['ckb', 'fa']:
-            return text
+            return
+
         exceptions = [
             'gallery',
             'file',
@@ -882,16 +883,9 @@ class CosmeticChangesToolkit(object):
             'startspace',
             'inputbox',
         ]
-        # FIXME: use textlib.NON_LATIN_DIGITS
         # valid digits
-        digits = {
-            'ckb': u'٠١٢٣٤٥٦٧٨٩',
-            'fa': u'۰۱۲۳۴۵۶۷۸۹',
-        }
+        digits = textlib.NON_LATIN_DIGITS
         faChrs = u'ءاآأإئؤبپتثجچحخدذرزژسشصضطظعغفقکگلمنوهیةيك' + digits['fa']
-        new = digits.pop(self.site.code)
-        # This only works if there are only two items in digits dict
-        old = digits[list(digits.keys())[0]]
         # not to let bot edits in latin content
         exceptions.append(re.compile(u"[^%(fa)s] *?\"*? *?, *?[^%(fa)s]"
                                      % {'fa': faChrs}))
@@ -912,18 +906,44 @@ class CosmeticChangesToolkit(object):
 
         return text
 
-        # FIXME: split this function into two.
-        # replace persian/arabic digits
-        # deactivated due to bug 55185
+    def fix_arabic_digits(self, text):
+        """Replace Persian/Arabic digits."""
+        # FIXME: Deactivated due to T57185
+        if self.site.code not in ['ckb', 'fa']:
+            return
+
+        exceptions = [
+            'gallery',
+            'file',
+            'hyperlink',
+            'interwiki',
+            # FIXME: but changes letters inside wikilinks
+            # 'link',
+            'math',
+            'pre',
+            'template',
+            'timeline',
+            'ref',
+            'source',
+            'startspace',
+            'inputbox',
+            'table',
+        ]
+
+        new = textlib.NON_LATIN_DIGITS[self.site.code]
+        old = textlib.NON_LATIN_DIGITS[
+            'fa' if self.site.code == 'ckb' else 'ckb']
+
+        # Fix alternative Arabic digits
         for i in range(0, 10):
             text = textlib.replaceExcept(text, old[i], new[i], exceptions)
+
         # do not change digits in class, style and table params
         pattern = re.compile(r'\w+=(".+?"|\d+)', re.UNICODE)
         exceptions.append(pattern)
         # do not change digits inside html-tags
         pattern = re.compile(u'<[/]*?[^</]+?[/]*?>', re.UNICODE)
         exceptions.append(pattern)
-        exceptions.append('table')  # exclude tables for now
         # replace digits
         for i in range(0, 10):
             text = textlib.replaceExcept(text, str(i), new[i], exceptions)

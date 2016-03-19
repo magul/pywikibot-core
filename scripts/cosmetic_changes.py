@@ -64,6 +64,7 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
             'async': False,
             'summary': u'Robot: Cosmetic changes',
             'ignore': cosmetic_changes.CANCEL_ALL,
+            'experimental': False,
         })
         super(CosmeticChangesBot, self).__init__(**kwargs)
 
@@ -74,6 +75,14 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
         try:
             ccToolkit = cosmetic_changes.CosmeticChangesToolkit.from_page(
                 self.current_page, False, self.getOption('ignore'))
+
+            if self.getOption('experimental'):
+                ccToolkit.common_methods = ccToolkit.common_methods + (
+                    ccToolkit.translateMagicWords,
+                    ccToolkit.resolveHtmlEntities,
+                    ccToolkit.fix_arabic_digits,
+                )
+
             changedText = ccToolkit.change(self.current_page.get())
             if changedText is not False:
                 self.put_current(new_text=changedText,
@@ -109,6 +118,8 @@ def main(*args):
             options['always'] = True
         elif arg == '-async':
             options['async'] = True
+        elif arg == '-experimental':
+            options['experimental'] = True
         elif arg.startswith('-ignore:'):
             ignore_mode = arg[len('-ignore:'):].lower()
             if ignore_mode == 'method':

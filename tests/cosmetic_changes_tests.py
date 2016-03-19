@@ -216,9 +216,13 @@ class TestDryCosmeticChanges(TestCosmeticChanges):
 
     def test_fixArabicLetters(self):
         """Test fixArabicLetters."""
+        if self.site.code in ['fa', 'ckb']:
+            raise unittest.SkipTest('requires site code other than fa or ckb')
+
         text = '1234,كىي'
         # fixArabicLetters must not change text when site is not fa or ckb
-        self.assertEqual(text, self.cct.fixArabicLetters(text))
+        self.assertIsNone(self.cct.fixArabicLetters(text))
+        self.assertIsNone(self.cct.fix_arabic_digits(text))
 
 
 class TestLiveCosmeticChanges(TestCosmeticChanges):
@@ -340,7 +344,35 @@ class TestCosmeticChangesPersian(TestCosmeticChanges):
         self.assertEqual(self.cct.fixArabicLetters('كي'),
                          'کی')
 
-        # Once numbering fixes are enabled we can add tests.
+    def test_fix_arabic_digits(self):
+        """Test fix_arabic_digits."""
+        # Covert Sorani
+        self.assertEqual(self.cct.fix_arabic_digits('۰۱٦b'),
+                         '۰۱۶b')
+        # Covert Latin
+        self.assertEqual(self.cct.fix_arabic_digits('0123'),
+                         '۰۱۲۳')
+
+    def test_fix_arabic_digits_skip(self):
+        """Test fix_arabic_digits in HTML not replaced."""
+        self.assertEqual(self.cct.fix_arabic_digits('<span foo="0123"></span>'),
+                         '<span foo="0123"></span>')
+        self.assertEqual(self.cct.fix_arabic_digits('<h1>foo</h1>'),
+                         '<h1>foo</h1>')
+        self.assertEqual(self.cct.fix_arabic_digits('<ref>0123</ref>'),
+                         '<ref>0123</ref>')
+        self.assertEqual(self.cct.fix_arabic_digits('<table>0123</table>'),
+                         '<table>0123</table>')
+
+    @unittest.expectedFailure
+    def test_non_local_date(self):
+        """Test that dates with English names and digits are not modified."""
+        # FIXME: numbers that are part of dates should be converted to
+        # local dates or not modified at all
+        self.assertEqual(self.cct.fix_arabic_digits('September 22, 2003'),
+                         'September 22, 2003')
+        self.assertEqual(self.cct.fix_arabic_digits('22 September 2003'),
+                         '22 September 2003')
 
 if __name__ == '__main__':
     try:
