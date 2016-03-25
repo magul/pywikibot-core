@@ -3023,10 +3023,16 @@ class APISite(BaseSite):
             titles=title,
             redirects=True)
         result = query.submit()
-        if "query" not in result or "redirects" not in result["query"]:
+
+        if 'query' not in result:
             raise RuntimeError(
                 "getredirtarget: No 'redirects' found for page %s."
                 % title.encode(self.encoding()))
+        # sometimes page_isredirect(page) gives wrong result (True)
+        # when pages are retrieved from broken redirect special page.
+        if 'redirects' not in result['query']:
+            page._isredir = False
+            raise IsNotRedirectPage(page)
 
         redirmap = dict((item['from'],
                          {'title': item['to'],
