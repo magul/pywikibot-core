@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Tests for the Namespace class."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -73,6 +73,8 @@ class TestNamespaceObject(TestCase):
         self.assertTrue(all(isinstance(name, basestring)
                             for val in ns.values()
                             for name in val))
+        # test boolean
+        self.assertTrue(all(x for x in ns.values()))
 
         # Use a namespace object as a dict key
         self.assertEqual(ns[ns[6]], ns[6])
