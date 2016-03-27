@@ -294,13 +294,10 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
         """
         Obtain boolean method for Namepace class.
 
-        This method is implemented to be independent
-        from __len__ method.
-
-        @return: Return True like generic object class.
+        @return: Return False for Main namespace else True.
         @rtype: bool
         """
-        return True
+        return self.id != self.MAIN
 
     __bool__ = __nonzero__  # python 3 compatibility
 
@@ -535,7 +532,7 @@ class NamespacesDict(Mapping, SelfCallMixin):
             return self._namespaces[key]
         else:
             namespace = self.lookup_name(key)
-            if namespace:
+            if namespace is not None:
                 return namespace
 
         return super(NamespacesDict, self).__getitem__(key)
@@ -554,7 +551,7 @@ class NamespacesDict(Mapping, SelfCallMixin):
                 return self[0]
 
             namespace = self.lookup_name(attr)
-            if namespace:
+            if namespace is not None:
                 return namespace
 
         return self.__getattribute__(attr)
@@ -4305,7 +4302,7 @@ class APISite(BaseSite):
             legen.request["leend"] = end
         if reverse:
             legen.request["ledir"] = "newer"
-        if namespace:
+        if namespace is not None:
             legen.request["lenamespace"] = namespace
         if tag:
             # Supported in version 1.16+; earlier sites will cause APIError
