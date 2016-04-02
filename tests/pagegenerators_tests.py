@@ -593,6 +593,23 @@ class DryFactoryGeneratorTest(TestCase):
         gf = pagegenerators.GeneratorFactory(site=self.get_site())
         self.assertRaises(UnknownExtension, gf.handleArg, '-ql:2')
 
+    def test_predefined_namespace_single(self):
+        """Test one predefined namespace."""
+        gf = pagegenerators.GeneratorFactory(site=self.get_site(), ns=[2])
+        self.assertEqual(gf.namespaces, set([2]))
+
+    def test_predefined_namespaces_multi(self):
+        """Test predefined namespaces."""
+        gf = pagegenerators.GeneratorFactory(site=self.get_site(), ns=[2, 6])
+        self.assertEqual(gf.namespaces, set([2, 6]))
+
+    def test_predefined_namespace_immutable(self):
+        """Test immutable namespace predefined by constructor."""
+        gf = pagegenerators.GeneratorFactory(site=self.get_site(), ns=[2])
+        gf.handleArg('-ns:1,6')
+        self.assertIsInstance(gf.namespaces, frozenset)
+        self.assertEqual(gf.namespaces, set([2]))
+
 
 class TestItemClaimFilterPageGenerator(WikidataTestCase):
 

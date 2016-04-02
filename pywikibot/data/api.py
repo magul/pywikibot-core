@@ -2625,7 +2625,7 @@ class QueryGenerator(_RequestWrapper):
                            self.api_limit),
                         _logger)
 
-    def set_namespace(self, namespaces):
+    def set_namespace(self, namespaces, quiet=False):
         """Set a namespace filter on this query.
 
         @param namespaces: namespace identifiers to limit query results
@@ -2633,6 +2633,9 @@ class QueryGenerator(_RequestWrapper):
             or a single instance of those types.  May be a '|' separated
             list of namespace identifiers. An empty iterator clears any
             namespace restriction.
+        @param quiet: Don't show a warning if module does not support
+             a namespace parameter
+        @type quiet: bool
         @raises KeyError: a namespace identifier was not resolved
         @raises TypeError: a namespace identifier has an inappropriate
             type such as NoneType or bool, or more than one namespace
@@ -2642,8 +2645,9 @@ class QueryGenerator(_RequestWrapper):
         param = self.site._paraminfo.parameter('query+' + self.limited_module,
                                                'namespace')
         if not param:
-            pywikibot.warning(u'{0} module does not support a namespace '
-                              'parameter'.format(self.limited_module))
+            if not quiet:
+                pywikibot.warning(u'{0} module does not support a namespace '
+                                  'parameter'.format(self.limited_module))
             return
 
         if isinstance(namespaces, basestring):

@@ -363,7 +363,7 @@ class GeneratorFactory(object):
     # When not in intersect mode, _filter_unique could be:
     #   functools.partial(filter_unique, container=global_seen_list)
 
-    def __init__(self, site=None, positional_arg_name=None):
+    def __init__(self, site=None, positional_arg_name=None, namespaces=None):
         """
         Constructor.
 
@@ -372,9 +372,18 @@ class GeneratorFactory(object):
         @param positional_arg_name: generator to use for positional args,
             which do not begin with a hyphen
         @type positional_arg_name: basestring
+        @param namespaces: list of namespace numbers
+        @type namespaces: list
         """
         self.gens = []
-        self._namespaces = []
+        self._site = site
+        if namespaces is None:
+            self._namespaces = []
+            self.default_ns_setting = False
+        else:
+            self._namespaces = namespaces
+            self.namespaces  # change the storage to immutable
+            self.default_ns_setting = True
         self.limit = None
         self.qualityfilter_list = []
         self.articlefilter_list = []
@@ -383,7 +392,6 @@ class GeneratorFactory(object):
         self.catfilter_list = []
         self.intersect = False
         self.subpage_max_depth = None
-        self._site = site
         self._positional_arg_name = positional_arg_name
         self._sparql = None
 
@@ -439,7 +447,8 @@ class GeneratorFactory(object):
         for i in range(len(self.gens)):
             if isinstance(self.gens[i], pywikibot.data.api.QueryGenerator):
                 if self.namespaces:
-                    self.gens[i].set_namespace(self.namespaces)
+                    self.gens[i].set_namespace(
+                        self.namespaces, quiet=self.default_ns_setting)
                 if self.limit:
                     self.gens[i].set_maximum_items(self.limit)
             else:
@@ -753,7 +762,8 @@ class GeneratorFactory(object):
         elif arg == '-page':
             if not value:
                 value = pywikibot.input(u'What page do you want to use?')
-            gen = [pywikibot.Page(pywikibot.Link(value, self.site))]
+            ns = list(self.namespaces)[0] if len(self.namespaces) == 1 else 0
+            gen = [pywikibot.Page(pywikibot.Link(value, self.site, ns))]
         elif arg == '-uncatfiles':
             gen = UnCategorizedImageGenerator(site=self.site)
         elif arg == '-uncatcat':
