@@ -3905,7 +3905,9 @@ class APISite(BaseSite):
         """Iterate pages in a single namespace.
 
         @param start: Start at this title (page need not exist).
+        @type start: str
         @param prefix: Only yield pages starting with this string.
+        @type prefix: str
         @param namespace: Iterate pages from this (single) namespace
         @type namespace: int or Namespace.
         @param filterredir: if True, only yield redirects; if False (and not
@@ -3943,6 +3945,7 @@ class APISite(BaseSite):
             warn('The value "{0!r}" for "filterredir" is deprecated; use '
                  '{1} instead.'.format(old, filterredir), DeprecationWarning, 3)
 
+        assert isinstance(start, basestring), 'start parameter must be str type'
         apgen = self._generator(api.PageGenerator, type_arg="allpages",
                                 namespaces=namespace,
                                 gapfrom=start, total=total,

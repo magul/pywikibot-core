@@ -13,6 +13,8 @@ Everything that needs customisation is indicated by comments.
 
 This script understands the following command-line arguments:
 
+&params;
+
 -limit              The number of images to check (default: 80)
 
 -commons            The Bot will check if an image on Commons has the same name
@@ -31,22 +33,13 @@ This script understands the following command-line arguments:
 
 -sleep[:#]          Time in seconds between repeat runs (default: 30)
 
--time[:#]           The -time option is deprecated. Use -sleep instead.
-
 -wait[:#]           Wait x second before check the images (default: 0)
 
 -skip[:#]           The bot skip the first [:#] images (default: 0)
 
--start[:#]          Use allpages() as generator
-                    (it starts already from File:[:#])
+-regex[:#]          Use regex, must be used with -fromurl
 
--cat[:#]            Use a category as generator
-
--regex[:#]          Use regex, must be used with -url or -page
-
--page[:#]           Define the name of the wikipage where are the images
-
--url[:#]            Define the url where are the images
+-fromurl[:#]        Define the url where are the images
 
 -nologerror         If given, this option will disable the error that is risen
                     when the log is full.
@@ -97,10 +90,12 @@ import time
 import pywikibot
 
 from pywikibot import i18n
-from pywikibot import pagegenerators as pg
+from pywikibot import pagegenerators
 
+from pywikibot.comms.http import fetch
 from pywikibot.exceptions import NotEmailableError
 from pywikibot.family import Family
+from pywikibot.site import Namespace
 from pywikibot.tools import deprecated, StringTypes
 
 ###############################################################################
@@ -509,6 +504,10 @@ project_inserted = ['ar', 'commons', 'de', 'en', 'fa', 'ga', 'hu', 'it', 'ja',
 
 # END OF CONFIGURATION.
 
+docuReplacements = {
+    '&params;': pagegenerators.parameterHelp,
+}
+
 SETTINGS_REGEX = re.compile(r"""
 <-------\ ------->\n
 \*[Nn]ame\ ?=\ ?['"](.*?)['"]\n
@@ -626,7 +625,8 @@ class checkImagesBot(object):
             try:
                 resPutMex = self.tag_image(unver)
             except pywikibot.NoPage:
-                pywikibot.output(u"The page has been deleted! Skip!")
+                pywikibot.output(
+                    'The page does not exist on current site! Skip!')
                 break
             except pywikibot.EditConflict:
                 pywikibot.output(u"Edit conflict! Skip!")
@@ -670,7 +670,8 @@ class checkImagesBot(object):
         try:
             reportPageText = reportPageObject.get()
         except pywikibot.NoPage:
-            pywikibot.output(u'%s has been deleted...' % self.imageName)
+            pywikibot.output(
+                '{0} does not exist on current site...'.format(self.imageName))
             return
         # You can use this function also to find only the user that
         # has upload the image (FixME: Rewrite a bit this part)
@@ -1498,8 +1499,9 @@ class checkImagesBot(object):
         try:
             self.imageCheckText = self.image.get()
         except pywikibot.NoPage:
-            pywikibot.output(u"Skipping %s because it has been deleted."
-                             % self.imageName)
+            pywikibot.output(
+                'Skipping {0} because it does not exist on current site.'
+                ''.format(self.imageName))
             return
         except pywikibot.IsRedirectPage:
             pywikibot.output(u"Skipping %s because it's a redirect."
@@ -1586,159 +1588,135 @@ def main(*args):
     skip_number = 0  # How many images to skip before checking?
     waitTime = 0  # How many time sleep before the check?
     commonsActive = False  # Is there's an image with the same name at commons?
-    normal = False  # Check the new images or use another generator?
-    urlUsed = False  # Use the url-related function instead of the new-pages
-    regexGen = False  # Use the regex generator
+    default = False  # Default generator is new images
+    url = None  # Use the url-related function instead of the new-pages
+    regex = None  # Use the regex for url
     duplicatesActive = False  # Use the duplicate option
     duplicatesReport = False  # Use the duplicate-report option
     sendemailActive = False  # Use the send-email
     logFullError = True  # Raise an error when the log is full
+    page_selected = None  # -page option is selected
     generator = None
 
-    # Here below there are the parameters.
-    for arg in pywikibot.handle_args(args):
-        if arg.startswith('-limit'):
-            if len(arg) == 6:
-                limit = int(pywikibot.input(
-                    u'How many files do you want to check?'))
-            else:
-                limit = int(arg[7:])
-        if arg.startswith('-sleep') or arg.startswith('-time'):
-            if arg.startswith('-sleep'):
-                length = len('-sleep')
-            else:
-                pywikibot.tools.issue_deprecation_warning('-time', '-sleep', 2)
-                length = len('-time')
-            if len(arg) == length:
-                time_sleep = int(pywikibot.input(
-                    'How many seconds do you want runs to be apart?'))
-            else:
-                time_sleep = int(arg[length + 1:])
-        elif arg == '-break':
-            repeat = False
-        elif arg == '-nologerror':
-            logFullError = False
-        elif arg == '-commons':
-            commonsActive = True
-        elif arg.startswith('-duplicates'):
-            duplicatesActive = True
-            if len(arg) == 11:
-                duplicates_rollback = 1
-            elif len(arg) > 11:
-                duplicates_rollback = int(arg[12:])
-        elif arg == '-duplicatereport':
-            duplicatesReport = True
-        elif arg == '-sendemail':
-            sendemailActive = True
-        elif arg.startswith('-skip'):
-            if len(arg) == 5:
-                skip_number = int(pywikibot.input(
-                    u'How many files do you want to skip?'))
-            elif len(arg) > 5:
-                skip_number = int(arg[6:])
-        elif arg.startswith('-wait'):
-            if len(arg) == 5:
-                waitTime = int(pywikibot.input(
-                    u'How many time do you want to wait before checking the '
-                    u'files?'))
-            elif len(arg) > 5:
-                waitTime = int(arg[6:])
-        elif arg.startswith('-start'):
-            if len(arg) == 6:
-                firstPageTitle = pywikibot.input(
-                    u'From which page do you want to start?')
-            elif len(arg) > 6:
-                firstPageTitle = arg[7:]
-            firstPageTitle = firstPageTitle.split(":")[1:]
-            generator = pywikibot.Site().allpages(start=firstPageTitle,
-                                                  namespace=6)
-            repeat = False
-        elif arg.startswith('-page'):
-            if len(arg) == 5:
-                regexPageName = str(pywikibot.input(
-                    u'Which page do you want to use for the regex?'))
-            elif len(arg) > 5:
-                regexPageName = str(arg[6:])
-            repeat = False
-            regexGen = True
-        elif arg.startswith('-url'):
-            if len(arg) == 4:
-                regexPageUrl = str(pywikibot.input(
-                    u'Which url do you want to use for the regex?'))
-            elif len(arg) > 4:
-                regexPageUrl = str(arg[5:])
-            urlUsed = True
-            repeat = False
-            regexGen = True
-        elif arg.startswith('-regex'):
-            if len(arg) == 6:
-                regexpToUse = str(pywikibot.input(
-                    u'Which regex do you want to use?'))
-            elif len(arg) > 6:
-                regexpToUse = str(arg[7:])
-            generator = 'regex'
-            repeat = False
-        elif arg.startswith('-cat'):
-            if len(arg) == 4:
-                catName = str(pywikibot.input(u'In which category do I work?'))
-            elif len(arg) > 4:
-                catName = str(arg[5:])
-            catSelected = pywikibot.Category(pywikibot.Site(),
-                                             'Category:%s' % catName)
-            generator = catSelected.articles(namespaces=[6])
-            repeat = False
-        elif arg.startswith('-ref'):
-            if len(arg) == 4:
-                refName = str(pywikibot.input(
-                    u'The references of what page should I parse?'))
-            elif len(arg) > 4:
-                refName = str(arg[5:])
-            ref = pywikibot.Page(pywikibot.Site(), refName)
-            generator = ref.getReferences(namespaces=[6])
-            repeat = False
-
-    if not generator:
-        normal = True
-
+    local_args = pywikibot.handle_args(args)
+    genFactory = pagegenerators.GeneratorFactory(ns=[Namespace.FILE])
     site = pywikibot.Site()
-    skip = skip_number > 0
 
-    # A little block-statement to ensure that the bot will not start with
-    # en-parameters
+    # A little block-statement to ensure that the bot will only start
+    # if the script is localized for a given site.
     if site.code not in project_inserted:
         pywikibot.output(u"Your project is not supported by this script.\n"
                          u"You have to edit the script and add it!")
         return False
 
-    # Reading the log of the new images if another generator is not given.
-    if normal:
-        if limit == 1:
-            pywikibot.output(u"Retrieving the latest file for checking...")
+    # Here below there are the local parameters.
+    for arg in local_args:
+        option, sep, value = arg.partition(':')
+        if option in ('-sleep', '-time'):
+            if option == '-time':
+                pywikibot.tools.issue_deprecation_warning('-time', '-sleep', 2)
+            if not value:
+                time_sleep = int(pywikibot.input(
+                    'How many seconds do you want runs to be apart?'))
+            else:
+                time_sleep = int(value)
+        elif option == '-break':
+            repeat = False
+        elif option == '-nologerror':
+            logFullError = False
+        elif option == '-commons':
+            commonsActive = True
+        elif option == '-duplicates':
+            duplicatesActive = True
+            if not value:
+                duplicates_rollback = 1
+            else:
+                duplicates_rollback = int(value)
+        elif option == '-duplicatereport':
+            duplicatesReport = True
+        elif option == '-sendemail':
+            sendemailActive = True
+        elif option == '-skip':
+            if not value:
+                skip_number = int(pywikibot.input(
+                    u'How many files do you want to skip?'))
+            else:
+                skip_number = int(value)
+        elif option == '-wait':
+            if not value:
+                waitTime = int(pywikibot.input(
+                    u'How many time do you want to wait before checking the '
+                    u'files?'))
+            else:
+                waitTime = int(value)
+        elif option == '-page':
+            page_selected = value or pywikibot.input(
+                'Which page do you want to use?')
+            pywikibot.tools.issue_deprecation_warning('-page', '-imagesused', 2)
+            genFactory.handleArg('-imagesused:' + value)
+        elif option in ('-url', 'fromurl'):
+            if option == '-url':
+                pywikibot.tools.issue_deprecation_warning('-url', '-fromurl', 2)
+            url = value or pywikibot.input(
+                'Which url do you want to use for the regex?')
+        elif option == '-regex':
+            regex = value or pywikibot.input(
+                'Which regex do you want to use?')
+        elif option == '-newpages':
+            pywikibot.warning('-newpages option is default. It may be omitted.')
         else:
-            pywikibot.output(u"Retrieving the latest %d files for checking..."
-                             % limit)
+            genFactory.handleArg(arg)
+
+    if page_selected:  # forward pagegenerators option
+        if url:
+            pywikibot.warning(
+                '-url option cannot be given with -page option.')
+            return False
+        elif regex:
+            pywikibot.tools.issue_deprecation_warning('-page', '-imagesused', 2)
+            genFactory.handleArg('-imagesused:' + page_selected)
+            regex = None
+        else:
+            genFactory.handleArg('-page:' + page_selected)
+    elif bool(url) != bool(regex):
+        pywikibot.warning('-regex option must be given with -url option.')
+        return False
+
+    limit = genFactory.limit
+    if not limit:
+        limit = genFactory.limit = 80
+    generator = genFactory.getCombinedGenerator()
+    if url and regex:
+        if generator:
+            pywikibot.warning(
+                '-url option cannot be given with other generator option.')
+            return False
+    elif not generator:
+        default = True
+
+    if not default:
+        repeat = False
+
+    skip = skip_number > 0
+
     while True:
         # Defing the Main Class.
         Bot = checkImagesBot(site, sendemailActive=sendemailActive,
                              duplicatesReport=duplicatesReport,
                              logFullError=logFullError)
-        if normal:
-            generator = pg.NewimagesPageGenerator(total=limit, site=site)
-        # if urlUsed and regexGen, get the source for the generator
-        if urlUsed and regexGen:
-            textRegex = site.getUrl(regexPageUrl, no_hostname=True)
-        # Not an url but a wiki page as "source" for the regex
-        elif regexGen:
-            pageRegex = pywikibot.Page(site, regexPageName)
-            try:
-                textRegex = pageRegex.get()
-            except pywikibot.NoPage:
-                pywikibot.output(u"%s doesn't exist!" % pageRegex.title())
-                textRegex = ''  # No source, so the bot will quit later.
-        # If generator is the regex' one, use your own Generator using an url
-        # or page and a regex.
-        if generator == 'regex' and regexGen:
-            generator = Bot.regexGenerator(regexpToUse, textRegex)
+
+        # Reading the log of the new images if another generator is not given.
+        if default:
+            pywikibot.output(
+                i18n.translate(
+                    'en',
+                    'Retrieving the latest {{PLURAL:num|file|%(num)s files}} '
+                    'for checking...', {'num': limit}))
+            generator = pagegenerators.NewimagesPageGenerator(total=limit,
+                                                              site=site)
+        # if url and regex used, get the generator from bot class
+        elif url and regex:
+            generator = Bot.regexGenerator(regex, fetch(url).content)
 
         Bot.takesettings()
         if waitTime > 0:
