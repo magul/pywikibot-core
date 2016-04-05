@@ -596,14 +596,11 @@ class checkImagesBot(object):
         """Return username."""
         return self.site.username()
 
-    def setParameters(self, imageName):
-        """
-        Set parameters.
-
-        Now only image but maybe it can be used for others in "future".
-        """
-        self.imageName = imageName
-        self.image = pywikibot.FilePage(self.site, self.imageName)
+    def setParameters(self, image):
+        """Set parameters."""
+        # ensure we have a FilePage
+        self.image = pywikibot.FilePage(image)
+        self.imageName = image.title(withNamespace=False)
         self.timestamp = None
         self.uploader = None
 
@@ -1752,7 +1749,7 @@ def main(*args):
             generator = Bot.wait(generator, waitTime)
         for image in generator:
             # Setting the image for the main class
-            Bot.setParameters(image.title(withNamespace=False))
+            Bot.setParameters(image)
             if skip:
                 skip = Bot.skipImages(skip_number, limit)
                 if skip:
