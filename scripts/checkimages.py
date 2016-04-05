@@ -1019,8 +1019,12 @@ class checkImagesBot(object):
                                                  text_for_the_report)
                     # if you want only one edit, the edit found should be more
                     # than 0 -> num - 1
-                    if already_reported_in_past > duplicates_rollback - 1 or \
-                            not dupTalkText:
+                    if already_reported_in_past > duplicates_rollback - 1:
+                        only_report = True
+                    elif not dupTalkText:
+                        pywikibot.output('No localized message given for '
+                                         "'duplicates_user_talk_text'. "
+                                         'Only reporting.')
                         only_report = True
                     else:
                         self.report(text_for_the_report, images_to_tag_list[-1],
