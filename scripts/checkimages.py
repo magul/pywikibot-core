@@ -85,7 +85,7 @@ right parameter.
 # (C) Kyle/Orgullomoore, 2006-2007 (newimage.py)
 # (C) Siebrand Mazeland, 2007-2010
 # (C) Filnik, 2007-2011
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -633,34 +633,23 @@ class checkImagesBot(object):
                                         notification2)
         self.commTalk = commTalk
         self.commImage = commImage or self.comment
-
-        while True:
+        resPutMex = False
+        try:
+            resPutMex = self.tag_image(unver)
+        except pywikibot.NoPage:
+            pywikibot.output('The page has been deleted! Skip!')
+        except pywikibot.EditConflict:
+            pywikibot.output('Edit conflict! Skip!')
+        if resPutMex and self.notification:
             try:
-                resPutMex = self.tag_image(unver)
-            except pywikibot.NoPage:
-                pywikibot.output(u"The page has been deleted! Skip!")
-                break
+                self.put_mex_in_talk()
             except pywikibot.EditConflict:
-                pywikibot.output(u"Edit conflict! Skip!")
-                break
-            else:
-                if not resPutMex:
-                    break
-            if self.notification:
+                pywikibot.output('Edit Conflict! Retrying...')
                 try:
                     self.put_mex_in_talk()
-                except pywikibot.EditConflict:
-                    pywikibot.output(u"Edit Conflict! Retrying...")
-                    try:
-                        self.put_mex_in_talk()
-                    except:
-                        pywikibot.output(
-                            u"Another error... skipping the user..")
-                        break
-                else:
-                    break
-            else:
-                break
+                except:
+                    pywikibot.output(
+                        'Another error... skipping the user..')
 
     def uploadBotChangeFunction(self, reportPageText, upBotArray):
         """Detect the user that has uploaded the file through the upload bot."""
@@ -683,7 +672,7 @@ class checkImagesBot(object):
             reportPageText = reportPageObject.get()
         except pywikibot.NoPage:
             pywikibot.output(u'%s has been deleted...' % self.imageName)
-            return
+            return False
         # You can use this function also to find only the user that
         # has upload the image (FixME: Rewrite a bit this part)
         if put:
@@ -695,7 +684,7 @@ class checkImagesBot(object):
                                      summary=self.commImage)
             except pywikibot.LockedPage:
                 pywikibot.output(u'File is locked. Skipping.')
-                return
+                return False
         # paginetta it's the image page object.
         try:
             if reportPageObject == self.image and self.uploader:
@@ -709,7 +698,7 @@ class checkImagesBot(object):
             repme = "\n* [[:File:%s]] problems '''with the APIs'''"
             self.report_image(self.image_to_report, self.rep_page, self.com,
                               repme)
-            return
+            return False
         upBots = i18n.translate(self.site, uploadBots)
         user = pywikibot.User(self.site, nick)
         luser = user.title(asUrl=True)
