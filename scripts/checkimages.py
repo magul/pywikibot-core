@@ -625,33 +625,27 @@ class checkImagesBot(object):
         self.commTalk = commTalk
         self.commImage = commImage or self.comment
 
-        while True:
+        try:
+            resPutMex = self.tag_image(unver)
+        except pywikibot.NoPage:
+            pywikibot.output('The page has been deleted! Skip!')
+            return
+        except pywikibot.EditConflict:
+            pywikibot.output('Edit conflict! Skip!')
+            return
+        else:
+            if not resPutMex:
+                return
+        if self.notification:
             try:
-                resPutMex = self.tag_image(unver)
-            except pywikibot.NoPage:
-                pywikibot.output(u"The page has been deleted! Skip!")
-                break
+                self.put_mex_in_talk()
             except pywikibot.EditConflict:
-                pywikibot.output(u"Edit conflict! Skip!")
-                break
-            else:
-                if not resPutMex:
-                    break
-            if self.notification:
+                pywikibot.output('Edit Conflict! Retrying...')
                 try:
                     self.put_mex_in_talk()
-                except pywikibot.EditConflict:
-                    pywikibot.output(u"Edit Conflict! Retrying...")
-                    try:
-                        self.put_mex_in_talk()
-                    except:
-                        pywikibot.output(
-                            u"Another error... skipping the user..")
-                        break
-                else:
-                    break
-            else:
-                break
+                except:
+                    pywikibot.output(
+                        'Another error... skipping the user..')
 
     def uploadBotChangeFunction(self, reportPageText, upBotArray):
         """Detect the user that has uploaded the file through the upload bot."""
