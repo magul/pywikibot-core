@@ -82,7 +82,7 @@ right parameter.
 # (C) Kyle/Orgullomoore, 2006-2007 (newimage.py)
 # (C) Siebrand Mazeland, 2007-2010
 # (C) Filnik, 2007-2011
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1106,49 +1106,37 @@ class checkImagesBot(object):
 
     def takesettings(self):
         """Function to take the settings from the wiki."""
+        self.settingsData = None
         settingsPage = i18n.translate(self.site, page_with_settings)
-        try:
-            if not settingsPage:
+        if settingsPage:
+            wikiPage = pywikibot.Page(self.site, settingsPage)
+            try:
+                testo = wikiPage.get()
+            except pywikibot.NoPage:
+                pywikibot.output('The settings page does not exist!')
+                return
+
+            self.settingsData = list()
+            for number, m in enumerate(SETTINGS_REGEX.finditer(testo), 1):
+                name = str(m.group(1))
+                find_tipe = str(m.group(2))
+                find = str(m.group(3))
+                imagechanges = str(m.group(4))
+                summary = str(m.group(5))
+                head = str(m.group(6))
+                text = str(m.group(7))
+                mexcatched = str(m.group(8))
+                tupla = [number, name, find_tipe, find, imagechanges,
+                         summary, head, text, mexcatched]
+                self.settingsData += [tupla]
+
+            if not self.settingsData:
+                pywikibot.output(
+                    u"You've set wrongly your settings, please take a "
+                    u"look to the relative page. (run without them)")
                 self.settingsData = None
-            else:
-                wikiPage = pywikibot.Page(self.site, settingsPage)
-                self.settingsData = list()
-                try:
-                    testo = wikiPage.get()
-                    number = 1
+                return
 
-                    for m in SETTINGS_REGEX.finditer(testo):
-                        name = str(m.group(1))
-                        find_tipe = str(m.group(2))
-                        find = str(m.group(3))
-                        imagechanges = str(m.group(4))
-                        summary = str(m.group(5))
-                        head = str(m.group(6))
-                        text = str(m.group(7))
-                        mexcatched = str(m.group(8))
-                        tupla = [number, name, find_tipe, find, imagechanges,
-                                 summary, head, text, mexcatched]
-                        self.settingsData += [tupla]
-                        number += 1
-
-                    if not self.settingsData:
-                        pywikibot.output(
-                            u"You've set wrongly your settings, please take a "
-                            u"look to the relative page. (run without them)")
-                        self.settingsData = None
-                except pywikibot.NoPage:
-                    pywikibot.output(u"The settings' page doesn't exist!")
-                    self.settingsData = None
-        except pywikibot.Error:
-            pywikibot.output(
-                u'Problems with loading the settigs, run without them.')
-            self.settingsData = None
-            self.some_problem = False
-
-        if not self.settingsData:
-            self.settingsData = None
-
-        # Real-Time page loaded
         if self.settingsData:
             pywikibot.output(u'>> Loaded the real-time page... <<')
         else:
