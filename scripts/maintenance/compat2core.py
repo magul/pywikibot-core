@@ -117,7 +117,10 @@ warnings = (
      'query.GetData() should be replaced by pywikibot.data.api.Request or\n'
      'by a direct site request'),
     ('.verbose',
-     'verbose_output need "from pywikibot import config" first')
+     'verbose_output need "from pywikibot import config" first'),
+    ('templatesWithParams(',
+     'the first item of each template info is a Page object of the template,\n'
+     'not the title. Please refer README-conversion.txt and the documentation.')
 )
 
 
