@@ -12,7 +12,7 @@ This module also includes objects:
 
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -2121,12 +2121,12 @@ class Page(BasePage):
     @deprecate_arg("get_redirect", None)
     def templatesWithParams(self):
         """
-        Iterate templates used on this Page.
+        Return templates used on this Page.
 
-        @return: a generator that yields a tuple for each use of a template
+        @return: a list that contains a tuple for each use of a template
             in the page, with the template Page as the first entry and a list of
             parameters as the second entry.
-        @rtype: generator
+        @rtype: list
         """
         # WARNING: may not return all templates used in particularly
         # intricate cases such as template substitution
