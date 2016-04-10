@@ -1574,12 +1574,10 @@ def extract_templates_and_params_regex(text, remove_disabled_parts=True,
                 for param in markedParams:
                     if "=" in param:
                         param_name, param_val = param.split("=", 1)
-                        implicit_parameter = False
                     else:
                         param_name = unicode(numbered_param)
                         param_val = param
                         numbered_param += 1
-                        implicit_parameter = True
                     count = len(inside)
                     for m2 in Rmarker1.finditer(param_val):
                         param_val = param_val.replace(m2.group(),
@@ -1595,8 +1593,7 @@ def extract_templates_and_params_regex(text, remove_disabled_parts=True,
                                                       values[int(m2.group(1))])
                     if strip:
                         param_name = param_name.strip()
-                        if not implicit_parameter:
-                            param_val = param_val.strip()
+                        param_val = param_val.strip()
                     params[param_name] = param_val
 
             # Special case for {{a|}} which has an undetected parameter

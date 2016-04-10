@@ -2118,6 +2118,7 @@ class Page(BasePage):
                                  'if source is a Site.')
         super(Page, self).__init__(source, title, ns)
 
+    @deprecated('templates_with_params')
     @deprecate_arg("get_redirect", None)
     def templatesWithParams(self):
         """
@@ -2128,24 +2129,10 @@ class Page(BasePage):
             parameters as the second entry.
         @rtype: list
         """
-        # WARNING: may not return all templates used in particularly
-        # intricate cases such as template substitution
-        titles = list(t.title() for t in self.templates())
-        templates = textlib.extract_templates_and_params(self.text)
         # backwards-compatibility: convert the dict returned as the second
         # element into a list in the format used by old scripts
         result = []
-        for template in templates:
-            try:
-                link = pywikibot.Link(template[0], self.site,
-                                      defaultNamespace=10)
-                if link.canonical_title() not in titles:
-                    continue
-            except pywikibot.Error:
-                # this is a parser function or magic word, not template name
-                # the template name might also contain invalid parts
-                continue
-            args = template[1]
+        for page, args in self.templates_with_params():
             intkeys = {}
             named = {}
             positional = []
@@ -2168,8 +2155,32 @@ class Page(BasePage):
                     break
             for name in named:
                 positional.append("%s=%s" % (name, named[name]))
-            result.append((pywikibot.Page(link, self.site), positional))
+            result.append((page, positional))
         return result
+
+    def templates_with_params(self):
+        """
+        Return templates used on this Page.
+
+        @return: a list that contains a tuple for each use of a template
+            in the page, with the template Page as the first entry and a list of
+            parameters as the second entry.
+        @rtype: list
+        """
+        templates = textlib.extract_templates_and_params(self.text, strip=True)
+        # WARNING: may not return all templates used in particularly
+        # intricate cases such as template substitution
+        titles = list(t.title() for t in self.templates())
+        for title, param in templates:
+            try:
+                link = pywikibot.Link(title, self.site, defaultNamespace=10)
+                if link.canonical_title() not in titles:
+                    continue
+            except pywikibot.Error:
+                # this is a parser function or magic word, not template name
+                # the template name might also contain invalid parts
+                continue
+            yield pywikibot.Page(link), param
 
     def set_redirect_target(self, target_page, create=False, force=False,
                             keep_section=False, save=True, **kwargs):

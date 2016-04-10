@@ -376,8 +376,8 @@ class TestTemplateParams(TestCase):
 
     def _stripped(self, func):
         """Common cases of stripped results."""
-        self.assertEqual(func('{{a|  }}'), [('a', OrderedDict((('1', '  '), )))])
-        self.assertEqual(func('{{a| | }}'), [('a', OrderedDict((('1', ' '), ('2', ' '))))])
+        self.assertEqual(func('{{a|  }}'), [('a', OrderedDict((('1', ''), )))])
+        self.assertEqual(func('{{a| | }}'), [('a', OrderedDict((('1', ''), ('2', ''))))])
         self.assertEqual(func('{{a| =|}}'), [('a', OrderedDict((('', ''), ('1', ''))))])
 
         self.assertEqual(func('{{a| b=c}}'), [('a', OrderedDict((('b', 'c'), )))])
@@ -386,13 +386,13 @@ class TestTemplateParams(TestCase):
         self.assertEqual(func('{{a|b=c }}'), [('a', OrderedDict((('b', 'c'), )))])
 
         self.assertEqual(func('{{a| foo |2= bar }}'),
-                         [('a', OrderedDict((('1', ' foo '), ('2', 'bar'))))])
+                         [('a', OrderedDict((('1', 'foo'), ('2', 'bar'))))])
 
         # 'bar' is always removed
         self.assertEqual(func('{{a| foo |2= bar | baz }}'),
-                         [('a', OrderedDict((('1', ' foo '), ('2', ' baz '))))])
+                         [('a', OrderedDict((('1', 'foo'), ('2', 'baz'))))])
         self.assertEqual(func('{{a| foo | 2 = bar | baz }}'),
-                         [('a', OrderedDict((('1', ' foo '), ('2', ' baz '))))])
+                         [('a', OrderedDict((('1', 'foo'), ('2', 'baz'))))])
 
     def _etp_regex_differs(self, func):
         """Common cases not handled the same by ETP_REGEX."""

@@ -9,7 +9,9 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
+from collections import OrderedDict
 import pickle
+from types import GeneratorType
 
 import pywikibot
 import pywikibot.page
@@ -965,6 +967,77 @@ class TestPageProtect(TestCase):
         p1.protect(protections={'edit': '', 'move': ''},
                    reason=u'Pywikibot unit test')
         self.assertEqual(p1.protection(), {})
+
+
+class TestTemplatesWithParams(TestCase):
+
+    """Test template_with_params methods."""
+
+    family = 'test'
+    code = 'test'
+
+    PARAM = 'Test template_with_params methods'
+    TEMPL = '{{test|Foo|Bar | Baz| qux | note = %s }}' % PARAM
+
+    def setUp(self):
+        """Setup test."""
+        super(TestTemplatesWithParams, self).setUp()
+        site = self.get_site()
+        self.page = pywikibot.Page(site, 'Main page')
+        self.page.text = self.TEMPL
+        tpl = pywikibot.Page(site, 'test', 10)
+        # Don't retrieve templates from life wiki; use cache instead.
+        self.page._templates = [tpl]
+
+    def test_new_templates_with_params(self):
+        """Test Page.template_with_params() method."""
+        gen = self.page.templates_with_params()
+        self.assertIsInstance(gen, GeneratorType)
+        twp = list(gen)
+        self.assertTrue(len(twp) == 1)
+        item = twp[0]
+        self.assertIsInstance(item, tuple)
+        page, param = item
+        self.assertIsInstance(page, pywikibot.Page)
+        self.assertIsInstance(param, OrderedDict)
+        for i, key in enumerate(param, 1):
+            value = param[key]
+            self.assertIsInstance(key, basestring)
+            self.assertIsInstance(value, basestring)
+            self.assertEqual(key, key.strip())
+            self.assertEqual(value, value.strip())
+            try:
+                int(key)
+            except ValueError:
+                # Test named parameters
+                self.assertIn(key, self.TEMPL)
+                self.assertEqual(value, self.PARAM)
+            else:
+                # Test positional parameters
+                self.assertEqual(key, str(i))
+                self.assertIn(value, self.TEMPL)
+
+    def test_old_templates_with_params(self):
+        """Test Page.templateWithParams() method."""
+        twp = self.page.templatesWithParams()
+        self.assertIsInstance(twp, list)
+        self.assertTrue(len(twp) == 1)
+        item = twp[0]
+        self.assertIsInstance(item, tuple)
+        page, param = item
+        self.assertIsInstance(page, pywikibot.Page)
+        self.assertIsInstance(param, list)
+        for value in param:
+            self.assertIsInstance(value, basestring)
+            self.assertEqual(value, value.strip())
+            key, sep, value = value.partition('=')
+            if value:
+                # Test named parameters
+                self.assertIn(key, self.TEMPL)
+                self.assertEqual(value, self.PARAM)
+            else:
+                # Test positional parameters
+                self.assertIn(key, self.TEMPL)
 
 
 class HtmlEntity(TestCase):
