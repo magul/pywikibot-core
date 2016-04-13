@@ -149,6 +149,7 @@ import pywikibot
 from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot.tools import issue_deprecation_warning
 from pywikibot import i18n, textlib, pagegenerators, Bot
+from pywikibot.bot import SkipPageError
 
 from pywikibot import editor as editarticle
 
@@ -665,110 +666,107 @@ class ReplaceRobot(Bot):
         semicolon = self.site.mediawiki_message('semicolon-separator')
         return semicolon.join(summary_messages)
 
-    def run(self):
-        """Start the bot."""
-        # Run the generator which will yield Pages which might need to be
-        # changed.
-        for page in self.generator:
-            if self.isTitleExcepted(page.title()):
-                pywikibot.output(
-                    u'Skipping %s because the title is on the exceptions list.'
-                    % page.title(asLink=True))
-                continue
-            try:
-                # Load the page's text from the wiki
-                original_text = page.get(get_redirect=True)
-                if not page.canBeEdited():
-                    pywikibot.output(u"You can't edit page %s"
-                                     % page.title(asLink=True))
-                    continue
-            except pywikibot.NoPage:
-                pywikibot.output(u'Page %s not found' % page.title(asLink=True))
-                continue
-            self._treat_counter += 1
-            applied = set()
-            new_text = original_text
-            while True:
-                if self.isTextExcepted(new_text):
-                    pywikibot.output(u'Skipping %s because it contains text '
-                                     u'that is on the exceptions list.'
-                                     % page.title(asLink=True))
-                    break
-                last_text = None
-                while new_text != last_text:
-                    last_text = new_text
-                    new_text = self.apply_replacements(last_text, applied,
-                                                       page)
-                    if not self.recursive:
-                        break
-                if new_text == original_text:
-                    pywikibot.output(u'No changes were necessary in %s'
-                                     % page.title(asLink=True))
-                    break
-                if hasattr(self, 'addedCat'):
-                    # Fetch only categories in wikitext, otherwise the others will
-                    # be explicitly added.
-                    cats = textlib.getCategoryLinks(new_text, site=page.site)
-                    if self.addedCat not in cats:
-                        cats.append(self.addedCat)
-                        new_text = textlib.replaceCategoryLinks(new_text,
-                                                                cats,
-                                                                site=page.site)
-                # Show the title of the page we're working on.
-                # Highlight the title in purple.
-                pywikibot.output(color_format(
-                    '\n\n>>> {lightpurple}{0}{default} <<<', page.title()))
-                pywikibot.showDiff(original_text, new_text)
-                if self.getOption('always'):
-                    break
-                choice = pywikibot.input_choice(
-                    u'Do you want to accept these changes?',
-                    [('Yes', 'y'), ('No', 'n'), ('Edit', 'e'),
-                     ('open in Browser', 'b'), ('all', 'a')],
-                    default='N')
-                if choice == 'e':
-                    editor = editarticle.TextEditor()
-                    as_edited = editor.edit(original_text)
-                    # if user didn't press Cancel
-                    if as_edited and as_edited != new_text:
-                        new_text = as_edited
-                    continue
-                if choice == 'b':
-                    pywikibot.bot.open_webbrowser(page)
-                    try:
-                        original_text = page.get(get_redirect=True, force=True)
-                    except pywikibot.NoPage:
-                        pywikibot.output(u'Page %s has been deleted.'
-                                         % page.title())
-                        break
-                    new_text = original_text
-                    continue
-                if choice == 'a':
-                    self.options['always'] = True
-                if choice == 'y':
-                    page.text = new_text
-                    page.save(summary=self.generate_summary(applied), async=True,
-                              callback=self._count_changes)
-                # choice must be 'N'
+    def init_page(self, page):
+        """Check whether treat should be executed for the page."""
+        super(ReplaceRobot, self).init_page(page)
+        if self.isTitleExcepted(page.title()):
+            raise SkipPageError('The title is on the exceptions list.')
+
+    def treat(self, page):
+        """Process a single page."""
+        try:
+            # Load the page's text from the wiki
+            original_text = page.get(get_redirect=True)
+            if not page.canBeEdited():
+                pywikibot.output(u"You can't edit page %s"
+                                 % page.title(asLink=True))
+                return
+        except pywikibot.NoPage:
+            pywikibot.output(u'Page %s not found' % page.title(asLink=True))
+            return
+        applied = set()
+        new_text = original_text
+        while True:
+            if self.isTextExcepted(new_text):
+                pywikibot.output(u'Skipping %s because it contains text '
+                                 u'that is on the exceptions list.'
+                                 % page.title(asLink=True))
                 break
-            if self.getOption('always') and new_text != original_text:
+            last_text = None
+            while new_text != last_text:
+                last_text = new_text
+                new_text = self.apply_replacements(last_text, applied,
+                                                   page)
+                if not self.recursive:
+                    break
+            if new_text == original_text:
+                pywikibot.output(u'No changes were necessary in %s'
+                                 % page.title(asLink=True))
+                break
+            if hasattr(self, 'addedCat'):
+                # Fetch only categories in wikitext, otherwise the others will
+                # be explicitly added.
+                cats = textlib.getCategoryLinks(new_text, site=page.site)
+                if self.addedCat not in cats:
+                    cats.append(self.addedCat)
+                    new_text = textlib.replaceCategoryLinks(new_text,
+                                                            cats,
+                                                            site=page.site)
+            # Show the title of the page we're working on.
+            # Highlight the title in purple.
+            pywikibot.output(color_format(
+                '\n\n>>> {lightpurple}{0}{default} <<<', page.title()))
+            pywikibot.showDiff(original_text, new_text)
+            if self.getOption('always'):
+                break
+            choice = pywikibot.input_choice(
+                u'Do you want to accept these changes?',
+                [('Yes', 'y'), ('No', 'n'), ('Edit', 'e'),
+                 ('open in Browser', 'b'), ('all', 'a')],
+                default='N')
+            if choice == 'e':
+                editor = editarticle.TextEditor()
+                as_edited = editor.edit(original_text)
+                # if user didn't press Cancel
+                if as_edited and as_edited != new_text:
+                    new_text = as_edited
+                continue
+            if choice == 'b':
+                pywikibot.bot.open_webbrowser(page)
                 try:
-                    page.text = new_text
-                    page.save(summary=self.generate_summary(applied),
-                              callback=self._count_changes)
-                except pywikibot.EditConflict:
-                    pywikibot.output(u'Skipping %s because of edit conflict'
-                                     % (page.title(),))
-                except pywikibot.SpamfilterError as e:
-                    pywikibot.output(
-                        u'Cannot change %s because of blacklist entry %s'
-                        % (page.title(), e.url))
-                except pywikibot.LockedPage:
-                    pywikibot.output(u'Skipping %s (locked page)'
-                                     % (page.title(),))
-                except pywikibot.PageNotSaved as error:
-                    pywikibot.output(u'Error putting page: %s'
-                                     % (error.args,))
+                    original_text = page.get(get_redirect=True, force=True)
+                except pywikibot.NoPage:
+                    pywikibot.output(u'Page %s has been deleted.'
+                                     % page.title())
+                    break
+                new_text = original_text
+                continue
+            if choice == 'a':
+                self.options['always'] = True
+            if choice == 'y':
+                page.text = new_text
+                page.save(summary=self.generate_summary(applied), async=True,
+                          callback=self._count_changes)
+            # choice must be 'N'
+            break
+        if self.getOption('always') and new_text != original_text:
+            try:
+                page.text = new_text
+                page.save(summary=self.generate_summary(applied),
+                          callback=self._count_changes)
+            except pywikibot.EditConflict:
+                pywikibot.output(u'Skipping %s because of edit conflict'
+                                 % (page.title(),))
+            except pywikibot.SpamfilterError as e:
+                pywikibot.output(
+                    u'Cannot change %s because of blacklist entry %s'
+                    % (page.title(), e.url))
+            except pywikibot.LockedPage:
+                pywikibot.output(u'Skipping %s (locked page)'
+                                 % (page.title(),))
+            except pywikibot.PageNotSaved as error:
+                pywikibot.output(u'Error putting page: %s'
+                                 % (error.args,))
 
 
 def prepareRegexForMySQL(pattern):
@@ -1100,10 +1098,7 @@ LIMIT 200""" % (whereClause, exceptClause)
                        allowoverlap, recursive, add_cat, sleep, edit_summary,
                        site)
     site.login()
-    try:
-        bot.run()
-    finally:
-        bot.exit()
+    bot.run()
 
 
 if __name__ == "__main__":
