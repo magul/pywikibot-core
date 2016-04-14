@@ -746,6 +746,7 @@ def main(*args):
     @type args: list of unicode
     """
     xmlFilename = None
+    xmlStart = None
     options = {}
     namespaces = []
     generator = None
@@ -755,39 +756,29 @@ def main(*args):
     genFactory = pagegenerators.GeneratorFactory()
 
     for arg in local_args:
-        if arg.startswith('-namespace:'):
+        arg, sep, value = arg.partition(':')
+        option = arg[1:]
+        if arg == '-namespace':
             try:
-                namespaces.append(int(arg[11:]))
+                namespaces.append(int(value))
             except ValueError:
-                namespaces += arg[11:].split(',')
-        elif arg.startswith('-summary:'):
-            options['summary'] = arg[9:]
-        elif arg == '-always':
-            options['always'] = True
-        elif arg == '-ignorepdf':
-            options['ignorepdf'] = True
-        elif arg.startswith('-limit:'):
-            options['limit'] = int(arg[7:])
-        elif arg.startswith('-xmlstart'):
-            if len(arg) == 9:
-                xmlStart = pywikibot.input(
-                    u'Please enter the dumped article to start with:')
-            else:
-                xmlStart = arg[10:]
-        elif arg.startswith('-xml'):
-            if len(arg) == 4:
-                xmlFilename = pywikibot.input(
-                    u'Please enter the XML dump\'s filename:')
-            else:
-                xmlFilename = arg[5:]
+                namespaces += value.split(',')
+        elif arg == '-summary':
+            options[option] = value
+        elif arg in ('-always', '-ignorepdf'):
+            options[option] = True
+        elif arg == '-limit':
+            options[option] = int(value)
+        elif arg == '-xmlstart':
+            xmlStart = value or pywikibot.input(
+                'Please enter the dumped article to start with:')
+        elif arg == '-xml':
+            xmlFilename = value or pywikibot.input(
+                "Please enter the XML dump's filename:")
         else:
             genFactory.handleArg(arg)
 
     if xmlFilename:
-        try:
-            xmlStart
-        except NameError:
-            xmlStart = None
         generator = XmlDumpPageGenerator(xmlFilename, xmlStart, namespaces)
     if not generator:
         generator = genFactory.getCombinedGenerator()
