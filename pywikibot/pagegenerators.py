@@ -2520,19 +2520,18 @@ class XMLDumpOldPageGenerator(IteratorNextMixin):
     def __init__(self, filename, start=None, namespaces=[], site=None,
                  text_predicate=None):
         """Constructor."""
-        # xmlFilename and xmlStart mapped to not break git blame
-        # use filename and start on new/changed lines
-        xmlFilename = filename
-        xmlStart = start
-
         self.text_predicate = text_predicate
 
-        self.xmlStart = xmlStart
-        self.namespaces = namespaces
-        self.skipping = bool(xmlStart)
+        self.skipping = bool(start)
+        if self.skipping:
+            self.xmlStart = start.replace('_', ' ')
         self.site = site or pywikibot.Site()
+        if namespaces is None:
+            self.namespaces = self.site.namespaces
+        else:
+            self.namespaces = self.site.namespaces.resolve(namespaces)
 
-        dump = xmlreader.XmlDump(xmlFilename)
+        dump = xmlreader.XmlDump(filename)
         self.parser = dump.parse()
 
     def __next__(self):
@@ -2543,7 +2542,7 @@ class XMLDumpOldPageGenerator(IteratorNextMixin):
             except StopIteration:
                 raise
             if self.skipping:
-                if entry.title != self.xmlStart:
+                if entry.title < self.xmlStart:
                     continue
                 self.skipping = False
             page = pywikibot.Page(self.site, entry.title)

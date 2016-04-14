@@ -759,7 +759,7 @@ def main(*args):
             try:
                 namespaces.append(int(arg[11:]))
             except ValueError:
-                namespaces.append(arg[11:])
+                namespaces += arg[11:].split(',')
         elif arg.startswith('-summary:'):
             options['summary'] = arg[9:]
         elif arg == '-always':
