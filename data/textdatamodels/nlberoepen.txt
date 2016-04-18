@@ -1,0 +1,677 @@
+QQ:claim[31:5] AND link[nlwiki] and noclaim[106]
+LL:nl
+PP:Q10000
+P106:beroep
+P611:religieuze orde
+P39:ambt
+P410:militaire rang
+P97:adellijke titel
+Q16533:rechter
+Q12097:koning
+Q48282:student
+Q719039:Koningin-gemalin
+Q205706:Groothertog
+Q43845:ondernemer
+Q3130384:topfunctionaris
+Q326653:boekhouder
+Q1162163:directeur
+Q863048:prinses
+Q102083:ridder
+Q2961975:zakenman
+schilderen:P106:Q1028181
+antiquaar:P106:Q187865
+bespeelde de piano:P106:Q486748
+major domus:P106:Q2918995
+consul:P106:Q207978
+landbouwers:P106:Q131512
+esotericus:P106:Q16004492
+golfer:P106:Q13156709
+landgraaf:P97:Q841633
+spion:P106:Q9352089
+biochemicus:P106:Q2919046
+slotvoogd:P106:Q1505781
+baron:P97:Q165503
+politieman:P106:Q384593
+gymnast:P106:Q16947675
+belastinggaarder:P106:Q1139055
+voetbalmakelaar:P106:Q144662
+wielrenner:P106:Q2309784
+schaker:P106:Q10873124
+grenadier:P106:Q313303
+dijkgraaf:P106:Q146839
+associate justice of the supreme court of the united states:P39:Q11144
+textielondernemer:P106:Q23754015
+koning van a ur:P39:Q217762
+marineofficier:P106:Q10669499
+fluitist:P106:Q12902372
+malacoloog:P106:Q16271261
+parlementslid in het parlement van engeland:P39:Q18018860
+ingenieur:P106:Q81096
+ornitholoog:P106:Q1225716
+hartchirurg:P106:Q19842026
+ufoloog:P106:Q18921227
+ontdekkingsreiziger:P106:Q11900058
+scheepsbouwer:P106:Q2106711
+eerste luitenant:P410:Q330459
+natuurbeschermer:P106:Q16060693
+bocciaspeler:P106:Q23719050
+lange afstandsrenner:P106:Q4439155
+hegoemen:P106:Q842781
+ethicus:P106:Q5403434
+sociologe:P106:Q2306091
+sultan of yogyakarta:P39:Q14579825
+topman:P106:Q3130384
+ambassadeur:P39:Q121998
+lid van de nationale vergadering van hongarije:P39:Q17590876
+scenarioschrijver:P106:Q28389
+striptekenaar:P106:Q715301
+boogschutter:P106:Q890527
+koloniaal bestuurder:P106:Q17765219
+playmate:P106:Q728711
+docent:P106:Q37226
+turnleraar:P106:Q2312637
+burggraaf:P97:Q185902
+hoogleraar in de rechtsgeleerdheid:P106:Q185351
+tsaar:P39:Q44356
+procurator:P39:Q499165
+zakenman:P106:Q2961975
+beiaardier:P106:Q18749693
+lijst van heersers van anjou:P97:Q770768
+tolk:P106:Q11085831
+assuradeur:P106:Q1666223
+bioloog:P106:Q864503
+jurist:P106:Q185351
+graficus:P106:Q1925963
+televisieacteur:P106:Q10798782
+kerkmuziekregisseur:P106:Q1294133
+koning van duitsland:P39:Q782985
+romeinse keizer:P39:Q842606
+huisarts:P106:Q6500773
+lid van de wetgevende vergadering van alberta:P39:Q15964815
+tennisser:P106:Q10833314
+tv programma:P106:Q947873
+prediker:P106:Q432386
+ijshockeyspeler:P106:Q11774891
+beeldhouwer:P106:Q1281618
+kapitein-ter-zee:P410:Q163500
+volleyballer:P106:Q15117302
+biofysicus:P106:Q14906342
+contrabassist:P106:Q584301
+kinderboekenschrijver:P106:Q4853732
+tegenkoning:P106:Q695364
+kanselier:P106:Q373085
+sciencefictionschrijver:P106:Q36180
+hoogleraar filosofie:P106:Q4964182
+prior:P106:Q830337
+luitenant ter zee:P410:Q2631032
+materiaalman:P106:Q5362501
+komiek:P106:Q245068
+motorcoureur:P106:Q3014296
+sakya trizin:P39:Q2165352
+bestuurder:P106:Q599151
+sporter:P106:Q2066131
+boekuitgever:P106:Q2516866
+landbouwer:P106:Q131512
+psychologie professor:P106:Q212980
+adjudant:P410:Q369894
+stemacteur:P106:Q2405480
+priester:P106:Q42603
+marathonloper:P106:Q13382460
+graveur:P106:Q329439
+piraat:P106:Q10729326
+ballonvaarder:P106:Q728425
+kabinetschef:P39:Q665061
+werd opgevolgd door:P106:Q116
+paus:P39:Q19546
+hueyi tlahtoani:P39:Q750183
+registeraccountant:P106:Q1108818
+hoveling:P106:Q1511216
+glaskunstenaar:P106:Q2865798
+milieubeschermer:P106:Q3578589
+commissionair:P106:Q1866727
+lid van de senaat van roemeni:P39:Q19938957
+in het leger:P106:Q47064
+hulpbisschop:P39:Q853982
+vioolpedagoog:P106:Q16145150
+legeraanvoerder:P106:Q189290
+decaan:P106:Q723682
+hockeyster:P106:Q10843263
+directeur generaal:P39:Q1501800
+openbaar aanklager:P106:Q600751
+caf houdster:P106:Q21500306
+heremiet:P106:Q189829
+chef kok:P106:Q3499072
+professioneel worstelaar:P106:Q13474373
+tai situ:P39:Q605879
+hertog:P97:Q166886
+mma vechtsporter:P106:Q11607585
+kapelaan:P106:Q1753370
+raadsheer:P106:Q16533
+uitvoerend producent:P106:Q1053574
+nawab:P39:Q23017648
+botanicus:P106:Q2374149
+militair:P106:Q47064
+koopman:P106:Q215536
+staatssecretaris:P39:Q736559
+stewardess:P106:Q101539
+kaatser:P106:Q21423578
+kolonel:P410:Q104680
+viceadmiraal:P410:Q214443
+boekbinder:P106:Q1413170
+hoogleraar informatica:P106:Q82594
+professor in filosofie:P106:Q4964182
+namestnik:P39:Q13424814
+geograaf:P106:Q901402
+lid van het pruisische hogerhuis:P39:Q18627576
+lexicograaf:P106:Q14972848
+revolutionaire:P106:Q14886050
+cargadoor:P106:Q236979
+rallynavigator:P106:Q2465611
+lama:P106:Q191421
+marianisten:P611:Q1896771
+generaal:P410:Q83460
+prostituee:P106:Q14915751
+katholiek bischop:P39:Q611644
+drummer:P106:Q386854
+missionaris:P106:Q219477
+roofridder:P106:Q2133060
+toneelschrijver:P106:Q214917
+singer songwriter:P106:Q488205
+geestelijke:P106:Q2259532
+chinees keizerrijk:P39:Q268218
+koningin:P106:Q719039
+vorst:P97:Q18244
+wakeboarder:P106:Q23308797
+zanger:P106:Q177220
+mensenrechtenverdediger:P106:Q1476215
+duc d'aquitaine:P97:Q21096233
+wetenschapper:P106:Q901
+lid van de zwitserse nationale raad:P39:Q18510612
+nobile:P97:Q3877594
+rechtsgeleerde:P106:Q185351
+cisterci nzer:P611:Q166861
+politicus:P106:Q82955
+ontwerper:P106:Q5322166
+producer:P106:Q183945
+neurofysioloog:P106:Q23719406
+kunstenares:P106:Q3391743
+bouwkundig ingenieur:P106:Q2305987
+muziekproducent:P106:Q3922505
+dichter:P106:Q49757
+militaire rang:P106:Q189290
+neurowetenschapper:P106:Q6337803
+inquisiteur:P106:Q1664338
+geoloog:P106:Q520549
+stadsomroeper:P106:Q2735971
+drost:P106:Q219101
+apotheker:P106:Q105186
+koning van:P106:Q116
+non:P106:Q191808
+maharadja:P39:Q1163330
+songwriter:P106:Q753110
+profeet:P106:Q42857
+diaken:P106:Q161944
+kamerheer:P106:Q264323
+president of the swiss national council:P39:Q2337229
+radja:P106:Q684172
+installaties:P106:Q18074503
+markgraaf:P97:Q209726
+keizerin gemalin:P106:Q719039
+schout bij nacht:P410:Q2408844
+toetsenist:P106:Q1075651
+apostolisch protonotaris:P39:Q620175
+piloot:P106:Q2095549
+ondernemer:P106:Q43845
+plastisch chirurg:P106:Q5770349
+muzikant:P106:Q639669
+filmregisseur:P106:Q2526255
+aartsbisschop:P39:Q49476
+maharajadhiraja:P106:Q1163330
+cricket international:P106:Q12299841
+karmelieten:P611:Q186277
+interieurarchitect:P106:Q8354364
+rensho:P39:Q497960
+keizer:P39:Q39018
+romanschrijver:P106:Q6625963
+romeins senator:P39:Q20056508
+king of joseon dynasty:P39:Q22304810
+verzet tweede wereldoorlog:P106:Q1397808
+verzetsstrijder:P106:Q1397808
+acteur:P106:Q33999
+oudste:P106:Q1155908
+activist:P106:Q15253558
+markiezaat van bergen op zoom:P39:Q1900720
+commandeur:P106:Q524980
+zeevaarder:P106:Q45199
+prins:P97:Q2747456
+filmacteur:P106:Q10800557
+vechtsporter:P106:Q11124885
+industrieel ontwerper:P106:Q15977509
+chancellor of the college of william mary:P39:Q5070795
+landdrost:P39:Q219101
+princess:P97:Q863048
+in het klooster:P106:Q733786
+wijnhandelaar:P106:Q23655566
+letterkundige:P106:Q18195617
+partner van de koning:P106:Q719039
+esquire to the body:P106:Q15132701
+posadnik:P106:Q2587924
+kampcommandant:P106:Q1719327
+instrumentmaker:P106:Q1955150
+activiste:P106:Q11499147a
+student:P106:Q48282
+kunstcriticus:P106:Q4164507
+consul de romeinse republiek:P39:Q21597597
+literatuur:P106:Q18195617
+edelsmid:P106:Q211423
+q2519376:P106:Q2519376
+nieuwslezer:P106:Q270389
+oberleutnant zur see:P410:Q19688860
+jonkheer:P97:Q1496077
+q2106711:P106:Q2106711
+taalkundige:P106:Q14467526
+duchess of normandy:P39:Q5311321
+kolonist:P106:Q1818899
+commandanten:P106:Q189290
+sieraadontwerper:P106:Q2519376
+doge:P39:Q858316
+uitgever van muziekwerken:P106:Q222836
+sergeant:P410:Q157696
+tsaar der:P106:Q116
+oorlogscrimineel:P31:Q15966439
+topfunctionaris:P106:Q3130384
+baronet:P97:Q282019
+hoogleraar in de rechtswetenschap:P106:Q185351
+een generaal:P106:Q189290
+religieus dienaar:P106:Q4504549
+first lady:P106:Q203184
+bankier:P106:Q806798
+ontwerper van tuinen:P106:Q2815948
+koning der belgen:P39:Q13592862
+veldmaarschalk:P410:Q2703373
+groot upan:P106:Q720247
+lijst van gouverneurs van colorado:P39:Q868353
+omroeper:P106:Q947873
+staatsraad van het koninkrijk:P39:Q1155243
+muziekinstrumentenmaker:P106:Q1955150
+revolutionair:P106:Q3242115
+gids:P106:Q14290559
+cartoonist:P106:Q1114448
+drossaard:P39:Q219101
+architect:P106:Q42973
+cacique:P106:Q599898
+propraetor:P39:Q2402261
+bouwvakker:P106:Q811122
+menselijk bijbels personage:P31:Q20643955
+literatuurcriticus:P106:Q4263842
+kunsthistoricus:P106:Q23307003
+presentatrice:P106:Q2722764
+﻿qq:claim[31:5] AND link[nlwiki] and noclaim[106]
+rentmeester:P106:Q1543547
+bibliothecaris:P106:Q182436
+hockey er:P106:Q10843263
+les geven:P106:Q37226
+kapitein ter zee:P410:Q163500
+minderbroeders:P611:Q165005
+bourgondische hertogen:P97:Q16145107
+filoloog:P106:Q13418253
+karakteracteur:P106:Q948329
+pokerspeler:P106:Q15295720
+stenograaf:P106:Q18810149
+sociaal werkster:P106:Q7019111
+radioproducent:P106:Q3406651
+dirigent:P106:Q158852
+benedictijn:P611:Q131132
+televisiepresentatrice:P106:Q947873
+rodelaar:P106:Q13382981
+american footballspeler:P106:Q19204627
+majoor:P410:Q983927
+pianist:P106:Q486748
+reder:P106:Q500251
+civiel ingenieur:P106:Q13582652
+sportbestuurder:P106:Q15986539
+astrofysicus:P106:Q752129
+auteur van kinderboeken:P106:Q4853732
+praefectus praetorio:P39:Q692343
+aartsdiaken:P39:Q1279743
+ambtenaar:P106:Q212238
+organist:P106:Q765778
+schrijfster:P106:Q36180
+theoloog:P106:Q1234713
+professor:P106:Q121594
+aartshertog:P97:Q154615
+hospik:P106:Q1201260
+leraar:P106:Q37226
+premier of alberta:P39:Q3401750
+wolkammer:P106:Q23766062
+vakbondsman:P106:Q15627169
+kaperkapitein:P106:Q201559
+marineman:P106:Q4991371
+comte de poitiers:P97:Q21096229
+raja:P39:Q684172
+radiopresentator:P106:Q2722764
+voetbalscheidsrechter:P106:Q859528
+meubelmaker:P106:Q559597
+secretaris generaal van de europese commissie:P39:Q19720821
+vredesactivist:P106:Q16323111
+archeoloog:P106:Q3621491
+bhikkhu:P106:Q854997
+dierenarts:P106:Q202883
+filosoof:P106:Q4964182
+koetsier:P106:Q23763484
+textielfabrikant:P106:Q23754015
+franciscanen:P611:Q165005
+mens:P31:Q5
+lid van de raad van state:P39:Q2614102
+mysticus:P106:Q12328016
+filmer:P106:Q1414443
+first sea lord:P39:Q1362267
+darter:P106:Q18574233
+abt:P106:Q103163
+monarchen:P106:Q116
+archivaris:P106:Q635734
+schoenmaker:P106:Q152355
+predikant:P106:Q1423891
+lid van het britse hogerhuis:P39:Q18952564
+hockeyspeler:P106:Q10843263
+bevelhebber:P106:Q189290
+astronoom:P106:Q11063
+singer-songwriter:P106:Q488205
+conservator:P106:Q674426
+treurspeldichter:P106:Q22073916
+uitvoerend kunstenaar:P106:Q10774753
+wolwever:P106:Q23763739
+classicus:P106:Q2468727
+vioolbouwer:P106:Q21009864
+autocoureur:P106:Q15958185
+kantoorbediende:P106:Q738142
+rapper:P106:Q2252262
+stadhouder:P39:Q325380
+maatschappelijk werker:P106:Q7019111
+dominee:P106:Q1423891
+wethouder:P39:Q20748682
+hoornist:P106:Q19729565
+sapa inca:P106:Q165948
+posadnik van veliki novgorod:P39:Q21113065
+diplomaat:P106:Q193391
+regisseur:P106:Q3455803
+psycholoog:P106:Q212980
+ecoloog:P106:Q15839134
+notarisklerk:P106:Q319341
+keurvorst:P39:Q22722
+vertaler:P106:Q333634
+neuroloog:P106:Q783906
+fotograaf:P106:Q33231
+q16145150:P106:Q16145150
+jezuiet:P611:Q36380
+krachtsporter:P106:Q1852228
+provinciegouverneur:P39:Q4557944
+lijst van hertogen van zwaben:P39:Q1399669
+zwemmer:P106:Q10843402
+tekenaar:P106:Q15296811
+couturier:P106:Q4845479
+shikken:P39:Q1045904
+onderwijzer:P106:Q37226
+kunstschilder:P106:Q1028181
+q219477:P106:Q219477
+manikongo:P39:Q926643
+lid van de senaat van arizona:P39:Q21360913
+hockeyer:P106:Q10843263
+lithograaf:P106:Q16947657
+betaaldvoetbalclub:P106:Q15986539
+q2306091:P106:Q2306091
+benedictijnen:P611:Q131132
+waterbouwkundige:P106:Q18703223
+abdis:P106:Q1646408
+filantroop:P106:Q13472585
+sultan:P97:Q43292
+schermer:P106:Q13381863
+zeeman:P106:Q2215100
+rijkswachter:P106:Q19801630
+columnist:P106:Q1086863
+auteur:P106:Q36180
+monnik:P106:Q733786
+software engineer:P106:Q1709010
+seculiere kanunnik:P106:Q2378979
+verzetsstrijdster:P106:Q1397808
+schaatser:P106:Q10866633
+martelaar:P106:Q6498826
+kapitein in:P106:Q189290
+baljuw:P106:Q10970991
+bisschop:P39:Q29182
+hoogleraar:P106:Q1622272
+lijsttrekker:P106:Q82955
+handelaar:P106:Q215536
+kapitein:P106:Q849424
+diskjockey:P106:Q130857
+q758780:P106:Q758780
+muziekuitgever:P106:Q3719391
+jazzmuzikant:P106:Q15981151
+farao:P106:Q37110
+zwemtrainer:P106:Q20730773
+keramist:P106:Q7541856
+magnificusrector:P39:Q212071
+goudsmid:P106:Q211423
+livedj:P106:Q10816969
+paltsgraaf:P39:Q22932
+ridder:P106:Q102083
+wever:P106:Q437512
+sportcoach:P106:Q41583
+onderzoeker:P106:Q1650915
+econoom:P106:Q188094
+natuurkundige:P106:Q169470
+concubine:P106:Q2719946
+voetbalcoach:P106:Q628099
+flankeur:P410:Q2279530
+meteoroloog:P106:Q2310145
+lid van het parlement van frankrijk:P39:Q3044918
+basketballer:P106:Q3665646
+indo europese talen:P106:Q14467526
+autohandelaar:P106:Q215536
+schepen:P39:Q2403813
+immunoloog:P106:Q15634285
+vakbondsbestuurder:P106:Q15627169
+ahau:P39:Q412185
+discuswerpen:P106:Q13381689
+violist:P106:Q1259917
+augustijnen:P611:Q214528
+magnificus rector:P39:Q212071
+meier:P106:Q17428947
+admiraal:P410:Q132851
+paardenfokker:P106:Q16000367
+rechtsfilosoof:P106:Q23760244
+luitenant generaal:P410:Q152951
+duke of lauenburg:P97:Q5313049
+universiteitsstudent:P106:Q48282
+literatuurwetenschapper:P106:Q18195617
+tenor:P106:Q177220
+hoofdabt:P106:Q1135621
+reclamedeskundige:P106:Q1900657
+praetoriaanse prefect:P39:Q692343
+rijksarchivaris:P106:Q635734
+gouverneur generaal van canada:P39:Q390776
+admiraal van de koninklijke marine:P106:Q10669499
+schooldirecteur:P106:Q1056391
+generaal in:P106:Q189290
+uitgever:P106:Q2516866
+monarch:P39:Q116
+muziekdocent:P106:Q16145150
+dammer:P106:Q18536353
+luitenant kolonel:P410:Q493898
+koning:P39:Q12097
+orthopedagoog:P106:Q23718886
+seriemoordenaar:P106:Q484188
+stadsarchivaris:P106:Q635734
+keizer van japan:P39:Q208233
+advocaat:P106:Q40348
+dierenbescherming:P106:Q23672693
+procureur generaal:P39:Q5358201
+politicoloog:P106:Q1238570
+nzermonnik:P106:Q733786
+presentator:P106:Q947873
+monarch of england:P39:Q18810062
+etser:P106:Q10862983
+sportjournalist:P106:Q13219447
+cisterciënzers:P611:Q166861
+model:P106:Q4610556
+letterontwerper:P106:Q354034
+televisieregisseur:P106:Q2059704
+zilversmid:P106:Q2216340
+bandiet:P106:Q2159907
+pater:P106:Q250867
+grand duke of lithuania:P97:Q2639920
+bevelhebber der zeestrijdkrachten:P39:Q2125721
+landschapsarchitect:P106:Q2815948
+cartograaf:P106:Q1734662
+houthandelaar:P106:Q215536
+glazenier:P106:Q2205972
+praetor urbanus:P39:Q16157626
+stoffeerder:P106:Q23754740
+hoofdinspecteur:P106:Q13728017
+marketeer:P106:Q1900657
+voorzitter van het nederlands:P106:Q15986539
+voetbaltrainer:P106:Q628099
+snowboarder:P106:Q15709642
+feminist:P106:Q16830344
+regent:P39:Q477406
+auto ontwerper:P106:Q15731008
+schout:P106:Q690928
+bodemkundige:P106:Q20888501
+uitvinder:P106:Q205375
+ganden tripa:P39:Q1493379
+houtsnijder:P106:Q6138343
+engelandvaarder:P106:Q1880441
+jezu eten:P611:Q36380
+decorontwerper:P106:Q2707485
+heer van:P97:Q332209
+videokunstenaar:P106:Q18216771
+elektrotechnisch ambtenaar:P106:Q1326820
+functionaris:P106:Q212238
+atleet:P106:Q11513337
+onderwijzeres:P106:Q37226
+heerser:P106:Q116
+zendeling:P106:Q20746152
+filmproducent:P106:Q3282637
+rechter:P106:Q16533
+accordeonist:P106:Q1863064
+journalist:P106:Q1930187
+generaal-majoor:P410:Q157148
+monarch van denemarken:P39:Q18341329
+tulku:P106:Q651267
+q1259917:P106:Q1259917
+zakenvrouw:P106:Q2961975
+kardinaal:P39:Q45722
+stadsdrukker:P106:Q175151
+sjah:P106:Q184299
+componist:P106:Q36834
+zuster:P106:Q191808
+schipper:P106:Q1897112
+koning van pontus:P39:Q890038
+kerkhistoricus:P106:Q1743122
+politievrouw:P106:Q384593
+antropoloog:P106:Q4773904
+pedagoog:P106:Q1231865
+sultan van:P106:Q116
+scheikundige:P106:Q593644
+ministerialis:P39:Q700101
+lid van de belgische senaat:P39:Q17619252
+klavecimbelspeler:P106:Q5371902
+hoofdcommissaris:P106:Q2855502
+microbioloog:P106:Q3779582
+meubelontwerper:P106:Q15977949
+hogepriester:P39:Q51677
+choreograaf:P106:Q2490358
+cameraman:P106:Q1208175
+fysisch geograaf:P106:Q2560911
+hegoumen:P106:Q842781
+generaal majoor:P410:Q157148
+arts:P106:Q39631
+kan:P39:Q181888
+directeur:P106:Q1162163
+q20730881:P106:Q20730881
+psychiater:P106:Q211346
+bridgespeelster:P106:Q18437198
+graaf:P97:Q3519259
+officier:P106:Q189290
+natuurwetenschapper:P106:Q18805
+elektrotechnisch ingenieur:P106:Q1326886
+schrijver:P106:Q36180
+bobsleeer:P106:Q13383011
+grafisch ontwerper:P106:Q627325
+wiskundige:P106:Q170790
+mensenrecthenactiviste:P106:Q1476215
+proost:P39:Q756215
+scheidsrechter:P106:Q202648
+cadet:P106:Q189290
+psychotherapeut:P106:Q1900167
+televisieproducent:P106:Q578109
+vlieger:P106:Q2095549
+korfballer:P106:Q23754399
+diefstallen:P106:Q3562775
+reserve officier:P106:Q47064
+keizer van duitsland:P39:Q181765
+musicoloog:P106:Q14915627
+gravin:P97:Q3519259
+accountant:P106:Q326653
+vorst van monaco:P106:Q116
+statisticus:P106:Q2732142
+beroepsmilitair:P106:Q47064
+orkestleider:P106:Q806349
+baron willoughby de eresby:P97:Q808681
+smid:P106:Q838566
+burgemeester:P39:Q30185
+hoogleraar scheikunde:P106:Q593644
+belastingontvanger:P106:Q1139055
+hovenier:P106:Q758780
+televisiepresentator:P106:Q947873
+markies:P97:Q209726
+abdijvorstendom:P39:Q2063178
+koningen van sparta:P39:Q107905
+trompettist:P106:Q17093672
+minister resident:P39:Q572927
+illustrator:P106:Q644687
+slagwerker:P106:Q17344998
+powerlifter:P106:Q23845879
+legatus:P31:Q212624
+emir:P39:Q166382
+zusters franciscanessen:P611:Q3977231
+drukker:P106:Q175151
+historisch geograaf:P106:Q23306981
+zanger tekstschrijver:P106:Q488205
+tsarina gemalin:P106:Q719039
+commandant:P106:Q189290
+commandant der marine:P106:Q10669499
+goochelaar:P106:Q1658894
+studeerde:P106:Q48282
+kastelein:P106:Q1543547
+vuilnisman:P106:Q1391360
+historicus:P106:Q201788
+typograaf:P106:Q1229025
+theaterproducent:P106:Q1759246
+aalmoezenier:P106:Q1657500
+rokuhara tandai:P39:Q938069
+danseres:P106:Q5716684
+verzetsleider:P106:Q1397808
+koningin gemalin:P97:Q719039
+kleinkunstenaar:P106:Q15214752
+apostolisch vicariaat:P39:Q620225
+lid van de senaat van de filipijnen:P39:Q18579098
+luftwaffepiloot:P106:Q2095549
+arrangeur:P106:Q1643514
+softballer:P106:Q13388586
+hertog van york:P39:Q337222
+voetballer:P106:Q937857
+stuurman:P106:Q254651
+president van honduras:P39:Q13341442
+vorstin:P97:Q18244
+drogist:P106:Q16101735
+kanselier van de orde van de nederlandse leeuw:P39:Q2731254
+lekenabt:P39:Q4536735
+hockeycoach:P106:Q41583
+slaaf:P106:Q12773225
+groothertog:P97:Q205706
+industrieel ontwerpster:P106:Q15977509
+boekhandelaar:P106:Q998550
+rector magnificus van de erasmus universiteit rotterdam:P39:Q20963060
+gouverneur:P39:Q132050
+prinses:P97:Q863048
