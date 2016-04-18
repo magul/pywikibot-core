@@ -1,0 +1,5 @@
+QQ:link[fywiki] AND noclaim[31] AND link[nlwiki] and noclaim[279]
+LL:nl
+PP:Q10000
+P31:is een
+P279:subklasse van
