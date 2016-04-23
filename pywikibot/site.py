@@ -5136,26 +5136,71 @@ class APISite(BaseSite):
     @must_be(group='sysop')
     @deprecate_arg("summary", "reason")
     def deletepage(self, page, reason):
-        """Delete page from the wiki. Requires appropriate privilege level.
+        """Delete page from the wiki.
 
-        @param page: Page to be deleted.
-        @type page: Page
+        Page to be deleted can be given either as Page object or as pageid.
+        Deletion via pageid is attemptedd first.
+        Delete via pageid is supported from MW version 1.14.
+
+        Requires appropriate privilege level.
+
+        @param page: Page to be deleted or its pageid.
+        @type page: Page or, in case of pageid, int or basestring
         @param reason: Deletion reason.
         @type reason: basestring
+        @raises TypeError: page has wrong type.
 
         """
         token = self.tokens['delete']
-        self.lock_page(page)
-        req = self._simple_request(action='delete',
-                                   token=token,
-                                   title=page,
-                                   reason=reason)
+
+        if isinstance(page, pywikibot.Page):
+            try:
+                pageid = page.pageid
+            except NotImplementedError:
+                pageid = None
+            finally:
+                del_from_page = True
+                msg = page.title(withSection=False)
+        else:
+            try:
+                pageid = int(page)
+            except (ValueError, TypeError):
+                pywikibot.error('Unexpected value or type for page param: %s'
+                                % page)
+                raise
+            else:
+                if isinstance(page, float):
+                    raise TypeError('Unexpected type for page param: %s'
+                                    % page)
+            finally:
+                del_from_page = False
+                msg = pageid
+
+        if pageid and not del_from_page:
+            if (MediaWikiVersion(self.version()) < MediaWikiVersion('1.14')):
+                raise NotImplementedError(
+                    "delete using pageid\n"
+                    "isn't implemented in MediaWiki version < 1.14")
+
+            req = self._simple_request(action='delete',
+                                       token=token,
+                                       pageid=pageid,
+                                       reason=reason)
+        else:
+            req = self._simple_request(action='delete',
+                                       token=token,
+                                       title=page,
+                                       reason=reason)
+
+        if del_from_page:
+            self.lock_page(page)
+
         try:
             req.submit()
         except api.APIError as err:
             errdata = {
                 'site': self,
-                'title': page.title(withSection=False),
+                'title': msg,
                 'user': self.user(),
             }
             if err.code in self._dl_errors:
@@ -5164,9 +5209,9 @@ class APISite(BaseSite):
                             % err.code,
                             _logger)
             raise
-        else:
+
+        if del_from_page:
             page.clear_cache()
-        finally:
             self.unlock_page(page)
 
     @must_be(group='sysop')
