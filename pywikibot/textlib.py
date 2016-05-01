@@ -7,7 +7,7 @@ and return a unicode string.
 
 """
 #
-# (C) Pywikibot team, 2008-2015
+# (C) Pywikibot team, 2008-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -20,6 +20,7 @@ import collections
 import datetime
 import re
 import sys
+from requests.utils import quote
 
 if sys.version_info[0] > 2:
     from html.parser import HTMLParser
@@ -126,6 +127,15 @@ NON_LATIN_DIGITS = {
     'gu': u'૦૧૨૩૪૫૬૭૮૯',
     'or': u'୦୧୨୩୪୫୬୭୮୯',
 }
+
+URL_PROTOCOLS_REGEX = (
+    r'(?:'
+    r'bitcoin:|ftp://|ftps://|geo:|git://|gopher://|http://|https://|'
+    r'irc://|ircs://|magnet:|mailto:|mms://|news:|nntp://|redis://|'
+    r'sftp://|sip:|sips:|sms:|ssh://|svn://|tel:|telnet://|urn:|'
+    r'worldwind://|xmpp:|//'
+    r')'
+)
 
 
 def to_local_digits(phrase, lang):
@@ -1669,6 +1679,41 @@ def glue_template_and_params(template_and_params):
 # Page parsing functionality
 # --------------------------
 
+
+def anchorencode(string):
+    """Return the anchor encoded string.
+
+    Similar to MediaWiki's {{anchorencode:string}} parser function.
+    This function is an incomplete implementation of MW's
+    Parser::guessSectionNameFromWikiText.
+
+    @param string: the section title
+    @type string: str
+    @return: anchorencoded string
+    @rtype: str
+
+    """
+    # Parser::stripSectionName
+    # Strip internal link markup
+    string = re.sub(r'\[\[:?([^[|]+)\|([^[]+)\]\]', r'\2', string)
+    string = re.sub(r'\[\[:?([^[]+)\|?\]\]', r'\1', string)
+    # Strip external link markup
+    string = re.sub(
+        r'\[' + URL_PROTOCOLS_REGEX + r'([^ ]+?) ([^[]+)\]',
+        r'\2',
+        string, re.I
+    )
+    # Todo: Parser::doQuotes (to handle italics & bold)
+    # Todo: StringUtils::delimiterReplace( '<', '>', '', $text )
+    # Sanitizer::normalizeSectionNameWhitespace
+    string = re.sub(r'[ _]+', r'_', string).strip('_')
+    # Sanitizer::escapeId
+    return quote(
+        string,
+        safe=':'
+    ).replace('%', '.')
+
+
 def does_text_contain_section(pagetext, section):
     """
     Determine whether the page text contains the given section title.
@@ -1684,14 +1729,15 @@ def does_text_contain_section(pagetext, section):
     @type pagetext: unicode or string
     @param section: a section of a page including wikitext markups
     @type section: unicode or string
+    @rtype: bool
 
     """
-    # match preceding colon for text links
-    section = re.sub(r'\\\[\\\[(\\:)?', r'\[\[\:?', re.escape(section))
-    # match underscores and white spaces
-    section = re.sub(r'\\?[ _]', '[ _]', section)
-    m = re.search("=+[ ']*%s[ ']*=+" % section, pagetext)
-    return bool(m)
+    encoded_section = anchorencode(section)
+    for m in re.finditer(r"^(=+)[ ']*(.*?)[ ']*\1 *\r?$", pagetext, re.M):
+        group2 = m.group(2)
+        if group2 == section or anchorencode(group2) == encoded_section:
+            return True
+    return False
 
 
 def reformat_ISBNs(text, match_func):

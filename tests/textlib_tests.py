@@ -74,7 +74,6 @@ class TestSectionFunctions(TestCase):
         self.assertNotContains('enwiki_help_editing', 'Minor_Edits',
                                'section hashes are case-sensitive')
 
-    @unittest.expectedFailure
     def testNonAlphabeticalCharactersInSection(self):
         """Test with non-alphabetical chars in section."""
         self.assertContains('enwiki_help_editing', 'Talk_.28discussion.29_pages',
@@ -94,15 +93,26 @@ class TestSectionFunctions(TestCase):
         self.assertContains("enwiki_help_editing", u"[[Wiki markup]]", "Link as section header")
         self.assertContains('enwiki_help_editing', '[[:Wiki markup]]',
                             'section header link with preleading colon')
-        self.assertNotContains('enwiki_help_editing', 'Wiki markup',
-                               'section header must be a link')
         # section is ===[[:Help]]ful tips===
         self.assertContains('enwiki_help_editing', '[[Help]]ful tips',
                             'Containing link')
         self.assertContains('enwiki_help_editing', '[[:Help]]ful tips',
                             'Containing link with preleading colon')
-        self.assertNotContains('enwiki_help_editing', 'Helpful tips',
-                               'section header must contain a link')
+
+    def test_anchorendoded_title(self):
+        """Test anchorenoded title."""
+        self.assertContains('enwiki_help_editing', 'آزمون')
+        self.assertContains(
+            'enwiki_help_editing',
+            '.D8.A2.D8.B2.D9.85.D9.88.D9.86'
+        )
+        self.assertContains(
+            'enwiki_help_editing',
+            '[https://www.mediawiki.org/wiki/Manual:Pywikibot Homepage]')
+        self.assertContains(
+            'enwiki_help_editing',
+            'Homepage'
+        )
 
 
 class TestFormatInterwiki(TestCase):

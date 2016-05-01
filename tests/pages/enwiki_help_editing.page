@@ -87,6 +87,10 @@ Make sure that you submit information which is relevant to Wikipedia's specific 
 ===Tools===
 * [[Wikipedia:Text editor support|Text editor support]]
 
+== آزمون ==
+=== [https://www.mediawiki.org/wiki/Manual:Pywikibot Homepage] ===
+To test anchorencoded non-ASCII titles and external links.
+
 ===See also===
 {{Meta}}
 * [[WP:WikiProject|WikiProjects]], if you are writing an article about something that belongs to a group of topics, check here first!
