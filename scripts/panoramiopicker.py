@@ -3,7 +3,7 @@
 """Tool to copy a Panoramio set to Commons."""
 #
 # (C) Multichill, 2010
-# (C) Pywikibot team, 2010-2015
+# (C) Pywikibot team, 2010-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -16,9 +16,13 @@ import hashlib
 import json
 import re
 import socket
-import StringIO
 
-from BeautifulSoup import BeautifulSoup
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+from bs4 import BeautifulSoup
 
 import pywikibot
 

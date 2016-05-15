@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Test that each script can be compiled and executed."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -42,9 +42,9 @@ script_deps = {
     # Note: package 'lunatic-python' provides module 'lua'
 
     'flickrripper': ['flickrapi'],
-    'imageharvest': ['BeautifulSoup'],
+    'imageharvest': ['bs4'],
     'match_images': ['PIL.ImageTk'],
-    'panoramiopicker': ['BeautifulSoup'],
+    'panoramiopicker': ['bs4'],
     'states_redirect': ['pycountry'],
     'patrol': ['mwparserfromhell'],
 }

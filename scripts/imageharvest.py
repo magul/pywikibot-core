@@ -5,7 +5,7 @@ Bot for getting multiple images from an external site.
 It takes a URL as an argument and finds all images (and other files specified
 by the extensions in 'fileformats') that URL is referring to, asking whether to
 upload them. If further arguments are given, they are considered to be the text
-that is common to the descriptions.
+that is common to the descriptions. BeautifulSoup is needed only in this case.
 
 A second use is to get a number of images that have URLs only differing in
 numbers. To do this, use the command line option "-pattern", and give the URL
@@ -16,7 +16,7 @@ Other options:
 -shown      Choose images shown on the page as well as linked from it
 -justshown  Choose _only_ images shown on the page, not those linked
 """
-#  (C) Pywikibot team, 2004-2015
+#  (C) Pywikibot team, 2004-2016
 #
 #   Distributed under the terms of the MIT license.
 #
@@ -26,7 +26,7 @@ __version__ = '$Id$'
 
 import os
 
-import BeautifulSoup
+from bs4 import BeautifulSoup
 
 import pywikibot
 
@@ -48,7 +48,7 @@ def get_imagelinks(url):
     links = []
     uo = URLopener()
     file = uo.open(url)
-    soup = BeautifulSoup.BeautifulSoup(file.read())
+    soup = BeautifulSoup(file.read())
     file.close()
     if not shown:
         tagname = "a"
