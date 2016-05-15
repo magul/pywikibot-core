@@ -40,11 +40,10 @@ script_deps = {
     'imagecopy_self': [TK_IMPORT],
     'script_wui': ['crontab', 'lua'],
     # Note: package 'lunatic-python' provides module 'lua'
-
     'flickrripper': ['flickrapi'],
-    'imageharvest': ['BeautifulSoup'],
+    'imageharvest': ['bs4'],
     'match_images': ['PIL.ImageTk'],
-    'panoramiopicker': ['BeautifulSoup'],
+    'panoramiopicker': ['bs4'],
     'states_redirect': ['pycountry'],
     'patrol': ['mwparserfromhell'],
 }
@@ -428,6 +427,8 @@ class TestScriptSimulate(DefaultSiteTestCase, PwbTestCase):
         'watchlist',
         # T94680: uses exit code 1
         'lonelypages',
+        # www.panoramio.com/ is shutting down
+        'panoramiopicker',
     ]
 
     _argument = 'simulate'
