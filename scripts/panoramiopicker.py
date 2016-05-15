@@ -3,7 +3,7 @@
 """Tool to copy a Panoramio set to Commons."""
 #
 # (C) Multichill, 2010
-# (C) Pywikibot team, 2010-2016
+# (C) Pywikibot team, 2010-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -16,9 +16,16 @@ import hashlib
 import json
 import re
 import socket
-import StringIO
 
-from BeautifulSoup import BeautifulSoup
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError as e:
+    BeautifulSoup = e
 
 import pywikibot
 
@@ -81,6 +88,10 @@ def findDuplicateImages(photo, site=None):
 
 def getLicense(photoInfo):
     """Adding license to the Panoramio API with a beautiful soup hack."""
+    # Check if BeautifulSoup is imported.
+    if isinstance(BeautifulSoup, ImportError):
+        raise BeautifulSoup
+
     photoInfo['license'] = u'c'
     page = urlopen(photoInfo.get(u'photo_url'))
     data = page.read()
