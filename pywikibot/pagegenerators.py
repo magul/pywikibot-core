@@ -347,7 +347,7 @@ docuReplacements = {'&params;': parameterHelp}
 __doc__ = __doc__.replace("&params;", parameterHelp)
 
 
-class GeneratorFactory(object):
+class GeneratorFactoryClass(object):
 
     """Process command line arguments and return appropriate page generator.
 
@@ -387,6 +387,7 @@ class GeneratorFactory(object):
         self._site = site
         self._positional_arg_name = positional_arg_name
         self._sparql = None
+        self._liverc = False
 
     @property
     def site(self):
@@ -714,6 +715,7 @@ class GeneratorFactory(object):
                                              _filter_unique=self._filter_unique)
 
         elif arg == '-liverecentchanges':
+            self._liverc = True
             gen = LiveRCPageGenerator(self.site, total=intNone(value))
         elif arg == '-file':
             if not value:
@@ -944,6 +946,26 @@ class GeneratorFactory(object):
             return True
         else:
             return False
+
+
+_generator_factory = None
+
+
+def GeneratorFactory(*args, **kwargs):
+    """
+    A factory method to obtain a GeneratorFactoryClass object.
+
+    We assume there is only one GeneratorFactoryClass object inside a script.
+
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+    @param positional_arg_name: generator to use for positional args,
+        which do not begin with a hyphen
+    @type positional_arg_name: basestring
+    """
+    global _generator_factory
+    _generator_factory = GeneratorFactoryClass(*args, **kwargs)
+    return _generator_factory
 
 
 @deprecated_args(step=None)
@@ -1857,22 +1879,27 @@ def PreloadingGenerator(generator, groupsize=50):
     @param groupsize: how many pages to preload at once
     @type groupsize: int
     """
-    # pages may be on more than one site, for example if an interwiki
-    # generator is used, so use a separate preloader for each site
-    sites = {}
-    # build a list of pages for each site found in the iterator
-    for page in generator:
-        site = page.site
-        sites.setdefault(site, []).append(page)
-        if len(sites[site]) >= groupsize:
-            # if this site is at the groupsize, process it
-            group = sites.pop(site)
-            for i in site.preloadpages(group, groupsize):
+    if _generator_factory and _generator_factory._liverc:
+        # do not preload pages for -liverecentchanges option
+        for page in generator:
+            yield page
+    else:
+        # pages may be on more than one site, for example if an interwiki
+        # generator is used, so use a separate preloader for each site
+        sites = {}
+        # build a list of pages for each site found in the iterator
+        for page in generator:
+            site = page.site
+            sites.setdefault(site, []).append(page)
+            if len(sites[site]) >= groupsize:
+                # if this site is at the groupsize, process it
+                group = sites.pop(site)
+                for i in site.preloadpages(group, groupsize):
+                    yield i
+        for site, pages in sites.items():
+            # process any leftover sites that never reached the groupsize
+            for i in site.preloadpages(pages, groupsize):
                 yield i
-    for site, pages in sites.items():
-        # process any leftover sites that never reached the groupsize
-        for i in site.preloadpages(pages, groupsize):
-            yield i
 
 
 @deprecated_args(step='groupsize')
