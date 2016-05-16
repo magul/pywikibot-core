@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Objects representing Mediawiki log entries."""
 #
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -219,6 +219,72 @@ class ProtectEntry(LogEntry):
     """Protection log entry."""
 
     _expectedType = 'protect'
+
+    def __init__(self, *args, **kwargs):
+        """Constructor."""
+        super(ProtectEntry, self).__init__(*args, **kwargs)
+        self._duration = {}
+        self._expiry = {}
+        self._level = {}
+        details = self._params.get('details')
+        if self.action() == 'protect':
+            for item in details:
+                key = item['type']
+                try:
+                    self._expiry[key] = pywikibot.Timestamp.fromISOformat(
+                        item['expiry'])
+                except ValueError:  # infinite
+                    self._expiry[key] = None
+                self._level[key] = item['level']
+        for key, expiry in self._expiry.iteritems():
+            if expiry is None:
+                self._duration[key] = None
+            else:
+                self._duration[key] = expiry - self.timestamp()
+
+    def duration(self, key=None):
+        """
+        Return a datetime.timedelta representing the protect duration.
+
+        @param key: A key to get the duration for.
+            Must beeither 'edit' or 'move' or None
+        @type key: str or None
+        @return: if a key is given, return datetime.timedelta,
+            or None if block is indefinite.
+            If key is None, return a dict with all keys.
+        @rtype: dict or datetime.timedelta or None
+        @raise: KeyError
+        """
+        return self._duration if key is None else self._duration[key]
+
+    def expiry(self, key=None):
+        """
+        Return a Timestamp representing the protect expiry date.
+
+        @param key: A key to get the expiry for.
+            Must beeither 'edit' or 'move' or None
+        @type key: str or None
+        @return: if a key is given, return pywikibot.Timestamp,
+            or None if block is indefinite.
+            If key is None, return a dict with all keys.
+        @rtype: dict or pywikibot.Timestamp or None
+        @raise: KeyError
+        """
+        return self._expiry if key is None else self._expiry[key]
+
+    def protect_level(self, key=None):
+        """
+        Return a string representing the protect level.
+
+        @param key: A key to get the protect level for.
+            Must beeither 'edit' or 'move' or None
+        @type key: str or None
+        @return: if a key is given, return the protect level string,
+            If key is None, return a dict with all keys.
+        @rtype: dict or str or None
+        @raise: KeyError
+        """
+        return self._level if key is None else self._level[key]
 
 
 class RightsEntry(LogEntry):

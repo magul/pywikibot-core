@@ -1,7 +1,7 @@
 # -*- coding: utf-8  -*-
 """Test logentries module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -167,6 +167,50 @@ class TestLogentryParams(TestLogentriesBase):
                                      logentry.expiry())
                 else:
                     self.assertIsNone(logentry.duration())
+                break
+
+    def test_ProtectEntry(self, key):
+        """Test ProtectEntry methods."""
+        if key == 'old':
+            self.skipTest('{0} does not has "protect" key.'
+                          ''.format(self.sites[key]['family']))
+        for logentry in self.site.logevents(logtype='protect', total=5):
+            self.assertIsInstance(logentry.duration(), dict)
+            self.assertIsInstance(logentry.expiry(), dict)
+            self.assertIsInstance(logentry.protect_level(), dict)
+            if logentry.action() != 'protect':
+                continue
+
+            with self.assertRaises(KeyError):
+                logentry.expiry('None')
+            with self.assertRaises(KeyError):
+                logentry.duration('None')
+            with self.assertRaises(KeyError):
+                logentry.protect_level('None')
+
+            done = True
+            for key in ('edit', 'move'):
+                self.assertIsInstance(logentry.expiry(key),
+                                      (unicode, type(None)))
+                self.assertIsInstance(logentry.duration(key),
+                                      (unicode, type(None)))
+                self.assertIsInstance(logentry.protect_level(key),
+                                      (unicode, type(None)))
+                if logentry.expiry(key) is not None:
+                    self.assertIsInstance(logentry.expiry(key),
+                                          pywikibot.Timestamp)
+                    self.assertIsInstance(logentry.duration(key),
+                                          datetime.timedelta)
+                    self.assertEqual(logentry.timestamp() +
+                                     logentry.duration(key),
+                                     logentry.expiry(key))
+                    self.assertIsInstance(logentry.protect_level(key), unicode)
+                else:
+                    self.assertIsNone(logentry.duration(key))
+                    self.assertIsNone(logentry.protect_level(key))
+                    done = False
+
+            if done:  # test for both keys are done
                 break
 
     def test_RightsEntry(self, key):
