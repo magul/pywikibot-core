@@ -95,7 +95,7 @@ Syntax examples:
 """
 #
 # (C) Daniel Herding, 2005
-# (C) Pywikibot team, 2005-2016
+# (C) Pywikibot team, 2005-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -962,7 +962,8 @@ def main(*args):
         # fetch at least 240 pages simultaneously from the wiki, but more if
         # a high thread number is set.
         pageNumber = max(240, config.max_external_links * 2)
-        gen = pagegenerators.PreloadingGenerator(gen, groupsize=pageNumber)
+        if not genFactory.nopreload:
+            gen = pagegenerators.PreloadingGenerator(gen, groupsize=pageNumber)
         gen = pagegenerators.RedirectFilterPageGenerator(gen)
         bot = WeblinkCheckerRobot(gen, HTTPignore, config.weblink_dead_days)
         try:

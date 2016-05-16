@@ -50,7 +50,7 @@ Furthermore, the following command line parameters are supported:
 # (C) Monobi a.k.a. Wikihermit, 2007
 # (C) Filnik, 2007-2011
 # (C) Nicolas Dumazet (NicDumZ), 2008-2009
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -277,7 +277,9 @@ def main(*args):
                 generator.append(pageCat)
         pywikibot.output(u'Categories loaded, start!')
     # Main Loop
-    preloadingGen = pagegenerators.PreloadingGenerator(generator, groupsize=60)
+    if not genFactory.nopreload:
+        preloadingGen = pagegenerators.PreloadingGenerator(generator,
+                                                           groupsize=60)
     for page in preloadingGen:
         pagename = page.title(asLink=True)
         pywikibot.output('Loading %s...' % pagename)

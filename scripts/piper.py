@@ -30,7 +30,7 @@ The following parameters are supported:
 
 """
 #
-# (C) Pywikibot team, 2008-2015
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -139,12 +139,10 @@ def main(*args):
                                           'piper-edit-summary',
                                           {'filters': s})
 
-    if not gen:
-        gen = genFactory.getCombinedGenerator()
+    gen = genFactory.getCombinedGenerator(gen, preload=True)
     if gen:
         # The preloading generator is responsible for downloading multiple
         # pages from the wiki simultaneously.
-        gen = pagegenerators.PreloadingGenerator(gen)
         bot = PiperBot(gen, **options)
         bot.run()
         return True

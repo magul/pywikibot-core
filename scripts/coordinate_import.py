@@ -24,7 +24,7 @@ You can use any typical pagegenerator to provide with a list of pages:
 """
 #
 # (C) Multichill, 2014
-# (C) Pywikibot team, 2013-2015
+# (C) Pywikibot team, 2013-2017
 #
 # Distributed under the terms of MIT License.
 #
@@ -50,7 +50,7 @@ class CoordImportRobot(WikidataBot):
 
         """
         super(CoordImportRobot, self).__init__()
-        self.generator = pagegenerators.PreloadingGenerator(generator)
+        self.generator = generator
         self.cacheSources()
         self.prop = 'P625'
 
@@ -124,7 +124,7 @@ def main(*args):
         if generator_factory.handleArg(arg):
             continue
 
-    generator = generator_factory.getCombinedGenerator()
+    generator = generator_factory.getCombinedGenerator(preload=True)
 
     if generator:
         coordbot = CoordImportRobot(generator)

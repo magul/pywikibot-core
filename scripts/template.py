@@ -102,8 +102,8 @@ pages:
 #
 # (C) Daniel Herding, 2004
 # (C) Rob W.W. Hooft, 2003-2005
-# (C) xqt, 2009-2016
-# (C) Pywikibot team, 2004-2016
+# (C) xqt, 2009-2017
+# (C) Pywikibot team, 2004-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -351,7 +351,8 @@ def main(*args):
         # make sure that proper namespace filtering etc. is handled
         gen = genFactory.getCombinedGenerator(gen)
 
-    preloadingGen = pagegenerators.PreloadingGenerator(gen)
+    if not genFactory.nopreload:
+        preloadingGen = pagegenerators.PreloadingGenerator(gen)
 
     bot = TemplateRobot(preloadingGen, templates, site=site, **options)
     bot.run()

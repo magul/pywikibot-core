@@ -21,7 +21,7 @@ the site commons should be given and not a Wikipedia or similar.
 """
 #
 # (C) Multichill, 2008
-# (C) Pywikibot team, 2009-2015
+# (C) Pywikibot team, 2009-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1397,14 +1397,13 @@ def main(*args):
         else:
             genFactory.handleArg(arg)
 
-    generator = genFactory.getCombinedGenerator(gen=generator)
+    generator = genFactory.getCombinedGenerator(gen=generator, preload=True)
     if not generator:
         pywikibot.bot.suggest_help(missing_generator=True)
         return False
     else:
-        pregenerator = pagegenerators.PreloadingGenerator(generator)
         site.login()
-        for page in pregenerator:
+        for page in generator:
             pywikibot.output(page.title())
             if page.exists() and (page.namespace() == 6) \
                     and (not page.isRedirectPage()):

@@ -22,7 +22,7 @@ Command line options:
                wikipedia, user, etc. namespaces.
 """
 # (C) Daniel Herding, 2007
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -111,8 +111,8 @@ class MisspellingRobot(DisambiguationRobot):
 
             empty_gen = (i for i in [])
             return empty_gen
-        generator = pagegenerators.CombinedPageGenerator(generators)
-        preloadingGen = pagegenerators.PreloadingGenerator(generator)
+        generator = pagegenerators.CombinedPageGenerator(generators,
+                                                         preload=True)
         return preloadingGen
 
     def findAlternatives(self, disambPage):

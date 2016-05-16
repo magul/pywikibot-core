@@ -19,7 +19,7 @@ Furthermore, the following command line parameters are supported:
 -create             Create items only.
 """
 
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -200,10 +200,8 @@ def main(*args):
     site = pywikibot.Site()
 
     options = {'always': always, 'create': create, 'clean': clean}
-    if not generator:
-        generator = genFactory.getCombinedGenerator()
+    generator = genFactory.getCombinedGenerator(generator, preload=True)
     if generator:
-        generator = pagegenerators.PreloadingGenerator(generator)
         bot = IWBot(generator, site, **options)
         bot.run()
     else:

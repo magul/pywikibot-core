@@ -24,7 +24,7 @@ and pagegenerator can be one of these:
 """
 #
 # (C) Leonardo Gregianin, 2006
-# (C) Pywikibot team, 2007-2014
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -138,9 +138,8 @@ def main(*args):
         else:
             genFactory.handleArg(arg)
 
-    gen = genFactory.getCombinedGenerator()
+    gen = genFactory.getCombinedGenerator(preload=True)
     if 'action' in options and gen:
-        gen = pagegenerators.PreloadingGenerator(gen)
         bot = CommonsLinkBot(gen, **options)
         bot.run()
         return True

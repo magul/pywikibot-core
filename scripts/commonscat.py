@@ -52,8 +52,8 @@ For example to go through all categories:
 # November 2013
 #
 # (C) Multichill, 2008-2009
-# (C) Xqt, 2009-2015
-# (C) Pywikibot team, 2008-2015
+# (C) Xqt, 2009-2017
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -535,7 +535,8 @@ def main(*args):
         generator = genFactory.getCombinedGenerator()
 
     if generator:
-        pregenerator = pagegenerators.PreloadingGenerator(generator)
+        if not genFactory.nopreload:
+            pregenerator = pagegenerators.PreloadingGenerator(generator)
         bot = CommonscatBot(pregenerator, **options)
         bot.run()
         return True

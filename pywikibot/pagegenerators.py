@@ -14,7 +14,7 @@ These parameters are supported to specify which pages titles to print:
 &params;
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -387,6 +387,7 @@ class GeneratorFactory(object):
         self._site = site
         self._positional_arg_name = positional_arg_name
         self._sparql = None
+        self.nopreload = None
 
     @property
     def site(self):
@@ -429,10 +430,12 @@ class GeneratorFactory(object):
                 self.site.namespaces.resolve(self._namespaces))
         return self._namespaces
 
-    def getCombinedGenerator(self, gen=None):
+    def getCombinedGenerator(self, gen=None, preload=False):
         """Return the combination of all accumulated generators.
 
         Only call this after all arguments have been parsed.
+        @param preload: preload pages using PreloadingGenerator
+        @type preload: bool
         """
         if gen:
             self.gens.insert(0, gen)
@@ -502,6 +505,12 @@ class GeneratorFactory(object):
         if self.catfilter_list:
             dupfiltergen = CategoryFilterPageGenerator(
                 dupfiltergen, self.catfilter_list, self.site)
+
+        if preload and not self.nopreload:
+            if isinstance(dupfiltergen, DequeGenerator):
+                dupfiltergen = DequePreloadingGenerator(dupfiltergen)
+            else:
+                dupfiltergen = PreloadingGenerator(dupfiltergen)
 
         return dupfiltergen
 
@@ -714,6 +723,7 @@ class GeneratorFactory(object):
                                              _filter_unique=self._filter_unique)
 
         elif arg == '-liverecentchanges':
+            self.nopreload = True
             gen = LiveRCPageGenerator(self.site, total=intNone(value))
         elif arg == '-file':
             if not value:

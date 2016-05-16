@@ -128,7 +128,7 @@ Please type "replace.py -help | more" if you can't read the top of the help.
 """
 #
 # (C) Daniel Herding, 2004-2012
-# (C) Pywikibot team, 2004-2015
+# (C) Pywikibot team, 2004-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1108,14 +1108,13 @@ JOIN text ON (page_id = old_id)
 LIMIT 200""" % (whereClause, exceptClause)
         gen = pagegenerators.MySQLPageGenerator(query)
 
-    gen = genFactory.getCombinedGenerator(gen)
+    gen = genFactory.getCombinedGenerator(gen, preload=True)
 
     if not gen:
         pywikibot.bot.suggest_help(missing_generator=True)
         return False
 
-    preloadingGen = pagegenerators.PreloadingGenerator(gen)
-    bot = ReplaceRobot(preloadingGen, replacements, exceptions, acceptall,
+    bot = ReplaceRobot(gen, replacements, exceptions, acceptall,
                        allowoverlap, recursive, add_cat, sleep, edit_summary,
                        site)
     site.login()

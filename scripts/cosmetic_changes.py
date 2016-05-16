@@ -26,8 +26,8 @@ The following parameters are supported:
 For further information see pywikibot/cosmetic_changes.py
 """
 #
-# (C) xqt, 2009-2013
-# (C) Pywikibot team, 2006-2015
+# (C) xqt, 2009-2017
+# (C) Pywikibot team, 2006-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -129,13 +129,12 @@ def main(*args):
         options['summary'] = i18n.twtranslate(site,
                                               'cosmetic_changes-standalone')
 
-    gen = genFactory.getCombinedGenerator()
+    gen = genFactory.getCombinedGenerator(preload=True)
     if gen:
         if options.get('always') or config.simulate or pywikibot.input_yn(
                 warning + '\nDo you really want to continue?',
                 default=False, automatic_quit=False):
             site.login()
-            preloadingGen = pagegenerators.PreloadingGenerator(gen)
             bot = CosmeticChangesBot(preloadingGen, **options)
             bot.run()
         return True

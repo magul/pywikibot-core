@@ -22,7 +22,7 @@ Example:
 """
 #
 # (C) Yrithinnd, 2006
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -111,9 +111,8 @@ def main(*args):
         else:
             genFactory.handleArg(arg)
 
-    gen = genFactory.getCombinedGenerator()
+    gen = genFactory.getCombinedGenerator(preload=True)
     if gen:
-        preloadingGen = pagegenerators.PreloadingGenerator(gen)
         bot = CapitalizeBot(preloadingGen, **options)
         bot.run()
         return True

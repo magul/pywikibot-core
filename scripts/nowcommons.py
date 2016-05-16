@@ -51,8 +51,8 @@ Please fix these if you are capable and motivated:
 #
 # (C) Wikipedian, 2006-2007
 # (C) Siebrand Mazeland, 2007-2008
-# (C) xqt, 2010-2016
-# (C) Pywikibot team, 2006-2016
+# (C) xqt, 2010-2017
+# (C) Pywikibot team, 2006-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -290,9 +290,8 @@ class NowCommonsDeleteBot(Bot):
             gens = [t.getReferences(follow_redirects=True, namespaces=[6],
                                     onlyTemplateInclusion=True)
                     for t in self.nc_templates]
-            gen = pg.CombinedPageGenerator(gens)
+            gen = pg.CombinedPageGenerator(gens, preload=True)
             gen = pg.DuplicateFilterPageGenerator(gen)
-            gen = pg.PreloadingGenerator(gen)
         return gen
 
     def findFilenameOnCommons(self, localImagePage):
