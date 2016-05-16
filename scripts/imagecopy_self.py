@@ -45,7 +45,7 @@ Todo:
 # English Wikipedia specific bot by:
 # (C) Multichill 2010-2012
 #
-# (C) Pywikibot team, 2010-2016
+# (C) Pywikibot team, 2010-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1037,8 +1037,8 @@ def main(*args):
         else:
             genFactory.handleArg(arg)
 
-    generator = genFactory.getCombinedGenerator()
-    if not generator:
+    pregenerator = genFactory.getCombinedGenerator(preload=True)
+    if not pregenerator:
         pywikibot.bot.suggest_help(missing_generator=True)
         return False
 
@@ -1050,8 +1050,6 @@ def main(*args):
     pywikibot.warning(u'It will only work on self published work images')
     pywikibot.warning(u'This bot is still full of bugs')
     pywikibot.warning(u'Use at your own risk!')
-
-    pregenerator = pagegenerators.PreloadingGenerator(generator)
 
     prefetchQueue = Queue(maxsize=50)
     uploadQueue = Queue(maxsize=200)

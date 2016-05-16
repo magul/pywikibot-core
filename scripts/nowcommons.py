@@ -218,9 +218,8 @@ class NowCommonsDeleteBot(Bot):
         gens = [t.getReferences(follow_redirects=True, namespaces=[6],
                                 onlyTemplateInclusion=True)
                 for t in self.nc_templates]
-        gen = pg.CombinedPageGenerator(gens)
+        gen = pg.CombinedPageGenerator(gens, preload=True)
         gen = pg.DuplicateFilterPageGenerator(gen)
-        gen = pg.PreloadingGenerator(gen)
         return gen
 
     def findFilenameOnCommons(self, localImagePage):
