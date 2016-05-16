@@ -69,6 +69,31 @@ class TestUserClass(TestCase):
         self.assertFalse(user.isEmailable())
         self.assertIn('invalid', user.getprops())
 
+    def test_CIDR_range(self):
+        """Test classless inter-domain routing range."""
+        user = User(self.site, '123.45.67.89/16')
+        self.assertEqual(user.name(), user.username)
+        self.assertEqual(user.title(withNamespace=False), user.username)
+        self.assertFalse(user.isRegistered())
+        self.assertTrue(user.isAnonymous())
+        self.assertTrue(user.is_range())
+        self.assertIsNone(user.registration())
+        self.assertFalse(user.isEmailable())
+        self.assertIn('invalid', user.getprops())
+
+    def test_excplicit_range(self):
+        """Test explicit ip range."""
+        user = User(self.site, '123.45.67.89-123.45.67.100')
+        self.assertEqual(user.name(), user.username)
+        self.assertEqual(user.title(withNamespace=False), user.username)
+        self.assertFalse(user.isRegistered())
+        self.assertTrue(user.isAnonymous())
+        self.assertTrue(user.is_range())
+        self.assertIsNone(user.registration())
+        self.assertFalse(user.isEmailable())
+        self.assertIn('missing', user.getprops())
+
+
 if __name__ == '__main__':
     try:
         unittest.main()

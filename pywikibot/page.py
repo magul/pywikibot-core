@@ -2893,7 +2893,22 @@ class User(Page):
 
         @rtype: bool
         """
-        return is_IP(self.username)
+        return is_IP(re.split('[/-]', self.username)[0])
+
+    def is_range(self):
+        """
+        Determine if the user is IP range.
+
+        @return: Determine whether the given user is an IP range.
+        @rtype: bool
+        """
+        if not self.isAnonymous():
+            return False
+        ip, sep, mask = self.username.partition('/')
+        if mask:
+            return mask.isdigit() and int(mask) in range(33)
+        ip, sep, mask = self.username.partition('-')
+        return is_IP(mask)
 
     def getprops(self, force=False):
         """
@@ -2909,7 +2924,13 @@ class User(Page):
         if not hasattr(self, '_userprops'):
             self._userprops = list(self.site.users([self.username, ]))[0]
             if self.isAnonymous():
-                r = list(self.site.blocks(users=self.username))
+                r = None
+                if not self.is_range():
+                    r = list(self.site.blocks(users=self.username, total=1))
+                # CIDR ranges only
+                elif '/' in self.username and int(
+                        self.username.split('/')[1]) >= 16:
+                    r = list(self.site.blocks(iprange=self.username, total=1))
                 if r:
                     self._userprops['blockedby'] = r[0]['by']
                     self._userprops['blockreason'] = r[0]['reason']
@@ -3011,6 +3032,8 @@ class User(Page):
             # an autoblock, so has no user pages per se.
             raise AutoblockUser(
                 "This is an autoblock ID, you can only use to unblock it.")
+        if self.is_range():
+            raise NotImplementedError("An IP range doesn't has a user page")
         if subpage:
             subpage = u'/' + subpage
         return Page(Link(self.title() + subpage, self.site))
@@ -3028,6 +3051,9 @@ class User(Page):
             # an autoblock, so has no user talk pages per se.
             raise AutoblockUser(
                 "This is an autoblock ID, you can only use to unblock it.")
+        if self.is_range():
+            raise NotImplementedError(
+                "An IP range doesn't has a user talk page")
         if subpage:
             subpage = u'/' + subpage
         return Page(Link(self.title(withNamespace=False) + subpage,
