@@ -422,10 +422,7 @@ class LogEntryFactory(object):
         @return: specified subclass of LogEntry, or LogEntry
         @rtype: class
         """
-        try:
-            return cls._logtypes[logtype]
-        except KeyError:
-            return LogEntry
+        return cls._logtypes[logtype]
 
     def _createFromData(self, logdata):
         """
