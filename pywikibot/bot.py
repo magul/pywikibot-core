@@ -1727,6 +1727,24 @@ class CreatingPageBot(CurrentPageBot):
         super(CreatingPageBot, self).treat(page)
 
 
+class EditingPageBot(CurrentPageBot):
+
+    """A CurrentPageBot class which only treats unlocked pages."""
+
+    def treat(self, page):
+        """Treat page if it is not locked."""
+        if page.exists():
+            restrictions = page.getRestrictions()
+            if (restrictions and
+                    'edit' in restrictions and
+                    restrictions['edit'] and
+                    'sysop' in restrictions['edit']):
+                pywikibot.warning('Page "{0}" is locked by sysop.'
+                                  ''.format(page.title(asLink=True)))
+                return
+        super(EditingPageBot, self).treat(page)
+
+
 class RedirectPageBot(CurrentPageBot):
 
     """A RedirectPageBot class which only treats redirects."""
