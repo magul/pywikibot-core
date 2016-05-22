@@ -100,5 +100,9 @@ test_script:
 after_test:
   - codecov
 
+branches:
+  except:
+    - nexqt
+
 artifacts:
   - path: dist\*  .coverage coverage.xml

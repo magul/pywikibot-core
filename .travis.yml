@@ -155,6 +155,10 @@ matrix:
     - python: '2.6'
       env: LANGUAGE=wikidata FAMILY=wikidata SITE_ONLY=1
 
+branches:
+  except:
+    - nexqt
+
 notifications:
   email:
     recipients:
