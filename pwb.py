@@ -9,7 +9,7 @@ Run scripts using:
 and it will use the package directory to store all user files, will fix up
 search paths so the package does not need to be installed, etc.
 """
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2016
 #
 # Distributed under the terms of the MIT license.
 #
@@ -32,6 +32,12 @@ from warnings import warn
 PYTHON_VERSION = sys.version_info[:3]
 PY2 = (PYTHON_VERSION[0] == 2)
 PY26 = (PYTHON_VERSION < (2, 7))
+
+try:
+    sys.pypy_version_info
+    PYPY = True
+except AttributeError:
+    PYPY = False
 
 versions_required_message = """
 Pywikibot not available on:
@@ -146,6 +152,9 @@ def abspath(path):
 # or it is the absolute path for the directory of pwb.py
 absolute_path = abspath(os.path.dirname(sys.argv[0]))
 rewrite_path = absolute_path
+
+if PYPY:
+    print('', end='')
 
 sys.path = [sys.path[0], rewrite_path,
             os.path.join(rewrite_path, 'pywikibot', 'compat'),
