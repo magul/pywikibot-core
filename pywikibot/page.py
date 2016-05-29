@@ -4869,7 +4869,9 @@ class Revision(DotReadableDict):
     HistEntry = namedtuple('HistEntry', ['revid',
                                          'timestamp',
                                          'user',
-                                         'comment'])
+                                         'comment',
+                                         'size',
+                                         'tags'])
 
     FullHistEntry = namedtuple('FullHistEntry', ['revid',
                                                  'timestamp',
@@ -4879,16 +4881,16 @@ class Revision(DotReadableDict):
 
     def __init__(self, revid, timestamp, user, anon=False, comment=u"",
                  text=None, minor=False, rollbacktoken=None, parentid=None,
-                 contentmodel=None, sha1=None):
+                 contentmodel=None, sha1=None, size=-1, tags=None):
         """
         Constructor.
 
         All parameters correspond to object attributes (e.g., revid
         parameter is stored as self.revid)
 
-        @param revid: Revision id number
+        @param revid: Revision id number (v1.11+)
         @type revid: int
-        @param text: Revision wikitext.
+        @param text: Revision wikitext
         @type text: unicode, or None if text not yet retrieved
         @param timestamp: Revision time stamp
         @type timestamp: pywikibot.Timestamp
@@ -4900,7 +4902,7 @@ class Revision(DotReadableDict):
         @type comment: unicode
         @param minor: edit flagged as minor
         @type minor: bool
-        @param rollbacktoken: rollback token
+        @param rollbacktoken: rollback token (v1.12+, deprecated since v1.24)
         @type rollbacktoken: unicode
         @param parentid: id of parent Revision (v1.16+)
         @type parentid: long
@@ -4908,6 +4910,10 @@ class Revision(DotReadableDict):
         @type contentmodel: unicode
         @param sha1: sha1 of revision text (v1.19+)
         @type sha1: unicode
+        @param size: size of revision text in bytes (v1.11+)
+        @type size: int
+        @param tags: any tags for this revision (v1.16+)
+        @type tags: list or None
         """
         self.revid = revid
         self.text = text
@@ -4920,6 +4926,8 @@ class Revision(DotReadableDict):
         self._parent_id = parentid
         self._content_model = contentmodel
         self._sha1 = sha1
+        self.size = size
+        self.tags = tags if tags is not None else []
 
     @property
     def parent_id(self):
@@ -4981,7 +4989,7 @@ class Revision(DotReadableDict):
     def hist_entry(self):
         """Return a namedtuple with a Page history record."""
         return Revision.HistEntry(self.revid, self.timestamp, self.user,
-                                  self.comment)
+                                  self.comment, self.size, self.tags)
 
     def full_hist_entry(self):
         """Return a namedtuple with a Page full history record."""

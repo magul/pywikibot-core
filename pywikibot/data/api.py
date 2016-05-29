@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Interface to Mediawiki's api.php."""
 #
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -3173,7 +3173,9 @@ def update_page(page, pagedict, props=[]):
                 rollbacktoken=rev.get('rollbacktoken', None),
                 parentid=rev.get('parentid'),
                 contentmodel=rev.get('contentmodel', None),
-                sha1=rev.get('sha1', None)
+                sha1=rev.get('sha1', None),
+                size=rev['size'],
+                tags=rev['tags'],
             )
             page._revisions[revision.revid] = revision
 
