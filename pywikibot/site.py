@@ -3889,7 +3889,8 @@ class APISite(BaseSite):
 
         rvargs = {'type_arg': 'info|revisions'}
 
-        rvargs['rvprop'] = ['ids', 'timestamp', 'flags', 'comment', 'user']
+        rvargs['rvprop'] = ['ids', 'timestamp', 'flags', 'comment', 'user',
+                            'size', 'tags']
         if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.21'):
             rvargs['rvprop'].append('contentmodel')
         if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.19'):
