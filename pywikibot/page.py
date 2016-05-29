@@ -4877,67 +4877,49 @@ class Revision(DotReadableDict):
                                                  'text',
                                                  'rollbacktoken'])
 
-    def __init__(self, revid, timestamp, user, anon=False, comment=u"",
-                 text=None, minor=False, rollbacktoken=None, parentid=None,
-                 contentmodel=None, sha1=None):
+    @deprecated_args(revid=None, timestamp=None, user=None, anon=None,
+                     comment=None, text=None, minor=None, rollbacktoken=None,
+                     parentid=None, contentmodel=None, sha1=None)
+    def __init__(self, data, title=None):
         """
         Constructor.
 
         All parameters correspond to object attributes (e.g., revid
         parameter is stored as self.revid)
 
-        @param revid: Revision id number
-        @type revid: int
-        @param text: Revision wikitext.
-        @type text: unicode, or None if text not yet retrieved
-        @param timestamp: Revision time stamp
-        @type timestamp: pywikibot.Timestamp
-        @param user: user who edited this revision
-        @type user: unicode
-        @param anon: user is unregistered
-        @type anon: bool
-        @param comment: edit comment text
-        @type comment: unicode
-        @param minor: edit flagged as minor
-        @type minor: bool
-        @param rollbacktoken: rollback token
-        @type rollbacktoken: unicode
-        @param parentid: id of parent Revision (v1.16+)
-        @type parentid: long
-        @param contentmodel: content model label (v1.21+)
-        @type contentmodel: unicode
-        @param sha1: sha1 of revision text (v1.19+)
-        @type sha1: unicode
+        @param data: revision dictionary from api call
+        @type data: dict
+        @param title: page title. Used for content model < v1.21 only.
+        @type title: str
         """
-        self.revid = revid
-        self.text = text
-        self.timestamp = timestamp
-        self.user = user
-        self.anon = anon
-        self.comment = comment
-        self.minor = minor
-        self.rollbacktoken = rollbacktoken
-        self._parent_id = parentid
-        self._content_model = contentmodel
-        self._sha1 = sha1
-
-    @property
-    def parent_id(self):
-        """
-        Return id of parent/previous revision.
-
-        Returns 0 if there is no previous revision
-
-        @return: id of parent/previous revision
-        @rtype: int or long
-        @raises AssertionError: parent id not supplied to the constructor
-        """
-        if self._parent_id is None:
+        self._data = data
+        self._title = title
+        if not isinstance(self._data, dict):
             raise AssertionError(
-                'Revision %d was instantiated without a parent id'
-                % self.revid)
+                'Revision was instantiated without any valid data')
 
-        return self._parent_id
+        for item in ('revid', 'timestamp', 'user', 'userid', 'rollbacktoken'):
+            setattr(self, item, self._data.get(item))
+
+        for item in ('user', 'comment', 'parsedcomment'):
+            setattr(self, item, self._data.get(item, ''))
+
+        self.text = self._data.get('*')
+        self.parent_id = self._data.get('parentid')
+        self._sha1 = self._data.get('sha1')
+        self.size = self._data.get('size', -1)
+        self.tags = self._data.get('tags', [])
+        self.anon = 'anon' in self._data
+        self.minor = 'minor' in self._data
+
+        for item in ('revid', 'timestamp', 'user', 'parent_id'):
+            if getattr(self, item) is None:
+                raise AssertionError(
+                    'Revision {0} was instantiated without {1}'
+                    ''.format(self.revid or '(unknown)', item))
+
+        self.timestamp = pywikibot.Timestamp.fromISOformat(
+            self._data['timestamp'])
 
     @property
     def content_model(self):
@@ -4949,13 +4931,15 @@ class Revision(DotReadableDict):
         @raises AssertionError: content model not supplied to the constructor
             which always occurs for MediaWiki versions lower than 1.21.
         """
-        # TODO: T102735: Add a sane default of 'wikitext' and others for <1.21
-        if self._content_model is None:
-            raise AssertionError(
-                'Revision %d was instantiated without a content model'
-                % self.revid)
-
-        return self._content_model
+        content_model = self._data.get('parentid')
+        if content_model is None and self._title:
+            if self._title.endswith('.js'):
+                content_model = 'javascript'
+            elif self._title.endswith('.css'):
+                content_model = 'css'
+        if content_model is None:
+            content_model = 'wikitext'
+        return content_model
 
     @property
     def sha1(self):
@@ -4970,10 +4954,7 @@ class Revision(DotReadableDict):
             None and does not cache anything.
         @rtype: str or None
         """
-        if self._sha1 is None:
-            if self.text is None:
-                # No text? No sha1 then.
-                return None
+        if self._sha1 is None and self.text is not None:
             self._sha1 = hashlib.sha1(self.text.encode('utf8')).hexdigest()
 
         return self._sha1

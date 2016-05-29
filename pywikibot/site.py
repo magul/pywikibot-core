@@ -3207,8 +3207,6 @@ class APISite(BaseSite):
         if pageprops:
             props += '|pageprops'
 
-        rvprop = ['ids', 'flags', 'timestamp', 'user', 'comment', 'content']
-
         for sublist in itergroup(pagelist, groupsize):
             # Do not use p.pageid property as it will force page loading.
             pageids = [str(p._pageid) for p in sublist
@@ -3231,7 +3229,7 @@ class APISite(BaseSite):
                 rvgen.request['pageids'] = set(pageids)
             else:
                 rvgen.request['titles'] = list(cache.keys())
-            rvgen.request['rvprop'] = rvprop
+            rvgen.request['rvprop'] = self._rvprops(content=True)
             pywikibot.output(u"Retrieving %s pages from %s."
                              % (len(cache), self))
 
@@ -3817,6 +3815,25 @@ class APISite(BaseSite):
                                 total=total, g_content=content, **cmargs)
         return cmgen
 
+    def _rvprops(self, content=False):
+        """Setup rvprop items for loadrevisions and preloadpages.
+
+        @return: rvprop items
+        @rtype: list
+        """
+        props = ['ids', 'flags', 'timestamp', 'comment', 'user', 'size']
+        if content:
+            props.append('content')
+        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.16'):
+            props.extend(('parsedcomment', 'tags'))
+        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.17'):
+            props.append('userid')
+        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.19'):
+            props.append('sha1')
+        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.21'):
+            props.append('contentmodel')
+        return props
+
     def loadrevisions(self, page, getText=False, revids=None,
                       startid=None, endid=None, starttime=None,
                       endtime=None, rvdir=None, user=None, excludeuser=None,
@@ -3889,15 +3906,9 @@ class APISite(BaseSite):
 
         rvargs = {'type_arg': 'info|revisions'}
 
-        rvargs['rvprop'] = ['ids', 'timestamp', 'flags', 'comment', 'user']
-        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.21'):
-            rvargs['rvprop'].append('contentmodel')
-        if MediaWikiVersion(self.version()) >= MediaWikiVersion('1.19'):
-            rvargs['rvprop'].append('sha1')
-        if getText:
-            rvargs['rvprop'].append('content')
-            if section is not None:
-                rvargs[u"rvsection"] = unicode(section)
+        rvargs['rvprop'] = self._rvprops(content=getText)
+        if getText and section is not None:
+            rvargs['rvsection'] = unicode(section)
         if rollback:
             self.login(sysop=sysop)
             rvargs[u"rvtoken"] = "rollback"

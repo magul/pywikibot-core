@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Interface to Mediawiki's api.php."""
 #
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -3160,21 +3160,9 @@ def update_page(page, pagedict, props=[]):
         for item in pagedict['protection']:
             page._protection[item['type']] = item['level'], item['expiry']
     if 'revisions' in pagedict:
-        # TODO: T102735: Use the page content model for <1.21
         for rev in pagedict['revisions']:
             revision = pywikibot.page.Revision(
-                revid=rev['revid'],
-                timestamp=pywikibot.Timestamp.fromISOformat(rev['timestamp']),
-                user=rev.get('user', u''),
-                anon='anon' in rev,
-                comment=rev.get('comment', u''),
-                minor='minor' in rev,
-                text=rev.get('*', None),
-                rollbacktoken=rev.get('rollbacktoken', None),
-                parentid=rev.get('parentid'),
-                contentmodel=rev.get('contentmodel', None),
-                sha1=rev.get('sha1', None)
-            )
+                data=rev.copy(), title=page.title())
             page._revisions[revision.revid] = revision
 
     if 'lastrevid' in pagedict:
