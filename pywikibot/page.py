@@ -4699,7 +4699,9 @@ class Revision(DotReadableDict):
     HistEntry = namedtuple('HistEntry', ['revid',
                                          'timestamp',
                                          'user',
-                                         'comment'])
+                                         'comment',
+                                         'size',
+                                         'tags'])
 
     FullHistEntry = namedtuple('FullHistEntry', ['revid',
                                                  'timestamp',
@@ -4709,7 +4711,7 @@ class Revision(DotReadableDict):
 
     def __init__(self, revid, timestamp, user, anon=False, comment=u"",
                  text=None, minor=False, rollbacktoken=None, parentid=None,
-                 contentmodel=None, sha1=None):
+                 contentmodel=None, sha1=None, size=-1, tags=None):
         """
         Constructor.
 
@@ -4750,6 +4752,8 @@ class Revision(DotReadableDict):
         self._parent_id = parentid
         self._content_model = contentmodel
         self._sha1 = sha1
+        self.size = size
+        self.tags = tags if tags is not None else []
 
     @property
     def parent_id(self):
@@ -4811,7 +4815,7 @@ class Revision(DotReadableDict):
     def hist_entry(self):
         """Return a namedtuple with a Page history record."""
         return Revision.HistEntry(self.revid, self.timestamp, self.user,
-                                  self.comment)
+                                  self.comment, self.size, self.tags)
 
     def full_hist_entry(self):
         """Return a namedtuple with a Page full history record."""
