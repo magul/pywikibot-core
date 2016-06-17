@@ -3234,6 +3234,20 @@ class User(Page):
                    item.pageid() > 0
                    )
 
+    @property
+    def thanks_enabled(self):
+        """
+        Determine if the user has thanks notifications enabled.
+
+        NOTE: This doesn't accurately determine if thanks is enabled for user.
+              Privacy of thanks preferences is under discussion, please see
+              https://phabricator.wikimedia.org/T57401#2216861, and
+              https://phabricator.wikimedia.org/T120753#1863894
+
+        @rtype: bool
+        """
+        return not self.isAnonymous()
+
 
 class WikibasePage(BasePage):
 

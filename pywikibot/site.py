@@ -3693,6 +3693,27 @@ class APISite(BaseSite):
                                 total=total, g_content=content, **cmargs)
         return cmgen
 
+    def get_revision(self, revid):
+        """Get a single revision's information from a given revision ID.
+
+        @param revid: Revision ID for the revision to be thanked.
+        @type revid: int
+        @return: JSON data returned by the wiki
+        @rtype: dict
+        """
+        if MediaWikiVersion(self.version()) < MediaWikiVersion("1.22"):
+            raise NotImplementedError(
+                u'Support of "revid" parameter\n'
+                u'is not implemented in MediaWiki version < "1.22"')
+        params = {'action': 'query',
+                  'prop': 'revisions',
+                  'revids': revid, }
+        req = self._request(parameters=params)
+        data = req.submit()
+        if 'pages' not in data['query']:
+            raise KeyError('This Revision_ID does not exist')
+        return data
+
     def loadrevisions(self, page, getText=False, revids=None,
                       startid=None, endid=None, starttime=None,
                       endtime=None, rvdir=None, user=None, excludeuser=None,
@@ -6389,6 +6410,22 @@ class APISite(BaseSite):
         data = req.submit()
         comparison = data['compare']['*']
         return comparison
+
+    @need_extension('Thanks')
+    def thank_revision(self, revid, source):
+        """Corresponding method to the 'action=thank' API action.
+
+        @param rev_id: Revision ID for the revision to be thanked.
+        @type rev_id: int
+        """
+        token = self.tokens['csrf']
+        params = {'action': 'thank',
+                  'rev': revid,
+                  'token': token,
+                  'source': source, }
+        req = self._request(parameters=params)
+        data = req.submit()
+        return data
 
     # Flow API calls
     @need_extension('Flow')
