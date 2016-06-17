@@ -188,8 +188,8 @@ class Namespace(Iterable, ComparableMixin, UnicodeMixin):
     # Namespace prefixes are always case-insensitive, but the
     # canonical forms are capitalized.
     canonical_namespaces = {
-        -2: u"Media",
-        -1: u"Special",
+        - 2: u"Media",
+        - 1: u"Special",
         0: u"",
         1: u"Talk",
         2: u"User",
@@ -1034,17 +1034,17 @@ class BaseSite(ComparableMixin):
                                        old_name='normalizeNamespace',
                                        class_name='BaseSite')
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def redirect(self):
         """Return list of localized redirect tags for the site."""
         return [u"REDIRECT"]
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def pagenamecodes(self):
         """Return list of localized PAGENAME tags for the site."""
         return [u"PAGENAME"]
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def pagename2codes(self):
         """Return list of localized PAGENAMEE tags for the site."""
         return [u"PAGENAMEE"]
@@ -2582,7 +2582,7 @@ class APISite(BaseSite):
         """
         return self.expand_text(wikitext)
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def redirect(self):
         """Return the localized #REDIRECT keyword."""
         # return the magic word without the preceding '#' character
@@ -2605,12 +2605,12 @@ class APISite(BaseSite):
             pattern = None
         return BaseSite.redirectRegex(self, pattern)
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def pagenamecodes(self):
         """Return list of localized PAGENAME tags for the site."""
         return self.getmagicwords("pagename")
 
-    @remove_last_args(('default', ))
+    @remove_last_args(('default',))
     def pagename2codes(self):
         """Return list of localized PAGENAMEE tags for the site."""
         return self.getmagicwords("pagenamee")
@@ -6054,7 +6054,7 @@ class APISite(BaseSite):
                                       3)
         if isinstance(ignore_warnings, Iterable):
             ignored_warnings = ignore_warnings
-            ignore_warnings = lambda warnings: all(  # flake8: disable=E731
+            ignore_warnings = lambda warnings: all(# flake8: disable=E731
                 w.code in ignored_warnings for w in warnings)
         ignore_all_warnings = not callable(ignore_warnings) and ignore_warnings
         if text is None:
@@ -6773,6 +6773,22 @@ class APISite(BaseSite):
         data = req.submit()
         comparison = data['compare']['*']
         return comparison
+
+    @need_extension('Thanks')
+    def thank_revision(self, rev_id, source):
+        """Corresponding method to the 'action=thank' API action.
+
+        @param rev_id: Revision ID for the revision to be thanked.
+        @type rev_id: int
+        """
+        token = self.tokens['csrf']
+        params = {'action': 'thank',
+                  'rev': rev_id,
+                  'token': token,
+                  'source': source, }
+        req = self._request(parameters=params)
+        data = req.submit()
+        return data
 
     # Flow API calls
     @need_extension('Flow')

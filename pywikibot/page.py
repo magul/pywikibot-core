@@ -756,7 +756,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
 
         return self._lastNonBotUser
 
-    @remove_last_args(('datetime', ))
+    @remove_last_args(('datetime',))
     def editTime(self):
         """Return timestamp of last revision to page.
 
@@ -944,7 +944,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         """DEPRECATED: use is_filepage instead."""
         return self.is_filepage()
 
-    @remove_last_args(('get_Index', ))
+    @remove_last_args(('get_Index',))
     def isDisambig(self):
         """
         Return True if this is a disambiguation page, False otherwise.
@@ -3462,6 +3462,20 @@ class User(Page):
                    item.pageid() > 0
                    )
 
+    @property
+    def thankable(self):
+        """
+        Determine if the user has thanks notifications enabled.
+
+        NOTE: This doesn't accurately determine if thanks is enabled for user.
+              Privacy of thanks preferences is under discussion, please see
+              https://phabricator.wikimedia.org/T57401#2216861, and
+              https://phabricator.wikimedia.org/T120753#1863894
+
+        @rtype: bool
+        """
+        return not self.isAnonymous()
+
 
 class WikibasePage(BasePage):
 
@@ -5756,17 +5770,17 @@ def html2unicode(text, ignore=None):
     convertIllegalHtmlEntities = {
         128: 8364,  # €
         130: 8218,  # ‚
-        131: 402,   # ƒ
+        131: 402,  # ƒ
         132: 8222,  # „
         133: 8230,  # …
         134: 8224,  # †
         135: 8225,  # ‡
-        136: 710,   # ˆ
+        136: 710,  # ˆ
         137: 8240,  # ‰
-        138: 352,   # Š
+        138: 352,  # Š
         139: 8249,  # ‹
-        140: 338,   # Œ
-        142: 381,   # Ž
+        140: 338,  # Œ
+        142: 381,  # Ž
         145: 8216,  # ‘
         146: 8217,  # ’
         147: 8220,  # “
@@ -5774,13 +5788,13 @@ def html2unicode(text, ignore=None):
         149: 8226,  # •
         150: 8211,  # –
         151: 8212,  # —
-        152: 732,   # ˜
+        152: 732,  # ˜
         153: 8482,  # ™
-        154: 353,   # š
+        154: 353,  # š
         155: 8250,  # ›
-        156: 339,   # œ
-        158: 382,   # ž
-        159: 376    # Ÿ
+        156: 339,  # œ
+        158: 382,  # ž
+        159: 376  # Ÿ
     }
     # ensuring that illegal &#129; &#141; and &#157, which have no known values,
     # don't get converted to chr(129), chr(141) or chr(157)
