@@ -6390,6 +6390,29 @@ class APISite(BaseSite):
         comparison = data['compare']['*']
         return comparison
 
+    @need_extension('Flow')
+    @need_extension('Thanks')
+    def thank_flowpost(self, postid):
+        """
+        Thank a post identified by the given Post ID.
+
+        @param postid: A Flow Post ID
+        @type postid: Unicode
+        @return: JSON data returned by the wiki
+        @rtype: dict
+        """
+        if MediaWikiVersion(self.version()) < MediaWikiVersion("1.24"):
+            raise NotImplementedError(
+                u'Support of "postid" parameter\n'
+                u'is not implemented in MediaWiki version < "1.24"')
+        token = self.tokens['csrf']
+        params = {'action': 'flowthank',
+                  'postid': postid,
+                  'token': token, }
+        req = self._request(parameters=params)
+        data = req.submit()
+        return data
+
     # Flow API calls
     @need_extension('Flow')
     def load_board(self, page):
