@@ -9,7 +9,7 @@ This module requires socketIO_client to be installed:
 """
 #
 # (C) 2014 Merlijn van Deen
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -18,6 +18,7 @@ from __future__ import absolute_import, unicode_literals
 __version__ = '$Id$'
 #
 
+from datetime import datetime
 import sys
 import threading
 
@@ -157,7 +158,8 @@ class RcListenerThread(threading.Thread):
         self.running = False
 
 
-def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
+def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None,
+                timeout=-1):
     """Yield changes received from RCstream.
 
     @param wikihost: the hostname of the wiki we want to get changes for. This
@@ -170,6 +172,8 @@ def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
                    (default: '/rc')
     @param total: the maximum number of entries to return. The underlying thread
                   is shut down then this number is reached.
+    @param timeout: Add a watchdog to restart rc listener thread
+    @type timeout: int or float
 
     @return: yield dict as formatted by MediaWiki's
         MachineReadableRCFeedFormatter, which consists of at least id
@@ -185,33 +189,45 @@ def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
         raise ImportError('socketIO_client is required for the rc stream;\n'
                           'install it with pip install "socketIO_client==0.5.6"')
 
-    rc_thread = RcListenerThread(
-        wikihost=wikihost,
-        rchost=rchost, rcport=rcport, rcpath=rcpath,
-        total=total
-    )
-
-    debug('Starting rcstream thread %r' % rc_thread,
-          _logger)
-    rc_thread.start()
+    rc_thread = None
 
     while True:
+        if rc_thread is None:
+            rc_thread = RcListenerThread(
+                wikihost=wikihost,
+                rchost=rchost, rcport=rcport, rcpath=rcpath,
+                total=total
+            )
+            debug('Starting rcstream thread %r' % rc_thread,
+                  _logger)
+            rc_thread.start()
+            ts = datetime.now()
+
+        if (datetime.now() - ts).total_seconds() > timeout:
+            rc_thread.stop()
+            rc_thread = None
+            warning('rcstream thread restarted due to watchdog timeout.')
+            continue
         try:
             element = rc_thread.queue.get(timeout=0.1)
         except Empty:
             continue
         if element is None:
-            return
+            debug('rcstren element was None')
+            break
         yield element
+        ts = datetime.now()
 
 
-def site_rc_listener(site, total=None):
+def site_rc_listener(site, total=None, timeout=None):
     """Yield changes received from RCstream.
 
     @param site: the Pywikibot.Site object to yield live recent changes for
     @type site: Pywikibot.BaseSite
     @param total: the maximum number of changes to return
     @type total: int
+    @param timeout: Add a watchdog to restart rc listener thread
+    @type timeout: int or float
 
     @return: pywikibot.comms.rcstream.rc_listener configured for the given site
     """
@@ -219,4 +235,5 @@ def site_rc_listener(site, total=None):
         wikihost=site.hostname(),
         rchost=site.rcstream_host(),
         total=total,
+        timeout=timeout or -1,
     )
