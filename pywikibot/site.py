@@ -7493,3 +7493,40 @@ class DataSite(APISite):
         if limit is not None:
             gen.set_maximum_items(limit)
         return gen
+
+    def parse(self, datatype, values, options, validate):
+        """
+        Send data values to the wikibase parser for interpretation.
+
+        @param datatype: datatype of the values being parsed: commonsMedia, globe-coordinate,
+            monolingualtext, quantity, string, time, url, external-id, wikibase-item,
+            wikibase-property, math
+        @type datatype: str
+        @param values: list of values to be parsed
+        @type values: list
+        @param options: any additional options for wikibase parser (for time, 'precision'
+            should be specified)
+        @type options: dict
+        @param validate: whether parser should provide data validation as well as parsing
+        @type validate: bool
+        @return: list of parsed values
+        @rtype: list
+        @raises ValueError: parsing failed due to some invalid input values
+        """
+        params = dict(action='wbparsevalue',
+                      datatype=datatype,
+                      values='|'.join(values),
+                      options=json.dumps(options),
+                      validate=validate,
+                      )
+        req = self._simple_request(**params)
+        data = req.submit()
+        results = []
+        if 'results' not in data:
+            raise ValueError('Parsing via wikibase wbparsevalue failed.')
+        for result_hash in data['results']:
+            if 'value' not in result_hash:
+                raise ValueError('Parsing via wikibase wbparsevalue failed: {0}'.
+                                 format(result_hash['error-info']))
+            results.append(result_hash['value'])
+        return results

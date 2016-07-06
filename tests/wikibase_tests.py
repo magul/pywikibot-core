@@ -282,6 +282,47 @@ class TestWikibaseTypes(WikidataTestCase):
                           text=None, language='sv')
 
 
+class TestWikibaseParser(WikidataTestCase):
+    """Test passing various datatypes to wikibase parser."""
+
+    def test_WbParseStrings(self):
+        """Test that strings return unchanged."""
+        test_list = ['test string', 'second test']
+        parsedStrings = self.site.parse('string', test_list, {}, False)
+        self.assertEqual(parsedStrings, test_list)
+
+    def test_WbParseTime(self):
+        """Test parsing of a time value."""
+        parsedDate = self.site.parse('time', ['1994-02-08'], {'precision': 9}, False)[0]
+        self.assertEqual(parsedDate['time'], '+1994-02-08T00:00:00Z')
+        self.assertEqual(parsedDate['precision'], 9)
+
+    def test_WbParseQuantity(self):
+        """Test parsing of quantity values."""
+        parsedQuantities = self.site.parse('quantity',
+                                           ['1.90e-9+-0.20e-9',
+                                            '1000000.00000000054321+-0',
+                                            '-123+-1',
+                                            '2.70e34+-1e32'],
+                                           {}, False)
+        self.assertEqual(parsedQuantities[0]['amount'], '+0.00000000190')
+        self.assertEqual(parsedQuantities[0]['upperBound'], '+0.00000000210')
+        self.assertEqual(parsedQuantities[0]['lowerBound'], '+0.00000000170')
+        self.assertEqual(parsedQuantities[1]['amount'], '+1000000.00000000054321')
+        self.assertEqual(parsedQuantities[1]['upperBound'], '+1000000.00000000054321')
+        self.assertEqual(parsedQuantities[1]['lowerBound'], '+1000000.00000000054321')
+        self.assertEqual(parsedQuantities[2]['amount'], '-123')
+        self.assertEqual(parsedQuantities[2]['upperBound'], '-122')
+        self.assertEqual(parsedQuantities[2]['lowerBound'], '-124')
+        self.assertEqual(parsedQuantities[3]['amount'], '+27000000000000000000000000000000000')
+        self.assertEqual(parsedQuantities[3]['upperBound'], '+27100000000000000000000000000000000')
+        self.assertEqual(parsedQuantities[3]['lowerBound'], '+26900000000000000000000000000000000')
+
+    def test_WbParseRaisesValueError(self):
+        """Test invalid value condition."""
+        self.assertRaises(ValueError, self.site.parse, 'quantity', ['Not a quantity'], {}, False)
+
+
 class TestItemPageExtensibility(TestCase):
 
     """Test ItemPage extensibility."""
@@ -1152,7 +1193,7 @@ class TestOwnClient(TestCase):
     def test_item_not_exists(self):
         """Test that a ItemPage does not exists for test:wikidata."""
         site = self.get_site('wikidatatest')
-        page = pywikibot.Page(site, 'Wikidata:Main Page')
+        page = pywikibot.Page(site, 'Xlc Garble Grox')
         with self.assertRaises(pywikibot.NoPage):
             pywikibot.ItemPage.fromPage(page)
 
