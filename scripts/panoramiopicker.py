@@ -15,6 +15,9 @@ import base64
 import hashlib
 import json
 import re
+
+import requests
+
 import socket
 import StringIO
 
@@ -24,14 +27,7 @@ import pywikibot
 
 from pywikibot import config
 
-from pywikibot.tools import PY2
-
 from scripts import imagerecat, upload
-
-if not PY2:
-    from urllib.request import urlopen
-else:
-    from urllib import urlopen
 
 try:
     from pywikibot.userinterfaces.gui import Tkdialog
@@ -57,7 +53,7 @@ def downloadPhoto(photoUrl):
     TODO: Add exception handling
 
     """
-    imageFile = urlopen(photoUrl).read()
+    imageFile = requests.get(photoUrl).content
     return StringIO.StringIO(imageFile)
 
 
@@ -81,8 +77,8 @@ def findDuplicateImages(photo, site=None):
 def getLicense(photoInfo):
     """Adding license to the Panoramio API with a beautiful soup hack."""
     photoInfo['license'] = u'c'
-    page = urlopen(photoInfo.get(u'photo_url'))
-    data = page.read()
+    page = requests.get(photoInfo.get(u'photo_url'))
+    data = page.content
     soup = BeautifulSoup(data)
     if soup.find("div", {'id': 'photo-info'}):
         pointer = soup.find("div", {'id': 'photo-info'})
@@ -266,8 +262,9 @@ def getPhotos(photoset=u'', start_id='', end_id='', interval=100):
             try:
                 if tries < maxtries:
                     tries += 1
-                    panoramioApiPage = urlopen(url % (photoset, i, i + interval))
-                    contents = panoramioApiPage.read().decode('utf-8')
+                    panoramioApiPage = requests.get(url % (photoset, i, i + interval))
+                    panoramioApiPage.decoding = 'utf-8'
+                    contents = panoramioApiPage.text
                     gotInfo = True
                     i += interval
                 else:
