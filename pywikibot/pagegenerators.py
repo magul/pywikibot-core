@@ -723,6 +723,12 @@ class GeneratorFactory(object):
             if not value:
                 value = pywikibot.input('Please enter the local file name:')
             gen = TextfilePageGenerator(value, site=self.site)
+
+        elif arg == '-tsv':
+            if not value:
+                value = pywikibot.input('Please enter the local file name:')
+            gen = TsvFilePageGenerator(value, site=self.site)
+
         elif arg in ['-namespace', '-ns', '-namespaces']:
             if isinstance(self._namespaces, frozenset):
                 warn('Cannot handle arg %s as namespaces can not '
@@ -1317,6 +1323,48 @@ def TextfilePageGenerator(filename=None, site=None):
         f.seek(0)
         for title in f:
             title = title.strip()
+            if '|' in title:
+                title = title[:title.index('|')]
+            if title:
+                yield pywikibot.Page(site, title)
+    f.close()
+
+
+def TsvFilePageGenerator(filename=None, site=None):
+    """Iterate pages from the first column of a TSV  file.
+
+    The file must be tab-delimited, and have its page spec in the first column.
+    The generator will yield each corresponding Page object. Otherwise
+    the item specification is based on a line in TextfilePageGenerator.
+
+    @param filename: the name of the file that should be read. If no name is
+                     given, the generator prompts the user.
+    @type filename: unicode
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+
+    NOTE: this was derived directly form TextfilePageGenerator
+
+    """
+    if filename is None:
+        filename = pywikibot.input(u'Please enter the filename:')
+    if site is None:
+        site = pywikibot.Site()
+    f = codecs.open(filename, 'r', config.textfile_encoding)
+    linkmatch = None
+    for linkmatch in pywikibot.link_regex.finditer(f.read()):
+        # If the link is in interwiki format, the Page object may reside
+        # on a different Site than the default.
+        # This makes it possible to work on different wikis using a single
+        # text file, but also could be dangerous because you might
+        # inadvertently change pages on another wiki!
+        raise NotImplemented()
+        yield pywikibot.Page(pywikibot.Link(linkmatch.group("title"), site))
+    if linkmatch is None:
+        f.seek(0)
+        for line in f:
+            record = line.split('\t')
+            title = record[0].strip()
             if '|' in title:
                 title = title[:title.index('|')]
             if title:
