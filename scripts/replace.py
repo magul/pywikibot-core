@@ -643,6 +643,22 @@ class ReplaceRobot(Bot):
                         'title is on the exceptions list.'.format(
                             replacement.description, page.title(asLink=True)))
                 continue
+            text_contains_match = ""
+            for exc in replacement.exceptions.get('text-contains', []):
+                text_contains_match = exc.search(original_text)
+                if text_contains_match:
+                    continue
+            if text_contains_match:
+                pywikibot.output(
+                    'Skipping fix "{0}" on {1} because the '
+                    'text contains "{2}".'.format(
+                        replacement.container.name,
+                        page.title(asLink=True),
+                        text_contains_match.group(),
+                    )
+                )
+                skipped_containers.add(replacement.container.name)
+                continue
             old_text = new_text
             new_text = textlib.replaceExcept(
                 new_text, replacement.old_regex, replacement.new,
