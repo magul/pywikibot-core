@@ -165,6 +165,7 @@ from pywikibot.tools import (
     deprecated,
     deprecated_args,
     issue_deprecation_warning,
+    first
 )
 
 from pywikibot.tools.formatter import color_format
@@ -623,6 +624,21 @@ class ReplaceRobot(Bot):
                         'Skipping unnamed replacement ({0}) on {1} because the '
                         'title is on the exceptions list.'.format(
                             replacement.description, page.title(asLink=True)))
+                continue
+            repl_exc_match = first(
+                exc.search(original_text)
+                for exc in replacement.exceptions.get('text-contains', [])
+            )
+            if repl_exc_match:
+                pywikibot.output(
+                    'Skipping fix "{0}" on {1} because the '
+                    'text contains "{2}".'.format(
+                        replacement.container.name,
+                        page.title(asLink=True),
+                        repl_exc_match.group(),
+                    )
+                )
+                skipped_containers.add(replacement.container.name)
                 continue
             old_text = new_text
             new_text = textlib.replaceExcept(

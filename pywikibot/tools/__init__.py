@@ -613,6 +613,19 @@ def itergroup(iterable, size):
         yield group
 
 
+def first(iterable, default=None, key=None):
+    """Return the first element of iterable with a True boolean value.
+
+    @param key: a predicate function
+    @param default: the value to be returned if no True element is found
+
+    """
+    if key is None:
+        return next((e for e in iterable if e), default)
+    else:
+        return next((e for e in iterable if key(e)), default)
+
+
 def islice_with_ellipsis(iterable, *args, **kwargs):
     u"""
     Generator which yields the first n elements of the iterable.
