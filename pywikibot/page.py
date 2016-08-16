@@ -12,7 +12,7 @@ This module also includes objects:
 
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -2511,7 +2511,9 @@ class Category(Page):
         return '[[%s]]' % titleWithSortKey
 
     @deprecated_args(startFrom=None, cacheResults=None, step=None)
-    def subcategories(self, recurse=False, total=None, content=False):
+    def subcategories(self, recurse=False, total=None, content=False,
+                      starttime=None, endtime=None,
+                      startsort=None, endsort=None):
         """
         Iterate all subcategories of the current category.
 
@@ -2524,13 +2526,29 @@ class Category(Page):
             subcategories in total (at all levels)
         @param content: if True, retrieve the content of the current version
             of each category description page (default False)
+        @param starttime: if provided, only generate pages added after this
+            time; not valid unless sortby="timestamp"
+        @type starttime: pywikibot.Timestamp
+        @param endtime: if provided, only generate pages added before this
+            time; not valid unless sortby="timestamp"
+        @type endtime: pywikibot.Timestamp
+        @param startsort: if provided, only generate pages >= this title
+            lexically; not valid if sortby="timestamp"
+        @type startsort: str
+        @param endsort: if provided, only generate pages <= this title
+            lexically; not valid if sortby="timestamp"
+        @type endsort: str
         """
         if not isinstance(recurse, bool) and recurse:
             recurse = recurse - 1
-        if not hasattr(self, "_subcats"):
+        if not hasattr(self, '_subcats') or not (
+                starttime is None and endtime is None and
+                startsort is None and endsort is None):
             self._subcats = []
             for member in self.site.categorymembers(
-                    self, member_type='subcat', total=total, content=content):
+                    self, member_type='subcat', total=total, content=content,
+                    starttime=starttime, endtime=endtime,
+                    startsort=startsort, endsort=endsort):
                 subcat = Category(member)
                 self._subcats.append(subcat)
                 yield subcat
@@ -2540,7 +2558,9 @@ class Category(Page):
                         return
                 if recurse:
                     for item in subcat.subcategories(
-                            recurse, total=total, content=content):
+                            recurse, total=total, content=content,
+                            starttime=starttime, endtime=endtime,
+                            startsort=startsort, endsort=endsort):
                         yield item
                         if total is not None:
                             total -= 1
@@ -2555,7 +2575,9 @@ class Category(Page):
                         return
                 if recurse:
                     for item in subcat.subcategories(
-                            recurse, total=total, content=content):
+                            recurse, total=total, content=content,
+                            starttime=starttime, endtime=endtime,
+                            startsort=startsort, endsort=endsort):
                         yield item
                         if total is not None:
                             total -= 1
