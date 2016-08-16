@@ -1256,13 +1256,9 @@ def SubCategoriesPageGenerator(category, recurse=False, start=None,
 
     If content is True (default is False), the current page text of each
     category description page will be downloaded.
-
     """
-    # TODO: page generator could be modified to use cmstartsortkey ...
-    for s in category.subcategories(recurse=recurse,
-                                    total=total, content=content):
-        if start is None or s.title(withNamespace=False) >= start:
-            yield s
+    return category.subcategories(recurse=recurse, total=total,
+                                  content=content, startsort=start)
 
 
 @deprecated_args(step=None)
