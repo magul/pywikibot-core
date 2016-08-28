@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Interface to Mediawiki's api.php."""
 #
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1949,7 +1949,7 @@ class Request(MutableMapping):
                                                      headers, uri, body),
                                 _logger)
 
-                rawdata = http.request(
+                r = http.query(
                     site=self.site, uri=uri, method='GET' if use_get else 'POST',
                     body=body, headers=headers)
             except Server504Error:
@@ -1977,6 +1977,8 @@ class Request(MutableMapping):
                 pywikibot.log(u"%s, %s" % (uri, paramstring))
                 self.wait()
                 continue
+            rawdata = r.content
+            retry_after = r.response_header.get('retry-after')
             if not isinstance(rawdata, unicode):
                 rawdata = rawdata.decode(self.site.encoding())
             pywikibot.debug((u"API response received from %s:\n" % self.site) +
@@ -2065,8 +2067,8 @@ class Request(MutableMapping):
                 continue
 
             # Lastly, the purge module require a POST if used as anonymous user,
-            # but we normally send a GET request. If the API tells us the request
-            # has to be POSTed, we're probably logged out.
+            # but we normally send a GET request. If the API tells us the
+            # request has to be POSTed, we're probably logged out.
             if code == 'mustbeposted' and self.action == 'purge':
                 pywikibot.error("Received unexpected 'mustbeposted' error. "
                                 "Forcing re-login.")
@@ -2075,11 +2077,12 @@ class Request(MutableMapping):
 
             if code == "maxlag":
                 lag = lagpattern.search(info)
+                pywikibot.log('Pausing due to database lag: ' + info)
                 if lag:
-                    pywikibot.log(
-                        u"Pausing due to database lag: " + info)
-                    self.site.throttle.lag(int(lag.group("lag")))
-                    continue
+                    lag = lag.group('lag')
+                waittime = int(retry_after or lag or 5)
+                self.site.throttle.lag(waittime)
+                continue
             elif code == 'help' and self.action == 'help':
                 # The help module returns an error result with the complete
                 # API information. As this data was requested, return the

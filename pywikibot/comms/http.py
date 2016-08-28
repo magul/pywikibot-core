@@ -14,7 +14,7 @@ This module is responsible for
 from __future__ import absolute_import, print_function, unicode_literals
 
 #
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -275,6 +275,36 @@ def fake_user_agent():
         'Either browseragents or fake_useragent must be installed to get fake UAs.')
 
 
+def query(site=None, uri=None, headers=None, **kwargs):
+    """
+    Request to Site with default error handling.
+
+    See L{requests.Session.request} for additional keyword parameters.
+
+    @param site: The Site to connect to
+    @type site: L{pywikibot.site.BaseSite}
+    @param uri: the relative URI from site including the document root '/'
+    @type uri: str
+    @note: both parameters site and uri must be given
+    @return: threadedhttp.HttpRequest object; content property contains
+        the decoded request content. For other properties refer the object.
+    @rtype: threadedhttp.HttpRequest
+    """
+    assert(site and uri)
+    baseuri = site.base_url(uri)
+    kwargs.setdefault("disable_ssl_certificate_validation",
+                      site.ignore_certificate_error())
+
+    if not headers:
+        headers = {}
+        format_string = None
+    else:
+        format_string = headers.get('user-agent', None)
+
+    headers['user-agent'] = user_agent(site, format_string)
+    return fetch(baseuri, headers, **kwargs)
+
+
 @deprecate_arg('ssl', None)
 def request(site=None, uri=None, method='GET', params=None, body=None,
             headers=None, data=None, **kwargs):
@@ -292,12 +322,13 @@ def request(site=None, uri=None, method='GET', params=None, body=None,
     @type site: L{pywikibot.site.BaseSite}
     @param uri: the URI to retrieve
     @type uri: str
-    @param charset: Either a valid charset (usable for str.decode()) or None
+    @keyword charset: Either a valid charset (usable for str.decode()) or None
         to automatically chose the charset from the returned header (defaults
         to latin-1)
     @type charset: CodecInfo, str, None
-    @return: The received data
-    @rtype: a unicode string
+    @return: The received data content.
+        For additional results like response_header use http.query instead.
+    @rtype: unicode
     """
     # body and data parameters both map to the data parameter of
     # requests.Session.request.
@@ -310,22 +341,8 @@ def request(site=None, uri=None, method='GET', params=None, body=None,
         issue_deprecation_warning(
             'Invoking http.request without argument site', 'http.fetch()', 3)
         r = fetch(uri, method, params, body, headers, **kwargs)
-        return r.content
-
-    baseuri = site.base_url(uri)
-
-    kwargs.setdefault("disable_ssl_certificate_validation",
-                      site.ignore_certificate_error())
-
-    if not headers:
-        headers = {}
-        format_string = None
     else:
-        format_string = headers.get('user-agent', None)
-
-    headers['user-agent'] = user_agent(site, format_string)
-
-    r = fetch(baseuri, method, params, body, headers, **kwargs)
+        r = query(site, uri, method, body, headers, **kwargs)
     return r.content
 
 

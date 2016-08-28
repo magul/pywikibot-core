@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Mechanics to slow down wiki read and/or write rate."""
 #
-# (C) Pywikibot team, 2008
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -16,6 +16,7 @@ import time
 
 import pywikibot
 from pywikibot import config
+from pywikibot.tools import deprecate_arg
 
 _logger = "wiki.throttle"
 
@@ -282,18 +283,24 @@ class Throttle(object):
         finally:
             self.lock.release()
 
-    def lag(self, lagtime):
+    @deprecate_arg('lagtime', 'waittime')
+    def lag(self, waittime):
         """Seize the throttle lock due to server lag.
 
         This will prevent any thread from accessing this site.
 
+        @param waittime: The time to wait for the next request. Usually the
+            retry-after value from response_header of the last request if
+            available, otherwise the last maxlag time from api warning.
+            Default value set by api is 5.
+            This method is used by api.request.
+        @type waittime: int
         """
         started = time.time()
         self.lock.acquire()
         try:
-            # start at 1/2 the current server lag time
-            # wait at least 5 seconds but not more than 120 seconds
-            delay = min(max(5, lagtime // 2), 120)
+            # wait not more than 120 seconds
+            delay = min(waittime, 120)
             # account for any time we waited while acquiring the lock
             wait = delay - (time.time() - started)
 
