@@ -530,7 +530,7 @@ log_pywiki_repo_version = False
 # (overrides log setting above)
 debug_log = []
 
-# ############# EXTERNAL SCRIPT PATH SETTING ##############
+# ############# EXTERNAL SCRIPT PATH SETTINGS ##############
 # set your own script path to lookup for your script files.
 # your private script path must be located inside the
 # framework folder, subfolders must be delimited by '.'.
@@ -822,7 +822,7 @@ cosmetic_changes_disable = {}
 cosmetic_changes_deny_script = ['category_redirect', 'cosmetic_changes',
                                 'newitem', 'touch']
 
-# ############# REPLICATION BOT ################
+# ############# REPLICATION BOT SETTINGS ################
 # You can add replicate_replace to your user_config.py, which has the following
 # format:
 #
