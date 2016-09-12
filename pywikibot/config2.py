@@ -33,7 +33,7 @@ build paths relative to base_dir:
 """
 #
 # (C) Rob W.W. Hooft, 2003
-# (C) Pywikibot team, 2003-2016
+# (C) Pywikibot team, 2003-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -524,7 +524,7 @@ log_pywiki_repo_version = False
 # (overrides log setting above)
 debug_log = []
 
-# ############# EXTERNAL SCRIPT PATH SETTING ##############
+# ############# EXTERNAL SCRIPT PATH SETTINGS ##############
 # set your own script path to lookup for your script files.
 # your private script path must be located inside the
 # framework folder, subfolders must be delimited by '.'.
