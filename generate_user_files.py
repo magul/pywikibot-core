@@ -25,6 +25,18 @@ import pywikibot
 
 from pywikibot import config
 
+DISABLED_SECTIONS = ('ACCOUNT SETTINGS',  # already set
+                     'USER INTERFACE SETTINGS',  # uses sys
+                     'EXTERNAL EDITOR SETTINGS',  # uses os
+                     )
+SCRIPT_SECTIONS = ('INTERWIKI SETTINGS',
+                   'SOLVE_DISAMBIGUATION SETTINGS',
+                   'TABLE CONVERSION BOT SETTINGS',
+                   'WEBLINK CHECKER SETTINGS',
+                   'REPLICATION BOT SETTINGS',
+                   'COPYRIGHT SETTINGS',
+                   )
+
 # Reset this flag in case another script is run by pwb after this script
 if not _orig_no_user_config:
     del os.environ['PYWIKIBOT2_NO_USER_CONFIG']
@@ -214,6 +226,50 @@ SMALL_CONFIG = ('# -*- coding: utf-8 -*-\n'
                 u"{usernames}\n")
 
 
+def read_sections(force=False):
+    """Read sections from config2.py file."""
+    # config2.py will be in the pywikibot/ directory relative to this
+    # script (generate_user_files)
+    install = os.path.dirname(os.path.abspath(__file__))
+    with codecs.open(os.path.join(install, "pywikibot", "config2.py"),
+                     "r", "utf-8") as config_f:
+        config_file = config_f.read()
+
+    res = re.findall(
+        '^(# ############# ([A-Z_ ]+) #.*?)^(?=# ####|# =====)',
+        config_file, re.MULTILINE | re.DOTALL)
+
+    if not res:
+        warn('Extended config extraction failed', UserWarning)
+    elif len(res) < 10:
+        warn('Extended config extraction found a wrong number of sections',
+             UserWarning)
+    else:
+        result = []
+        all_sections = not pywikibot.input_yn(
+            'Do you want to select setting sections?',
+            force=force, default=False, automatic_quit=False)
+        for section, head in res:
+            if head in DISABLED_SECTIONS or head in SCRIPT_SECTIONS:
+                continue
+            if all_sections or pywikibot.input_yn(
+                    'Do you want to add {0} section?'.format(head),
+                    force=force, default=True, automatic_quit=False):
+                result.append(section)
+        all_sections = not pywikibot.input_yn(
+            '\nDo you want to select script setting section?',
+            force=force, default=False, automatic_quit=False)
+        for section, head in res:
+            if head not in SCRIPT_SECTIONS:
+                continue
+            if all_sections or pywikibot.input_yn(
+                    'Do you want to add {0} sections?'.format(head),
+                    force=force, default=False, automatic_quit=False):
+                result.append(section)
+        return result
+    return None
+
+
 def create_user_config(args=None, force=False):
     """Create a user-config.py in base_dir."""
     _fnc = os.path.join(base_dir, "user-config.py")
@@ -243,49 +299,14 @@ def create_user_config(args=None, force=False):
             u"usernames['{0}']['{1}'] = u'{2}'".format(*username)
             for username in usernames)
 
-    config_text = ''
-    config_content = SMALL_CONFIG
-
-    try:
-        # config2.py will be in the pywikibot/ directory relative to this
-        # script (generate_user_files)
-        install = os.path.dirname(os.path.abspath(__file__))
-        with codecs.open(os.path.join(install, "pywikibot", "config2.py"),
-                         "r", "utf-8") as config_f:
-            config_file = config_f.read()
-
-        res = re.findall("^(# ############# (?:"
-                         "LOGFILE|"
-                         'EXTERNAL SCRIPT PATH|'
-                         "INTERWIKI|"
-                         "SOLVE_DISAMBIGUATION|"
-                         "IMAGE RELATED|"
-                         "TABLE CONVERSION BOT|"
-                         "WEBLINK CHECKER|"
-                         "DATABASE|"
-                         "SEARCH ENGINE|"
-                         "COPYRIGHT|"
-                         "FURTHER"
-                         ") SETTINGS .*)^(?=#####|# =====)",
-                         config_file, re.MULTILINE | re.DOTALL)
-
-        if not res:
-            warn('Extended config extraction failed', UserWarning)
-
-        config_text = '\n'.join(res)
-        if len(config_text.splitlines()) < 350:
-            warn('Extended config extraction too short: %d'
-                 % len(config_text.splitlines()),
-                 UserWarning)
-
+    result = read_sections(force=force)
+    if result:
         config_content = EXTENDED_CONFIG
-    except Exception as e:
-        # If the warning was explicitly enabled, raise
-        if isinstance(e, UserWarning):
-            raise
-        pywikibot.output('Exception while creating extended user-config; '
-                         'falling back to simple user-config.')
-        pywikibot.exception()
+        config_text = ''.join(result)
+    else:
+        pywikibot.output('Creating a small variant of user-config.py')
+        config_text = ''
+        config_content = SMALL_CONFIG
 
     try:
         with codecs.open(_fnc, "w", "utf-8") as f:
