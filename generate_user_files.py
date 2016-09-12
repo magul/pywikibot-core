@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Script to create user-config.py."""
 #
-# (C) Pywikibot team, 2010-2016
+# (C) Pywikibot team, 2010-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -265,14 +265,17 @@ def create_user_config(args=None, force=False):
                          "SEARCH ENGINE|"
                          "COPYRIGHT|"
                          "FURTHER"
-                         ") SETTINGS .*)^(?=#####|# =====)",
+                         ') SETTINGS .*?)^(?=# ####|# =====)',
                          config_file, re.MULTILINE | re.DOTALL)
 
         if not res:
             warn('Extended config extraction failed', UserWarning)
+        elif len(res) != 10:
+            warn('Extended config extraction found a wrong number of sections',
+                 UserWarning)
 
         config_text = '\n'.join(res)
-        if len(config_text.splitlines()) < 350:
+        if len(config_text.splitlines()) < 200:
             warn('Extended config extraction too short: %d'
                  % len(config_text.splitlines()),
                  UserWarning)
