@@ -174,45 +174,45 @@ def get_site_and_lang(default_family='wikipedia', default_lang='en',
 EXTENDED_CONFIG = """# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-# This is an automatically generated file. You can find more configuration
-# parameters in 'config.py' file.
+## This is an automatically generated file. You can find more configuration
+## parameters in 'config.py' file.
 
-# The family of sites to work on by default.
-#
-# ‘site.py’ imports ‘families/xxx_family.py’, so if you want to change
-# this variable, you need to use the name of one of the existing family files
-# in that folder or write your own, custom family file.
-#
-# For ‘site.py’ to be able to read your custom family file, you must
-# save it to ‘families/xxx_family.py’, where ‘xxx‘ is the codename of the
-# family that your custom ‘xxx_family.py’ family file defines.
-#
-# You can also save your custom family files to a different folder. As long
-# as you follow the ‘xxx_family.py’ naming convention, you can register your
-# custom folder in this configuration file with the following global function:
-#
-#   register_families_folder(folder_path)
-#
-# Alternatively, you can register particular family files that do not need
-# to follow the ‘xxx_family.py’ naming convention using the following
-# global function:
-#
-#   register_family_file(family_name, file_path)
-#
-# Where ‘family_name’ is the family code (the ‘xxx’ in standard family file
-# names) and ‘file_path’ is the absolute path to the target family file.
-#
-# If you use either of these functions to define the family to work on by
-# default (the ‘family’ variable below), you must place the function call
-# before the definition of the ‘family’ variable.
+## The family of sites to work on by default.
+##
+## ‘site.py’ imports ‘families/xxx_family.py’, so if you want to change
+## this variable, you need to use the name of one of the existing family files
+## in that folder or write your own, custom family file.
+##
+## For ‘site.py’ to be able to read your custom family file, you must
+## save it to ‘families/xxx_family.py’, where ‘xxx‘ is the codename of the
+## family that your custom ‘xxx_family.py’ family file defines.
+##
+## You can also save your custom family files to a different folder. As long
+## as you follow the ‘xxx_family.py’ naming convention, you can register your
+## custom folder in this configuration file with the following global function:
+##
+##   register_families_folder(folder_path)
+##
+## Alternatively, you can register particular family files that do not need
+## to follow the ‘xxx_family.py’ naming convention using the following
+## global function:
+##
+##   register_family_file(family_name, file_path)
+##
+## Where ‘family_name’ is the family code (the ‘xxx’ in standard family file
+## names) and ‘file_path’ is the absolute path to the target family file.
+##
+## If you use either of these functions to define the family to work on by
+## default (the ‘family’ variable below), you must place the function call
+## before the definition of the ‘family’ variable.
 family = '{main_family}'
 
-# The language code of the site we're working on.
+## The language code of the site we're working on.
 mylang = '{main_lang}'
 
-# The dictionary usernames should contain a username for each site where you
-# have a bot account. If you have a unique username for all languages of a
-# family , you can use '*'
+## The dictionary usernames should contain a username for each site where you
+## have a bot account. If you have a unique username for all languages of a
+## family , you can use '*'
 {usernames}
 
 
@@ -301,7 +301,10 @@ def create_user_config(args=None, force=False):
     result = read_sections(force=force)
     if result:
         config_content = EXTENDED_CONFIG
-        config_text = '\n'.join(result)
+        lines = []
+        for part in result:
+            lines.extend(part.splitlines())
+        config_text = re.sub('(?m)#$', '', '\n#'.join(lines))
     else:
         pywikibot.output('Creating a small variant of user-config.py')
         config_text = ''
