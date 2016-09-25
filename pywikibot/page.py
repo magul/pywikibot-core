@@ -800,6 +800,24 @@ class BasePage(UnicodeMixin, ComparableMixin):
             return False
         if not hasattr(self, "_catredirect"):
             catredirs = self.site._category_redirects()
+            for template in self.templates():
+                if template.title(withNamespace=False) in catredirs:
+                    self._catredirect=True
+                    break
+            else:
+                self._catredirect=False
+        return bool(self._catredirect)
+
+    def getCategoryRedirectTarget(self):
+        """
+        If this is a category redirect, return the target category title.
+
+        @rtype: Category
+        """
+        if hasattr(self, "_catredirect") and (self._catredirect==False):
+            raise pywikibot.IsNotRedirectPage(self)
+        else:
+            catredirs = self.site._category_redirects()
             for (template, args) in self.templatesWithParams():
                 if template.title(withNamespace=False) in catredirs:
                     # Get target (first template argument)
@@ -820,16 +838,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
                         self._catredirect = False
                     break
             else:
-                self._catredirect = False
-        return bool(self._catredirect)
-
-    def getCategoryRedirectTarget(self):
-        """
-        If this is a category redirect, return the target category title.
-
-        @rtype: Category
-        """
-        if self.isCategoryRedirect():
+                self._catredirect=False
+        if self._catredirect:
             return Category(Link(self._catredirect, self.site))
         raise pywikibot.IsNotRedirectPage(self)
 
