@@ -1285,10 +1285,15 @@ class BasePage(UnicodeMixin, ComparableMixin):
         @type newtext: unicode
 
         """
-        self.text = newtext
-        self.save(summary=summary, watch=watchArticle, minor=minorEdit,
-                  botflag=botflag, force=force, async=async, callback=callback,
-                  **kwargs)
+        if self.text != newtext:
+            self.text = newtext
+            self.save(summary=summary, watch=watchArticle, minor=minorEdit,
+                      botflag=botflag, force=force, async=async, callback=callback,
+                      **kwargs)
+        else:
+            pywikibot.output('No changes made to the page \'title:{title}\' '
+                             'as the content on the page has not changed'
+                             .format(title=self.title()))
 
     @deprecated_args(comment='summary')
     def put_async(self, newtext, summary=u'', watchArticle=None,
