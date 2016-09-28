@@ -7,9 +7,10 @@ Parameters:
 
 -always         Don't be asked every time.
 -nouserwarning  Do not warn uploader about orphaned file.
--total          Specify number of pages to work on with "-total:n" where
-                n is the maximum number of articles to work on.
-                If not used, all pages are used.
+
+All pagegenerators options are available.
+-unusedfiles is set by default if not present.
+'-unusedfiles:n' or '-limit' can be used to specify number of pages to work on.
 """
 #
 # (C) Leonardo Gregianin, 2007
@@ -112,19 +113,22 @@ def main(*args):
     @type args: list of unicode
     """
     options = {}
-    total = None
 
     local_args = pywikibot.handle_args(args)
 
-    for arg in local_args:
-        arg, sep, value = arg.partition(':')
-        if arg == '-total':
-            total = value
-        else:
-            options[arg[1:]] = True
+    # Add default for -unusedfiles.
+    if not any('-unusedfiles' in arg for arg in local_args):
+        local_args.append('-unusedfiles')
 
     site = pywikibot.Site()
-    gen = pagegenerators.UnusedFilesGenerator(total=total, site=site)
+    genFactory = pagegenerators.GeneratorFactory(site=site)
+
+    for arg in local_args:
+        if genFactory.handleArg(arg):
+            continue
+        options[arg[1:]] = True
+
+    gen = genFactory.getCombinedGenerator()
     gen = pagegenerators.PreloadingGenerator(gen)
 
     bot = UnusedFilesBot(site, generator=gen, **options)
