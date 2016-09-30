@@ -780,8 +780,9 @@ class ReplaceRobot(Bot):
                     self.options['always'] = True
                 if choice == 'y':
                     page.text = new_text
-                    page.save(summary=self.generate_summary(applied), async=True,
-                              callback=self._count_changes, quiet=True)
+                    page.save(summary=self.generate_summary(applied),
+                              asynchronous=True, callback=self._count_changes,
+                              quiet=True)
                 while not self._pending_processed_titles.empty():
                     proc_title, res = self._pending_processed_titles.get()
                     pywikibot.output('Page %s%s saved'

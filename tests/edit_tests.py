@@ -55,7 +55,7 @@ class TestGeneralWrite(TestCase):
         ts = str(time.time())
         p = pywikibot.Page(self.site, 'User:John Vandenberg/async test write')
         p.text = ts
-        p.save(async=True, callback=callback)
+        p.save(asynchronous=True, callback=callback)
 
         page_put_queue.join()
 

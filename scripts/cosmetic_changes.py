@@ -78,7 +78,7 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
             if changedText is not False:
                 self.put_current(new_text=changedText,
                                  summary=self.getOption('summary'),
-                                 async=self.getOption('async'))
+                                 asynchronous=self.getOption('async'))
         except pywikibot.LockedPage:
             pywikibot.output("Page %s is locked?!"
                              % self.current_page.title(asLink=True))

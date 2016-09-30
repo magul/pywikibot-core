@@ -98,7 +98,9 @@ from pywikibot.logging import (
     debug, error, exception, log, output, stdout, warning,
 )
 from pywikibot.logging import critical
-from pywikibot.tools import deprecated, deprecated_args, PY2, PYTHON_VERSION
+from pywikibot.tools import (
+    deprecated, deprecated_arg, deprecated_args, PY2, PYTHON_VERSION,
+)
 from pywikibot.tools._logging import (
     LoggingFormatter as _LoggingFormatter,
     RotatingFileHandler,
@@ -1255,6 +1257,7 @@ class BaseBot(object):
 
         return True
 
+    @deprecated_arg('async', 'asynchronous')
     @deprecated_args(comment='summary')
     def userPut(self, page, oldtext, newtext, **kwargs):
         """
@@ -1269,7 +1272,7 @@ class BaseBot(object):
 
         Keyword args used:
 
-        * 'async' - passed to page.save
+        * 'asynchronous' - passed to page.save
         * 'summary' - passed to page.save
         * 'show_diff' - show changes between oldtext and newtext (enabled)
         * 'ignore_save_related_errors' - report and ignore (disabled)
@@ -1316,8 +1319,8 @@ class BaseBot(object):
         if not self.user_confirm('Do you want to accept these changes?'):
             return
 
-        if 'async' not in kwargs and self.getOption('always'):
-            kwargs['async'] = True
+        if 'asynchronous' not in kwargs and self.getOption('always'):
+            kwargs['asynchronous'] = True
 
         ignore_save_related_errors = kwargs.pop('ignore_save_related_errors',
                                                 False)
