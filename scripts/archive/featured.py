@@ -223,7 +223,7 @@ class FeaturedBot(pywikibot.Bot):
     def __init__(self, **kwargs):
         """Only accepts options defined in availableOptions."""
         self.availableOptions.update({
-            'async': False,  # True for asynchronously putting a page
+            'asynchronous': False,  # True for asynchronously putting a page
             'afterpage': u"!",
             'count': False,   # featuredcount
             'featured': False,

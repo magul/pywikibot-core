@@ -12,7 +12,7 @@ The following parameters are supported:
 -always           Don't prompt you for each replacement. Warning (see below)
                   has not to be confirmed. ATTENTION: Use this with care!
 
--async            Put page on queue to be saved to wiki asynchronously.
+-asynchronous            Put page on queue to be saved to wiki asynchronously.
 
 -summary:XYZ      Set the summary message text for the edit to XYZ, bypassing
                   the predefined message texts with original and replacements
@@ -61,7 +61,7 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
     def __init__(self, generator, **kwargs):
         """Constructor."""
         self.availableOptions.update({
-            'async': False,
+            'asynchronous': False,
             'summary': u'Robot: Cosmetic changes',
             'ignore': cosmetic_changes.CANCEL_ALL,
         })
@@ -78,7 +78,7 @@ class CosmeticChangesBot(MultipleSitesBot, ExistingPageBot, NoRedirectPageBot):
             if changedText is not False:
                 self.put_current(new_text=changedText,
                                  summary=self.getOption('summary'),
-                                 async=self.getOption('async'))
+                                 asynchronous=self.getOption('asynchronous'))
         except pywikibot.LockedPage:
             pywikibot.output("Page %s is locked?!"
                              % self.current_page.title(asLink=True))
@@ -107,8 +107,8 @@ def main(*args):
             options['summary'] = arg[len('-summary:'):]
         elif arg == '-always':
             options['always'] = True
-        elif arg == '-async':
-            options['async'] = True
+        elif arg == '-asynchronous':
+            options['asynchronous'] = True
         elif arg.startswith('-ignore:'):
             ignore_mode = arg[len('-ignore:'):].lower()
             if ignore_mode == 'method':
