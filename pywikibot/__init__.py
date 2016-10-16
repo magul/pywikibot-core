@@ -18,6 +18,7 @@ import re
 import sys
 import threading
 
+from copy import copy
 from decimal import Decimal
 
 if sys.version_info[0] > 2:
@@ -537,10 +538,48 @@ class WbTime(_WbRepresentation):
         return self._year > other._year or (
             self._year == other._year and self._timestamp >= other._timestamp)
 
+    def __add__(self, other):
+        """Perform addition, returning a WbTime."""
+        new = copy(self)
+        new._year = new.year
+        # leap year offset for calculating
+        new._timestamp = new._timestamp.replace(year=4800)
+        new._timestamp += other
+        diff = new._timestamp.year - 4800
+        if new._year < 0 and new._year + diff >= 0:
+            diff += 1  # skip invalid year 0
+        new._year += diff
+        if new._year >= datetime.MINYEAR and new._year <= datetime.MAXYEAR:
+            new._timestamp = new._timestamp.replace(year=new._year)
+            new._year = 0
+        else:
+            new._timestamp = new._timestamp.replace(year=2000)
+        return new
+
+    def __sub__(self, other):
+        """Perform substraction, returning a WbTime."""
+        new = copy(self)
+        new._year = new.year
+        new._timestamp = new._timestamp.replace(year=4800)
+        new._timestamp -= other
+        diff = new._timestamp.year - 4800
+        if new._year > 0 and new._year + diff <= 0:
+            diff -= 1  # skip invalid year 0
+        new._year += diff
+        if new._year >= datetime.MINYEAR and new._year <= datetime.MAXYEAR:
+            new._timestamp = new._timestamp.replace(year=new._year)
+            new._year = 0
+        else:
+            new._timestamp = new._timestamp.replace(year=2000)
+        return new
+
     def __getattr__(self, name):
         """Provide time parts from Timestamp."""
-        if self.is_datetime_year() and hasattr(
-                self._timestamp, name) or name in self._items[:6]:
+        # "not name.startswith('__')" prevents infinite loops
+        # while cloning in py 3.4
+        if not name.startswith('__') and (
+                self.is_datetime_year() and hasattr(self._timestamp, name) or
+                name in self._items[:6]):
             return getattr(self._timestamp, name)
         raise AttributeError(
             "{0} object has no attribute '{1}'".format(self.__class__.__name__,

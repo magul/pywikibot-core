@@ -13,6 +13,7 @@ __version__ = '$Id$'
 import copy
 import json
 
+from datetime import timedelta
 from decimal import Decimal
 
 import pywikibot
@@ -190,6 +191,24 @@ class TestWikibaseTypes(WikidataTestCase):
                           precision='invalid_precision')
         self.assertIsInstance(t1.toTimestamp(), pywikibot.Timestamp)
         self.assertRaises(ValueError, t2.toTimestamp)
+
+    def test_WbTime_arithmetics(self):
+        """Test WbTime arithmetics."""
+        repo = self.get_repo()
+        t = pywikibot.WbTime(site=repo, year=1)
+        t._timestamp = t.max
+        delta = timedelta(days=1)
+        t += delta
+        self.assertEqual(t.toTimestr(), '+00000010000-01-01T23:59:59Z')
+        t -= delta
+        self.assertEqual(t._timestamp, t.max)
+
+        t = pywikibot.WbTime(site=repo, year=1)
+        t._timestamp = t.min
+        t -= delta
+        self.assertEqual(t.toTimestr(), '-00000000001-12-31T00:00:00Z')
+        t += delta
+        self.assertEqual(t._timestamp, t.min)
 
     def test_WbQuantity_integer(self):
         """Test WbQuantity for integer value."""
