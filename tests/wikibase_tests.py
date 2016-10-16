@@ -368,6 +368,40 @@ class TestWbTime(WbRepresentationTestCase):
         self.assertRaises(ValueError, pywikibot.WbTime, site=repo,
                           precision='invalid_precision')
 
+    def test_comparison(self):
+        """Test WbTime comparison."""
+        repo = self.get_repo()
+        t1 = pywikibot.WbTime(site=repo, year=2010, hour=12, minute=43)
+        t2 = pywikibot.WbTime(site=repo, year=-2005, hour=16, minute=45)
+        self.assertEqual(t1.precision, pywikibot.WbTime.PRECISION['minute'])
+        self.assertEqual(t1, t1)
+        self.assertGreaterEqual(t1, t1)
+        self.assertGreaterEqual(t1, t2)
+        self.assertGreater(t1, t2)
+        self.assertEqual(t1.year, 2010)
+        self.assertEqual(t2.year, -2005)
+        self.assertEqual(t1.month, 1)
+        self.assertEqual(t2.month, 1)
+        self.assertEqual(t1.day, 1)
+        self.assertEqual(t2.day, 1)
+        self.assertEqual(t1.hour, 12)
+        self.assertEqual(t2.hour, 16)
+        self.assertEqual(t1.minute, 43)
+        self.assertEqual(t2.minute, 45)
+        self.assertEqual(t1.second, 0)
+        self.assertEqual(t2.second, 0)
+        self.assertTrue(t1.is_datetime_year())
+        self.assertFalse(t2.is_datetime_year())
+        self.assertEqual(t1.toTimestr(), '+00000002010-01-01T12:43:00Z')
+        self.assertEqual(t2.toTimestr(), '-00000002005-01-01T16:45:00Z')
+        self.assertEqual(t1.totimestampformat(), '20100101124300')
+        self.assertFalse(hasattr(t2, 'totimestampformat'))
+        self.assertRaises(ValueError, pywikibot.WbTime, site=repo, precision=15)
+        self.assertRaises(ValueError, pywikibot.WbTime, site=repo,
+                          precision='invalid_precision')
+        self.assertIsInstance(t1.toTimestamp(), pywikibot.Timestamp)
+        self.assertRaises(ValueError, t2.toTimestamp)
+
 
 class TestWbQuantity(WbRepresentationTestCase):
 
