@@ -432,11 +432,15 @@ class WbTime(_WbRepresentation):
         readable string, e.g., 'hour'. If no precision is given, it is set
         according to the given time units.
 
-        Timezone information is given in three different ways depending on the time:
-        * Times after the implementation of UTC (1972): as an offset from UTC in minutes;
-        * Times before the implementation of UTC: the offset of the time zone from universal time;
-        * Before the implementation of time zones: The longitude of the place of
-          the event, in the range −180° to 180°, multiplied by 4 to convert to minutes.
+        Timezone information is given in three different ways depending on the
+        time:
+        * Times after the implementation of UTC (1972): as an offset from UTC
+          in minutes;
+        * Times before the implementation of UTC: the offset of the time zone
+          from universal time;
+        * Before the implementation of time zones: The longitude of the place
+          of the event, in the range −180° to 180°, multiplied by 4 to convert
+          to minutes.
 
         @param year: The year as a signed integer of between 1 and 16 digits.
         @type year: long
@@ -452,11 +456,11 @@ class WbTime(_WbRepresentation):
         @type second: int
         @param precision: The unit of the precision of the time.
         @type precision: int or str
-        @param before: Number of units after the given time it could be, if uncertain.
-            The unit is given by the precision.
+        @param before: Number of units after the given time it could be,
+            if uncertain. The unit is given by the precision.
         @type before: int
-        @param after: Number of units before the given time it could be, if uncertain.
-            The unit is given by the precision.
+        @param after: Number of units before the given time it could be,
+            if uncertain. The unit is given by the precision.
         @type after: int
         @param timezone: Timezone information in minutes.
         @type timezone: int
@@ -465,30 +469,29 @@ class WbTime(_WbRepresentation):
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
         """
-        if year is None:
-            raise ValueError('no year given')
-        self.precision = self.PRECISION['second']
-        if second is None:
+        if not year:
+            raise ValueError("no year or invalid year '0' given")
+        if precision is not None:
+            if (isinstance(precision, int) and
+                    precision in self.PRECISION.values()):
+                self.precision = precision
+            elif precision in self.PRECISION:
+                self.precision = self.PRECISION[precision]
+            else:
+                raise ValueError('Invalid precision: "%s"' % precision)
+        # autodetection
+        elif second is not None:
+            self.precision = self.PRECISION['second']
+        elif minute is not None:
             self.precision = self.PRECISION['minute']
-            second = 0
-        if minute is None:
+        elif hour is not None:
             self.precision = self.PRECISION['hour']
-            minute = 0
-        if hour is None:
+        elif day is not None:
             self.precision = self.PRECISION['day']
-            hour = 0
-        if day is None:
+        elif month is not None:
             self.precision = self.PRECISION['month']
-            day = 1
-        if month is None:
+        else:
             self.precision = self.PRECISION['year']
-            month = 1
-        self.year = long(year)
-        self.month = month
-        self.day = day
-        self.hour = hour
-        self.minute = minute
-        self.second = second
         self.after = after
         self.before = before
         self.timezone = timezone
@@ -498,15 +501,72 @@ class WbTime(_WbRepresentation):
             calendarmodel = site.calendarmodel()
         self.calendarmodel = calendarmodel
 
-        # if precision is given it overwrites the autodetection above
-        if precision is not None:
-            if (isinstance(precision, int) and
-                    precision in self.PRECISION.values()):
-                self.precision = precision
-            elif precision in self.PRECISION:
-                self.precision = self.PRECISION[precision]
-            else:
-                raise ValueError('Invalid precision: "%s"' % precision)
+        if year < datetime.MINYEAR or year > datetime.MAXYEAR:
+            self._year = long(year)
+            year = 2000
+        else:
+            self._year = 0
+        self._timestamp = Timestamp(year, month or 1, day or 1, hour or 0,
+                                    minute or 0, second or 0)
+
+    def __lt__(self, other):
+        """Compare if self is less than other."""
+        return self._year < other._year or (
+            self._year == other._year and self._timestamp < other._timestamp)
+
+    def __le__(self, other):
+        """Compare if self is less equals other."""
+        return self._year < other._year or (
+            self._year == other._year and self._timestamp <= other._timestamp)
+
+    def __eq__(self, other):
+        """Compare if self is equal to other."""
+        return self._year == other._year and self._timestamp == other._timestamp
+
+    def __ne__(self, other):
+        """Compare if self is not equal to other."""
+        return not self.__eq__(other)
+
+    def __gt__(self, other):
+        """Compare if self is greater than other."""
+        return self._year > other._year or (
+            self._year == other._year and self._timestamp > other._timestamp)
+
+    def __ge__(self, other):
+        """Compare if self is greater equals other."""
+        return self._year > other._year or (
+            self._year == other._year and self._timestamp >= other._timestamp)
+
+    def __getattr__(self, name):
+        """Provide time parts from Timestamp."""
+        if self.is_datetime_year() and hasattr(
+                self._timestamp, name) or name in self._items[:6]:
+            return getattr(self._timestamp, name)
+        raise AttributeError(
+            "{0} object has no attribute '{1}'".format(self.__class__.__name__,
+                                                       name))
+
+    @property
+    def year(self):
+        """Return the year of the WbTime."""
+        return long(self._year or self._timestamp.year)
+
+    def is_datetime_year(self):
+        """Check whether year is in datetime range MINYEAR to MAXYEAR."""
+        return self._year == 0
+
+    def toTimestamp(self):
+        """
+        Convert data to Timestamp.
+
+        @return: timestamp of WbTime time
+        @rtype: Timestamp
+        @raises ValueError: When year is outsite datetime year range
+        """
+        if not self.is_datetime_year():
+            raise ValueError(
+                'Year {0} is out of Timestamp range'.format(self._year))
+        return self._timestamp
 
     @classmethod
     def fromTimestr(cls, datetimestr, precision=14, before=0, after=0,
@@ -554,6 +614,8 @@ class WbTime(_WbRepresentation):
         @return: Timestamp in a format resembling ISO 8601
         @rtype: str
         """
+        # NOTE: on some platforms datetime.strftime() canot be used for
+        #       years below 1900. We have to format in this way.
         return self.FORMATSTR.format(self.year, self.month, self.day,
                                      self.hour, self.minute, self.second)
 
