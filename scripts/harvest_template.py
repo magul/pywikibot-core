@@ -136,8 +136,8 @@ class HarvestRobot(WikidataBot):
                              'Skipping.' % (page, item.title()))
             return
 
-        pagetext = page.get()
-        templates = textlib.extract_templates_and_params(pagetext)
+        page.get()
+        templates = page.raw_extracted_templates
         for (template, fielddict) in templates:
             # Clean up template
             try:
