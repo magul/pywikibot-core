@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """The initialization file for the Pywikibot framework."""
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -23,6 +23,7 @@ from decimal import Decimal
 if sys.version_info[0] > 2:
     from queue import Queue
     long = int
+    basestring = str
 else:
     from Queue import Queue
 
@@ -256,7 +257,7 @@ class Coordinate(_WbRepresentation):
         @type dim: int
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
-        @param entity: The URL entity of a Wikibase item
+        @param entity: The URL entity of a Wikibase item for the globe
         @type entity: str
         """
         self.lat = lat
@@ -651,7 +652,9 @@ class WbQuantity(_WbRepresentation):
         @param amount: number representing this quantity
         @type amount: string or Decimal. Other types are accepted, and converted
                       via str to Decimal.
-        @param unit: not used (only unit-less quantities are supported)
+        @param unit: the Wikibase item for the unit or the URL entity of this
+                     Wikibase item.
+        @type unit: pywikibot.ItemPage, str or None
         @param error: the uncertainty of the amount (e.g. ±1)
         @type error: same as amount, or tuple of two values, where the first value is
                      the upper error and the second is the lower error value.
@@ -660,11 +663,14 @@ class WbQuantity(_WbRepresentation):
         """
         if amount is None:
             raise ValueError('no amount given')
-        if unit is None:
-            unit = '1'
 
         self.amount = self._todecimal(amount)
-        self.unit = unit
+        self._unit = unit
+
+        # also allow entity urls to be provided via unit parameter
+        if isinstance(unit, basestring) and \
+                unit.partition('://')[0] not in ('http', 'https'):
+            raise ValueError("'unit' must be an ItemPage or entity url.")
 
         if error is None and not self._require_errors(site):
             self.upperBound = self.lowerBound = None
@@ -679,6 +685,13 @@ class WbQuantity(_WbRepresentation):
 
             self.upperBound = self.amount + upperError
             self.lowerBound = self.amount - lowerError
+
+    @property
+    def unit(self):
+        """Return _unit's entity url or '1' if _unit is None."""
+        if isinstance(self._unit, ItemPage):
+            return self._unit.concept_url()
+        return self._unit or '1'
 
     def toWikibase(self):
         """
@@ -709,7 +722,11 @@ class WbQuantity(_WbRepresentation):
         error = None
         if (upperBound and lowerBound) or cls._require_errors(site):
             error = (upperBound - amount, amount - lowerBound)
-        return cls(amount, wb['unit'], error, site)
+        if wb['unit'] == '1':
+            unit = None
+        else:
+            unit = wb['unit']
+        return cls(amount, unit, error, site)
 
 
 class WbMonolingualText(_WbRepresentation):

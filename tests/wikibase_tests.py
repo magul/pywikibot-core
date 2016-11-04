@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the Wikidata parts of the page module."""
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -291,6 +291,39 @@ class TestWikibaseTypes(WikidataTestCase):
         """Test WbQuantity error handling."""
         self.assertRaises(ValueError, pywikibot.WbQuantity, amount=None,
                           error=1)
+
+    def test_WbQuantity_entity_unit(self):
+        """Test WbQuantity with entity url unit."""
+        q = pywikibot.WbQuantity(amount=1234, error=1,
+                                 unit='http://www.wikidata.org/entity/Q712226')
+        self.assertEqual(q.toWikibase(),
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235',
+                          'unit': 'http://www.wikidata.org/entity/Q712226', })
+
+    def test_WbQuantity_ItemPage_unit(self):
+        """Test WbQuantity with ItemPage unit."""
+        repo = self.get_repo()
+        if MediaWikiVersion(repo.version()) < MediaWikiVersion('1.28-wmf.23'):
+            raise unittest.SkipTest('Wiki version must be 1.28-wmf.23 or '
+                                    'newer to expose wikibase-conceptbaseuri.')
+
+        q = pywikibot.WbQuantity(amount=1234, error=1,
+                                 unit=pywikibot.ItemPage(repo, 'Q712226'))
+        self.assertEqual(q.toWikibase(),
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235',
+                          'unit': 'http://www.wikidata.org/entity/Q712226', })
+
+    def test_WbQuantity_unit_fromWikibase(self):
+        """Test WbQuantity recognising unit from Wikibase output."""
+        q = pywikibot.WbQuantity.fromWikibase({
+            'amount': '+1234', 'lowerBound': '+1233', 'upperBound': '+1235',
+            'unit': 'http://www.wikidata.org/entity/Q712226', })
+        self.assertEqual(q.toWikibase(),
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235',
+                          'unit': 'http://www.wikidata.org/entity/Q712226', })
 
     def test_WbMonolingualText_string(self):
         """Test WbMonolingualText string."""
@@ -789,6 +822,16 @@ class TestClaimSetValue(WikidataTestCase):
         claim.setTarget(target)
         self.assertEqual(claim.target, target)
 
+    def test_set_WbQuantity(self):
+        """Test setting claim of quantity type."""
+        wikidata = self.get_repo()
+        claim = pywikibot.Claim(wikidata, 'P1106')
+        self.assertEqual(claim.type, 'quantity')
+        target = pywikibot.WbQuantity(
+            amount=1234, error=1, unit='http://www.wikidata.org/entity/Q11573')
+        claim.setTarget(target)
+        self.assertEqual(claim.target, target)
+
     def test_set_math(self):
         """Test setting claim of math type."""
         wikidata = self.get_repo()
@@ -824,6 +867,8 @@ class TestClaimSetValue(WikidataTestCase):
         self.assertRaises(ValueError, url_claim.setTarget, pywikibot.WbTime(2001, site=wikidata))
         mono_claim = pywikibot.Claim(wikidata, 'P1450')
         self.assertRaises(ValueError, mono_claim.setTarget, 'foo')
+        quantity_claim = pywikibot.Claim(wikidata, 'P1106')
+        self.assertRaises(ValueError, quantity_claim.setTarget, 'foo')
 
 
 class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase):
