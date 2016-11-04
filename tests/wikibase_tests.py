@@ -292,6 +292,25 @@ class TestWikibaseTypes(WikidataTestCase):
         self.assertRaises(ValueError, pywikibot.WbQuantity, amount=None,
                           error=1)
 
+    def test_WbQuantity_entity_unit(self):
+        """Test WbQuantity with entity url unit."""
+        q = pywikibot.WbQuantity(amount=1234, error=1,
+                                 entity='http://www.wikidata.org/entity/Q712226')
+        self.assertEqual(q.toWikibase(),
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235',
+                          'unit': 'http://www.wikidata.org/entity/Q712226', })
+
+    def test_WbQuantity_unit_fromWikibase(self):
+        """Test WbQuantity recognising unit from Wikibase output."""
+        q = pywikibot.WbQuantity.fromWikibase({
+            'amount': '+1234', 'lowerBound': '+1233', 'upperBound': '+1235',
+            'unit': 'http://www.wikidata.org/entity/Q712226', })
+        self.assertEqual(q.toWikibase(),
+                         {'amount': '+1234', 'lowerBound': '+1233',
+                          'upperBound': '+1235',
+                          'unit': 'http://www.wikidata.org/entity/Q712226', })
+
     def test_WbMonolingualText_string(self):
         """Test WbMonolingualText string."""
         q = pywikibot.WbMonolingualText(text='Test that basics work', language='en')
@@ -789,6 +808,16 @@ class TestClaimSetValue(WikidataTestCase):
         claim.setTarget(target)
         self.assertEqual(claim.target, target)
 
+    def test_set_WbQuantity(self):
+        """Test setting claim of quantity type."""
+        wikidata = self.get_repo()
+        claim = pywikibot.Claim(wikidata, 'P1106')
+        self.assertEqual(claim.type, 'quantity')
+        target = pywikibot.WbQuantity(
+            amount=1234, error=1, entity='http://www.wikidata.org/entity/Q712226')
+        claim.setTarget(target)
+        self.assertEqual(claim.target, target)
+
     def test_set_math(self):
         """Test setting claim of math type."""
         wikidata = self.get_repo()
@@ -824,6 +853,8 @@ class TestClaimSetValue(WikidataTestCase):
         self.assertRaises(ValueError, url_claim.setTarget, pywikibot.WbTime(2001, site=wikidata))
         mono_claim = pywikibot.Claim(wikidata, 'P1450')
         self.assertRaises(ValueError, mono_claim.setTarget, 'foo')
+        quantity_claim = pywikibot.Claim(wikidata, 'P1106')
+        self.assertRaises(ValueError, quantity_claim.setTarget, 'foo')
 
 
 class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase):

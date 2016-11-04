@@ -256,7 +256,7 @@ class Coordinate(_WbRepresentation):
         @type dim: int
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
-        @param entity: The URL entity of a Wikibase item
+        @param entity: The URL entity of a Wikibase item for the globe
         @type entity: str
         """
         self.lat = lat
@@ -644,19 +644,21 @@ class WbQuantity(_WbRepresentation):
             return None
         return format(value, "+g")
 
-    def __init__(self, amount, unit=None, error=None, site=None):
+    def __init__(self, amount, unit=None, error=None, site=None, entity=''):
         u"""
         Create a new WbQuantity object.
 
         @param amount: number representing this quantity
         @type amount: string or Decimal. Other types are accepted, and converted
                       via str to Decimal.
-        @param unit: not used (only unit-less quantities are supported)
+        @param unit: not used (only units through the entity parameter are supported)
         @param error: the uncertainty of the amount (e.g. ±1)
         @type error: same as amount, or tuple of two values, where the first value is
                      the upper error and the second is the lower error value.
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
+        @param entity: The URL entity of the Wikibase item for the unit
+        @type entity: str
         """
         if amount is None:
             raise ValueError('no amount given')
@@ -665,6 +667,7 @@ class WbQuantity(_WbRepresentation):
 
         self.amount = self._todecimal(amount)
         self.unit = unit
+        self._entity = entity
 
         if error is None and not self._require_errors(site):
             self.upperBound = self.lowerBound = None
@@ -680,6 +683,12 @@ class WbQuantity(_WbRepresentation):
             self.upperBound = self.amount + upperError
             self.lowerBound = self.amount - lowerError
 
+    @property
+    def entity(self):
+        if self._entity:
+            return self._entity
+        return self.unit
+
     def toWikibase(self):
         """
         Convert the data to a JSON object for the Wikibase API.
@@ -690,7 +699,7 @@ class WbQuantity(_WbRepresentation):
         json = {'amount': self._fromdecimal(self.amount),
                 'upperBound': self._fromdecimal(self.upperBound),
                 'lowerBound': self._fromdecimal(self.lowerBound),
-                'unit': self.unit
+                'unit': self.entity
                 }
         return json
 
@@ -709,7 +718,7 @@ class WbQuantity(_WbRepresentation):
         error = None
         if (upperBound and lowerBound) or cls._require_errors(site):
             error = (upperBound - amount, amount - lowerBound)
-        return cls(amount, wb['unit'], error, site)
+        return cls(amount, None, error, site, wb['unit'])
 
 
 class WbMonolingualText(_WbRepresentation):
