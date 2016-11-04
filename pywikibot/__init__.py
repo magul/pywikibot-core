@@ -651,19 +651,26 @@ class WbQuantity(_WbRepresentation):
         @param amount: number representing this quantity
         @type amount: string or Decimal. Other types are accepted, and converted
                       via str to Decimal.
-        @param unit: not used (only units through the entity parameter are supported)
+        @param unit: the Wikibase item for the unit
+        @type unit: pywikibot.ItemPage
         @param error: the uncertainty of the amount (e.g. ±1)
         @type error: same as amount, or tuple of two values, where the first value is
                      the upper error and the second is the lower error value.
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
-        @param entity: The URL entity of the Wikibase item for the unit
+        @param entity: The URL entity of the Wikibase item for the unit. If provided
+                       it takes presedence over any value supplied in 'unit'.
         @type entity: str
         """
         if amount is None:
             raise ValueError('no amount given')
-        if unit is None:
-            unit = '1'
+
+        # to maintain backwards compatibility for users of undocumented feature
+        if unit and not isinstance(unit, ItemPage):
+            warning(
+                "WbQuantity now expects 'unit' to be an ItemPage. To go on using "
+                "plain entity URIs instead use the 'entity' parameter.")
+            entity = unit
 
         self.amount = self._todecimal(amount)
         self.unit = unit
@@ -687,7 +694,9 @@ class WbQuantity(_WbRepresentation):
     def entity(self):
         if self._entity:
             return self._entity
-        return self.unit
+        if self.unit:
+            return self.unit.concept_url()
+        return '1'
 
     def toWikibase(self):
         """
