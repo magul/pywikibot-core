@@ -21,7 +21,7 @@ except ImportError as e:
 import pywikibot
 
 from pywikibot import config2 as config
-from pywikibot.tools import Counter
+from pywikibot.tools import Counter, deprecated
 
 # deprecated value
 pydotfound = not isinstance(pydot, ImportError)
@@ -75,19 +75,14 @@ class Subject(object):
         # Remember the "origin page"
         self._origin = origin
 
-        # Temporary variable to support git blame; do not use
-        originPage = origin
-
-        self.found_in = None
-
         # foundIn is a dictionary where pages are keys and lists of
         # pages are values. It stores where we found each page.
         # As we haven't yet found a page that links to the origin page, we
         # start with an empty list for it.
-        if originPage:
-            self.foundIn = {self.originPage: []}
+        if origin:
+            self.found_in = {self.origin: []}
         else:
-            self.foundIn = {}
+            self.found_in = {}
 
     @property
     def origin(self):
@@ -100,15 +95,16 @@ class Subject(object):
         self._origin = value
 
     @property
+    @deprecated('origin')
     def originPage(self):
         """Deprecated property for the origin page.
 
         DEPRECATED.  Use origin.
         """
-        # TODO: deprecate this property
         return self.origin
 
     @originPage.setter
+    @deprecated('origin')
     def originPage(self, value):
         """Deprecated property for the origin page.
 
@@ -117,15 +113,16 @@ class Subject(object):
         self.origin = value
 
     @property
+    @deprecated('found_in')
     def foundIn(self):
         """Mapping of pages to others pages interwiki linked to it.
 
         DEPRECATED.  Use found_in.
         """
-        # TODO: deprecate this property
         return self.found_in
 
     @foundIn.setter
+    @deprecated('found_in')
     def foundIn(self, value):
         """Temporary property setter to support code migration."""
         self.found_in = value
