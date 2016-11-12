@@ -6383,6 +6383,27 @@ class APISite(BaseSite):
 
         return wcgen
 
+    def wantedfiles(self, total=None):
+        """Yield Pages from Special:Wantedfiles.
+
+        @param total: number of pages to return
+        """
+        wfgen = self._generator(api.PageGenerator,
+                                type_arg="querypage", gqppage="Wantedfiles",
+                                total=total)
+        return wfgen
+
+    def wantedtemplates(self, total=None):
+        """Yield Pages from Special:Wantedtemplates.
+
+        @param total: number of pages to return
+        """
+        wtgen = self._generator(api.PageGenerator,
+                                type_arg="querypage", gqppage="Wantedtemplates",
+                                total=total)
+
+        return wtgen
+
     @deprecated_args(number='total', step=None, repeat=None)
     def uncategorizedcategories(self, total=None):
         """Yield Categories from Special:Uncategorizedcategories.

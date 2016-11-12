@@ -246,6 +246,22 @@ parameterHelp = u"""\
 -usercontribs     Work on all articles that were edited by a certain user.
                   (Example : -usercontribs:DumZiBoT)
 
+-wantedpages      Work on pages that are linked, but do not exist;
+                  may be given as "-wantedpages:n" where
+                  n is the maximum number of articles to work on.
+
+-wantedcategories Work on categories that are used, but do not exist;
+                  may be given as "-wantedcategories:n" where
+                  n is the maximum number of articles to work on.
+
+-wantedfiles      Work on files that are used, but do not exist;
+                  may be given as "-wantedfiles:n" where
+                  n is the maximum number of articles to work on.
+
+-wantedtemplates  Work on templates that are used, but do not exist;
+                  may be given as "-wantedtemplates:n" where
+                  n is the maximum number of articles to work on.
+
 -weblink          Work on all articles that contain an external link to
                   a given URL; may be given as "-weblink:url"
 
@@ -655,6 +671,14 @@ class GeneratorFactory(object):
             gen = FileLinksGenerator(page)
         elif arg == '-unusedfiles':
             gen = UnusedFilesGenerator(total=intNone(value), site=self.site)
+        elif arg == '-wantedpages':
+            gen = WantedPagesPageGenerator(total=intNone(value), site=self.site)
+        elif arg == '-wantedfiles':
+            gen = WantedFilesGenerator(total=intNone(value), site=self.site)
+        elif arg == '-wantedcategories':
+            gen = WantedCategoriesGenerator(total=intNone(value), site=self.site)
+        elif arg == '-wantedtemplates':
+            gen = WantedTemplatesGenerator(total=intNone(value), site=self.site)
         elif arg == '-lonelypages':
             gen = LonelyPagesPageGenerator(total=intNone(value),
                                            site=self.site)
@@ -2164,6 +2188,51 @@ def WantedPagesPageGenerator(total=100, site=None):
         site = pywikibot.Site()
     for page in site.wantedpages(total=total):
         yield page
+
+
+def WantedCategoriesGenerator(total=100, site=None):
+    """
+    Wanted categories generator.
+
+    @param total: Maximum number of pages to retrieve in total
+    @type total: int
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+    """
+    if site is None:
+        site = pywikibot.Site()
+    for page in site.wantedcategories(total=total):
+        yield page
+
+
+def WantedTemplatesGenerator(total=100, site=None):
+    """
+    Wanted templates generator.
+
+    @param total: Maximum number of pages to retrieve in total
+    @type total: int
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+    """
+    if site is None:
+        site = pywikibot.Site()
+    for page in site.wantedtemplates(total=total):
+        yield page
+
+
+def WantedFilesGenerator(total=100, site=None):
+    """
+    Wanted files generator.
+
+    @param total: Maximum number of pages to retrieve in total
+    @type total: int
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+    """
+    if site is None:
+        site = pywikibot.Site()
+    for page in site.wantedfiles(total=total):
+        yield pywikibot.FilePage(page.site, page.title())
 
 
 @deprecated_args(number="total", repeat=None)
