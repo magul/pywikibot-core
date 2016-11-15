@@ -34,7 +34,7 @@ class Option(object):
     def __init__(self, stop=True):
         """Constructor."""
         super(Option, self).__init__()
-        self._stop = stop
+        self.stop = stop
 
     @staticmethod
     def formatted(text, options, default=None):
@@ -43,11 +43,6 @@ class Option(object):
         for option in options:
             formatted_options.append(option.format(default=default))
         return '{0} ({1})'.format(text, ', '.join(formatted_options))
-
-    @property
-    def stop(self):
-        """Return whether this option stops asking."""
-        return self._stop
 
     def handled(self, value):
         """

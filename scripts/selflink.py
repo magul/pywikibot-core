@@ -71,6 +71,7 @@ class SelflinkBot(MultipleSitesBot, BaseUnlinkBot):
                 u'Skipping page %s because it contains an image map.'
                 % self.current_page.title(asLink=True))
             return
+        self.pageToUnlink = self.current_page
         self.unlink(self.current_page)
 
 
