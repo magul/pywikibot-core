@@ -3454,7 +3454,11 @@ class WikibasePage(BasePage):
         """
         if not hasattr(self, '_content'):
             try:
-                self.get(get_redirect=True)
+                if isinstance(self, PropertyPage):
+                    # PropertyPage.get only implements "force".
+                    self.get()
+                else:
+                    self.get(get_redirect=True)
                 return True
             except pywikibot.NoPage:
                 return False

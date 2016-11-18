@@ -723,6 +723,14 @@ class TestPropertyPage(WikidataTestCase):
         self.assertEqual(claim.type, 'wikibase-property')
         self.assertEqual(claim.target, property_page)
 
+    def test_exists(self):
+        """Test the exists method of PropertyPage."""
+        wikidata = self.get_repo()
+        property_page = PropertyPage(wikidata, 'P1687')
+        self.assertTrue(property_page.exists())
+        # Retry with cached _content.
+        self.assertTrue(property_page.exists())
+
 
 class TestClaimSetValue(WikidataTestCase):
 
