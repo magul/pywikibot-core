@@ -812,38 +812,33 @@ class TestPageMethodsWithItemTitle(WikidataTestCase, BasePageMethodsTestBase):
         self._test_no_wikitext()
 
 
-class TestDryPageGetNotImplemented(DefaultWikibaseClientTestCase,
-                                   DeprecationTestCase):
+class TestDryPageGetTypeError(DefaultWikibaseClientTestCase):
 
     """Test not implement get arguments of WikibasePage classes."""
 
     dry = True
 
     def test_base_get_args(self):
-        """Test WikibasePage.get() with sysop argument."""
+        """Test WikibasePage.get() with improper argument."""
         item = WikibasePage(self.repo, 'Q1')
         # avoid loading anything
         item._content = {}
-        self.assertRaises(NotImplementedError,
-                          item.get, force=True, sysop=True)
-        self.assertRaises(NotImplementedError,
-                          item.get, force=False, sysop=True)
-        self.assertRaises(NotImplementedError,
-                          item.get, force=False, sysop=False)
-        self.assertRaises(NotImplementedError,
-                          item.get, sysop=True)
+        self.assertRaises(TypeError, item.get, force=True, sysop=True, a=True)
+        self.assertRaises(TypeError, item.get, force=False, sysop=True, b=False)
+        self.assertRaises(TypeError, item.get, force=False, sysop=False, c=None)
+        self.assertRaises(TypeError, item.get, sysop=True, d=0)
 
     def test_item_get_args(self):
-        """Test ItemPage.get() with sysop argument."""
+        """Test ItemPage.get() with improper argument."""
         item = ItemPage(self.repo, 'Q1')
         item._content = {}
-        self.assertRaises(NotImplementedError, item.get, sysop=True)
+        self.assertRaises(TypeError, item.get, sysop=True, a=True)
 
     def test_property_get_args(self):
-        """Test PropertyPage.get() with sysop argument."""
+        """Test PropertyPage.get() with improper argument."""
         pp = PropertyPage(self.repo, 'P1')
         pp._content = {}
-        self.assertRaises(NotImplementedError, pp.get, sysop=True)
+        self.assertRaises(TypeError, pp.get, sysop=True, a=False)
 
 
 class TestLinks(WikidataTestCase):

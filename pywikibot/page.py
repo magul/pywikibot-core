@@ -3474,19 +3474,18 @@ class WikibasePage(BasePage):
         """
         return True
 
-    def get(self, force=False, *args, **kwargs):
-        """
-        Fetch all page data, and cache it.
+    def get(self, force=False, get_redirect=False, sysop=False):
+        """Fetch all page data, and cache it.
 
         @param force: override caching
         @type force: bool
-        @raise NotImplementedError: a value in args or kwargs
+        @param get_redirect: return the item content, do not follow the
+                             redirect, do not raise an exception.
+        @type get_redirect: bool
+        @param sysop:           if the user has a sysop account, use it to
+                                retrieve this page
+        @type sysop: bool
         """
-        if args or kwargs:
-            raise NotImplementedError(
-                '{0}.get does not implement var args: {1!r} and {2!r}'.format(
-                    self.__class__, args, kwargs))
-
         lazy_loading_id = not hasattr(self, 'id') and hasattr(self, '_site')
         if force or not hasattr(self, '_content'):
             identification = self._defined_by()
@@ -3494,6 +3493,8 @@ class WikibasePage(BasePage):
                 raise pywikibot.NoPage(self)
 
             try:
+                if sysop:
+                    self.repo.login(sysop=sysop)
                 data = self.repo.loadcontent(identification)
             except APIError as err:
                 if err.code == 'no-such-entity':
@@ -3544,6 +3545,9 @@ class WikibasePage(BasePage):
                     c = Claim.fromJSON(self.repo, claim)
                     c.on_item = self
                     self.claims[pid].append(c)
+
+        if self.isRedirectPage() and not get_redirect:
+            raise pywikibot.IsRedirectPage(self)
 
         return {'aliases': self.aliases,
                 'labels': self.labels,
@@ -3917,21 +3921,21 @@ class ItemPage(WikibasePage):
             raise pywikibot.NoPage(i)
         return i
 
-    def get(self, force=False, get_redirect=False, *args, **kwargs):
-        """
-        Fetch all item data, and cache it.
+    def get(self, force=False, get_redirect=False, sysop=False):
+        """Fetch all item data, and cache it.
 
         @param force: override caching
         @type force: bool
         @param get_redirect: return the item content, do not follow the
                              redirect, do not raise an exception.
         @type get_redirect: bool
-        @raise NotImplementedError: a value in args or kwargs
+        @param sysop:           if the user has a sysop account, use it to
+                                retrieve this page
+        @type sysop: bool
         """
-        data = super(ItemPage, self).get(force, *args, **kwargs)
-
-        if self.isRedirectPage() and not get_redirect:
-            raise pywikibot.IsRedirectPage(self)
+        data = super(ItemPage, self).get(force=force,
+                                         get_redirect=get_redirect,
+                                         sysop=sysop)
 
         # sitelinks
         self.sitelinks = {}
@@ -4250,20 +4254,22 @@ class PropertyPage(WikibasePage, Property):
                 u"'%s' is not an property page title" % title)
         Property.__init__(self, source, self.id)
 
-    def get(self, force=False, *args, **kwargs):
-        """
-        Fetch the property entity, and cache it.
+    def get(self, force=False, get_redirect=False, sysop=False):
+        """Fetch the property entity, and cache it.
 
         @param force: override caching
         @type force: bool
-        @raise NotImplementedError: a value in args or kwargs
+        @param get_redirect:    return the redirect text, do not follow the
+                                redirect, do not raise an exception.
+        @type get_redirect: bool
+        @param sysop:           if the user has a sysop account, use it to
+                                retrieve this page
+        @type sysop: bool
         """
-        if args or kwargs:
-            raise NotImplementedError(
-                'PropertyPage.get only implements "force".')
-
         if force or not hasattr(self, '_content'):
-            WikibasePage.get(self, force)
+            super(PropertyPage, self).get(force=force,
+                                          get_redirect=get_redirect,
+                                          sysop=sysop)
         self._type = self._content['datatype']
 
     def newClaim(self, *args, **kwargs):
