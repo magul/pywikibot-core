@@ -5261,6 +5261,10 @@ class Link(ComparableMixin):
 
         # Replace underscores by spaces
         t = t.replace(u"_", u" ")
+        # Cleanup whitespace
+        t = re.sub(
+            '[\xa0\u1680\u180E\u2000-\u200A\u2028\u2029\u202F\u205F\u3000]',
+            ' ', t)
         # replace multiple spaces with a single space
         t = re.sub(' {2,}', ' ', t)
         # Strip spaces at both ends
