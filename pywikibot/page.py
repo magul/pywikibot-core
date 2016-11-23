@@ -5002,7 +5002,9 @@ class Link(ComparableMixin):
 
         # Replace underscores by spaces
         t = t.replace(u"_", u" ")
-        # replace multiple spaces with a single space
+        # Replace non-breaking spaces
+        t = t.replace('\xa0', ' ')
+        # Replace multiple spaces with a single space
         t = re.sub(' {2,}', ' ', t)
         # Strip spaces at both ends
         t = t.strip()
