@@ -127,6 +127,34 @@ def allowed_failure_if(expect):
         return lambda orig: orig
 
 
+def retry_few_times(retry_limit):
+    """
+    Decorator to retry test on failure.
+
+    Swallow AssertionError retry_limit times before failing test.
+
+    @param retry_limit: Retry limit before failing test
+    @type retry_limit: int
+    @return: a decorator to retry test on failure
+    @rtype: function
+    @raises AssertionError: all retries of test failed
+    """
+    def actual_decorator(wrapped_func):
+        def wrapper_func(*args, **kwargs):
+            for retry_no in range(1, retry_limit + 1):
+                try:
+                    wrapped_func(*args, **kwargs)
+                except AssertionError:
+                    if retry_no == retry_limit:
+                        raise
+                except:
+                    raise
+                else:
+                    return
+        return wrapper_func
+    return actual_decorator
+
+
 def add_metaclass(cls):
     """Call six's add_metaclass with the site's __metaclass__ in Python 3."""
     if not PY2:

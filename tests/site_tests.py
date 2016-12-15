@@ -45,7 +45,12 @@ from tests.aspects import (
     AlteredDefaultSiteTestCase,
 )
 from tests.basepage_tests import BasePageLoadRevisionsCachingTestBase
-from tests.utils import allowed_failure, allowed_failure_if, entered_loop
+from tests.utils import (
+    allowed_failure,
+    allowed_failure_if,
+    entered_loop,
+    retry_few_times,
+)
 
 
 class TokenTestBase(TestCaseBase):
@@ -457,12 +462,15 @@ class TestSiteGenerators(DefaultSiteTestCase):
                               namespaces=1)
         self.assertEqual(gen.request['gblnamespace'], [1])
 
-    def testLinkMethods(self):
-        """Test site methods for getting links to and from a page."""
+    @retry_few_times(10)
+    def test_pagebacklinks(self):
+        """Test site generator pagebacklinks()."""
         if self.site.family.name == 'wpbeta':
             raise unittest.SkipTest('Test fails on betawiki; T69931')
+
         mysite = self.get_site()
         mainpage = self.get_mainpage()
+
         backlinks = set(mysite.pagebacklinks(mainpage, namespaces=[0]))
         # only non-redirects:
         filtered = set(mysite.pagebacklinks(mainpage, namespaces=0,
@@ -474,6 +482,7 @@ class TestSiteGenerators(DefaultSiteTestCase):
         indirect = set(mysite.pagebacklinks(mainpage, namespaces=[0],
                                             followRedirects=True,
                                             filterRedirects=False))
+
         self.assertEqual(filtered & redirs, set([]))
         self.assertEqual(indirect & redirs, set([]))
         self.assertLessEqual(filtered, indirect)
@@ -483,20 +492,19 @@ class TestSiteGenerators(DefaultSiteTestCase):
             backlinks,
             set(self.site.pagebacklinks(mainpage, namespaces=[0, 2])))
 
-        # pagereferences includes both backlinks and embeddedin
-        embedded = set(mysite.page_embeddedin(mainpage, namespaces=[0]))
-        refs = set(mysite.pagereferences(mainpage, namespaces=[0]))
-        self.assertTrue(backlinks.issubset(refs))
-        self.assertTrue(embedded.issubset(refs))
         for bl in backlinks:
             self.assertIsInstance(bl, pywikibot.Page)
-            self.assertIn(bl, refs)
-        for ei in embedded:
-            self.assertIsInstance(ei, pywikibot.Page)
-            self.assertIn(ei, refs)
-        for ref in refs:
-            self.assertIn(ref, backlinks | embedded)
-        # test embeddedin arguments
+
+    @retry_few_times(10)
+    def test_page_embeddedin(self):
+        """Test site generator page_embeddedin()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
+        embedded = set(mysite.page_embeddedin(mainpage, namespaces=[0]))
         self.assertTrue(embedded.issuperset(
             set(mysite.page_embeddedin(mainpage, filterRedirects=True,
                                        namespaces=[0]))))
@@ -505,21 +513,43 @@ class TestSiteGenerators(DefaultSiteTestCase):
                                        namespaces=[0]))))
         self.assertTrue(embedded.issubset(
             set(mysite.page_embeddedin(mainpage, namespaces=[0, 2]))))
+        for ei in embedded:
+            self.assertIsInstance(ei, pywikibot.Page)
+
+    @retry_few_times(10)
+    def test_pagereferences(self):
+        """Test site generator pagereferences()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
+        # pagereferences includes both backlinks and embeddedin
+        backlinks = set(mysite.pagebacklinks(mainpage, namespaces=[0]))
+        embedded = set(mysite.page_embeddedin(mainpage, namespaces=[0]))
+        refs = set(mysite.pagereferences(mainpage, namespaces=[0]))
+        self.assertTrue(backlinks.issubset(refs))
+        self.assertTrue(embedded.issubset(refs))
+        for bl in backlinks:
+            self.assertIn(bl, refs)
+        for ei in embedded:
+            self.assertIn(ei, refs)
+        for ref in refs:
+            self.assertIn(ref, backlinks | embedded)
+
+    @retry_few_times(10)
+    def test_pagelinks(self):
+        """Test site generator pagelinks()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         links = set(mysite.pagelinks(mainpage))
         for pl in links:
             self.assertIsInstance(pl, pywikibot.Page)
-        # test links arguments
-        # TODO: There have been build failures because the following assertion
-        # wasn't true. Bug: T92856
-        # Example: https://travis-ci.org/wikimedia/pywikibot-core/jobs/54552081#L505
-        namespace_links = set(mysite.pagelinks(mainpage, namespaces=[0, 1]))
-        if namespace_links - links:
-            unittest_print(
-                'FAILURE wrt T92856:\nSym. difference: "{0}"'.format(
-                    '", "'.join(
-                        '{0}@{1}'.format(link.namespace(),
-                                         link.title(withNamespace=False))
-                        for link in namespace_links ^ links)))
         self.assertCountEqual(
             set(mysite.pagelinks(mainpage, namespaces=[0, 1])) - links, [])
         for target in mysite.preloadpages(mysite.pagelinks(mainpage,
@@ -527,23 +557,68 @@ class TestSiteGenerators(DefaultSiteTestCase):
                                                            total=5)):
             self.assertIsInstance(target, pywikibot.Page)
             self.assertFalse(target.isRedirectPage())
-        # test pagecategories
+
+    @retry_few_times(10)
+    def test_pagecategories(self):
+        """Test site generator pagecategories()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         for cat in mysite.pagecategories(mainpage):
             self.assertIsInstance(cat, pywikibot.Category)
             for cm in mysite.categorymembers(cat):
                 self.assertIsInstance(cat, pywikibot.Page)
-        # test pageimages
+
+    @retry_few_times(10)
+    def test_pageimages(self):
+        """Test site generator pageimages()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         self.assertTrue(all(isinstance(im, pywikibot.FilePage)
                             for im in mysite.pageimages(mainpage)))
-        # test pagetemplates
+
+    @retry_few_times(10)
+    def test_pagetemplates(self):
+        """Test site generator pagetemplates()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         self.assertTrue(all(isinstance(te, pywikibot.Page)
                             for te in mysite.pagetemplates(mainpage)))
         self.assertTrue(set(mysite.pagetemplates(mainpage)).issuperset(
                         set(mysite.pagetemplates(mainpage, namespaces=[10]))))
-        # test pagelanglinks
+
+    @retry_few_times(10)
+    def test_pagelanglinks(self):
+        """Test site generator pagelanglinks()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         for ll in mysite.pagelanglinks(mainpage):
             self.assertIsInstance(ll, pywikibot.Link)
-        # test page_extlinks
+
+    @retry_few_times(10)
+    def test_page_extlinks(self):
+        """Test site generator page_extlinks()."""
+        if self.site.family.name == 'wpbeta':
+            raise unittest.SkipTest('Test fails on betawiki; T69931')
+
+        mysite = self.get_site()
+        mainpage = self.get_mainpage()
+
         self.assertTrue(all(isinstance(el, basestring)
                             for el in mysite.page_extlinks(mainpage)))
 
