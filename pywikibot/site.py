@@ -3130,13 +3130,21 @@ class APISite(BaseSite):
             or a comma- or pipe-separated string of pageids
             (e.g. '945097,1483753, 956608' or '945097|483753|956608')
         """
+        _original_pageids = pageids
         if isinstance(pageids, basestring):
             pageids = pageids.replace('|', ',')
             pageids = pageids.split(',')
             pageids = [p.strip() for p in pageids]
+            pageids = pageids if pageids != [''] else []
 
         # Validate pageids.
-        gen = (str(int(p)) for p in pageids if int(p) > 0)
+        gen = []
+        for p in pageids:
+            if str(p).isdigit():
+                gen.append(str(p))
+            else:
+                raise ValueError('Invalid pageids argument: "{0}"'.format(
+                    _original_pageids))
 
         # Find out how many pages can be specified at a time.
         parameter = self._paraminfo.parameter('query+info', 'prop')
