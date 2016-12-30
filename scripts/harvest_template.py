@@ -13,6 +13,11 @@ Usage:
 This will work on all pages that transclude the template in the article
 namespace
 
+* python pwb.py harvest_template [generators] -harvest_labels -template:"..." \
+    template_parameter PID [template_parameter PID]
+
+This will set labels to target entity connected through PID using template field.
+
 These command line parameters can be used to specify which pages to work on:
 
 &params;
@@ -61,13 +66,14 @@ class HarvestRobot(WikidataBot):
 
     """A bot to add Wikidata claims."""
 
-    def __init__(self, generator, templateTitle, fields):
+    def __init__(self, generator, templateTitle, harvestLabels, fields):
         """
         Constructor.
 
         Arguments:
             * generator     - A generator that yields Page objects.
             * templateTitle - The template to work on
+            * harvestLabels - Whether to assign labels to already existing claims
             * fields        - A dictionary of fields that are of use to us
 
         """
@@ -78,6 +84,7 @@ class HarvestRobot(WikidataBot):
         self.fields = fields
         self.cacheSources()
         self.templateTitles = self.getTemplateSynonyms(self.templateTitle)
+        self.harvest_labels = harvestLabels
 
     def getTemplateSynonyms(self, title):
         """Fetch redirects of the title, so we can check against them."""
@@ -133,7 +140,7 @@ class HarvestRobot(WikidataBot):
             raise KeyboardInterrupt
         self.current_page = page
         item.get()
-        if set(self.fields.values()) <= set(item.claims.keys()):
+        if not self.harvest_labels and set(self.fields.values()) <= set(item.claims.keys()):
             pywikibot.output('%s item %s has claims for all properties. '
                              'Skipping.' % (page, item.title()))
             return
@@ -160,65 +167,101 @@ class HarvestRobot(WikidataBot):
 
                     # This field contains something useful for us
                     if field in self.fields:
-                        # Check if the property isn't already set
-                        claim = pywikibot.Claim(self.repo, self.fields[field])
-                        if claim.getID() in item.get().get('claims'):
-                            pywikibot.output(
-                                'A claim for %s already exists. Skipping.'
-                                % claim.getID())
-                            # TODO: Implement smarter approach to merging
-                            # harvested values with existing claims esp.
-                            # without overwriting humans unintentionally.
-                        else:
-                            if claim.type == 'wikibase-item':
-                                # Try to extract a valid page
-                                match = re.search(pywikibot.link_regex, value)
-                                if not match:
-                                    pywikibot.output(
-                                        '%s field %s value %s is not a '
-                                        'wikilink. Skipping.'
-                                        % (claim.getID(), field, value))
-                                    continue
+                        self._harvest_field(field, value, item)
 
-                                link_text = match.group(1)
-                                linked_item = self._template_link_target(
-                                    item, link_text)
-                                if not linked_item:
-                                    continue
+    def _harvest_field(self, field, value, item):
+        """Process a single field/item."""
+        # Check if the property isn't already set
+        claim = pywikibot.Claim(self.repo, self.fields[field])
+        if claim.getID() in item.get().get('claims'):
+            # special case - importing labels
+            if self.harvest_labels and claim.type == 'wikibase-item':
+                self._harvest_label(item.claims[claim.getID()],
+                                    self.current_page.site.lang, value)
 
-                                claim.setTarget(linked_item)
-                            elif claim.type in ('string', 'external-id'):
-                                claim.setTarget(value.strip())
-                            elif claim.type == 'commonsMedia':
-                                commonssite = pywikibot.Site('commons',
-                                                             'commons')
-                                imagelink = pywikibot.Link(value,
-                                                           source=commonssite,
-                                                           defaultNamespace=6)
-                                image = pywikibot.FilePage(imagelink)
-                                if image.isRedirectPage():
-                                    image = pywikibot.FilePage(
-                                        image.getRedirectTarget())
-                                if not image.exists():
-                                    pywikibot.output(
-                                        "{0} doesn't exist. I can't link to it"
-                                        ''.format(image.title(asLink=True)))
-                                    continue
-                                claim.setTarget(image)
-                            else:
-                                pywikibot.output(
-                                    '%s is not a supported datatype.'
-                                    % claim.type)
-                                continue
+            pywikibot.output(
+                'A claim for %s already exists. Skipping.'
+                % claim.getID())
+            # TODO: Implement smarter approach to merging
+            # harvested values with existing claims esp.
+            # without overwriting humans unintentionally.
 
-                            pywikibot.output(
-                                'Adding %s --> %s'
-                                % (claim.getID(), claim.getTarget()))
-                            item.addClaim(claim)
-                            # A generator might yield pages from multiple sites
-                            source = self.getSource(page.site)
-                            if source:
-                                claim.addSource(source, bot=True)
+        else:
+            if claim.type == 'wikibase-item':
+                # Try to extract a valid page
+                match = re.search(pywikibot.link_regex, value)
+                if not match:
+                    pywikibot.output(
+                        '%s field %s value %s is not a '
+                        'wikilink. Skipping.'
+                        % (claim.getID(), field, value))
+                    return
+
+                link_text = match.group(1)
+                linked_item = self._template_link_target(item, link_text)
+                if not linked_item:
+                    return
+
+                claim.setTarget(linked_item)
+            elif claim.type in ('string', 'external-id'):
+                claim.setTarget(value.strip())
+            elif claim.type == 'commonsMedia':
+                commonssite = pywikibot.Site("commons", "commons")
+                imagelink = pywikibot.Link(value, source=commonssite,
+                                           defaultNamespace=6)
+                image = pywikibot.FilePage(imagelink)
+                if image.isRedirectPage():
+                    image = pywikibot.FilePage(image.getRedirectTarget())
+                if not image.exists():
+                    pywikibot.output(
+                        '[[%s]] doesn\'t exist so I can\'t link to it'
+                        % (image.title(),))
+                    return
+                claim.setTarget(image)
+            else:
+                pywikibot.output(
+                    '%s is not a supported datatype.'
+                    % claim.type)
+                return
+
+            pywikibot.output('Adding %s --> %s'
+                             % (claim.getID(), claim.getTarget()))
+            item.addClaim(claim)
+            # A generator might yield pages from multiple sites
+            source = self.getSource(self.current_page.site)
+            if source:
+                claim.addSource(source, bot=True)
+
+    def _harvest_label(self, existing_claim, lang, value):
+        """Add value as label for existing claim target if possible."""
+        if not existing_claim or len(existing_claim) != 1:
+            return  # skip when there are multiple possible target entities
+
+        target_entity = existing_claim[0].target
+        if not target_entity:  # target may be no value
+            return
+        target_labels = target_entity.get()['labels']
+        if lang in target_labels:
+            # skip if label already exist
+            return
+
+        match = re.search(pywikibot.link_regex, value)
+        if match:
+            new_label = match.group(1)
+        else:
+            # make sure it is not complex wiki code
+            if re.search('[{\[\]<]', value):
+                pywikibot.output('Fail to parse value: %s' % value)
+                return
+            new_label = value
+        readable_label = '(%s)' % target_labels['en'] if 'en' in target_labels else ''
+        pywikibot.output(
+            'Adding [%s] label %s to %s %s'
+            % (lang, new_label, target_entity.getID(), readable_label))
+        source_link = self.current_page.title(asLink=True, insite=self.repo)
+        target_entity.editLabels({lang: new_label},
+                                 summary='+%s label: %s. Source: %s' %
+                                         (lang, new_label, source_link))
 
 
 def main(*args):
@@ -232,6 +275,7 @@ def main(*args):
     """
     commandline_arguments = list()
     template_title = u''
+    harvest_labels = False
 
     # Process global args and prepare generator args parser
     local_args = pywikibot.handle_args(args)
@@ -244,6 +288,8 @@ def main(*args):
                     u'Please enter the template to work on:')
             else:
                 template_title = arg[10:]
+        elif arg.startswith('-harvest_labels'):
+            harvest_labels = True
         elif gen.handleArg(arg):
             if arg.startswith(u'-transcludes:'):
                 template_title = arg[13:]
@@ -267,7 +313,7 @@ def main(*args):
         gen.handleArg(u'-transcludes:' + template_title)
         generator = gen.getCombinedGenerator()
 
-    bot = HarvestRobot(generator, template_title, fields)
+    bot = HarvestRobot(generator, template_title, harvest_labels, fields)
     bot.run()
 
 if __name__ == "__main__":
