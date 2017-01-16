@@ -48,7 +48,7 @@ L{CurrentPageBot} and automatically defines the summary when C{put_current} is
 used.
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1313,7 +1313,7 @@ class BaseBot(object):
         @rtype: bool
         """
         if not self.user_confirm('Do you want to accept these changes?'):
-            return
+            return False
 
         if 'async' not in kwargs and self.getOption('always'):
             kwargs['async'] = True
@@ -1863,7 +1863,7 @@ class WikidataBot(Bot):
         @kwarg summary: revision comment, passed to ItemPage.editEntity
         @type summary: str
         @kwarg show_diff: show changes between oldtext and newtext (default:
-          True)
+          True unless the 'always' option is True)
         @type show_diff: bool
         @kwarg ignore_server_errors: if True, server errors will be reported
           and ignored (default: False)
@@ -1871,25 +1871,25 @@ class WikidataBot(Bot):
         @kwarg ignore_save_related_errors: if True, errors related to
           page save will be reported and ignored (default: False)
         @type ignore_save_related_errors: bool
+        @return: whether the item was saved successfully
+        @rtype: bool
         """
-        self.current_page = item
-
-        show_diff = kwargs.pop('show_diff', True)
+        show_diff = kwargs.pop('show_diff', not self.getOption('always'))
+        diff = None
+        if data is None:
+            diff = item.toJSON(diffto=(
+                item._content if hasattr(item, '_content') else None))
         if show_diff:
-            if data is None:
-                diff = item.toJSON(diffto=(
-                    item._content if hasattr(item, '_content') else None))
-            else:
-                diff = pywikibot.WikibasePage._normalizeData(data)
+            if not diff:
+                diff = pywikibot.page.WikibasePage._normalizeData(data)
             pywikibot.output(json.dumps(diff, indent=4, sort_keys=True))
 
         if 'summary' in kwargs:
             pywikibot.output(u'Change summary: %s' % kwargs['summary'])
 
-        # TODO async in editEntity should actually have some effect (bug T86074)
         # TODO PageSaveRelatedErrors should be actually raised in editEntity
         # (bug T86083)
-        self._save_page(item, item.editEntity, data, **kwargs)
+        return self._save_page(item, item.editEntity, data, **kwargs)
 
     def getSource(self, site):
         """
