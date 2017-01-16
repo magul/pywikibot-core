@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test diff module."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -11,7 +11,7 @@ __version__ = '$Id$'
 
 import sys
 
-from pywikibot.diff import cherry_pick, html_comparator, PatchManager
+from pywikibot.diff import cherry_pick, html_comparator, PatchManager, DictPatchManager
 from pywikibot.tools import PY2
 
 from tests import join_html_data_path
@@ -192,8 +192,225 @@ class TestPatchManager(TestCase):
                 self.assertEqual(p.hunks[key].diff_plain_text, case[2][key])
 
 
-class TestCherryPick(TestCase):
+class TestDictPatchManager(TestCase):
 
+    """Test DictPatchManager creating diffs between dictionaries."""
+
+    net = False
+
+    def check_hunks(self, first, second, results):
+        """Helper method, used to check if DictPatchManager returned expected results."""
+        p = DictPatchManager(first, second)
+        self.assertEqual(len(p.hunks), len(results))
+        for i in range(0, len(p.hunks)):
+            self.assertEqual(p.hunks[i].diff_plain_text, results[i])
+
+    def test_numeric_values(self):
+        """Test comparing dictionaries with numeric values."""
+        first = {
+            'numeric1': 42,
+            'numeric2': 124,
+            'numeric3': 15,
+        }
+        second = {
+            'numeric1': 42,
+            'numeric2': 62,
+            'numeric4': 195,
+        }
+        results = [
+            '- numeric2: 124\n'
+            '+ numeric2: 62\n',
+
+            '- numeric3: 15\n',
+            '+ numeric4: 195\n',
+        ]
+        self.check_hunks(first, second, results)
+
+    def test_string_values(self):
+        """Test comparing dictionaries with values values."""
+        first = {
+            'string1': 'value1',
+            'string2': 'value2',
+            'string3': 'value3',
+        }
+        second = {
+            'string1': 'value1',
+            'string2': 'changed_value2',
+            'string4': 'new_value4',
+        }
+        results = [
+            '- string2: "value2"\n'
+            '+ string2: "changed_value2"\n',
+
+            '- string3: "value3"\n',
+            '+ string4: "new_value4"\n',
+        ]
+        self.check_hunks(first, second, results)
+
+    def test_nested_dicts(self):
+        """Test comparing dictionaries with nested dictionaries."""
+        first = {
+            'nested_dict': {
+                'nested_key1': 'nested_value1',
+                'nested_key2': 'nested_value2',
+                'nested_key3': 'nested_value3',
+            },
+            'nested_dict_2': {
+                'foo': 'bar',
+            },
+        }
+        second = {
+            'nested_dict': {
+                'nested_key1': 'nested_value1',
+                'nested_key2': 'nested_changed_value2',
+                'nested_key4': 'nested_new_value4',
+            },
+            'nested_dict_3': {
+                'foo': 'bar',
+            },
+        }
+        results = [
+            '- nested_dict.nested_key2: "nested_value2"\n'
+            '+ nested_dict.nested_key2: "nested_changed_value2"\n'
+            '? nested_dict.nested_key2:      ++++++++\n',
+
+            '- nested_dict.nested_key3: "nested_value3"\n',
+            '+ nested_dict.nested_key4: "nested_new_value4"\n',
+            '- nested_dict_2.foo: "bar"\n',
+            '+ nested_dict_3.foo: "bar"\n',
+        ]
+        self.check_hunks(first, second, results)
+
+    def test_nested_arrays(self):
+        """Test comparing dictionaries with nested arrays."""
+        first = {
+            'array1': [
+                42, 124, 15,
+            ],
+            'array2': [
+                {
+                    'foo': 'bar',
+                },
+                1,
+                2,
+                {
+                    'key0': 'value1',
+                },
+                {
+                    'key1a': 'value2a',
+                    'key1b': 'value2b',
+                },
+                {
+                    'key3': 'value3',
+                },
+                {
+                    'foo': 'bar',
+                },
+            ],
+            'array3': [
+                [0, 1, 2],
+                [3, 4, 5],
+            ],
+            'array4': [
+                5,
+                6,
+                [
+                    'value1', 'value2'
+                ],
+                [
+                    'value4', 'value5'
+                ],
+            ],
+        }
+        second = {
+            'array1': [
+                42, 62, 195
+            ],
+            'array2': [
+                {
+                    'foo': 'new_value',
+                },
+                2,
+                3,
+                4,
+                {
+                    'key0': 'value1',
+                },
+                {
+                    'key1a': 'changed_value_2a',
+                    'key1b': 'value2b',
+                },
+                {
+                    'key4': 'new_value_4',
+                },
+            ],
+            'array3': [
+                [0, 1, 2],
+                [6, 4, 8],
+            ],
+            'array4': [
+                6,
+                7,
+                8,
+                [
+                    'value1', 'value3'
+                ],
+            ],
+        }
+        results = [
+            '- array1[1]: 124\n',
+            '- array1[2]: 15\n',
+            '+ array1[1]: 62\n',
+            '+ array1[2]: 195\n',
+            '- array2[1]: 1\n',
+            '+ array2[2]: 3\n',
+            '+ array2[3]: 4\n',
+
+            '- array2[0].foo: "bar"\n'
+            '+ array2[0].foo: "new_value"\n',
+
+            '- array2[4->5].key1a: "value2a"\n'
+            '+ array2[4->5].key1a: "changed_value_2a"\n',
+
+            '- array2[5->6].key3: "value3"\n',
+            '+ array2[5->6].key4: "new_value_4"\n',
+            '- array2[6].foo: "bar"\n',
+            '- array3[1][0]: 3\n',
+            '- array3[1][2]: 5\n',
+            '+ array3[1][0]: 6\n',
+            '+ array3[1][2]: 8\n',
+            '- array4[0]: 5\n',
+            '+ array4[1]: 7\n',
+            '+ array4[2]: 8\n',
+            '- array4[2->3][1]: "value2"\n',
+            '+ array4[2->3][1]: "value3"\n',
+            '- array4[3][0]: "value4"\n',
+            '- array4[3][1]: "value5"\n',
+        ]
+        self.check_hunks(first, second, results)
+
+    @patch('pywikibot.output')
+    def test_print_hunks(self, mock):
+        """Test printing hunks."""
+        first = {
+            'foo': 'bar',
+            'unicode-test': '\U0001F30E',
+        }
+        second = {
+        }
+        diff_messages = [
+            '\x03{lightred}- foo: "bar"',
+            '\x03{lightred}- unicode-test: "\U0001F30E"',
+            '\x03{default}',
+        ]
+
+        p = DictPatchManager(first, second)
+        p.print_hunks()
+        for message in diff_messages:
+            mock.assert_any_call(message)
+
+
+class TestCherryPick(TestCase):
     """Test cherry_pick method."""
 
     net = False
@@ -261,6 +478,7 @@ class TestCherryPick(TestCase):
         self.check_headers(mock)
         mock.assert_any_call(self.diff_by_letter_message)
         mock.assert_any_call(self.none_message)
+
 
 if __name__ == '__main__':  # pragma: no cover
     try:
