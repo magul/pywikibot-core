@@ -93,7 +93,7 @@ oursql ; python_version < '3'
 # core HTML comparison parser in diff module
 beautifulsoup4
 
-# scripts/states_redirect.py
+# scripts/states_redirect.py and wikibase_diff.py
 pycountry
 
 # scripts/weblinkchecker.py

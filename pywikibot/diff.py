@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Diff module."""
 #
-# (C) Pywikibot team, 2014-2015
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -561,6 +561,219 @@ class PatchManager(object):
         if all(h.reviewed == h.APPR for h in self.hunks):
             assert u''.join(l_text) == u''.join(self.b)
         return l_text
+
+
+class DictHunk(Hunk):
+    """One change (change of one key) between two dictionaries."""
+
+    def __init__(self, key, a, b, grouped_opcode):
+        """
+        Constructor.
+
+        @param key: key of two dictionaries, which is compared.
+        @param a: first value.
+        @param b: second value.
+        @param grouped_opcode: list of 5-tuples describing how to turn a into b.
+            it has the same format as returned by difflib.get_opcodes().
+        """
+        self.key = key
+        super(DictHunk, self).__init__(a, b, grouped_opcode)
+        self.diff_plain_text = ''.join(self.diff)
+
+    def create_diff(self):
+        """Generator of diff text for this hunk, without formatting."""
+        for line in Hunk.create_diff(self):
+            yield '%s %s: %s' % (line[0], self.key, line[2:])
+
+    def __str__(self):
+        """Return the diff as formatted text."""
+        return self.diff_text
+
+
+class DictPatchManager(PatchManager):
+    """Similar to PatchManager, but compares dictionaries instead."""
+
+    def __init__(self, dict_a, dict_b):
+        """
+        Constructor.
+
+        @param dict_a: first dictionary to compare.
+        @param dict_b: second dictionary to compare.
+        """
+        self.a = dict_a
+        self.b = dict_b
+
+        self.hunks = []
+
+        self.add_dict_hunks(self.a, self.b)
+
+    def add_hunk(self, a, b, key, add_quotes=True):
+        """
+        Add new hunk to the list of hunks.
+
+        @param a: first value.
+        @param b: second value.
+        @param key: key of the dictionary (used when displaying)
+        @param add_quotes: whether to add quotes to string values when displaying
+        """
+        if isinstance(a, Sequence):
+            if add_quotes:
+                a = '"%s"' % a
+        else:
+            a = a or ''
+            a = str(a)
+
+        a = a.splitlines(1)
+
+        if isinstance(b, Sequence):
+            if add_quotes:
+                b = '"%s"' % b
+        else:
+            b = b or ''
+            b = str(b)
+
+        b = b.splitlines(1)
+
+        s = difflib.SequenceMatcher(None, a, b)
+        groups = list(s.get_grouped_opcodes(0))
+        if len(groups) > 0:
+            hunk = DictHunk(key, a, b, groups[0])
+            self.hunks.append(hunk)
+
+    def add_dict_hunks(self, a, b, key_prefix=None, key_parts=[], sort_keys=True):
+        """
+        Compare two dictionaries (recursively).
+
+        @param a: first dictionary.
+        @param b: second dictionary.
+        @param key_prefix: prefix to add to each key (used when displayed).
+        @param key_parts: list of keys, indicating location of dictionaries relative to the root.
+        @param sort_keys: whether to sort keys when creating diff.
+        """
+        a = a or {}
+        b = b or {}
+
+        keys = list(set(a) | set(b))
+
+        if sort_keys:
+            keys = sorted(keys)
+
+        for key in keys:
+            a_value = a.get(key)
+            b_value = b.get(key)
+
+            if key_prefix:
+                prefixed_key = '%s.%s' % (key_prefix, key)
+            else:
+                prefixed_key = key
+
+            new_key_parts = key_parts + [key]
+
+            if isinstance(a_value, dict) or isinstance(b_value, dict):
+                self.add_dict_hunks(a_value, b_value, prefixed_key, new_key_parts)
+                continue
+
+            if isinstance(a_value, list) or isinstance(b_value, list):
+                self.add_list_hunks(a_value, b_value, prefixed_key, new_key_parts)
+                continue
+
+            self.add_hunk(a_value, b_value, prefixed_key)
+
+    def add_list_hunks(self, a, b, key, key_parts):
+        """
+        Compare two lists (recursively) and add all differences between them to the list of hunks.
+
+        @param a: first list.
+        @param b: second list.
+        @param key: key, under which those lists are stored.
+        @param key_parts: list of keys, indicating location of compared lists relative to the root.
+        """
+        a = a or []
+        b = b or []
+
+        # elements in the first list, which do not exist in the second list
+        a_diff = []
+        # dicts and lists in the first list, which are different from dicts in the second list
+        a_dicts = []
+        a_lists = []
+        # elements in the second list, which do not exist in the first list
+        b_diff = b[:]
+        # dicts and lists in the second list, which are different from dicts in the first list
+        b_dicts = []
+        b_lists = []
+
+        # used to calculate indexes of different values
+        a_index_shift = 0
+        b_index_shift = 0
+
+        # find difference between two lists
+        for element in a:
+            if element in b:
+                b_diff.remove(element)
+            else:
+                a_diff.append(element)
+
+        # add hunks for found differences (dicts will be checked later)
+        self._process_list_diff(a, a_diff, a_dicts, a_lists, key, a_index_shift, False)
+        self._process_list_diff(b, b_diff, b_dicts, b_lists, key, b_index_shift, True)
+
+        # compare dicts and lists
+        self._compare_collections(a_dicts, b_dicts, key, key_parts)
+        self._compare_collections(a_lists, b_lists, key, key_parts)
+
+    def print_hunks(self):
+        """Output all hunks (formatted)."""
+        for hunk in self.hunks:
+            hunk_str = hunk.__str__()
+            hunk_str = hunk_str[:hunk_str.rfind('\n')]
+            pywikibot.output(hunk_str)
+        if len(self.hunks) > 0:
+            pywikibot.output('\x03{default}')
+
+    def _compare_collections(self, first, second, key, key_parts):
+        """Compare two lists of collections and add hunks."""
+        for (a, a_index), (b, b_index) in zip_longest(first, second, fillvalue=(None, 0)):
+            if a and b:
+                new_key_parts = key_parts + [a_index]
+
+                if a_index == b_index:
+                    suffixed_key = '%s[%i]' % (key, a_index)
+                else:
+                    suffixed_key = '%s[%i->%i]' % (key, a_index, b_index)
+            else:
+                index = max(a_index, b_index)
+                suffixed_key = '%s[%i]' % (key, index)
+                new_key_parts = key_parts + [index]
+
+            if isinstance(a, dict) or isinstance(b, dict):
+                self.add_dict_hunks(a, b, suffixed_key, new_key_parts)
+            elif isinstance(a, list) or isinstance(b, list):
+                self.add_list_hunks(a, b, suffixed_key, new_key_parts)
+
+    def _process_list_diff(self, source, diff_array, dicts, lists,
+                           key, index_shift, changes_added):
+        """
+        Process list, which indicates differences between two lists.
+
+        Adds hunks. If list contains nested dicts or lists, they will be added to special lists
+        and be processed later.
+        """
+        for element in diff_array:
+            element_index = source.index(element) + index_shift
+            source.remove(element)
+            suffixed_key = '%s[%s]' % (key, element_index)
+            index_shift += 1
+            if isinstance(element, dict):
+                dicts.append((element, element_index))
+            elif isinstance(element, list):
+                lists.append((element, element_index))
+            else:
+                before = after = None
+                if changes_added:
+                    after = element
+                else:
+                    before = element
+                self.add_hunk(before, after, suffixed_key)
 
 
 def cherry_pick(oldtext, newtext, n=0, by_letter=False):
