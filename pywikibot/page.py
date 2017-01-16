@@ -12,7 +12,7 @@ This module also includes objects:
 
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -3806,7 +3806,7 @@ class WikibasePage(BasePage):
             return site.dbName()
         return site
 
-    def editEntity(self, data=None, **kwargs):
+    def editEntity(self, data=None, async=False, **kwargs):  # FIXME: T86074
         """
         Edit an entity using Wikibase wbeditentity API.
 
