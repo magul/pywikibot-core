@@ -20,7 +20,7 @@ This script understands various command-line arguments:
 """
 #
 # (C) Multichill, 2014
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -42,6 +42,7 @@ class NewItemRobot(WikidataBot):
     def __init__(self, generator, **kwargs):
         """Only accepts options defined in availableOptions."""
         self.availableOptions.update({
+            'always': True,
             'lastedit': 7,
             'pageage': 21,
             'touch': False,
@@ -127,12 +128,10 @@ class NewItemRobot(WikidataBot):
                  }
                 }
 
-        pywikibot.output(summary)
-
         item = pywikibot.ItemPage(page.site.data_repository())
-        item.editEntity(data, summary=summary)
-        # And do a null edit to force update
-        self._touch_page(page)
+        if self.user_edit_entity(item, data, summary=summary):
+            # And do a null edit to force update
+            self._touch_page(page)
 
 
 def main(*args):
