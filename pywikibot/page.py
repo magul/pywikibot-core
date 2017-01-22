@@ -4376,7 +4376,7 @@ class Claim(Property):
         'commonsMedia': lambda value, site:
             FilePage(pywikibot.Site('commons', 'commons'), value),
         'globe-coordinate': pywikibot.Coordinate.fromWikibase,
-        'time': lambda value, site: pywikibot.WbTime.fromWikibase(value),
+        'time': pywikibot.WbTime.fromWikibase,
         'quantity': pywikibot.WbQuantity.fromWikibase,
         'monolingualtext': lambda value, site:
             pywikibot.WbMonolingualText.fromWikibase(value)
