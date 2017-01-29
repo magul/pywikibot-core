@@ -235,8 +235,9 @@ class Coordinate(_WbRepresentation):
 
     _items = ('lat', 'lon', 'globe')
 
+    @deprecate_arg('entity', 'globe_item')
     def __init__(self, lat, lon, alt=None, precision=None, globe='earth',
-                 typ="", name="", dim=None, site=None, entity=''):
+                 typ="", name="", dim=None, site=None, globe_item=None):
         """
         Represent a geo coordinate.
 
@@ -257,8 +258,9 @@ class Coordinate(_WbRepresentation):
         @type dim: int
         @param site: The Wikibase site
         @type site: pywikibot.site.DataSite
-        @param entity: The URL entity of a Wikibase item for the globe
-        @type entity: str
+        @param globe_item: The Wikibase item for the globe, or the URL entity
+                           of this Wikibase item.
+        @type globe_item: pywikibot.ItemPage or str
         """
         self.lat = lat
         self.lon = lon
@@ -267,18 +269,17 @@ class Coordinate(_WbRepresentation):
         if globe:
             globe = globe.lower()
         self.globe = globe
-        self._entity = entity
+        self._entity = globe_item
         self.type = typ
         self.name = name
         self._dim = dim
-        if not site:
-            self.site = Site().data_repository()
-        else:
-            self.site = site
+        self.site = site or Site().data_repository()
 
     @property
     def entity(self):
         if self._entity:
+            if isinstance(self._entity, ItemPage):
+                return self._entity.concept_url()
             return self._entity
         return self.site.globes()[self.globe]
 
@@ -326,7 +327,7 @@ class Coordinate(_WbRepresentation):
 
         return cls(data['latitude'], data['longitude'],
                    data['altitude'], data['precision'],
-                   globe, site=site, entity=data['globe'])
+                   globe, site=site, globe_item=data['globe'])
 
     @property
     def precision(self):
