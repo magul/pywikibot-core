@@ -159,11 +159,32 @@ class TestWikibaseCoordinate(WikidataTestCase):
             z.precisionToDim()
 
     def test_Coordinate_entity_globe(self):
-        """Test setting Coordinate globe from entity."""
+        """Test setting Coordinate globe from an entity url."""
         repo = self.get_repo()
         coord = pywikibot.Coordinate(
             site=repo, lat=12.0, lon=13.0, precision=0,
-            entity='http://www.wikidata.org/entity/Q123')
+            globe_item='http://www.wikidata.org/entity/Q123')
+        self.assertEqual(coord.toWikibase(),
+                         {'latitude': 12.0, 'longitude': 13.0,
+                          'altitude': None, 'precision': 0,
+                          'globe': 'http://www.wikidata.org/entity/Q123'})
+
+
+class TestWikibaseCoordinateNonDry(WikidataTestCase):
+
+    """
+    Test Wikibase Coordinate data type (non-dry).
+
+    These can be moved to TestWikibaseCoordinate once DrySite has been bumped
+    to the appropriate version.
+    """
+
+    def test_Coordinate_item_globe(self):
+        """Test setting Coordinate globe from an ItemPage."""
+        repo = self.get_repo()
+        coord = pywikibot.Coordinate(
+            site=repo, lat=12.0, lon=13.0, precision=0,
+            globe_item=ItemPage(repo, 'Q123'))
         self.assertEqual(coord.toWikibase(),
                          {'latitude': 12.0, 'longitude': 13.0,
                           'altitude': None, 'precision': 0,
