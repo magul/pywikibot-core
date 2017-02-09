@@ -4186,7 +4186,7 @@ class ItemPage(WikibasePage):
             self._isredir = True
 
     def set_redirect_target(self, target_page, create=False, force=False,
-                            keep_section=False, save=True, **kwargs):
+                            keep_section=False, save=True, bot=True, **kwargs):
         """
         Make the item redirect to another item.
 
@@ -4207,7 +4207,7 @@ class ItemPage(WikibasePage):
         if not save or keep_section or create:
             raise NotImplementedError
         self.repo.set_redirect_target(
-            from_item=self, to_item=target_page)
+            from_item=self, to_item=target_page, bot=bot)
 
     def isRedirectPage(self):
         """Return True if item is a redirect, False if not or not existing."""

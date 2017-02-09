@@ -7652,7 +7652,7 @@ class DataSite(APISite):
         return data
 
     @must_be(group='user')
-    def set_redirect_target(self, from_item, to_item):
+    def set_redirect_target(self, from_item, to_item, bot=True):
         """
         Make a redirect to another item.
 
@@ -7660,6 +7660,8 @@ class DataSite(APISite):
         @type to_item: pywikibot.ItemPage
         @param from_item: Title of the item to be redirected.
         @type from_item: pywikibot.ItemPage
+        @param bot: Whether to mark the edit as a bot edit
+        @type bot: bool
         """
         params = {
             'action': 'wbcreateredirect',
@@ -7667,6 +7669,8 @@ class DataSite(APISite):
             'to': to_item.getID(),
             'token': self.tokens['edit']
         }
+        if bot:
+            params['bot'] = 1
         req = self._simple_request(**params)
         data = req.submit()
         return data
