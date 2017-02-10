@@ -4168,7 +4168,11 @@ class ItemPage(WikibasePage):
         # list of length one.
         if isinstance(claims, pywikibot.Claim):
             claims = [claims]
-        self.repo.removeClaims(claims, **kwargs)
+        data = self.repo.removeClaims(claims, **kwargs)
+        for claim in claims:
+            claim.on_item = None
+            claim.snak = None
+            claim.on_item.latest_revision_id = data['pageinfo']['lastrevid']
 
     def mergeInto(self, item, **kwargs):
         """
