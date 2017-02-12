@@ -7,7 +7,7 @@ and return a unicode string.
 
 """
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -236,7 +236,7 @@ def _create_default_regexes():
         # source code readability.
         # TODO: handle nested tables.
         'table':        re.compile(r'(?ims)^{\|.*?^\|}|<table[ >].*?</table>'),
-        'hyperlink':    compileLinkR(),
+        'hyperlink':    make_ext_link_regex(),
         'gallery':      re.compile(r'(?is)<gallery.*?>.*?</gallery>'),
         # this matches internal wikilinks, but also interwiki, categories, and
         # images.
@@ -1311,8 +1311,36 @@ def categoryFormat(categories, insite=None):
 # Functions dealing with external links
 # -------------------------------------
 
+@deprecated('make_ext_link_regex')
 def compileLinkR(withoutBracketed=False, onlyBracketed=False):
     """Return a regex that matches external links."""
+    if withoutBracketed:
+        return make_ext_link_regex(brackets='without')
+    elif onlyBracketed:
+        return make_ext_link_regex(brackets='only')
+    return make_ext_link_regex()
+
+
+def make_ext_link_regex(brackets=None):
+    """Return a regex that matches external links.
+
+    Parameter brackets specify if also single square brackets and anchor
+        text shall be matched.
+
+    - None:      only the URI will be matched; this is the default.
+    - 'without': only ext links not preceded by a square bracket will be
+                 matched,
+    - 'only':    only ext links preceded by a square bracket will be matched,
+                 including the left bracket but not the anchor text.
+    - 'all':     ext link including square brackets and anchor text
+                 will be matched.
+
+    @param brackets: specify regex rules.
+    @type: None or str
+    """
+    params = [None, 'without', 'only', 'all', ]
+    assert brackets in params, '%s not in %s' % (brackets, params)
+
     # RFC 2396 says that URLs may only contain certain characters.
     # For this regex we also accept non-allowed characters, so that the bot
     # will later show these links as broken ('Non-ASCII Characters in URL').
@@ -1333,12 +1361,14 @@ def compileLinkR(withoutBracketed=False, onlyBracketed=False):
             r'(?=[%(notAtEnd)s]*\'\')|http[s]?://[^%(notInside)s]*' \
             r'[^%(notAtEnd)s])' % {'notInside': notInside, 'notAtEnd': notAtEnd}
 
-    if withoutBracketed:
+    if brackets == 'without':
         regex = r'(?<!\[)' + regex
-    elif onlyBracketed:
+    elif brackets == 'only':
         regex = r'\[' + regex
-    linkR = re.compile(regex)
-    return linkR
+    elif brackets == 'all':
+        regex = r'\[' + regex + r'[^\]]*?\]'
+
+    return re.compile(regex)
 
 
 # --------------------------------
@@ -1927,11 +1957,25 @@ class TimeStripper(object):
             self.pdayR,
         ]
 
-        self.linkP = compileLinkR()
-        self.comment_pattern = re.compile(r'<!--(.*?)-->')
+        self._hyperlink_pat = make_ext_link_regex(brackets='all')
+        self._comment_pat = re.compile(r'<!--(.*?)-->')
+        self._wikilink_pat = re.compile(
+            r'\[\[(?P<link>[^\]\|]*?)(?P<anchor>\|[^\]]*)?\]\]')
 
         self.tzinfo = tzoneFixedOffset(self.site.siteinfo['timeoffset'],
                                        self.site.siteinfo['timezone'])
+
+    @property
+    @deprecated('_hyperlink_pat')
+    def linkP(self):
+        """Deprecated linkP instance variable."""
+        return self._hyperlink_pat
+
+    @property
+    @deprecated('_comment_pat')
+    def comment_pattern(self):
+        """Deprecated comment_pattern instance variable."""
+        return self._comment_pat
 
     @deprecated('module function')
     def findmarker(self, text, base=u'@@', delta='@'):
@@ -2014,23 +2058,47 @@ class TimeStripper(object):
         @return: A timestamp found on the given line
         @rtype: pywikibot.Timestamp
         """
+        # Try to maintain gaps that are used in _valid_date_dict_positions()
+        def censor_match(match):
+            return '_' * (match.end() - match.start())
+
         # match date fields
         dateDict = dict()
+
         # Analyze comments separately from rest of each line to avoid to skip
         # dates in comments, as the date matched by timestripper is the
         # rightmost one.
         most_recent = []
-        for comment in self.comment_pattern.finditer(line):
+        for comment in self._comment_pat.finditer(line):
             # Recursion levels can be maximum two. If a comment is found, it will
             # not for sure be found in the next level.
             # Nested comments are excluded by design.
             timestamp = self.timestripper(comment.group(1))
             most_recent.append(timestamp)
 
+        # Censor comments.
+        line = self._comment_pat.sub(censor_match, line)
+
         # Remove parts that are not supposed to contain the timestamp, in order
         # to reduce false positives.
-        line = removeDisabledParts(line)
-        line = self.linkP.sub('', line)  # remove external links
+        line = removeDisabledParts(line, include=['comments'])
+
+        # Censor external links.
+        line = self._hyperlink_pat.sub(censor_match, line)
+
+        for wikilink in self._wikilink_pat.finditer(line):
+            # Recursion levels can be maximum two. If a link is found, it will
+            # not for sure be found in the next level.
+            # Nested links are excluded by design.
+            link, anchor = wikilink.group('link'), wikilink.group('anchor')
+            timestamp = self.timestripper(link)
+            most_recent.append(timestamp)
+            if anchor:
+                timestamp = self.timestripper(anchor)
+                most_recent.append(timestamp)
+
+        # Censor wikilinks.
+        line = self._wikilink_pat.sub(censor_match, line)
 
         line = self.fix_digits(line)
         for pat in self.patterns:
