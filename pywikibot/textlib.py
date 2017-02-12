@@ -1311,7 +1311,8 @@ def categoryFormat(categories, insite=None):
 # Functions dealing with external links
 # -------------------------------------
 
-def compileLinkR(withoutBracketed=False, onlyBracketed=False):
+def compileLinkR(withoutBracketed=False, onlyBracketed=False,
+                 with_brackets=False):
     """Return a regex that matches external links."""
     # RFC 2396 says that URLs may only contain certain characters.
     # For this regex we also accept non-allowed characters, so that the bot
@@ -1337,6 +1338,8 @@ def compileLinkR(withoutBracketed=False, onlyBracketed=False):
         regex = r'(?<!\[)' + regex
     elif onlyBracketed:
         regex = r'\[' + regex
+    elif with_brackets:
+        regex = r'\[' + regex + r'[^\]]*?\]'
     linkR = re.compile(regex)
     return linkR
 
@@ -1927,8 +1930,10 @@ class TimeStripper(object):
             self.pdayR,
         ]
 
-        self.linkP = compileLinkR()
+        self.hyperlink_pat = compileLinkR(with_brackets=True)
         self.comment_pattern = re.compile(r'<!--(.*?)-->')
+        self.wikilink_pat = re.compile(
+            r'\[\[(?P<link>[^\]\|]*?)(?P<anchor>\|[^\]]*)?\]\]')
 
         self.tzinfo = tzoneFixedOffset(self.site.siteinfo['timeoffset'],
                                        self.site.siteinfo['timezone'])
@@ -2016,6 +2021,11 @@ class TimeStripper(object):
         """
         # match date fields
         dateDict = dict()
+
+        # Try to maintain gaps that are used in _valid_date_dict_positions()
+        def censor_match(match):
+            return '_' * (match.end() - match.start())
+
         # Analyze comments separately from rest of each line to avoid to skip
         # dates in comments, as the date matched by timestripper is the
         # rightmost one.
@@ -2027,10 +2037,29 @@ class TimeStripper(object):
             timestamp = self.timestripper(comment.group(1))
             most_recent.append(timestamp)
 
+        # Censor comments.
+        line = self.comment_pattern.sub(censor_match, line)
+
         # Remove parts that are not supposed to contain the timestamp, in order
         # to reduce false positives.
-        line = removeDisabledParts(line)
-        line = self.linkP.sub('', line)  # remove external links
+        line = removeDisabledParts(line, include=['comments'])
+
+        # Censor external links.
+        line = self.hyperlink_pat.sub(censor_match, line)
+
+        for wikilink in self.wikilink_pat.finditer(line):
+            # Recursion levels can be maximum two. If a link is found, it will
+            # not for sure be found in the next level.
+            # Nested links are excluded by design.
+            link, anchor = wikilink.group('link'), wikilink.group('anchor')
+            timestamp = self.timestripper(link)
+            most_recent.append(timestamp)
+            if anchor:
+                timestamp = self.timestripper(anchor)
+                most_recent.append(timestamp)
+
+        # Censor wikilinks.
+        line = self.wikilink_pat.sub(censor_match, line)
 
         line = self.fix_digits(line)
         for pat in self.patterns:
