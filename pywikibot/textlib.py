@@ -1927,8 +1927,9 @@ class TimeStripper(object):
             self.pdayR,
         ]
 
-        self.linkP = compileLinkR()
+        self.hyperlink_pattern = _get_regexes(['hyperlink'], self.site)[0]
         self.comment_pattern = re.compile(r'<!--(.*?)-->')
+        self.wikilink_pattern = _get_regexes(['link'], self.site)[0]
 
         self.tzinfo = tzoneFixedOffset(self.site.siteinfo['timeoffset'],
                                        self.site.siteinfo['timezone'])
@@ -2030,7 +2031,12 @@ class TimeStripper(object):
         # Remove parts that are not supposed to contain the timestamp, in order
         # to reduce false positives.
         line = removeDisabledParts(line)
-        line = self.linkP.sub('', line)  # remove external links
+
+        # Try to maintain gaps that are used in _valid_date_dict_positions()
+        def censor_wikilink(match):
+            return '_' * (match.end() - match.start())
+        line = self.hyperlink_pattern.sub('', line)  # remove external links
+        line = self.wikilink_pattern.sub(censor_wikilink, line)  # remove wikilinks
 
         line = self.fix_digits(line)
         for pat in self.patterns:

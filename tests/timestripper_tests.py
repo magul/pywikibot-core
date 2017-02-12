@@ -272,6 +272,60 @@ class TestTimeStripperLanguage(TestCase):
         self.assertEqual(self.ts.timestripper(txtNoMatch), None)
 
 
+class TestTimeStrippeDoNotMatchUnwantedText(TestTimeStripperCase):
+
+    """Test that possible matches in unwanted text do not affect result."""
+
+    family = 'wikisource'
+    code = 'en'
+
+    date = '06:57 06 June 2015 (UTC)'
+    fake_time = '07:58'
+    tzone = tzoneFixedOffset(0, 'UTC')
+    expected_date = datetime.datetime(2015, 6, 6, 6, 57, tzinfo=tzone)
+
+    def test_timestripper_skip_hyperlink(self):
+        """Test that dates in hyperlinks are correctly skipped."""
+        ts = self.ts.timestripper
+
+        txt_match = self.date + '[http://' + self.fake_time + ']'
+        self.assertEqual(ts(txt_match), self.expected_date)
+
+        txt_match = '[http://' + self.fake_time + ']' + self.date
+        self.assertEqual(ts(txt_match), self.expected_date)
+
+    def test_timestripper_skip_wikilink(self):
+        """Test that dates in wikilinks are correctly skipped."""
+        ts = self.ts.timestripper
+
+        txt_match = self.date + '[[' + self.fake_time + ']]'
+        self.assertEqual(ts(txt_match), self.expected_date)
+
+        txt_match = '[[' + self.fake_time + ']]' + self.date
+        self.assertEqual(ts(txt_match), self.expected_date)
+
+    def test_timestripper_skip_hyperlink_and_do_not_connect(self):
+        """Test that skipping hyperlinks will not make gaps shorter."""
+        ts = self.ts.timestripper
+
+        txt_match = '%s[http://example.com Here is long enough text]%s' % (
+            self.date[:9], self.date[9:]
+        )
+        self.assertEqual(ts(txt_match), None)
+
+    def test_timestripper_skip_wikilink_and_do_not_connect(self):
+        """Test that skipping wikilinks will not make gaps shorter."""
+        ts = self.ts.timestripper
+
+        txt_match = '%s[[Here is long enough text]]%s' % (
+            self.date[:9], self.date[9:]
+        )
+        self.assertEqual(ts(txt_match), None)
+
+        txt_match = self.date[:9] + '[[foo]]' + self.date[9:]
+        self.assertEqual(ts(txt_match), self.expected_date)
+
+
 class TestTimeStripperDoNotArchiveUntil(TestTimeStripperCase):
 
     """Test cases for Do Not Archive Until templates.
