@@ -1300,16 +1300,15 @@ class TestReplaceExcept(DefaultDrySiteTestCase):
                 'x', 'y', ['file'], site=self.site),
             '[[File:a|[[foo]] [[bar [invalid ]].x]][[y]]')
 
-    @unittest.expectedFailure
     def test_replace_tag_file_failure(self):
         """Test showing limits of the file link regex."""
-        # When the double brackets are unbalanced, the regex
+        # When the double brackets are nested, the regex
         # does not correctly detect the end of the file link.
         self.assertEqual(
             textlib.replaceExcept(
-                '[[File:a|[[foo]] [[bar [[invalid ]].x]][[x]]',
+                '[[File:a|[[foo]] [[bar [[invalid]] baz]].x]][[x]]',
                 'x', 'y', ['file'], site=self.site),
-            '[[File:a|[[foo]] [[bar [invalid] ]].x]][[y]]')
+            '[[File:a|[[foo]] [[bar [[invalid]] baz]].y]][[y]]')
 
     def test_replace_tags_interwiki(self):
         """Test replacing not inside interwiki links."""
