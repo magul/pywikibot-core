@@ -11,13 +11,16 @@ __version__ = '$Id$'
 #
 
 import collections
-import imp
 import logging
 import re
 import string
 import sys
 import warnings
 
+try:
+    from importlib.util import spec_from_file_location, module_from_spec
+except ImportError:
+    import imp
 if sys.version_info[0] > 2:
     import urllib.parse as urlparse
 else:
@@ -917,6 +920,8 @@ class Family(object):
                 myfamily = AutoFamily(fam, family_file)
                 Family._families[fam] = myfamily
                 return Family._families[fam]
+        else:
+            raise UnknownFamily('Family %s does not exist' % fam)
 
         try:
             # Ignore warnings due to dots in family names.
@@ -924,8 +929,13 @@ class Family(object):
             #     RuntimeWarning's while loading.
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", RuntimeWarning)
-                mod = imp.load_source(fam, config.family_files[fam])
-        except (ImportError, KeyError):
+                if sys.version_info[:2] > (3, 4):
+                    spec = spec_from_file_location('module.name', family_file)
+                    mod = module_from_spec(spec)
+                    spec.loader.exec_module(mod)
+                else:
+                    mod = imp.load_source(fam, family_file)
+        except ImportError:
             raise UnknownFamily(u'Family %s does not exist' % fam)
         cls = mod.Family()
         if cls.name != fam:
