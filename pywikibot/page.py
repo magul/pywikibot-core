@@ -65,7 +65,7 @@ from pywikibot.exceptions import (
 )
 from pywikibot.data.api import APIError
 from pywikibot.family import Family
-from pywikibot.site import Namespace, need_version
+from pywikibot.site import DataSite, Namespace, need_version
 from pywikibot.tools import (
     PYTHON_VERSION,
     MediaWikiVersion, UnicodeMixin, ComparableMixin, DotReadableDict,
@@ -3973,6 +3973,7 @@ class ItemPage(WikibasePage):
         @rtype: ItemPage
 
         @raise NoPage: There is no corresponding ItemPage for the page
+        @raise WikiBaseError: The site of the page has no data repository.
         """
         if not page.site.has_data_repository:
             raise pywikibot.WikiBaseError('{0} has no data repository'
@@ -3994,6 +3995,40 @@ class ItemPage(WikibasePage):
         if not lazy_load and not i.exists():
             raise pywikibot.NoPage(i)
         return i
+
+    @classmethod
+    def from_entity_url(cls, url, site, lazy_load=False):
+        """
+        Get the ItemPage from its entity url.
+
+        @param url: Entity url for the Wikibase Item
+        @type page: basestring
+        @param site: The Wikibase site for the item.
+        @type site: pywikibot.site.DataSite
+        @param lazy_load: Do not raise NoPage if ItemPage does not exist.
+        @type lazy_load: bool
+        @rtype: ItemPage
+
+        @raise TypeError: Site is not a valid DataSite
+        @raise ValueError: Site does not match the base uri of the provided url
+        @raise NoPage: Url points to non-existent item.
+        """
+        if not isinstance(site, DataSite):
+            raise TypeError('{0} is not a data repository.'.format(site))
+
+        base_uri, _, qid = url.rpartition('/')
+        if base_uri != site.concept_base_uri.rstrip('/'):
+            raise ValueError(
+                'The supplied data repository ({repo}) does not correspond to '
+                'that of the item ({item})'.format(
+                    repo=site.concept_base_uri.rstrip('/'),
+                    item=base_uri))
+
+        item = cls(site, qid)
+        if not lazy_load and not item.exists():
+            raise pywikibot.NoPage(item)
+
+        return item
 
     def get(self, force=False, get_redirect=False, *args, **kwargs):
         """

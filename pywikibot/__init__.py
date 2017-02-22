@@ -676,6 +676,7 @@ class WbQuantity(_WbRepresentation):
 
         self.amount = self._todecimal(amount)
         self._unit = unit
+        self.site = site or Site().data_repository()
 
         # also allow entity urls to be provided via unit parameter
         if isinstance(unit, basestring) and \
@@ -702,6 +703,30 @@ class WbQuantity(_WbRepresentation):
         if isinstance(self._unit, ItemPage):
             return self._unit.concept_url()
         return self._unit or '1'
+
+    def get_unit_item(self, repo=None, lazy_load=False):
+        """
+        Return the ItemPage corresponding to the unit.
+
+        Note that the unit need not be in the same data repository as the
+        WbQuantity itself.
+
+        A successful lookup is stored as an internal value to avoid the need
+        for repeated lookups.
+
+        @param repo: the Wikibase site for the unit, if different from that
+            provided with the WbQuantity.
+        @type repo: pywikibot.site.DataSite
+        @param lazy_load: Do not raise NoPage if ItemPage does not exist.
+        @type lazy_load: bool
+        @return: pywikibot.ItemPage
+        """
+        if not isinstance(self._unit, basestring):
+            return self._unit
+
+        repo = repo or self.site
+        self._unit = ItemPage.from_entity_url(self._unit, repo, lazy_load)
+        return self._unit
 
     def toWikibase(self):
         """
