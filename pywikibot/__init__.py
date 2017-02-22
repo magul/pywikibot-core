@@ -65,7 +65,9 @@ from pywikibot.exceptions import (
 )
 from pywikibot.family import Family
 from pywikibot.i18n import translate
-from pywikibot.site import BaseSite
+from pywikibot.site import (
+    BaseSite, DataSite
+)
 from pywikibot.tools import (
     # __ to avoid conflict with ModuleDeprecationWrapper._deprecated
     deprecated as __deprecated,
@@ -676,6 +678,7 @@ class WbQuantity(_WbRepresentation):
 
         self.amount = self._todecimal(amount)
         self._unit = unit
+        self.site = site or Site().data_repository()
 
         # also allow entity urls to be provided via unit parameter
         if isinstance(unit, basestring) and \
@@ -702,6 +705,38 @@ class WbQuantity(_WbRepresentation):
         if isinstance(self._unit, ItemPage):
             return self._unit.concept_url()
         return self._unit or '1'
+
+    def get_unit_item(self, repo=None):
+        """
+        Return the ItemPage corresponding to the unit.
+
+        Note that the unit need not be in the same data repository as the
+        WbQuantity itself.
+
+        @param repo: the Wikibase site for the unit, if different from that
+            provided with the WbQuantity.
+        @type repo: pywikibot.site.DataSite
+        @return: pywikibot.ItemPage
+        """
+        if not isinstance(self._unit, basestring):
+            return self._unit
+
+        # attempt to idenify the ItemPage
+        repo = repo or self.site
+        if not isinstance(repo, DataSite):
+            # wrong type or undefined
+            raise TypeError('The supplied site was not a data repository.')
+        base_uri, _, qid = self._unit.rpartition('/')
+        if base_uri != repo.concept_base_uri:
+            raise ValueError(
+                'The supplied data repository ({repo}) does not correspond to '
+                'that of the unit ({unit})'.format(
+                    repo=repo.concept_base_uri,
+                    unit=base_uri))
+
+        # Store ItemPage as internal value to avoid repeated lookups
+        self._unit = ItemPage(repo, qid)
+        return self._unit
 
     def toWikibase(self):
         """
