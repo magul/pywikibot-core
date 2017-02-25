@@ -27,14 +27,11 @@ The following parameters are supported:
     -summary:      custom edit summary.
                    Use quotes if edit summary contains spaces.
 
-    -force         overwrites existing text
-                   optional, default False
-
     -always        don't bother asking to confirm any of the changes.
 
 """
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -71,7 +68,6 @@ class UploadTextBot(SingleSiteBot):
         @type generator: generator
         """
         self.availableOptions.update({
-            'force': False,
             'showdiff': False,
             'summary': 'Uploading text'
         })
@@ -90,7 +86,7 @@ class UploadTextBot(SingleSiteBot):
         new_text = page.text
 
         summary = self.getOption('summary')
-        if page.exists() and not self.getOption('force'):
+        if page.exists():
             pywikibot.output('Page %s already exists, not adding!' % page)
         else:
             self.userPut(page, old_text, new_text,
@@ -123,8 +119,6 @@ def main(*args):
             options['showdiff'] = True
         elif arg == '-summary':
             options['summary'] = value
-        elif arg == '-force':
-            options['force'] = True
         elif arg == '-always':
             options['always'] = True
         else:
