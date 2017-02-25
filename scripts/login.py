@@ -160,6 +160,13 @@ def main(*args):
             namedict = config.sysopnames
         else:
             namedict = config.usernames
+        for fam in namedict.copy():
+            if '*' in namedict[fam]:
+                user = namedict[fam]['*']
+                namedict[fam] = dict(
+                    (lang, user)
+                    for lang in pywikibot.Site('en', fam).languages()
+                )
     else:
         site = pywikibot.Site()
         namedict = {site.family.name: {site.code: None}}
