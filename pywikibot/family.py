@@ -1148,7 +1148,16 @@ class Family(object):
 
     def rcstream_host(self, code):
         """Hostname for RCStream."""
+        raise NotImplementedError(
+            'This family does support neither RCStream nor EventStreams')
+
+    def rcstream_path(self, code):
+        """Return path for RCStream."""
         raise NotImplementedError("This family does not support RCStream")
+
+    def eventstreams_path(self, code):
+        """Return path for EventStreams."""
+        raise NotImplementedError('This family does not support EventStreams')
 
     @deprecated_args(name='title')
     def get_address(self, code, title):
@@ -1641,6 +1650,14 @@ class WikimediaFamily(Family):
     def rcstream_port(self, code):
         """Return 443 as the RCStream port number."""
         return 443
+
+    def rcstream_path(self, code):
+        """Return path for RCStream."""
+        return '/rc'
+
+    def eventstreams_path(self, code):
+        """Return path for EventStreams."""
+        return '/v2/stream'
 
 
 class WikimediaOrgFamily(SingleSiteFamily, WikimediaFamily):
