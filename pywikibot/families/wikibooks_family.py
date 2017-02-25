@@ -115,6 +115,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
     ]
 
     removed_wikis = [
+        'dk',
         'tokipona',
     ]
 
