@@ -22,6 +22,8 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
     closed_wikis = [
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Alemannic_Wikiquote
         'als',
+        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Amharic_Wikiquote_2
+        'am'
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Old_English_Wikiquote
         'ang',
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Asturianu_Wikiquote
@@ -62,6 +64,8 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
         'vo',
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Zhuang_Wikiquote
         'za',
+        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Min_Nan_Wikiquote_(2)
+        'zh_min_nan',
     ]
 
     removed_wikis = [
@@ -84,13 +88,13 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
+        # & https://meta.wikimedia.org/wiki/Special:WikiSets/2
         self.cross_allowed = [
-            'af', 'am', 'ar', 'az', 'be', 'bg', 'br', 'bs', 'ca', 'cs', 'da',
-            'el', 'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fr', 'gl', 'he', 'hi',
-            'hu', 'hy', 'id', 'is', 'it', 'ja', 'ka', 'kn', 'ku', 'ky', 'la',
-            'li', 'lt', 'ml', 'mr', 'nl', 'nn', 'no', 'pt', 'ro', 'ru', 'sk',
-            'sl', 'sq', 'sr', 'su', 'sv', 'ta', 'te', 'tr', 'uk', 'uz', 'vi',
-            'wo', 'zh',
+            'af', 'ar', 'az', 'be', 'bg', 'br', 'bs', 'ca', 'cs', 'cy', 'da', 'el',
+            'eo', 'es', 'et', 'eu', 'fa', 'fi', 'fr', 'gl', 'gu', 'he', 'hi', 'hu',
+            'hy', 'id', 'is', 'it', 'ja', 'ka', 'kn', 'ko', 'ku', 'ky', 'la', 'li',
+            'lt', 'ml', 'mr', 'nl', 'nn', 'no', 'pt', 'ro', 'ru', 'sk', 'sl', 'sq',
+            'sr', 'su', 'sv', 'ta', 'te', 'tr', 'uk', 'ur', 'uz', 'vi', 'wo', 'zh',
         ]
 
         # Subpages for documentation.
