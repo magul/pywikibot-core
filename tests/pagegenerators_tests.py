@@ -851,7 +851,7 @@ class TestFactoryGenerator(DefaultSiteTestCase):
         gen = gf.getCombinedGenerator()
         self.assertIsNotNone(gen)
         pages = set(gen)
-        self.assertGreater(len(pages), 0)
+        self.assertGreaterEqual(len(pages), 0)
         self.assertLessEqual(len(pages), 60)
 
     def test_newpages_ns_default(self):
