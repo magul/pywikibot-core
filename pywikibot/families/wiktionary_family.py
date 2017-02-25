@@ -66,8 +66,6 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
         'sn',
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Tongan_Wiktionary
         'to',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Klingon_Wiktionary
-        'tlh',
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Twi_Wiktionary
         'tw',
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Xhosa_Wiktionary
@@ -79,6 +77,9 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
     ]
 
     removed_wikis = [
+        'dk',
+        'ba',
+        'tlh',
         'tokipona',
     ]
 
@@ -105,15 +106,19 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
+        # & https://meta.wikimedia.org/wiki/Special:WikiSets/2
         self.cross_allowed = [
-            'am', 'an', 'ang', 'ast', 'ay', 'az', 'be', 'bg', 'bn', 'br', 'bs',
-            'ca', 'chr', 'co', 'cy', 'da', 'dv', 'eo', 'es', 'et', 'eu', 'fa',
-            'fi', 'fj', 'fo', 'fy', 'ga', 'gd', 'gl', 'gn', 'gv', 'hu', 'ia',
-            'id', 'ie', 'io', 'jv', 'ka', 'kl', 'kn', 'ku', 'ky', 'lb', 'lo',
-            'lt', 'lv', 'mg', 'mk', 'ml', 'mn', 'my', 'ne', 'nl', 'no', 'oc',
-            'or', 'pt', 'sh', 'simple', 'sk', 'sl', 'sm', 'su', 'tg', 'th',
-            'ti', 'tk', 'tn', 'tpi', 'ts', 'ug', 'uk', 'vo', 'wa', 'wo', 'zh',
-            'zh-min-nan', 'zu',
+            'am', 'af', 'am', 'ang', 'an', 'ar', 'ast', 'ay', 'az', 'be', 'bg', 'bn',
+            'br', 'bs', 'ca', 'chr', 'co', 'csb', 'cs', 'cy', 'da', 'dv', 'el', 'eo',
+            'es', 'et', 'eu', 'fa', 'fi', 'fj', 'fo', 'fy', 'ga', 'gd', 'gl', 'gn',
+            'gu', 'gv', 'ha', 'hsb', 'hu', 'hy', 'ia', 'id', 'ie', 'io', 'iu', 'jbo',
+            'jv', 'ka', 'kk', 'kl', 'km', 'kn', 'ko', 'ks', 'ku', 'kw', 'ky', 'la',
+            'lb', 'ln', 'lo', 'lt', 'lv', 'mg', 'mi', 'mk', 'ml', 'mn', 'ms', 'mt',
+            'my', 'nah', 'na', 'nds', 'ne', 'nl', 'nn', 'no', 'oc', 'om', 'or', 'pa',
+            'pnb', 'ps', 'pt', 'qu', 'roa_rup', 'rw', 'sa', 'scn', 'sd', 'sg', 'sh',
+            'simple', 'si', 'sk', 'sl', 'sm', 'so', 'sq', 'sr', 'ss', 'st', 'su', 'sv',
+            'sw', 'ta', 'te', 'tg', 'th', 'ti', 'tk', 'tl', 'tn', 'tpi', 'tr', 'ts', 'tt',
+            'ug', 'uk', 'ur', 'uz', 'vec', 'vi', 'vo', 'wa', 'wo', 'yi', 'zh_min_nan', 'zh', 'zu',
         ]
 
         # Other than most Wikipedias, page names must not start with a capital
