@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Miscellaneous helper functions (not wiki-dependent)."""
 #
-# (C) Pywikibot team, 2008-2016
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -153,6 +153,16 @@ else:
     Counter = collections.Counter
     OrderedDict = collections.OrderedDict
     count = itertools.count
+
+
+def has_module(module):
+    """Check whether a module can be imported."""
+    try:
+        __import__(module)
+    except ImportError:
+        return False
+    else:
+        return True
 
 
 def empty_iterator():
