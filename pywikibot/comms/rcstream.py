@@ -9,7 +9,7 @@ This module requires socketIO_client to be installed:
 """
 #
 # (C) 2014 Merlijn van Deen
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -219,5 +219,6 @@ def site_rc_listener(site, total=None):
         wikihost=site.hostname(),
         rchost=site.rcstream_host(),
         rcport=site.rcstream_port(),
+        rcpath=site.rcstream_path(),
         total=total,
     )
