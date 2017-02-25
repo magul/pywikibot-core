@@ -42,7 +42,12 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
-        self.cross_allowed = ['ca', 'cs', 'en', 'fa', 'ko', ]
+        # & https://meta.wikimedia.org/wiki/Special:WikiSets/2
+        self.cross_allowed = [
+            'ar', 'bg', 'bs', 'ca', 'cs', 'el', 'en', 'eo', 'fa', 'fi', 'he',
+            'ja', 'ko', 'no', 'pt', 'ro', 'sq', 'sr', 'sv', 'ta', 'tr', 'uk',
+            'zh',
+        ]
 
         # TODO:
         # Change site_tests.py when wikinews will have doc_subpage.

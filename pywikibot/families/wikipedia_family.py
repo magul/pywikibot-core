@@ -20,37 +20,42 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
     name = 'wikipedia'
 
     closed_wikis = [
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Afar_Wikipedia
         'aa',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Choctaw_Wikipedia
+        'advisory',
         'cho',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Hiri_Motu_Wikipedia
         'ho',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Herero_Wikipedia
         'hz',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Yi_Wikipedia
         'ii',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Kwanyama_Wikipedia
         'kj',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Kanuri_Wikipedia
         'kr',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Marshallese_Wikipedia
         'mh',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Moldovan_Wikipedia
         'mo',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Muscogee_Wikipedia
         'mus',
+        'ng',
+        'quality',
+        'strategy',
+        'ten',
+        'usability',
+        'wikimania2005',
+        'wikimania2006',
+        'wikimania2007',
+        'wikimania2008',
+        'wikimania2009',
+        'wikimania2010',
+        'wikimania2011',
+        'wikimania2012',
+        'wikimania2013',
+        'wikimania2014',
+        'wikimania2015',
     ]
 
     removed_wikis = [
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Ndonga_Wikipedia
-        'ng',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Siberian_Wikipedia
+        'dkwiki',
         'ru-sib',
-        # Klingon, locked in 2005, and moved to http://klingon.wikia.com/
-        'tlh',
-        # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Tokipona_Wikipedia
+        'tlhwiki',
         'tokipona',
+        'zh_cnwiki',
+        'zh_twwiki',
     ]
 
     def __init__(self):

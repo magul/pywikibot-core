@@ -25,6 +25,9 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
         # https://meta.wikimedia.org/wiki/Proposals_for_closing_projects/Closure_of_Haitian_Creole_Wikisource
         'ht',
     ]
+    removed_wikis = [
+        'tokipona',
+    ]
 
     def __init__(self):
         """Constructor."""

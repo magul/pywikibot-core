@@ -30,4 +30,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
 
         # Global bot allowed languages on
         # https://meta.wikimedia.org/wiki/Bot_policy/Implementation#Current_implementation
-        self.cross_allowed = ['es', 'ru', ]
+        # & https://meta.wikimedia.org/wiki/Special:WikiSets/2
+        self.cross_allowed = [
+            'el', 'en', 'es', 'fa', 'ru',
+        ]
