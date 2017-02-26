@@ -497,6 +497,8 @@ class WbTime(_WbRepresentation):
         if calendarmodel is None:
             if site is None:
                 site = Site().data_repository()
+                if site is None:
+                    raise ValueError('Site has no data repository')
             calendarmodel = site.calendarmodel()
         self.calendarmodel = calendarmodel
 
