@@ -801,30 +801,15 @@ class BasePage(UnicodeMixin, ComparableMixin):
         """
         if not self.isCategory():
             return False
-        if not hasattr(self, "_catredirect"):
+        if not hasattr(self, '_catredirtemplate'):
             catredirs = self.site._category_redirects()
-            for (template, args) in self.templatesWithParams():
+            for template in self.templates():
                 if template.title(withNamespace=False) in catredirs:
-                    # Get target (first template argument)
-                    try:
-                        p = pywikibot.Page(self.site, args[0].strip(), ns=14)
-                        if p.namespace() == 14:
-                            self._catredirect = p.title()
-                        else:
-                            pywikibot.warning(
-                                u"Target %s on %s is not a category"
-                                % (p.title(asLink=True),
-                                   self.title(asLink=True)))
-                            self._catredirect = False
-                    except IndexError:
-                        pywikibot.warning(
-                            u"No target for category redirect on %s"
-                            % self.title(asLink=True))
-                        self._catredirect = False
+                    self._catredirtemplate = template
                     break
             else:
-                self._catredirect = False
-        return bool(self._catredirect)
+                self._catredirtemplate = False
+        return bool(self._catredirtemplate)
 
     def getCategoryRedirectTarget(self):
         """
@@ -833,7 +818,23 @@ class BasePage(UnicodeMixin, ComparableMixin):
         @rtype: Category
         """
         if self.isCategoryRedirect():
-            return Category(Link(self._catredirect, self.site))
+            # Get target
+            templates_dict = dict(self.templatesWithParams())
+            args = templates_dict[self._catredirtemplate]
+            try:
+                p = Page(self.site, args[0].strip(), ns=14)
+                if p.isCategory():
+                    return Category(p)
+                else:
+                    pywikibot.warning(
+                        'Target %s on %s is not a category'
+                        % (p.title(asLink=True),
+                           self.title(asLink=True)))
+            except IndexError:
+                pywikibot.warning(
+                    'No target for category redirect on %s'
+                    % self.title(asLink=True))
+
         raise pywikibot.IsNotRedirectPage(self)
 
     @deprecated("interwiki.page_empty_check(page)")
