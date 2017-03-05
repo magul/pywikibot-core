@@ -304,14 +304,16 @@ def getversion_git(path=None):
                            '--abbrev-commit',
                            '--date=iso'],
                           cwd=_program_dir,
-                          stdout=subprocess.PIPE).stdout as stdout:
+                          stdout=subprocess.PIPE) as dp:
+        stdout, stderr = dp.communicate()
         info = stdout.read()
     info = info.decode(config.console_encoding).split('|')
     date = info[0][:-6]
     date = time.strptime(date.strip('"'), '%Y-%m-%d %H:%M:%S')
     with subprocess.Popen([cmd, 'rev-list', 'HEAD'],
                           cwd=_program_dir,
-                          stdout=subprocess.PIPE).stdout as stdout:
+                          stdout=subprocess.PIPE) as dp:
+        stdout, stderr = dp.communicate()
         rev = stdout.read()
     rev = 'g%s' % len(rev.splitlines())
     hsh = info[3]  # also stored in '.git/refs/heads/master'
