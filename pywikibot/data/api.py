@@ -2012,22 +2012,7 @@ class Request(MutableMapping):
                                % type(result),
                                data=result)
 
-            if self.action == 'query' and 'userinfo' in result.get('query', ()):
-                # if we get passed userinfo in the query result, we can confirm
-                # that we are logged in as the correct user. If this is not the
-                # case, force a re-login.
-                username = result['query']['userinfo']['name']
-                if self.site.user() is not None and self.site.user() != username:
-                    pywikibot.error(
-                        "Logged in as '{actual}' instead of '{expected}'. "
-                        "Forcing re-login.".format(
-                            actual=username,
-                            expected=self.site.user()
-                        )
-                    )
-                    self.site._relogin()
-                    continue
-
+ 
             self._handle_warnings(result)
 
             if "error" not in result:
