@@ -247,6 +247,9 @@ parameterHelp = """\
                   Argument can be given as "-unwatched:n" where
                   n is the maximum number of articles to work on.
 
+-property:name    Work on all pages with a given propery name from
+                  Special:PagesWithProp.
+
 -usercontribs     Work on all articles that were edited by a certain user.
                   (Example : -usercontribs:DumZiBoT)
 
@@ -661,6 +664,10 @@ class GeneratorFactory(object):
         elif arg == '-unwatched':
             gen = UnwatchedPagesPageGenerator(total=intNone(value),
                                               site=self.site)
+        elif arg == '-property':
+            if not value:
+                value = pywikibot.input('Which property name to be used?')
+            gen = page_with_property_generator(value, site=self.site)
         elif arg == '-usercontribs':
             gen = UserContributionsGenerator(value)
         elif arg == '-withoutinterwiki':
@@ -2166,6 +2173,22 @@ def UnwatchedPagesPageGenerator(total=None, site=None):
         site = pywikibot.Site()
     for page in site.unwatchedpages(total=total):
         yield page
+
+
+def page_with_property_generator(name, total=None, site=None):
+    """
+    Special:PagesWithProperty page generator.
+
+    @param name: Property name of pages to be retrieved
+    @type name: str
+    @param total: Maximum number of pages to retrieve in total
+    @type total: int
+    @param site: Site for generator results.
+    @type site: L{pywikibot.site.BaseSite}
+    """
+    if site is None:
+        site = pywikibot.Site()
+    return site.pages_with_property(name, total=total)
 
 
 def WantedPagesPageGenerator(total=100, site=None):
