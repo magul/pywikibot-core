@@ -105,7 +105,7 @@ pages:
 # (C) Daniel Herding, 2004
 # (C) Rob W.W. Hooft, 2003-2005
 # (C) xqt, 2009-2016
-# (C) Pywikibot team, 2004-2016
+# (C) Pywikibot team, 2004-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -220,6 +220,17 @@ class TemplateRobot(ReplaceBot):
         for old, new in self.templates.items():
             templateRegex = builder.pattern(old)
 
+            # Follow redirects, T151940.
+            old_tmpl = pywikibot.Page(self.site, old, ns=10)
+            if old_tmpl.isRedirectPage():
+                old = old_tmpl.getRedirectTarget().title(withNamespace=False)
+
+            if new:
+                new_tmpl = pywikibot.Page(self.site, new, ns=10)
+                if new_tmpl.isRedirectPage():
+                    new_tmpl = new_tmpl.getRedirectTarget()
+                    new = new_tmpl.title(withNamespace=False)
+
             if self.getOption('subst') and self.getOption('remove'):
                 replacements.append((templateRegex,
                                      r'{{subst:%s\g<parameters>}}' % new))
@@ -231,8 +242,7 @@ class TemplateRobot(ReplaceBot):
             elif self.getOption('remove'):
                 replacements.append((templateRegex, ''))
             else:
-                template = pywikibot.Page(self.site, new, ns=10)
-                if not template.exists():
+                if not new_tmpl.exists():
                     pywikibot.warning(u'Template "%s" does not exist.' % new)
                     if not pywikibot.input_yn('Do you want to proceed anyway?',
                                               default=False, automatic_quit=False):
