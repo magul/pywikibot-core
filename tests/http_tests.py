@@ -159,6 +159,9 @@ class HttpsCertificateTestCase(TestCase):
         http.session.close()  # clear the connection
 
         # Verify that the warning occurred
+        from tests import unittest_print
+        for w in warning_log:
+            unittest_print('-------------->>>>>>>>>>>>', w)
         self.assertEqual(len(warning_log), 1)
         self.assertEqual(warning_log[0].category.__name__,
                          'InsecureRequestWarning')
