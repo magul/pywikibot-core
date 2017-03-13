@@ -200,12 +200,12 @@ class CosmeticChangesToolkit(object):
     """Cosmetic changes toolkit."""
 
     @deprecate_arg('debug', 'diff')
-    def __init__(self, site, diff=False, redirect=False, namespace=None,
-                 pageTitle=None, ignore=CANCEL_ALL):
+    @deprecate_arg('redirect', None)
+    def __init__(self, site, diff=False, namespace=None, pageTitle=None,
+                 ignore=CANCEL_ALL):
         """Constructor."""
         self.site = site
         self.diff = diff
-        self.redirect = redirect
         try:
             self.namespace = int(namespace)
         except TypeError:
