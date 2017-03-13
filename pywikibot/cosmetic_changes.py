@@ -206,7 +206,10 @@ class CosmeticChangesToolkit(object):
         self.site = site
         self.diff = diff
         self.redirect = redirect
-        self.namespace = namespace
+        try:
+            self.namespace = int(namespace)
+        except TypeError:
+            raise ValueError('%s needs a namespace' % self.__class__.__name__)
         self.template = (self.namespace == 10)
         self.talkpage = self.namespace >= 0 and self.namespace % 2 == 1
         self.title = pageTitle
