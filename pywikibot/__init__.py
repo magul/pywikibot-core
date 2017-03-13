@@ -235,6 +235,18 @@ class Coordinate(_WbRepresentation):
 
     _items = ('lat', 'lon', 'globe')
 
+    def __eq__(self, other):
+        """Override equality to handle different globe representations."""
+        if isinstance(other, self.__class__):
+            self_dict = self.__dict__.copy()
+            other_dict = other.__dict__.copy()
+            self_dict['_entity'] = self.entity
+            other_dict['_entity'] = other.entity
+            del self_dict['globe']
+            del other_dict['globe']
+            return self_dict == other_dict
+        return NotImplemented
+
     def __init__(self, lat, lon, alt=None, precision=None, globe='earth',
                  typ="", name="", dim=None, site=None, entity=''):
         """
