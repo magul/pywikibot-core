@@ -10,7 +10,6 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
-import collections
 import os
 import re
 import subprocess
@@ -19,7 +18,7 @@ import pywikibot
 
 from pywikibot.tools import (
     deprecated, deprecated_args,
-    StringTypes,
+    StringTypes, Counter,
 )
 
 
@@ -195,7 +194,7 @@ class DjVuFile(object):
 
     def get_most_common_info(self):
         """Return most common size and dpi for pages in djvu file."""
-        cnt = collections.Counter(s_d for _, s_d in self._get_page_info().values())
+        cnt = Counter(s_d for _, s_d in self._get_page_info().values())
         (size, dpi), _ = cnt.most_common()[0]
         return size, dpi
 
