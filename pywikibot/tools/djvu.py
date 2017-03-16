@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
-import collections
+from collections import defaultdict
 import os
 import re
 import subprocess
@@ -195,8 +195,12 @@ class DjVuFile(object):
 
     def get_most_common_info(self):
         """Return most common size and dpi for pages in djvu file."""
-        cnt = collections.Counter(s_d for _, s_d in self._get_page_info().values())
-        (size, dpi), _ = cnt.most_common()[0]
+        # Cannot use collections.Counter, incompatible with Python 2.6; T160620
+        counter = defaultdict(int)
+        for _, size_dpi in self._get_page_info().values():
+            counter[size_dpi] += 1
+        size, dpi = next(iter(sorted(
+            counter.keys(), key=counter.get, reverse=True)))
         return size, dpi
 
     @check_cache
