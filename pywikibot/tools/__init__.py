@@ -22,6 +22,10 @@ import threading
 import time
 import types
 
+try:
+    from collections import Counter
+except ImportError:  # Python 2.6
+    from pywikibot.backports import Counter
 from distutils.version import Version
 from warnings import warn
 
@@ -120,17 +124,8 @@ Please upgrade to Python 2.7+ or Python 3.3+, or run:
 
                 pass
 
-        try:
-            from counter import Counter
-        except ImportError:
-            class Counter(NotImplementedClass):
-
-                """Counter not found."""
-
-                pass
         count = None
     else:
-        Counter = future.backports.misc.Counter
         OrderedDict = future.backports.misc.OrderedDict
 
         try:
@@ -150,7 +145,6 @@ Please upgrade to Python 2.7+ or Python 3.3+, or run:
 
 
 else:
-    Counter = collections.Counter
     OrderedDict = collections.OrderedDict
     count = itertools.count
 
