@@ -127,7 +127,7 @@ class TestLiveApiFunctions(WikidataTestCase):
                                                         [PropertyPage(self.repo, "P101")],
                                                         2))
 
-        c = pywikibot.Coordinate(50, 60)
+        c = pywikibot.Coordinate(50, 60, site=self.repo)
         q = query.Around(PropertyPage(self.repo, "P625"), c, 23.4)
         self.assertEqual(str(q), 'around[625,50,60,23.4]')
 
