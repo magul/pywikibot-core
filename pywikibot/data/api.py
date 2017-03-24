@@ -1682,14 +1682,19 @@ class Request(MutableMapping):
         if self.action == 'query':
             meta = self._params.get("meta", [])
             if "userinfo" not in meta:
-                meta = set(meta + ['userinfo'])
+                meta.append('userinfo')
                 self._params['meta'] = list(meta)
             uiprop = self._params.get("uiprop", [])
-            uiprop = set(uiprop + ["blockinfo", "hasmsg"])
+            if 'blockinfo' not in uiprop:
+                uiprop.append('blockinfo')
+            if 'hasmsg' not in uiprop:
+                uiprop.append('hasmsg')
             self._params["uiprop"] = list(sorted(uiprop))
             if 'prop' in self._params:
                 if self.site.has_extension('ProofreadPage'):
-                    prop = set(self._params['prop'] + ['proofread'])
+                    prop = self._params['prop']
+                    if 'proofread' not in prop:
+                        prop.append('proofread')
                     self._params['prop'] = list(prop)
             # When neither 'continue' nor 'rawcontinue' is present and the
             # version number is at least 1.25wmf5 we add a dummy rawcontinue
@@ -2322,7 +2327,7 @@ class CachedRequest(Request):
                             % (self.__class__.__name__, filename, uniquedescr),
                             _logger)
             return True
-        except IOError as e:
+        except IOError:
             # file not found
             return False
         except Exception as e:
