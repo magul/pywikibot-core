@@ -33,7 +33,7 @@ families_list = [
     'wiktionary',
 ]
 
-exceptions = ['-']
+exceptions = ['-', 'mul']
 
 
 def update_family(families):
