@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-SocketIO-based rcstream client.
+EventStreams based RecentChange stream interface.
 
 This file is part of the Pywikibot framework.
 
-This module requires socketIO_client to be installed:
-    pip install socketIO_client
+This module requires sseclient to be installed:
+    pip install sseclient
 """
 #
 # (C) 2014 Merlijn van Deen
 # (C) Pywikibot team, 2014-2016
+# (C) 2017 Andrew Otto
 #
 # Distributed under the terms of the MIT license.
 #
@@ -18,37 +19,42 @@ from __future__ import absolute_import, unicode_literals
 __version__ = '$Id$'
 #
 
-import sys
-import threading
-
-if sys.version_info[0] > 2:
-    from queue import Queue, Empty
-else:
-    from Queue import Queue, Empty
-
-try:
-    import socketIO_client
-except ImportError as e:
-    socketIO_client = e
-
 from pywikibot.bot import debug, warning
-
+from pywikibot.comms.eventstreams import EventStreamThread, eventstream
 _logger = 'pywikibot.rcstream'
 
 
-class RcListenerThread(threading.Thread):
+def create_wikihost_filter_fn(wikihost):
+    if wikihost in [None, '*']:
+        filter_fn = None
+    else:
+        filter_fn = lambda e: e['server_name'] == wikihost
+
+    return filter_fn
+
+
+def get_eventstreams_recentchange_url(rchost, rcport, rcpath):
+    url = rchost
+    if rcport:
+        url += ':' + str(rcport)
+    url += rcpath
+    return url
+
+
+class RcListenerThread(EventStreamThread):
 
     """
     Low-level RC Listener Thread, pushing RC stream events into a queue.
 
     @param wikihost: the hostname of the wiki we want to get changes for. This
-                     is passed to rcstream using a 'subscribe' command. Pass
-                     '*' to listen to all wikis for a given rc host.
-    @param rchost: the recent changes stream host to connect to. For Wikimedia
+                     is used to filter events for server_name. Pass
+                     None or '*' to listen to all wikis.
+    @param rchost: the eventstreams host to connect to. For Wikimedia
                    wikis, this is 'https://stream.wikimedia.org'
-    @param rcport: the port to connect to (default: 80)
-    @param rcpath: the sockets.io path. For Wikimedia wikis, this is '/rc'.
-                   (default: '/rc')
+    @param rcport: the port to connect to (default: None)
+    @param rcpath: the recentchange stream path. For Wikimedia wikis,
+                   this is '/v2/stream/recentchange'.
+                   (default: '/v2/stream/recentchange')
     @param total: the maximum number of entries to return. The underlying
                   thread is shut down then this number is reached.
 
@@ -72,102 +78,27 @@ class RcListenerThread(threading.Thread):
     >>> t.stop()  # optional, the thread will shut down on exiting python
     """
 
-    def __init__(self, wikihost, rchost, rcport=80, rcpath='/rc', total=None):
+    def __init__(self, wikihost=None, rchost='https://stream.wikimedia.org', rcport=None, rcpath='/v2/stream/recentchange', total=None):
         """Constructor for RcListenerThread."""
-        super(RcListenerThread, self).__init__()
-        self.rchost = rchost
-        self.rcport = rcport
-        self.rcpath = rcpath
-        self.wikihost = wikihost
 
-        self.daemon = True
-        self.running = False
-        self.queue = Queue()
-
-        self.warn_queue_length = 100
-
-        self.total = total
-        self.count = 0
-
-        debug('Opening connection to %r' % self, _logger)
-        self.client = socketIO_client.SocketIO(rchost, rcport)
-
-        thread = self
-
-        class RCListener(socketIO_client.BaseNamespace):
-            def on_change(self, change):
-                debug('Received change %r' % change, _logger)
-                if not thread.running:
-                    debug('Thread in shutdown mode; ignoring change.', _logger)
-                    return
-
-                thread.count += 1
-                thread.queue.put(change)
-                if thread.queue.qsize() > thread.warn_queue_length:
-                    warning('%r queue length exceeded %i'
-                            % (thread,
-                               thread.warn_queue_length),
-                            _logger=_logger)
-                    thread.warn_queue_length = thread.warn_queue_length + 100
-
-                if thread.total is not None and thread.count >= thread.total:
-                    thread.stop()
-                    return
-
-            def on_connect(self):
-                debug('Connected to %r; subscribing to %s'
-                      % (thread, thread.wikihost),
-                      _logger)
-                self.emit('subscribe', thread.wikihost)
-                debug('Subscribed to %s' % thread.wikihost, _logger)
-
-            def on_reconnect(self):
-                debug('Reconnected to %r' % (thread,), _logger)
-                self.on_connect()
-
-        class GlobalListener(socketIO_client.BaseNamespace):
-            def on_heartbeat(self):
-                self._transport.send_heartbeat()
-
-        self.client.define(RCListener, rcpath)
-        self.client.define(GlobalListener)
-
-    def __repr__(self):
-        """Return representation."""
-        return "<rcstream for socketio://%s@%s:%s%s>" % (
-               self.wikihost, self.rchost, self.rcport, self.rcpath
+        super(RcListenerThread, self).__init__(
+            url=get_eventstreams_recentchange_url(rchost, rcport, rcpath),
+            filter_fn=create_wikihost_filter_fn(wikihost),
+            total=total
         )
 
-    def run(self):
-        """
-        Threaded function.
 
-        Runs inside the thread when started with .start().
-        """
-        self.running = True
-        while self.running:
-            self.client.wait(seconds=0.1)
-        debug('Shut down event loop for %r' % self, _logger)
-        self.client.disconnect()
-        debug('Disconnected %r' % self, _logger)
-        self.queue.put(None)
-
-    def stop(self):
-        """Stop the thread."""
-        self.running = False
-
-
-def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
+def rc_listener(wikihost=None, rchost='https://stream.wikimedia.org', rcport=None, rcpath='/v2/stream/recentchange', total=None):
     """Yield changes received from RCstream.
 
     @param wikihost: the hostname of the wiki we want to get changes for. This
-                     is passed to rcstream using a 'subscribe' command. Pass
-                     '*' to listen to all wikis for a given rc host.
-    @param rchost: the recent changes stream host to connect to. For Wikimedia
+                     is used to filter events for server_name. Pass
+                     None or '*' to listen to all wikis.
+    @param rchost: the eventstreams host to connect to. For Wikimedia
                    wikis, this is 'https://stream.wikimedia.org'
-    @param rcport: the port to connect to (default: 80)
-    @param rcpath: the sockets.io path. For Wikimedia wikis, this is '/rc'.
-                   (default: '/rc')
+    @param rcport: the port to connect to (default: None)
+    @param rcpath: the recentchange stream path. For Wikimedia wikis, this is '/v2/stream/recentchange'.
+                   (default: '/v2/stream/recentchange')
     @param total: the maximum number of entries to return. The underlying thread
                   is shut down then this number is reached.
 
@@ -179,30 +110,13 @@ def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
     @see: U{MachineReadableRCFeedFormatter<https://doc.wikimedia.org/
         mediawiki-core/master/php/classMachineReadableRCFeedFormatter.html>}
     @rtype: generator
-    @raises ImportError
     """
-    if isinstance(socketIO_client, Exception):
-        raise ImportError('socketIO_client is required for the rc stream;\n'
-                          'install it with pip install "socketIO_client==0.5.6"')
 
-    rc_thread = RcListenerThread(
-        wikihost=wikihost,
-        rchost=rchost, rcport=rcport, rcpath=rcpath,
+    return eventstream(
+        url=get_eventstreams_recentchange_url(rchost, rcport, rcpath),
+        filter_fn=create_wikihost_filter_fn(wikihost),
         total=total
     )
-
-    debug('Starting rcstream thread %r' % rc_thread,
-          _logger)
-    rc_thread.start()
-
-    while True:
-        try:
-            element = rc_thread.queue.get(timeout=0.1)
-        except Empty:
-            continue
-        if element is None:
-            return
-        yield element
 
 
 def site_rc_listener(site, total=None):
