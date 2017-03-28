@@ -32,6 +32,7 @@ except ImportError as e:
     socketIO_client = e
 
 from pywikibot.bot import debug, warning
+from pywikibot.tools import deprecated
 
 _logger = 'pywikibot.rcstream'
 
@@ -72,6 +73,7 @@ class RcListenerThread(threading.Thread):
     >>> t.stop()  # optional, the thread will shut down on exiting python
     """
 
+    @deprecated(instead='eventstreams.recentchanges')
     def __init__(self, wikihost, rchost, rcport=80, rcpath='/rc', total=None):
         """Constructor for RcListenerThread."""
         super(RcListenerThread, self).__init__()
@@ -157,6 +159,7 @@ class RcListenerThread(threading.Thread):
         self.running = False
 
 
+@deprecated(instead='eventstreams.recentchanges')
 def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
     """Yield changes received from RCstream.
 
@@ -205,6 +208,7 @@ def rc_listener(wikihost, rchost, rcport=80, rcpath='/rc', total=None):
         yield element
 
 
+@deprecated(instead='eventstreams.recentchanges')
 def site_rc_listener(site, total=None):
     """Yield changes received from RCstream.
 
