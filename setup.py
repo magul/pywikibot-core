@@ -190,7 +190,17 @@ else:
 from setuptools import setup, find_packages
 
 name = 'pywikibot'
-version = '3.0-dev'
+version = '3.0'
+
+try:
+    import subprocess
+    date = subprocess.check_output(['git', 'log', '-1', '--format=%ci']).strip()
+    date = date.split(" ")[0].replace("-", "")
+    version = version + "." + date
+except Exception as e:
+    print(e)
+    version = version + "-dev"
+
 github_url = 'https://github.com/wikimedia/pywikibot-core'
 
 setup(
