@@ -42,7 +42,7 @@ logger = logging.getLogger("pywiki.wiki.family")
 
 # Legal characters for Family.name and Family.langs keys
 NAME_CHARACTERS = string.ascii_letters + string.digits
-CODE_CHARACTERS = string.ascii_lowercase + string.digits + '-'
+CODE_CHARACTERS = string.ascii_lowercase + string.digits + '-.'
 
 
 class Family(object):

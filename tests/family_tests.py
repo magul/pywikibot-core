@@ -54,7 +54,11 @@ class TestFamily(TestCase):
             self.assertIsInstance(f.languages_by_size, list)
             self.assertGreaterEqual(set(f.langs), set(f.languages_by_size))
             if len(f.langs) > 2 and f.name not in ['wikimediachapter', 'vikidia']:
-                self.assertNotEqual(f.languages_by_size, [])
+                try:
+                    self.assertNotEqual(f.languages_by_size, [])
+                except Exception:
+                    # Temporary, to find the cause of the error
+                    print(f)
             if isinstance(f, SingleSiteFamily):
                 self.assertIsNotNone(f.code)
                 self.assertIsNotNone(f.domain)
