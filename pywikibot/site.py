@@ -2731,10 +2731,16 @@ class APISite(BaseSite):
         return version
 
     @property
-    def has_image_repository(self):
-        """Return True if site has a shared image repository like Commons."""
-        code, fam = self.shared_image_repository()
-        return bool(code or fam)
+    @deprecated('has_image_repository')
+    def has_shared_image_repository(self):
+        """
+        Return True if site has a shared image repository like Commons.
+
+        Note that this will give False on the shared image repository itself,
+        since it is there considered a local repo.
+        """
+        repos = self.image_repository(get_all=True)
+        return 'shared' in repos
 
     @property
     def has_data_repository(self):
@@ -2747,11 +2753,61 @@ class APISite(BaseSite):
         """Return True if site has a shared data repository like Wikidata."""
         return self.has_data_repository
 
-    def image_repository(self):
-        """Return Site object for image repository e.g. commons."""
-        code, fam = self.shared_image_repository()
-        if bool(code or fam):
-            return pywikibot.Site(code, fam, self.username())
+    def image_repository(self, get_all=False):
+        """
+        Return the image/file repository connected to this site.
+
+        @param get_all: whether to return all connected (and enabled) image
+            repositories. Defaults to only returning one, giving priority to
+            any shared repo.
+        @type get_all: bool
+        @return: The image repository if one is connected or None otherwise. If
+            get_all=True then a dict of all connected image repositories is
+            returned with their name as keys.
+        @rtype: APISite or None or dict with APISite as values
+        """
+        def handle_warning(mod, warning):
+            return (mod == 'query' and
+                    re.match(r'Unrecognized value for parameter '
+                             r'[\'"]meta[\'"]: filerepoinfo',
+                             warning))
+
+        req = self._simple_request(action='query', meta='filerepoinfo')
+        req._warning_handler = handle_warning
+        data = req.submit()
+        found_repos = {}
+        if 'query' in data and 'repos' in data['query']:
+            for repo in data['query']['repos']:
+                if 'canUpload' not in repo.keys():
+                    continue
+                if repo['name'] == 'local':
+                    found_repos['local'] = self
+                else:
+                    url = repo['scriptDirUrl'] + '/index.php'
+                    try:
+                        site = pywikibot.Site(url=url, user=self.username(),
+                                              interface='APISite')
+                        found_repos[repo['name']] = site
+                    except SiteDefinitionError as e:
+                        pywikibot.warning(
+                            'Site "{0}" supports image repository at "{1}", '
+                            'but creation failed: {2}.'.format(self, url, e))
+        else:
+            assert 'warnings' in data
+            return None
+
+        if found_repos:
+            if get_all:
+                return found_repos
+            elif len(found_repos) == 1:
+                return found_repos.values()[0]
+            elif 'shared' in found_repos:
+                return found_repos['shared']
+            else:
+                pywikibot.warning(
+                    'Site "{0}" supports multiple image repositories but only '
+                    'returning one. Use "get_all=True" to return all.')
+                return found_repos.values()[0]
 
     def data_repository(self):
         """
@@ -2782,8 +2838,14 @@ class APISite(BaseSite):
             assert 'warnings' in data
             return None
 
-    def is_image_repository(self):
-        """Return True if Site object is the image repository."""
+    @deprecated('is_image_repository')
+    def is_shared_image_repository(self):
+        """
+        Return True if Site object is the image repository.
+
+        This will return False even if a site is an image repository if it also
+        has a shared repository connected to it.
+        """
         return self is self.image_repository()
 
     def is_data_repository(self):
