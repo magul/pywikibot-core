@@ -28,6 +28,7 @@ class Family(family.WikimediaFamily):
         self.langs = {
             'wikidata': 'www.wikidata.org',
             'test': 'test.wikidata.org',
+            'wikidata.beta': 'wikidata.beta.wmflabs.org',
         }
 
         self.interwiki_forward = 'wikipedia'
