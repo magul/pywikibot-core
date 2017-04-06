@@ -4318,6 +4318,7 @@ class Property(object):
              'monolingualtext': pywikibot.WbMonolingualText,
              'math': basestring,
              'external-id': basestring,
+             'geo-shape': pywikibot.WbGeoShape,
              }
 
     value_types = {'wikibase-item': 'wikibase-entityid',
@@ -4327,6 +4328,7 @@ class Property(object):
                    'globe-coordinate': 'globecoordinate',
                    'math': 'string',
                    'external-id': 'string',
+                   'geo-shape': 'string',
                    }
 
     def __init__(self, site, id, datatype=None):
@@ -4459,6 +4461,7 @@ class Claim(Property):
         'commonsMedia': lambda value, site:
             FilePage(pywikibot.Site('commons', 'commons'), value),
         'globe-coordinate': pywikibot.Coordinate.fromWikibase,
+        'geo-shape': pywikibot.WbGeoShape.fromWikibase,
         'time': lambda value, site: pywikibot.WbTime.fromWikibase(value),
         'quantity': pywikibot.WbQuantity.fromWikibase,
         'monolingualtext': lambda value, site:
