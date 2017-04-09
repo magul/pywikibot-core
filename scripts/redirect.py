@@ -89,6 +89,7 @@ import sys
 import pywikibot
 
 from pywikibot import i18n, xmlreader, Bot
+from pywikibot.bot_choice import QuitKeyboardInterrupt
 from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot.textlib import extract_templates_and_params_regex_simple
 from pywikibot.tools.formatter import color_format
@@ -190,7 +191,6 @@ class RedirectGenerator(object):
     def get_redirect_pages_via_api(self):
         """Yield Pages that are redirects."""
         for ns in self.namespaces:
-            done = False
             gen = self.site.allpages(start=self.api_start,
                                      namespace=ns,
                                      filterredir=True)
@@ -247,7 +247,6 @@ class RedirectGenerator(object):
                 raise RuntimeError("API query error: %s" % data)
             if data == [] or 'query' not in data:
                 raise RuntimeError("No results given.")
-            redirects = {}
             pages = {}
             redirects = dict((x['from'], x['to'])
                              for x in data['query']['redirects'])
@@ -724,12 +723,15 @@ class RedirectRobot(Bot):
         """Run the script method selected by 'action' parameter."""
         # TODO: make all generators return a redirect type indicator,
         #       thus make them usable with 'both'
-        if self.action == 'double':
-            self.fix_double_redirects()
-        elif self.action == 'broken':
-            self.delete_broken_redirects()
-        elif self.action == 'both':
-            self.fix_double_or_delete_broken_redirects()
+        try:
+            if self.action == 'double':
+                self.fix_double_redirects()
+            elif self.action == 'broken':
+                self.delete_broken_redirects()
+            elif self.action == 'both':
+                self.fix_double_or_delete_broken_redirects()
+        except QuitKeyboardInterrupt:
+            self.exit()
 
 
 def main(*args):
