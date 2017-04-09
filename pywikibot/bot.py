@@ -1355,7 +1355,7 @@ class BaseBot(object):
         return False
 
     def quit(self):
-        """Cleanup and quit processing."""
+        """Raise QuitKeyboardInterrupt."""
         raise QuitKeyboardInterrupt
 
     def exit(self):
@@ -1390,7 +1390,7 @@ class BaseBot(object):
 
         # exc_info contains exception from self.run() while terminating
         exc_info = sys.exc_info()
-        if exc_info[0] is None or exc_info[0] is KeyboardInterrupt:
+        if exc_info[0] is None or isinstance(exc_info[1], KeyboardInterrupt):
             pywikibot.output("Script terminated successfully.")
         else:
             pywikibot.output("Script terminated by exception:\n")
