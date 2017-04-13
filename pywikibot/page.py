@@ -3789,6 +3789,7 @@ class WikibasePage(BasePage):
         self._revid = value
 
     @latest_revision_id.deleter
+    @remove_last_args(('value', ))
     def latest_revision_id(self):
         self.clear_cache()
 
