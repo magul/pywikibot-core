@@ -2743,7 +2743,7 @@ def WikidataQueryPageGenerator(query, site=None):
 
 def WikidataSPARQLPageGenerator(query, site=None,
                                 item_name='item', endpoint=None,
-                                result_type=set):
+                                entity_url=None, result_type=set):
     """Generate pages that result from the given SPARQL query.
 
     @param query: the SPARQL query string.
@@ -2759,19 +2759,9 @@ def WikidataSPARQLPageGenerator(query, site=None,
     if site is None:
         site = pywikibot.Site()
     repo = site.data_repository()
-    if endpoint is None:
-        try:
-            endpoint = repo.sparql_endpoint
-        except NotImplementedError:
-            raise NotImplementedError(
-                'Wiki version must be 1.28-wmf.23 or newer to automatically '
-                'extract the sparql endpoint. Please provide the endpoint '
-                'parameter as well.')
-        if not endpoint:
-            pywikibot.error('The site {0} does not provide a sparql endpoint.'
-                            .format(repo))
-
-    query_object = sparql.SparqlQuery(endpoint=endpoint)
+    query_object = sparql.SparqlQuery(endpoint=endpoint,
+                                      entity_url=entity_url,
+                                      repo=repo)
     data = query_object.get_items(query,
                                   item_name=item_name,
                                   result_type=result_type)
