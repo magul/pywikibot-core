@@ -1229,7 +1229,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         err = None
         link = self.title(asLink=True)
         if cc or cc is None and config.cosmetic_changes:
-            summary = self._cosmetic_changes_hook(summary) or summary
+            summary = self._cosmetic_changes_hook(summary)
         try:
             done = self.site.editpage(self, summary=summary, minor=minor,
                                       watch=watch, bot=botflag, **kwargs)
@@ -1251,10 +1251,19 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if callback:
             callback(self, err)
 
-    def _cosmetic_changes_hook(self, comment):
+    @deprecated_args(comment='summary')
+    def _cosmetic_changes_hook(self, summary):
+        """The cosmetic changes hook.
+
+        @param summary: The current edit summary.
+        @type summary: str
+        @return: Modified edit summary if cosmetic changes has been done,
+            else the old edit summary.
+        @rtype: str
+        """
         if self.isTalkPage() or \
            pywikibot.calledModuleName() in config.cosmetic_changes_deny_script:
-            return
+            return summary
         family = self.site.family.name
         if config.cosmetic_changes_mylang_only:
             cc = ((family == config.family and
@@ -1267,7 +1276,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
               (family in list(config.cosmetic_changes_disable.keys()) and
                self.site.lang in config.cosmetic_changes_disable[family]))
         if not cc:
-            return
+            return summary
 
         old = self.text
         pywikibot.log(u'Cosmetic changes for %s-%s enabled.'
@@ -1280,12 +1289,11 @@ class BasePage(UnicodeMixin, ComparableMixin):
                                            pageTitle=self.title(),
                                            ignore=CANCEL_MATCH)
         self.text = ccToolkit.change(old)
-        if comment and \
-           old.strip().replace('\r\n',
-                               '\n') != self.text.strip().replace('\r\n', '\n'):
+        if summary and old.strip().replace(
+                '\r\n', '\n') != self.text.strip().replace('\r\n', '\n'):
             from pywikibot import i18n
-            comment += i18n.twtranslate(self.site, 'cosmetic_changes-append')
-            return comment
+            summary += i18n.twtranslate(self.site, 'cosmetic_changes-append')
+        return summary
 
     @deprecate_arg('async', 'asynchronous')  # T106230
     @deprecated_args(comment='summary')
@@ -2022,7 +2030,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if answer == 'y':
             return self.site.protect(self, protections, reason, **kwargs)
 
-    def change_category(self, oldCat, newCat, comment=None, sortKey=None,
+    @deprecated_args(comment='summary')
+    def change_category(self, oldCat, newCat, summary=None, sortKey=None,
                         inPlace=True, include=[]):
         """
         Remove page from oldCat and add it to newCat.
@@ -2032,7 +2041,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         @param newCat: category to be added, if any
         @type newCat: Category or None
 
-        @param comment: string to use as an edit summary
+        @param summary: string to use as an edit summary
 
         @param sortKey: sortKey to use for the added category.
             Unused if newCat is None, or if inPlace=True
@@ -2096,7 +2105,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
 
         if oldtext != newtext:
             try:
-                self.put(newtext, comment)
+                self.put(newtext, summary)
                 return True
             except pywikibot.PageSaveRelatedError as error:
                 pywikibot.output(u'Page %s not saved: %s'
