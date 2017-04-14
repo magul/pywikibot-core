@@ -69,7 +69,7 @@ from pywikibot.site import BaseSite
 from pywikibot.tools import (
     # __ to avoid conflict with ModuleDeprecationWrapper._deprecated
     deprecated as __deprecated,
-    deprecate_arg as __deprecate_arg,
+    deprecate_arg,
     normalize_username,
     MediaWikiVersion,
     redirect_func,
@@ -130,7 +130,6 @@ for _name in textlib_methods:
 
 
 deprecated = redirect_func(__deprecated)
-deprecate_arg = redirect_func(__deprecate_arg)
 
 
 class Timestamp(datetime.datetime):
