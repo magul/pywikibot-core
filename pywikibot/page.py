@@ -4255,6 +4255,7 @@ class ItemPage(WikibasePage):
         data = {'sitelinks': data}
         self.editEntity(data, **kwargs)
 
+    @allow_asynchronous
     def addClaim(self, claim, bot=True, **kwargs):
         """
         Add a claim to the item.
