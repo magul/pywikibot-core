@@ -332,24 +332,22 @@ class UploadRobot(BaseBot):
 
         # A proper description for the submission.
         # Empty descriptions are not accepted.
-        pywikibot.output(u'The suggested description is:\n%s'
-                         % self.description)
-
-        # Description must be set and verified
-        if not self.description:
-            self.verifyDescription = True
+        if self.description:
+            pywikibot.output('The suggested description is:\n%s'
+                             % self.description)
 
         while not self.description or self.verifyDescription:
             if not self.description:
                 pywikibot.output(color_format(
                     '{lightred}It is not possible to upload a file '
-                    'without a summary/description.{default}'))
-
+                    'without a description.{default}'))
             assert not always
-            # if no description, default is 'yes'
-            if pywikibot.input_yn(
-                    u'Do you want to change this description?',
-                    default=not self.description):
+            # if no description, ask if user want to add one or quit, and loop until one is filled.
+            # if self.verifyDescription, ask if user want to change it or continue.
+            if (not self.description and pywikibot.input_choice(
+                    u'No description was given. Add one?', [('Yes', 'y')], default='y')) \
+                    or pywikibot.input_yn(u'Do you want to change this description?', default='n'):
+                pywikibot.output('Please enter a description in the window.')
                 from pywikibot import editor as editarticle
                 editor = editarticle.TextEditor()
                 try:
