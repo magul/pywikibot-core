@@ -24,6 +24,8 @@ __all__ = ('requests', 'unittest', 'TestRequest',
 # - mwparserfromhell is optional, so is only imported in textlib_tests
 import requests
 
+from pywikibot.comms import http
+from pywikibot.comms.http import fetch, session
 from pywikibot.tools import PYTHON_VERSION
 
 if PYTHON_VERSION < (2, 7, 3):
@@ -40,6 +42,12 @@ from pywikibot import i18n
 
 from pywikibot.data.api import CachedRequest
 from pywikibot.data.api import Request as _original_Request
+
+try:
+    import unittest.mock as mock
+except ImportError:
+    import mock
+
 
 _root_dir = os.path.split(os.path.split(__file__)[0])[0]
 
@@ -336,3 +344,18 @@ def unpatch_request():
     """Un-patch Request classes with TestRequest."""
     pywikibot.data.api.Request = _original_Request
     pywikibot.data.api.CachedRequest._expired = original_expired
+
+
+def session_closer_fetch(obj):
+    """Patch obj to automatically close session after each fetch call.
+
+    This decorator is used to prevent the ResourceWarning caused by unclosed
+    requests.Session. See T163175.
+
+    """
+    def closer_fetch(*args, **kwargs):
+        """Close the session after each fetch call."""
+        session.close()
+        with session:
+            return fetch(*args, **kwargs)
+    return mock.patch.object(http, 'fetch', closer_fetch)(obj)

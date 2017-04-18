@@ -24,7 +24,7 @@ from pywikibot.tools import (
     UnicodeType as unicode,
 )
 
-from tests import join_images_path
+from tests import join_images_path, session_closer_fetch
 from tests.aspects import (
     unittest,
     TestCase,
@@ -136,13 +136,12 @@ class HttpsCertificateTestCase(TestCase):
     CERT_VERIFY_FAILED_RE = 'certificate verify failed'
     hostname = 'testssl-expire-r2i2.disig.sk'
 
+    @session_closer_fetch
     def test_https_cert_error(self):
         """Test if http.fetch respects disable_ssl_certificate_validation."""
         self.assertRaisesRegex(pywikibot.FatalServerError, self.CERT_VERIFY_FAILED_RE,
                                http.fetch,
                                uri='https://testssl-expire-r2i2.disig.sk/index.en.html')
-        http.session.close()  # clear the connection
-
         with warnings.catch_warnings(record=True) as warning_log:
             response = http.fetch(
                 uri='https://testssl-expire-r2i2.disig.sk/index.en.html',
@@ -150,13 +149,11 @@ class HttpsCertificateTestCase(TestCase):
         r = response.content
         self.assertIsInstance(r, unicode)
         self.assertTrue(re.search(r'<title>.*</title>', r))
-        http.session.close()  # clear the connection
 
         # Verify that it now fails again
         self.assertRaisesRegex(pywikibot.FatalServerError, self.CERT_VERIFY_FAILED_RE,
                                http.fetch,
                                uri='https://testssl-expire-r2i2.disig.sk/index.en.html')
-        http.session.close()  # clear the connection
 
         # Verify that the warning occurred
         self.assertIn('InsecureRequestWarning',
