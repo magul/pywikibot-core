@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Package tests."""
 #
-# (C) Pywikibot team, 2007-2015
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -253,13 +253,11 @@ CachedRequest._get_cache_dir = classmethod(
 # Travis-CI builds are set to retry twice, which aims to reduce the number
 # of 'red' builds caused by intermittant server problems, while also avoiding
 # the builds taking a long time due to retries.
-# The following allows builds to retry twice, but higher default values are
-# overridden here to restrict retries to only 1, so developer builds fail more
-# frequently in code paths resulting from mishandled server problems.
+# The following allows builds to retry twice but not higher.
 if config.max_retries > 2:
     if 'PYWIKIBOT_TEST_QUIET' not in os.environ:
-        print('tests: max_retries reduced from %d to 1' % config.max_retries)
-    config.max_retries = 1
+        print('tests: max_retries reduced from %d to 2' % config.max_retries)
+    config.max_retries = 2
 
 cache_misses = 0
 cache_hits = 0
