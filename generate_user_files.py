@@ -314,7 +314,7 @@ def main(*args):
     global base_dir
 
     # set the config family and mylang values to an invalid state so that
-    # the script can detect that the command line arguments -family & -lang
+    # the script can detect that the command line arguments -family & -code
     # were used and and handle_args has updated these config values,
     # and 'force' mode can be activated below.
     (config.family, config.mylang) = ('wikipedia', None)

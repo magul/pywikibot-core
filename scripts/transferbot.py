@@ -5,7 +5,7 @@ This script transfers pages from a source wiki to a target wiki.
 
 It also copies edit history to a subpage.
 
--tolang:          The target site code.
+-tocode:          The target site code.
 
 -tosite:          The target site family.
 
@@ -25,18 +25,18 @@ Example commands:
 Transfer all pages in category "Query service" from the English Wikipedia to
 the Arabic Wiktionary, adding "Wiktionary:Import enwp/" as prefix:
 
-    python pwb.py transferbot -family:wikipedia -lang:en -cat:"Query service" \
-        -tofamily:wiktionary -tolang:ar -prefix:"Wiktionary:Import enwp/"
+    python pwb.py transferbot -family:wikipedia -code:en -cat:"Query service" \
+        -tofamily:wiktionary -tocode:ar -prefix:"Wiktionary:Import enwp/"
 
 Copy the template "Query service" from the Toolserver wiki to wikitech:
 
-    python pwb.py transferbot -family:wikipedia -lang:en \
-        -tofamily:wiktionary -tolang:ar -page:"Template:Query service"
+    python pwb.py transferbot -family:wikipedia -code:en \
+        -tofamily:wiktionary -tocode:ar -page:"Template:Query service"
 
 """
 #
 # (C) Merlijn van Deen, 2014
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -47,6 +47,8 @@ __version__ = '$Id$'
 
 import pywikibot
 from pywikibot import pagegenerators
+from pywikibot.exceptions import ArgumentDeprecationWarning
+from pywikibot.tools import issue_deprecation_warning
 
 docuReplacements = {
     '&params;': pagegenerators.parameterHelp,
@@ -103,16 +105,20 @@ def main(*args):
     genFactory = pagegenerators.GeneratorFactory()
 
     for arg in local_args:
+        option, sep, value = arg.partition(':')
         if genFactory.handleArg(arg):
             gen_args.append(arg)
             continue
-        if arg.startswith('-tofamily'):
-            tofamily = arg[len('-tofamily:'):]
-        elif arg.startswith('-tolang'):
-            tolang = arg[len('-tolang:'):]
-        elif arg.startswith('-prefix'):
-            prefix = arg[len('-prefix:'):]
-        elif arg == "-overwrite":
+        if option == '-tofamily':
+            tofamily = value
+        elif option in ('-tolang', '-tocode'):
+            if option == '-tolang':
+                issue_deprecation_warning(
+                    option, '-tocode', 1, ArgumentDeprecationWarning)
+            tolang = value
+        elif option == '-prefix':
+            prefix = value
+        elif option == '-overwrite':
             overwrite = True
 
     tosite = pywikibot.Site(tolang, tofamily)

@@ -90,6 +90,7 @@ from pywikibot.bot_choice import (
     ListOption, OutputProxyOption, HighlightContextOption,
     ChoiceException, QuitKeyboardInterrupt,
 )
+from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot.logging import (
     CRITICAL, ERROR, INFO, WARNING,
 )
@@ -100,7 +101,8 @@ from pywikibot.logging import (
 )
 from pywikibot.logging import critical
 from pywikibot.tools import (
-    deprecated, deprecate_arg, deprecated_args, PY2, PYTHON_VERSION,
+    deprecated, deprecate_arg, deprecated_args, issue_deprecation_warning,
+    PY2, PYTHON_VERSION,
 )
 from pywikibot.tools._logging import (
     LoggingFormatter as _LoggingFormatter,
@@ -832,7 +834,7 @@ def handle_args(args=None, do_help=True):
     Handle standard command line arguments, and return the rest as a list.
 
     Takes the command line arguments as Unicode strings, processes all
-    global parameters such as -lang or -log, initialises the logging layer,
+    global parameters such as -code or -log, initialises the logging layer,
     which emits startup information into log at level 'verbose'.
 
     This makes sure that global arguments are applied first,
@@ -873,7 +875,10 @@ def handle_args(args=None, do_help=True):
             pass
         elif option == '-family':
             config.family = value
-        elif option == '-lang':
+        elif option in ('-lang', '-code'):
+            if option == '-lang':
+                issue_deprecation_warning(
+                    option, '-code', 1, ArgumentDeprecationWarning)
             config.mylang = value
         elif option == '-user':
             username = value
@@ -996,9 +1001,9 @@ Global arguments available for all bots:
 -dir:PATH         Read the bot's configuration data from directory given by
                   PATH, instead of from the default directory.
 
--lang:xx          Set the language of the wiki you want to work on, overriding
+-code:xx          Set the code of the wiki you want to work on, overriding
                   the configuration in user-config.py. xx should be the
-                  language code.
+                  site code.
 
 -family:xyz       Set the family of the wiki you want to work on, e.g.
                   wikipedia, wiktionary, wikitravel, ...

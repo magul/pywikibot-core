@@ -9,7 +9,7 @@ Example:
 
 or
 
-    python pwb.py replicate_wiki [-r] -ns 10 -family:wikipedia -lang:nl li fy
+    python pwb.py replicate_wiki [-r] -ns 10 -family:wikipedia -code:nl li fy
 
 to copy all templates from an nlwiki to liwiki and fywiki. It will show which
 pages have to be changed if -r is not present, and will only actually write
@@ -30,7 +30,7 @@ The following parameters are supported:
 --replace         you will only get an overview page)
 
 -o                original wiki
---original        (you may use -lang:<code> option instead)
+--original        (you may use -code:<code> option instead)
 
 destination_wiki  destination wiki(s)
 
@@ -42,7 +42,7 @@ destination_wiki  destination wiki(s)
 """
 #
 # (C) Kasper Souren, 2012-2013
-# (C) Pywikibot team, 2013-2016
+# (C) Pywikibot team, 2013-2017
 #
 # Distributed under the terms of the MIT license.
 #

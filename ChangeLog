@@ -146,7 +146,7 @@ Pywikibot API improvements include:
   - added ISBN support
   - added redirect support
 - Optionally uses external library for improved isbn validation
-- Automatically generating user files when -user, -family and -lang are
+- Automatically generating user files when -user, -family and -code are
   provided to a script
 - Page.content_model added
 - Page.contributors() and Page.revision_count() added
