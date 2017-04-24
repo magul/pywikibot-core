@@ -36,7 +36,7 @@ This SQL query can be used to find pages to work on:
 
 Example:
 
-      pwb.py table2wiki -xml:20050713_pages_current.xml -lang:de
+      pwb.py table2wiki -xml:20050713_pages_current.xml -code:de
 
 FEATURES
 Save against missing </td>
@@ -48,7 +48,7 @@ Please check every article you change.
 """
 #
 # (C) 2003 Thomas R. Koll, <tomk32@tomk32.de>
-# (C) Pywikibot team, 2003-2013
+# (C) Pywikibot team, 2003-2017
 #
 # Distributed under the terms of the MIT license.
 #

@@ -19,7 +19,7 @@ These command line parameters can be used to specify which pages to work on:
 
 Examples:
 
-    python pwb.py harvest_template -lang:nl -cat:Sisoridae -namespace:0 \
+    python pwb.py harvest_template -code:nl -cat:Sisoridae -namespace:0 \
         -template:"Taxobox straalvinnige" orde P70 familie P71 geslacht P74
 
 """
