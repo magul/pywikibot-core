@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the replace script and ReplaceRobot class."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -89,8 +89,8 @@ class TestReplacementsMain(TWNBotTestCase):
     def _run(self, *args):
         """Run the L{replace.main} with the given args and summary and page."""
         # -page to not have an empty generator
-        # -lang and -family as it will use Site() otherwise
-        return replace.main(*(args + ('-lang:test', '-family:test',
+        # -code and -family as it will use Site() otherwise
+        return replace.main(*(args + ('-code:test', '-family:test',
                                       '-page:TEST')))
 
     def test_invalid_replacements(self):

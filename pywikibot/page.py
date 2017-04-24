@@ -324,7 +324,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
             characters that are unsafe in filenames
         @param insite: (only used if asLink is true) a site object where the
             title is to be shown. default is the current family/lang given by
-            -family and -lang option i.e. config.family and config.mylang
+            -family and -code option i.e. config.family and config.mylang
         @rtype: unicode
         """
         title = self._link.canonical_title()

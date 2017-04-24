@@ -5,7 +5,7 @@ Coordinate importing script.
 
 Usage:
 
-    python pwb.py coordinate_import -lang:en -family:wikipedia \
+    python pwb.py coordinate_import -code:en -family:wikipedia \
         -cat:Category:Coordinates_not_on_Wikidata
 
 This will work on all pages in the category "coordinates not on Wikidata" and
@@ -18,14 +18,14 @@ is used so that extension has to be setup properly. You can look at the
 
 You can use any typical pagegenerator to provide with a list of pages:
 
-    python pwb.py coordinate_import -lang:it -family:wikipedia \
+    python pwb.py coordinate_import -code:it -family:wikipedia \
         -namespace:0 -transcludes:Infobox_stazione_ferroviaria
 
 &params;
 """
 #
 # (C) Multichill, 2014
-# (C) Pywikibot team, 2013-2016
+# (C) Pywikibot team, 2013-2017
 #
 # Distributed under the terms of MIT License.
 #

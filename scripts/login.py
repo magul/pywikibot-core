@@ -9,15 +9,15 @@ sure this bot account is well known on your home wiki before using.
 Parameters:
 
    -family:FF
-   -lang:LL     Log in to the LL language of the FF family.
-                Example: -family:wiktionary -lang:fr will log you in at
+   -code:LL     Log in to the LL site code of the FF family.
+                Example: -family:wiktionary -code:fr will log you in at
                 fr.wiktionary.org.
 
    -all         Try to log in on all sites where a username is defined in
                 user-config.py.
 
    -logout      Log out of the curren site. Combine with -all to log out of
-                all sites, or with -family and -lang to log out of a specific
+                all sites, or with -family and -code to log out of a specific
                 site.
 
    -force       Ignores if the user is already logged in, and tries to log in.
@@ -53,7 +53,7 @@ subdirectory.
 """
 #
 # (C) Rob W.W. Hooft, 2003
-# (C) Pywikibot team, 2003-2014
+# (C) Pywikibot team, 2003-2017
 #
 # Distributed under the terms of the MIT license.
 #

@@ -67,7 +67,7 @@ script:
       python -m generate_family_file 'http://'$LANGUAGE'.wikisource.beta.wmflabs.org/' 'wsbeta' 'y' ;
     fi
 
-  - python -W error::UserWarning -m generate_user_files -dir:~/.pywikibot/ -family:$FAMILY -lang:$LANGUAGE -v -user:"$PYWIKIBOT2_USERNAME"
+  - python -W error::UserWarning -m generate_user_files -dir:~/.pywikibot/ -family:$FAMILY -code:$LANGUAGE -v -user:"$PYWIKIBOT2_USERNAME"
 
   - if [[ -n "$USER_PASSWORD" && -n "$PYWIKIBOT2_USERNAME" ]]; then
       printf "usernames['wikipedia']['en'] = '%q'\n" "$PYWIKIBOT2_USERNAME" >> ~/.pywikibot/user-config.py ;

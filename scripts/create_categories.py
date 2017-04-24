@@ -19,7 +19,7 @@ The following command line parameters are supported:
 Example:
 
     python pwb.py create_categories \
-        -lang:commons \
+        -code:commons \
         -family:commons \
         -links:User:Multichill/Wallonia \
         -parent:"Cultural heritage monuments in Wallonia" \
@@ -35,8 +35,8 @@ from __future__ import absolute_import, unicode_literals
 __version__ = '$Id$'
 #
 # (C) Multichill, 2011
-# (C) xqt, 2011-2016
-# (c) Pywikibot team, 2016
+# (C) xqt, 2011-2017
+# (c) Pywikibot team, 2017
 #
 # Distributed under the terms of the MIT license.
 #
