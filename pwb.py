@@ -161,9 +161,7 @@ except ImportError as e:
     requests = None
 
 if not requests:
-    print("Python module requests is required.")
-    print("Try running 'pip install requests'.")
-    sys.exit(1)
+    raise ImportError("Python module 'requests' is required. Try running 'pip install requests'.")
 
 del requests
 
