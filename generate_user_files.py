@@ -159,6 +159,7 @@ def get_site_and_lang(default_family='wikipedia', default_lang='en',
         username = username.replace("'", "\\'")
     return fam.name, mylang, username
 
+
 EXTENDED_CONFIG = """# -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
@@ -212,11 +213,31 @@ SMALL_CONFIG = ('# -*- coding: utf-8 -*-\n'
                 u"mylang = '{main_lang}'\n"
                 u"{usernames}\n")
 
+PASSFILE_CONFIG = """# -*- coding: utf-8 -*-
+from __future__ import absolute_import, unicode_literals
+
+# This is an automatically generated file used to store BotPasswords. See
+# user-config.py for general informations about user- files.
+#
+# As a simpler (but less secure) alternative to OAuth, MediaWiki allows bot
+# users to uses BotPasswords to limit the permissions given to a bot.
+# When using BotPasswords, each instance gets keys. This combination can only
+# access the API, not the normal web interface.
+#
+# See https://www.mediawiki.org/wiki/Manual:Pywikibot/BotPasswords for more
+# information.
+
+{botpasswords}"""
+
 
 def create_user_config(args=None, force=False):
-    """Create a user-config.py in base_dir."""
+    """
+    Create a user-config.py and if necessary a user-password.py in
+    base_dir.
+    """
     _fnc = os.path.join(base_dir, "user-config.py")
-    if file_exists(_fnc):
+    _fncpass = os.path.join(base_dir, "user-password.py")
+    if file_exists(_fnc) or file_exists(_fncpass):
         return
 
     if args and force and not config.verbose_output:
@@ -238,9 +259,36 @@ def create_user_config(args=None, force=False):
         usernames = "# usernames['{0}']['{1}'] = u'MyUsername'".format(
             main_family, main_lang)
     else:
+        # For each different username entered, ask if user wants to save a
+        # BotPassword (username, BotPassword name, BotPassword pass)
+        botpasswords = []
+        seen = set()
+        for username in usernames:
+            if username[2] not in seen and not seen.add(username[2]) and \
+                pywikibot.input_yn("Do you want to add a BotPassword for {0}?"
+                                   .format(username[2]),
+                                   force=force, default=False):
+                pywikibot.output(
+                    'See https://www.mediawiki.org/wiki/'
+                    'Manual:Pywikibot/BotPasswords to know how to get codes.')
+                message = u"BotPassword's \"bot name\" for {0}".format(
+                    username[2])
+                botpasswordname = pywikibot.input(message, force=force)
+                message = "BotPassword's \"password\" for BotPassword \"{0}\"" \
+                          " (no characters will be shown)"\
+                    .format(botpasswordname)
+                botpasswordpass = pywikibot.input(message, force=force,
+                                                  password=True)
+                if botpasswordname and botpasswordpass:
+                    botpasswords.append((username[2], botpasswordname,
+                                         botpasswordpass))
+
         usernames = '\n'.join(
             u"usernames['{0}']['{1}'] = u'{2}'".format(*username)
             for username in usernames)
+        botpasswords = '\n'.join(
+            "(u'{0}', BotPassword(u'{1}', u'{2}'))".format(*botpassword)
+            for botpassword in botpasswords)
 
     config_text = ''
     config_content = SMALL_CONFIG
@@ -287,13 +335,18 @@ def create_user_config(args=None, force=False):
         pywikibot.exception()
 
     try:
+        # Finally save user-config.py and if necessary user-password.py
         with codecs.open(_fnc, "w", "utf-8") as f:
             f.write(config_content.format(main_family=main_family,
                                           main_lang=main_lang,
                                           usernames=usernames,
                                           config_text=config_text))
-
         pywikibot.output(u"'%s' written." % _fnc)
+        if botpasswords:
+            with codecs.open(_fncpass, "w", "utf-8") as f:
+                f.write(PASSFILE_CONFIG.format(botpasswords=botpasswords))
+                pywikibot.output(u"'%s' written." % _fncpass)
+
     except:
         try:
             os.remove(_fnc)
@@ -340,6 +393,7 @@ def main(*args):
     # Only give option for directory change if user-config.py already exists
     # in the directory. This will repeat if user-config.py also exists in
     # the requested directory.
+    # TODO: check for user-password.py
     if not force or config.verbose_output:
         pywikibot.output(u'\nYour default user directory is "%s"' % base_dir)
         while os.path.isfile(os.path.join(base_dir, "user-config.py")):
@@ -361,6 +415,7 @@ def main(*args):
     else:
         pywikibot.output('user-config.py already exists in the target '
                          'directory "{0}".'.format(base_dir))
+
 
 if __name__ == '__main__':
     main()
