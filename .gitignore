@@ -19,3 +19,4 @@ pywikibot/families/
 build
 dist
 docs/_build/
+passwordfile
