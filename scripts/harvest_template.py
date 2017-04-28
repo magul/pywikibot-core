@@ -59,18 +59,18 @@ docuReplacements = {'&params;': pywikibot.pagegenerators.parameterHelp}
 
 class HarvestRobot(WikidataBot):
 
-    """A bot to add Wikidata claims."""
+    """A bot to add Wikidata claims.
+
+    @param generator: A generator that yields Page objects
+    @type generator: iterator
+    @param templateTitle: The template to work on
+    @type templateTitle: str
+    @param fields: A dictionary of fields that are of use to us
+    @type fields: dict
+    """
 
     def __init__(self, generator, templateTitle, fields):
-        """
-        Constructor.
-
-        Arguments:
-            * generator     - A generator that yields Page objects.
-            * templateTitle - The template to work on
-            * fields        - A dictionary of fields that are of use to us
-
-        """
+        """Constructor."""
         self.availableOptions['always'] = True
         super(HarvestRobot, self).__init__()
         self.generator = pg.PreloadingGenerator(generator)
