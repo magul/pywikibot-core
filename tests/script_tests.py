@@ -22,8 +22,6 @@ from tests.utils import allowed_failure, execute_pwb, add_metaclass
 
 scripts_path = join_root_path('scripts')
 
-archive_path = join_root_path('scripts', 'archive')
-
 if PY2:
     TK_IMPORT = 'Tkinter'
 else:
@@ -88,8 +86,7 @@ def list_scripts(path, exclude=None):
     return scripts
 
 script_list = (['login'] +
-               list_scripts(scripts_path, 'login.py') +
-               list_scripts(archive_path))
+               list_scripts(scripts_path, 'login.py'))
 
 runnable_script_list = (['login'] +
                         sorted(set(script_list) -
