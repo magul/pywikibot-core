@@ -136,8 +136,7 @@ def abspath(path):
     path = os.path.abspath(path)
     if path[0] != '/':
         # normalise Windows drive letter
-        # TODO: use pywikibot.tools.first_upper
-        path = path[0].upper() + path[1:]
+        path = pwb.tools.first_upper(path)
     return path
 
 
