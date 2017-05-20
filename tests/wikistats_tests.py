@@ -14,7 +14,7 @@ from pywikibot.tools import UnicodeType
 
 from tests.aspects import unittest, TestCase
 
-
+@unittest.skip("Wikistats at https://wikistats.wmflabs.org/ appears to be broken. See T165830 in Phabricator")
 class WikiStatsTestCase(TestCase):
 
     """Test WikiStats dump."""
