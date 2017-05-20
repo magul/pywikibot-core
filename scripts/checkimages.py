@@ -1800,11 +1800,12 @@ def main(*args):
 
 if __name__ == "__main__":
     start = time.time()
+    ret = None
     try:
         ret = main()
-    except SystemExit:
+    except KeyboardInterrupt:
         pass
-    else:
+    finally:
         if ret is not False:
             final = time.time()
             delta = int(final - start)
