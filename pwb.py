@@ -9,7 +9,7 @@ Run scripts using:
 and it will use the package directory to store all user files, will fix up
 search paths so the package does not need to be installed, etc.
 """
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -136,7 +136,6 @@ def abspath(path):
     path = os.path.abspath(path)
     if path[0] != '/':
         # normalise Windows drive letter
-        # TODO: use pywikibot.tools.first_upper
         path = path[0].upper() + path[1:]
     return path
 
