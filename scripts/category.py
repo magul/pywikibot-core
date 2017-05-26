@@ -424,7 +424,7 @@ class CategoryMoveRobot(object):
 
         @param oldcat: The move source.
         @param newcat: The move target.
-        @param batch: If True the user has not to confirm the deletion.
+        @param batch: If True the user doesn't have to confirm the deletion.
         @param comment: The edit summary for all pages where the category is
             changed, and also for moves and deletions if not overridden.
         @param inplace: If True the categories are not reordered.
@@ -572,16 +572,22 @@ class CategoryMoveRobot(object):
             if self.history and can_move_page:
                 self._hist()
 
+        # Category.isEmptyCategory() may be outdated (T166515)
+        # check it ourselves
+        empty = False
         if move_items:
-            self._change(pagegenerators.CategorizedPageGenerator(self.oldcat))
+            empty = self._change(
+                pagegenerators.CategorizedPageGenerator(self.oldcat))
             if not self.pagesonly:
-                self._change(
-                    pagegenerators.SubCategoriesPageGenerator(self.oldcat))
+                gen = pagegenerators.SubCategoriesPageGenerator(self.oldcat)
+                empty = self._change(gen) and empty
         else:
             pywikibot.log("Didn't move pages/subcategories, because the "
                           "category page hasn't been moved.")
-        if self.oldcat.isEmptyCategory() and self.delete_oldcat and \
-                ((self.newcat and self.move_oldcat) or not self.newcat):
+
+        empty = empty or self.oldcat.isEmptyCategory()
+        if empty and self.delete_oldcat and \
+           self.move_oldcat or not self.newcat:
             self._delete(can_move_page, can_move_talk)
 
     def _delete(self, moved_page, moved_talk):
@@ -604,38 +610,48 @@ class CategoryMoveRobot(object):
         Do not use this function from outside the class.
 
         @param gen: Generator containing pages or categories.
+        @rtype: bool
         """
         template_docs = set()  # buffer for template doc pages preloading
+        empty = True
 
         for page in pagegenerators.PreloadingGenerator(gen):
-            if not self.title_regex or re.search(self.title_regex,
-                                                 page.title()):
+            if self.title_regex and re.search(self.title_regex, page.title()):
+                empty = False
+                continue
 
-                page.change_category(self.oldcat, self.newcat,
-                                     summary=self.comment,
-                                     inPlace=self.inplace,
-                                     sortKey=self.keep_sortkey)
+            success = page.change_category(
+                self.oldcat, self.newcat, summary=self.comment,
+                inPlace=self.inplace, sortKey=self.keep_sortkey)
+            if success:
+                continue
 
-                # Categories for templates can be included in <includeonly> section
-                # of Template:Page/doc subpage.
-                # TODO: doc page for a template can be Anypage/doc, as specified in
-                #    {{Template:Documentation}} -> not managed here
-                # TODO: decide if/how to enable/disable this feature
-                if page.namespace() == 10:
-                    docs = page.site.doc_subpage  # return tuple
-                    for doc in docs:
-                        doc_page = pywikibot.Page(page.site, page.title() + doc)
-                        template_docs.add(doc_page)
+            # Categories for templates can be included in <includeonly> section
+            # of Template:Page/doc subpage.
+            # TODO: doc page for a template can be Anypage/doc, as specified in
+            #    {{Template:Documentation}} -> not managed here
+            # TODO: decide if/how to enable/disable this feature
+            if page.namespace() == 10:
+                docs = page.site.doc_subpage  # return tuple
+                for doc in docs:
+                    doc_page = pywikibot.Page(page.site, page.title() + doc)
+                    template_docs.add(doc_page)
 
         for doc_page in pagegenerators.PreloadingGenerator(template_docs):
-            if (doc_page.exists() and
-                (not self.title_regex or
-                 re.search(self.title_regex, doc_page.title()))):
-                    doc_page.change_category(self.oldcat, self.newcat,
-                                             summary=self.comment,
-                                             inPlace=self.inplace,
-                                             include=['includeonly'],
-                                             sortKey=self.keep_sortkey)
+            if doc_page.exists():
+                if self.title_regex and re.search(self.title_regex,
+                                                  doc_page.title()):
+                    empty = False
+                    continue
+
+                success = doc_page.change_category(
+                    self.oldcat, self.newcat, summary=self.comment,
+                    inPlace=self.inplace, include=['includeonly'],
+                    sortKey=self.keep_sortkey)
+                if not success:
+                    empty = False
+
+        return empty
 
     @staticmethod
     def check_move(name, old_page, new_page):
