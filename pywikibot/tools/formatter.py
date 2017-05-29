@@ -9,7 +9,6 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 
-import inspect
 import math
 
 from string import Formatter
@@ -75,7 +74,6 @@ class _ColorFormatter(Formatter):
     def __init__(self):
         """Create new instance and store the stack depth."""
         super(_ColorFormatter, self).__init__()
-        self._depth = len(inspect.stack())
 
     def get_value(self, key, args, kwargs):
         """Get value, filling in 'color' when it is a valid color."""
