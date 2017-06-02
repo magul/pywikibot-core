@@ -44,9 +44,13 @@ from tests.aspects import (
 )
 from tests.basepage_tests import BasePageLoadRevisionsCachingTestBase
 from tests.utils import allowed_failure, allowed_failure_if, entered_loop
+from tests import TestRequest
 
 if not PY2:
     long = int  # Must be global: T159700
+    from unittest.mock import Mock, patch
+else:
+    from mock import Mock, patch
 
 
 class TokenTestBase(TestCaseBase):
@@ -508,6 +512,7 @@ class TestSiteGenerators(DefaultSiteTestCase):
             self.assertIn(ei, refs)
         for ref in refs:
             self.assertIn(ref, backlinks | embedded)
+
         # test embeddedin arguments
         self.assertTrue(embedded.issuperset(
             set(mysite.page_embeddedin(mainpage, filterRedirects=True,
@@ -520,41 +525,56 @@ class TestSiteGenerators(DefaultSiteTestCase):
         links = set(mysite.pagelinks(mainpage))
         for pl in links:
             self.assertIsInstance(pl, pywikibot.Page)
+
         # test links arguments
-        # TODO: There have been build failures because the following assertion
-        # wasn't true. Bug: T92856
-        # Example: https://travis-ci.org/wikimedia/pywikibot-core/jobs/54552081#L505
         namespace_links = set(mysite.pagelinks(mainpage, namespaces=[0, 1]))
-        if namespace_links - links:
-            unittest_print(
-                'FAILURE wrt T92856:\nSym. difference: "{0}"'.format(
-                    '", "'.join(
-                        '{0}@{1}'.format(link.namespace(),
-                                         link.title(withNamespace=False))
-                        for link in namespace_links ^ links)))
-        self.assertCountEqual(
-            set(mysite.pagelinks(mainpage, namespaces=[0, 1])) - links, [])
+        try:
+            self.assertCountEqual(namespace_links - links, [])
+        except AssertionError:
+            with patch.object(
+                TestRequest, '_expired', Mock(return_value=True)
+            ):
+                # Update namespace_links cache.
+                set(mysite.pagelinks(mainpage, namespaces=[0, 1]))
+                # Confirm that links have changed during test.
+                self.assertNotEqual(links, set(mysite.pagelinks(mainpage)))
         for target in mysite.preloadpages(mysite.pagelinks(mainpage,
                                                            follow_redirects=True,
                                                            total=5)):
             self.assertIsInstance(target, pywikibot.Page)
             self.assertFalse(target.isRedirectPage())
+
         # test pagecategories
         for cat in mysite.pagecategories(mainpage):
             self.assertIsInstance(cat, pywikibot.Category)
             for cm in mysite.categorymembers(cat):
                 self.assertIsInstance(cat, pywikibot.Page)
+
         # test pageimages
         self.assertTrue(all(isinstance(im, pywikibot.FilePage)
                             for im in mysite.pageimages(mainpage)))
+
         # test pagetemplates
-        self.assertTrue(all(isinstance(te, pywikibot.Page)
-                            for te in mysite.pagetemplates(mainpage)))
-        self.assertTrue(set(mysite.pagetemplates(mainpage)).issuperset(
-                        set(mysite.pagetemplates(mainpage, namespaces=[10]))))
+        templates = set(mysite.pagetemplates(mainpage))
+        self.assertTrue(all(isinstance(t, pywikibot.Page) for t in templates))
+        namespace_templates = set(mysite.pagetemplates(mainpage, [10]))
+        try:
+            self.assertTrue(templates >= namespace_templates)
+        except AssertionError:
+            with patch.object(
+                TestRequest, '_expired', Mock(return_value=True)
+            ):
+                # Update namespace_templates cache.
+                set(mysite.pagetemplates(mainpage, namespaces=[10]))
+                # Confirm that templates have changed during test.
+                self.assertNotEqual(
+                    templates, set(mysite.pagetemplates(mainpage))
+                )
+
         # test pagelanglinks
         for ll in mysite.pagelanglinks(mainpage):
             self.assertIsInstance(ll, pywikibot.Link)
+
         # test page_extlinks
         self.assertTrue(all(isinstance(el, basestring)
                             for el in mysite.page_extlinks(mainpage)))
