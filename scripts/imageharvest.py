@@ -25,9 +25,13 @@ from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
 #
-import os
 
-import BeautifulSoup
+try:
+    from bs4 import BeautifulSoup
+except ImportError as e:
+    BeautifulSoup = e
+
+import os
 
 import pywikibot
 
