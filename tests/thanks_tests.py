@@ -35,7 +35,7 @@ class TestThankRevision(TestCase):
             revid = i['revid']
             username = i['user']
             user = User(site, username)
-            if user.thankable:
+            if user.isThankable:
                 can_thank = True
                 break
         if not can_thank:

@@ -3463,7 +3463,7 @@ class User(Page):
                    )
 
     @property
-    def thankable(self):
+    def isThankable(self):
         """
         Determine if the user has thanks notifications enabled.
 
@@ -3474,7 +3474,7 @@ class User(Page):
 
         @rtype: bool
         """
-        return not self.isAnonymous()
+        return not (self.isAnonymous() or 'bot' in self.groups())
 
 
 class WikibasePage(BasePage):
