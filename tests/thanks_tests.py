@@ -30,7 +30,7 @@ class TestThankRevision(TestCase):
         """
         found_log = can_thank = False
         site = self.get_site()
-        data = site.recentchanges(total=50, reverse=True)
+        data = site.recentchanges(total=20)
         for i in data:
             revid = i['revid']
             username = i['user']
@@ -39,11 +39,31 @@ class TestThankRevision(TestCase):
                 can_thank = True
                 break
         if not can_thank:
-            self.skipTest('There is no recent change which can be test thanked.')
+            self.skipTest('There is no recent change '
+                          'which can be test thanked.')
         before_time = site.getcurrenttimestamp()
         Revision._thank(revid, site, source='pywikibot test')
-        log_entries = site.logevents(logtype='thanks', total=5, start=before_time, page=user)
+        log_entries = site.logevents(logtype='thanks', total=5, page=user,
+                                     start=before_time, reverse=True)
         for __ in log_entries:
             found_log = True
             break
         self.assertTrue(found_log)
+
+    def test_bad_recipient(self):
+        """Test that thanking a bad recipient causes an error."""
+        can_thank = True
+        site = self.get_site()
+        data = site.recentchanges(total=20)
+        for i in data:
+            revid = i['revid']
+            username = i['user']
+            user = User(site, username)
+            if not user.is_thankable:
+                can_thank = False
+                break
+        if can_thank:
+            self.skipTest('There is no recent change '
+                          'which can be test thanked.')
+        self.assertAPIError('invalidrecipient', None, Revision._thank,
+                            revid, site, source='pywikibot test')
