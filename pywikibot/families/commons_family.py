@@ -13,7 +13,7 @@ from pywikibot import family
 
 
 # The Wikimedia Commons family
-class Family(family.WikimediaOrgFamily):
+class Family(family.WikimediaFamily):
 
     """Family class for Wikimedia Commons."""
 
@@ -22,6 +22,11 @@ class Family(family.WikimediaOrgFamily):
     def __init__(self):
         """Constructor."""
         super(Family, self).__init__()
+
+        self.langs = {
+            'commons': 'commons.wikimedia.org',
+            'beta': 'commons.wikimedia.beta.wmflabs.org'
+        }
 
         self.interwiki_forward = 'wikipedia'
 
