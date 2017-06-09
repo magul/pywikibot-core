@@ -829,14 +829,6 @@ class checkImagesBot(object):
         sec, image = max(listGiven, key=lambda element: element[0])
         return image
 
-    @deprecated('Page.revision_count()')
-    def countEdits(self, pagename, userlist):
-        """Function to count the edit of a user or a list of users in a page."""
-        if isinstance(userlist, StringTypes):
-            userlist = [userlist]
-        page = pywikibot.Page(self.site, pagename)
-        return page.revision_count(userlist)
-
     def checkImageOnCommons(self):
         """Checking if the file is on commons."""
         pywikibot.output(u'Checking if [[%s]] is on commons...'
