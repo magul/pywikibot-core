@@ -223,7 +223,7 @@ def get_archive_url(url):
     try:
         return _get_closest_memento_url(
             url,
-            timegate_uri='http://web.archive.org/web/')
+            timegate_uri='https://web.archive.org/web/')
     except Exception:
         return _get_closest_memento_url(
             url,
@@ -793,7 +793,7 @@ class DeadLinkReportThread(threading.Thread):
                     '{lightaqua}** Reporting dead link on {0}...{default}',
                     talkPage.title(asLink=True)))
                 try:
-                    content = talkPage.get() + "\n\n\n"
+                    content = talkPage.get() + "\n"
                     if url in content:
                         pywikibot.output(color_format(
                             '{lightaqua}** Dead link seems to have already '
@@ -824,7 +824,7 @@ class DeadLinkReportThread(threading.Thread):
                     i += 1
                     count = u' ' + str(i)
                 caption += count
-                content += '== %s ==\n\n%s\n\n%s%s\n--~~~~' % \
+                content += '\n\n== %s ==\n\n%s\n\n%s%s--~~~~' % \
                            (caption,
                             i18n.twtranslate(containingPage.site,
                                              'weblinkchecker-report'),
