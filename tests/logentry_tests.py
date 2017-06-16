@@ -215,6 +215,13 @@ class TestLogentryParams(TestLogentriesBase):
         with self.assertRaises(pywikibot.NoMoveTarget):
             page.moved_target()
 
+    def test_thanks_target_user(self, key):
+        """Test Thanks target_user property."""
+        if key == 'old':
+            self.skipTest('Thanks extension not on old.')
+        logentry = self._get_logentry('thanks')
+        self.assertIsInstance(logentry.target_user, pywikibot.User)
+
 
 class TestDeprecatedMethods(TestLogentriesBase, DeprecationTestCase):
 
