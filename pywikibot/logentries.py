@@ -360,6 +360,13 @@ class NewUsersEntry(LogEntry):
 
     _expectedType = 'newusers'
 
+
+class ThanksEntry(LogEntry):
+
+    """Thanks log entry."""
+
+    _expectedType = 'thanks'
+
 # TODO entries for merge,suppress,makebot,gblblock,renameuser,globalauth,gblrights ?
 
 
@@ -380,7 +387,8 @@ class LogEntryFactory(object):
         'move': MoveEntry,
         'import': ImportEntry,
         'patrol': PatrolEntry,
-        'newusers': NewUsersEntry
+        'newusers': NewUsersEntry,
+        'thanks': ThanksEntry,
     }
 
     def __init__(self, site, logtype=None):
