@@ -65,6 +65,8 @@ class TestLogentriesBase(TestCase):
 
     def _test_logevent(self, logtype):
         """Test a single logtype entry."""
+        if self.site_key == 'old' and logtype == 'thanks':
+            self.skipTest('Thanks extension not on old.')
         logentry = self._get_logentry(logtype)
         if logtype in LogEntryFactory.logtypes:
             self.assertEqual(logentry._expectedType, logtype)
@@ -214,6 +216,13 @@ class TestLogentryParams(TestLogentriesBase):
         page = pywikibot.Page(self.get_site('dewp'), 'Main Page')
         with self.assertRaises(pywikibot.NoMoveTarget):
             page.moved_target()
+
+    def test_thanks_page(self, key):
+        """Test Thanks page method return type."""
+        if not self.site.has_extension('Thanks'):
+            self.skipTest('Thanks extension not available.')
+        logentry = self._get_logentry('thanks')
+        self.assertIsInstance(logentry.page(), pywikibot.User)
 
 
 class TestDeprecatedMethods(TestLogentriesBase, DeprecationTestCase):
