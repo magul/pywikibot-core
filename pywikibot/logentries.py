@@ -360,6 +360,20 @@ class NewUsersEntry(LogEntry):
 
     _expectedType = 'newusers'
 
+
+class ThanksEntry(LogEntry):
+
+    """Thanks log entry."""
+
+    _expectedType = 'thanks'
+
+    @property
+    def target_user(self):
+        """Return target user object."""
+        if not hasattr(self, '_target_user'):
+            self._target_user = pywikibot.User(self.page())
+        return self._target_user
+
 # TODO entries for merge,suppress,makebot,gblblock,renameuser,globalauth,gblrights ?
 
 
@@ -380,7 +394,8 @@ class LogEntryFactory(object):
         'move': MoveEntry,
         'import': ImportEntry,
         'patrol': PatrolEntry,
-        'newusers': NewUsersEntry
+        'newusers': NewUsersEntry,
+        'thanks': ThanksEntry,
     }
 
     def __init__(self, site, logtype=None):
