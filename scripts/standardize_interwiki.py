@@ -30,6 +30,7 @@ comment = {
     'fa': u'ربات: تصحیح جایگذاری میان‌ویکی‌ها',
     'fr': u'Robot : Standardisation des interwikis',
     'he': u'בוט: מסדר את האינטרוויקי',
+    'hi': 'बॉट: अंतरविकि मानकीकरण',
     'it': u'Bot: Standardizzo interwiki',
     'ja': u'ロボットによる: 言語間リンクを標準化',
     'ml': u'യന്ത്രം: അന്തർവിക്കി ക്രമവൽക്കരണം',
