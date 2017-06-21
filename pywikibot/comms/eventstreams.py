@@ -18,6 +18,7 @@ from __future__ import absolute_import, unicode_literals
 import json
 import socket
 
+from requests.packages.urllib3.response import httplib
 from requests.packages.urllib3.exceptions import ProtocolError
 
 try:
@@ -207,7 +208,7 @@ class EventStreams(object):
                 self.source = EventSource(**self.sse_kwargs)
             try:
                 event = next(self.source)
-            except (ProtocolError, socket.error) as e:
+            except (ProtocolError, socket.error, httplib.IncompleteRead) as e:
                 warning('Connection error: {0}.\n'
                         'Try to re-establish connection.'.format(e))
                 del self.source
