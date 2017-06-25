@@ -250,15 +250,15 @@ usernames['%(fam_name)s']['%(wiki_code)s'] = 'myUsername'"""
 
         password_f = codecs.open(password_file, encoding='utf-8')
         for line_nr, line in enumerate(password_f):
-            if not line.strip():
+            if not line.strip() or line.startswith('#') or line.startswith('import'):
                 continue
             try:
                 entry = eval(line)
             except SyntaxError:
                 entry = None
             if type(entry) is not tuple:
-                warn('Invalid tuple in line {0}'.format(line_nr),
-                     _PasswordFileWarning)
+                warn('The element line {0} is invalid or has no place here'
+                    .format(line_nr), _PasswordFileWarning)
                 continue
             if not 2 <= len(entry) <= 4:
                 warn('The length of tuple in line {0} should be 2 to 4 ({1} '
