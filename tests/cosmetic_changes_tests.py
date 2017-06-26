@@ -180,6 +180,25 @@ class TestDryCosmeticChanges(TestCosmeticChanges):
         self.assertEqual(
             '[https://de.wikipedia.org/w/api.php API]',
             self.cct.fixSyntaxSave('[https://de.wikipedia.org/w/api.php|API]'))
+        self.assertEqual(
+            '[[:Category:Example]]\n'
+            '[[:Category:Example|Description]]\n'
+            '[[:File:Example.svg]]\n'
+            '[[:File:Example.svg|Description]]\n'
+            '[[:Category:Example]]\n'
+            '[[:Category:Example|Description]]\n'
+            '[[:File:Example.svg]]\n'
+            '[[:File:Example.svg|Description]]\n',
+            self.cct.fixSyntaxSave(
+                '[https://en.wikipedia.org/wiki/Category:Example]\n'
+                '[https://en.wikipedia.org/wiki/Category:Example Description]\n'
+                '[https://en.wikipedia.org/wiki/File:Example.svg]\n'
+                '[https://en.wikipedia.org/wiki/File:Example.svg Description]\n'
+                '[[https://en.wikipedia.org/wiki/Category:Example]]\n'
+                '[[https://en.wikipedia.org/wiki/Category:Example Description]]\n'
+                '[[https://en.wikipedia.org/wiki/File:Example.svg]]\n'
+                '[[https://en.wikipedia.org/wiki/File:Example.svg Description]]\n'
+            ))
 
     def test_fixHtml(self):
         """Test fixHtml method."""
