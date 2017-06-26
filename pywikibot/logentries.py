@@ -99,6 +99,9 @@ class LogEntry(object):
 
         Note: title may be missing in data dict e.g. by oversight action to
               hide the title. In that case a KeyError exception will raise
+
+        @rtype: Page
+        @raise: KeyError: title was missing from log entry
         """
         if not hasattr(self, '_page'):
             self._page = pywikibot.Page(self.site, self.data['title'])
@@ -138,6 +141,8 @@ class UserTargetLogEntry(LogEntry):
 
         This returns a User object instead of the Page object returned by the
         superclass method.
+
+        @rtype: User
         """
         if not hasattr(self, '_page'):
             self._page = pywikibot.User(super(UserTargetLogEntry, self).page())
