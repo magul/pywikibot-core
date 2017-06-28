@@ -1682,6 +1682,11 @@ class Request(MutableMapping):
 
         if self.action == 'query':
             meta = self._params.get("meta", [])
+            # Special logic for private wikis (T153903).
+            # If the wiki requires login privileges to read articles, pywikibot
+            # will be blocked from accessing the userinfo.
+            # Work around this by requiring userinfo only if 'tokens' and 'login'
+            # are not both set.
             typep = self._params.get("type", [])
             if "userinfo" not in meta and not ("tokens" in meta and "login" in typep):
                 meta = set(meta + ['userinfo'])
