@@ -245,8 +245,9 @@ def main(*args):
         page_target = pywikibot.Page(site, page_target)
         if not overwrite and page_target.exists():
             pywikibot.bot.suggest_help(
-                additional_text='Page "{0}" already exists.'.format(
-                    page_target.title()))
+                additional_text='Page "{0}" already exists. You can use the '
+                                '-overwrite argument to replace the content of '
+                                'this page.'.format(page_target.title()))
             return False
         if re.match('^[a-z_-]+$', summary):
             summary = i18n.twtranslate(site, summary)
