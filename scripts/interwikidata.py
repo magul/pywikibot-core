@@ -159,8 +159,9 @@ class IWBot(ExistingPageBot, SingleSiteBot):
             try:
                 wd_data.add(pywikibot.ItemPage.fromPage(iw_page))
             except pywikibot.NoPage:
-                warning('Interwiki %s does not exist, skipping...' %
-                        iw_page.title(asLink=True))
+                if not iw_page.exists():
+                    warning('Interwiki %s does not exist, skipping...' %
+                            iw_page.title(asLink=True))
                 continue
         if not wd_data:
             # will create a new item with interwiki
