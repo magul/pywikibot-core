@@ -535,3 +535,7 @@ class Post(object):
         """
         self.site.restore_post(self, reason)
         self._load()
+
+    def thank(self):
+        """Thank the user who made this post."""
+        self.site.thank_post(self)
