@@ -3131,9 +3131,12 @@ class User(Page):
 
         All parameters are the same as for Page() constructor.
         """
-        if len(title) > 1 and title[0] == u'#':
+        if title.startswith('#'):
             self._isAutoblock = True
             title = title[1:]
+        elif ':#' in title:
+            self._isAutoblock = True
+            title = title.replace(':#', ':')
         else:
             self._isAutoblock = False
         Page.__init__(self, source, title, ns=2)
