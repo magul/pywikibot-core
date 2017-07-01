@@ -3098,7 +3098,7 @@ class User(Page):
 
         All parameters are the same as for Page() constructor.
         """
-        if len(title) > 1 and title[0] == u'#':
+        if title.startswith('#') or ':#' in title:
             self._isAutoblock = True
             title = title[1:]
         else:
