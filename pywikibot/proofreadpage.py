@@ -30,7 +30,7 @@ import json
 import re
 
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup, FeatureNotFound
 except ImportError as e:
     BeautifulSoup = e
 
@@ -522,7 +522,10 @@ class ProofreadPage(pywikibot.Page):
                 pywikibot.error('Error fetching HTML for %s.' % self)
                 raise
 
-            soup = BeautifulSoup(response.content, 'lxml')
+            try:
+                soup = BeautifulSoup(response.content, 'lxml')
+            except FeatureNotFound:
+                soup = BeautifulSoup(response.content, 'html.parser')
 
             try:
                 # None if nothing is found by .find()
@@ -577,7 +580,10 @@ class ProofreadPage(pywikibot.Page):
         """Do hocr using //tools.wmflabs.org/phetools/hocr_cgi.py?cmd=hocr."""
         def parse_hocr_text(txt):
             """Parse hocr text."""
-            soup = BeautifulSoup(txt, 'lxml')
+            try:
+                soup = BeautifulSoup(txt, 'lxml')
+            except FeatureNotFound:
+                soup = BeautifulSoup(txt, 'html.parser')
 
             res = []
             for ocr_page in soup.find_all(class_='ocr_page'):
