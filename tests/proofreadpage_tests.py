@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the proofreadpage module."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -129,6 +129,7 @@ class TestProofreadPageParseTitle(TestCase):
         self.assertEqual(page._num, num)
 
 
+@require_modules('bs4')
 class TestProofreadPageValidSite(TestCase):
 
     """Test ProofreadPage class."""
