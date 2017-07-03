@@ -129,6 +129,7 @@ class TestProofreadPageParseTitle(TestCase):
         self.assertEqual(page._num, num)
 
 
+@require_modules('bs4')
 class TestProofreadPageValidSite(TestCase):
 
     """Test ProofreadPage class."""
