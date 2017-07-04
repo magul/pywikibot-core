@@ -112,9 +112,6 @@ pages:
 #
 from __future__ import absolute_import, unicode_literals
 
-__version__ = '$Id$'
-#
-
 import re
 
 from warnings import warn
