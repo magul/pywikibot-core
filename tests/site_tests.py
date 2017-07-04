@@ -557,7 +557,16 @@ class TestSiteGenerators(DefaultSiteTestCase):
         for te in pagetemplates_all:
             self.assertIsInstance(te, pywikibot.Page)
 
-        self.assertLessEqual(pagetemplates_ns_10, pagetemplates_all)
+        # cleanup randomized templates
+        pt_all = [te for te in pagetemplates_all if te.depth < 2]
+        pt_ns_10 = [te for te in pagetemplates_ns_10 if te.depth < 2]
+
+        self.assertLessEqual(pt_ns_10, pt_all,
+                             'pt_ns_10 subset elements {0} are not in pt_all'
+                             .format(pt_ns_10 - pt_all))
+        # check the removed template number
+        self.assertEqual(len(pagetemplates_all) - len(pt_all),
+                         len(pagetemplates_ns_10) - len(pt_ns_10))
 
     def test_pagelanglinks(self):
         """Test Site.pagelanglinks."""
