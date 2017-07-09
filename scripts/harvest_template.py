@@ -34,7 +34,6 @@ from __future__ import absolute_import, unicode_literals
 __version__ = '$Id$'
 #
 
-import re
 import signal
 
 willstop = False
@@ -174,7 +173,7 @@ class HarvestRobot(WikidataBot):
                         else:
                             if claim.type == 'wikibase-item':
                                 # Try to extract a valid page
-                                match = re.search(pywikibot.link_regex, value)
+                                match = pywikibot.link_regex.search(value)
                                 if not match:
                                     pywikibot.output(
                                         '%s field %s value %s is not a '
