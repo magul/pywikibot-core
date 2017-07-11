@@ -2774,7 +2774,9 @@ class Category(Page):
     def articles(self, recurse=False, total=None,
                  content=False, namespaces=None, sortby=None,
                  reverse=False, starttime=None, endtime=None,
-                 startsort=None, endsort=None):
+                 startsort=None, endsort=None,
+                 startprefix=None, endprefix=None,
+                 ):
         """
         Yield all articles in the current category.
 
@@ -2805,12 +2807,22 @@ class Category(Page):
         @param endtime: if provided, only generate pages added before this
             time; not valid unless sortby="timestamp"
         @type endtime: pywikibot.Timestamp
-        @param startsort: if provided, only generate pages >= this title
-            lexically; not valid if sortby="timestamp"
+        @param startsort: if provided, only generate pages that have a
+            sortkey >= startsort; not valid if sortby="timestamp"
+            (Deprecated in MW 1.24)
         @type startsort: str
-        @param endsort: if provided, only generate pages <= this title
-            lexically; not valid if sortby="timestamp"
+        @param endsort: if provided, only generate pages that have a
+            sortkey <= endsort; not valid if sortby="timestamp"
+            (Deprecated in MW 1.24)
         @type endsort: str
+        @param startprefix: if provided, only generate pages >= this title
+            lexically; not valid if sortby="timestamp"; overrides "startsort"
+            (requires MW 1.18+)
+        @type startprefix: str
+        @param endprefix: if provided, only generate pages < this title
+            lexically; not valid if sortby="timestamp"; overrides "endsort"
+            (requires MW 1.18+)
+        @type endprefix: str
         """
         for member in self.site.categorymembers(self,
                                                 namespaces=namespaces,
@@ -2820,6 +2832,8 @@ class Category(Page):
                                                 starttime=starttime,
                                                 endtime=endtime,
                                                 startsort=startsort,
+                                                startprefix=startprefix,
+                                                endprefix=endprefix,
                                                 endsort=endsort,
                                                 member_type=['page', 'file']
                                                 ):
@@ -2840,7 +2854,9 @@ class Category(Page):
                                                starttime=starttime,
                                                endtime=endtime,
                                                startsort=startsort,
-                                               endsort=endsort
+                                               endsort=endsort,
+                                               startprefix=startprefix,
+                                               endprefix=endprefix,
                                                ):
                     yield article
                     if total is not None:
