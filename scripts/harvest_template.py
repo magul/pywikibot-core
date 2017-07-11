@@ -127,11 +127,10 @@ class HarvestRobot(WikidataBot):
 
         return linked_item
 
-    def treat(self, page, item):
+    def treat_page_and_item(self, page, item):
         """Process a single page/item."""
         if willstop:
             raise KeyboardInterrupt
-        self.current_page = page
         item.get()
         if set(self.fields.values()) <= set(item.claims.keys()):
             pywikibot.output('%s item %s has claims for all properties. '
