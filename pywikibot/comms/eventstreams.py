@@ -38,6 +38,28 @@ class EventStreams(object):
 
     It provides access to arbitrary streams of data including recent changes.
     It replaces rcstream.py implementation.
+
+    Usage:
+
+    >>> stream = EventStreams(stream='recentchange')
+    >>> change = iter(stream).next()
+    >>> change
+    {'comment': '/* wbcreateclaim-create:1| */ [[Property:P31]]: [[Q4167836]]',
+     'wiki': 'wikidatawiki', 'type': 'edit', 'server_name': 'www.wikidata.org',
+     'server_script_path': '/w', 'namespace': 0, 'title': 'Q32857263',
+     'bot': True, 'server_url': 'https://www.wikidata.org',
+     'length': {'new': 1223, 'old': 793},
+     'meta': {'domain': 'www.wikidata.org', 'partition': 0,
+              'uri': 'https://www.wikidata.org/wiki/Q32857263',
+              'offset': 288986585, 'topic': 'eqiad.mediawiki.recentchange',
+              'request_id': '1305a006-8204-4f51-a27b-0f2df58289f4',
+              'schema_uri': 'mediawiki/recentchange/1',
+              'dt': '2017-07-13T10:55:31+00:00',
+              'id': 'ca13742b-67b9-11e7-935d-141877614a33'},
+     'user': 'XXN-bot', 'timestamp': 1499943331, 'patrolled': True,
+     'id': 551158959, 'minor': False,
+     'revision': {'new': 518751558, 'old': 517180066}}
+    >>> del stream
     """
 
     def __init__(self, **kwargs):
@@ -80,7 +102,7 @@ class EventStreams(object):
                 raise NotImplementedError(
                     'No stream specified for class {0}'
                     .format(self.__class__.__name__))
-            self._url = ('{0}{1}/{2}'.format(self._site.rcstream_host(),
+            self._url = ('{0}{1}/{2}'.format(self._site.eventstreams_host(),
                                              self._site.eventstreams_path(),
                                              self._stream))
         return self._url
@@ -247,20 +269,11 @@ def site_rc_listener(site, total=None):
     @type total: int
 
     @return: pywikibot.comms.eventstream.rc_listener configured for given site
+    @raises ImportError: sseclient installation is required
     """
     if isinstance(EventSource, Exception):
-        warning('sseclient is required for EventStreams;\n'
-                'install it with "pip install sseclient"\n')
-        # fallback to old rcstream method
-        # NOTE: this will be deprecated soon
-        from pywikibot.comms.rcstream import rc_listener
-        return rc_listener(
-            wikihost=site.hostname(),
-            rchost=site.rcstream_host(),
-            rcport=site.rcstream_port(),
-            rcpath=site.rcstream_path(),
-            total=total,
-        )
+        raise ImportError('sseclient is required for EventStreams;\n'
+                          'install it with "pip install sseclient"\n')
 
     stream = EventStreams(stream='recentchange', site=site)
     stream.set_maximum_items(total)
