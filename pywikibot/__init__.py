@@ -53,7 +53,7 @@ from pywikibot.exceptions import (
     SiteDefinitionError, NoSuchSite, UnknownSite, UnknownFamily,
     UnknownExtension,
     NoUsername, UserBlocked,
-    PageRelatedError, IsRedirectPage, IsNotRedirectPage,
+    PageRelatedError, UnsupportedPage, IsRedirectPage, IsNotRedirectPage,
     PageSaveRelatedError, PageNotSaved, OtherPageSaveError,
     LockedPage, CascadeLockedPage, LockedNoPage, NoCreateError,
     EditConflict, PageDeletedConflict, PageCreatedConflict,

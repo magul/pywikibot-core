@@ -36,7 +36,7 @@ from pywikibot.comms import http
 from pywikibot.exceptions import (
     Server504Error, Server414Error, FatalServerError, NoUsername,
     Error,
-    InvalidTitle
+    InvalidTitle, UnsupportedPage
 )
 from pywikibot.tools import (
     MediaWikiVersion, deprecated, itergroup, ip, PY2, getargspec,
@@ -3156,6 +3156,8 @@ def update_page(page, pagedict, props=[]):
         if page.site.sametitle(page.title(), pagedict['title']):
             if 'invalid' in pagedict:
                 raise InvalidTitle('%s: %s' % (page, pagedict['invalidreason']))
+        if int(pagedict['ns']) < 0:
+            raise UnsupportedPage(page)
         raise AssertionError(
             "Page %s has neither 'pageid' nor 'missing' attribute" % pagedict['title'])
     page._contentmodel = pagedict.get('contentmodel')  # can be None
