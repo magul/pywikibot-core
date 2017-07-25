@@ -233,6 +233,17 @@ class TemplateRobot(ReplaceBot):
                 exceptions['inside-tags'] = ['ref', 'gallery', 'poem',
                                              'pagelist', ]
             elif self.getOption('remove'):
+                separate_line_pattern = r'^[\*\#\:]* *{0} *\n'.format(
+                    templateRegex.pattern)
+                separate_line_regex = re.compile(
+                    separate_line_pattern,
+                    re.DOTALL | re.M)
+                replacements.append((separate_line_regex, ''))
+
+                spaced_pattern = r' +{0} +'.format(templateRegex.pattern)
+                spaced_regex = re.compile(spaced_pattern, re.DOTALL)
+                replacements.append((spaced_regex, ' '))
+
                 replacements.append((templateRegex, ''))
             else:
                 template = pywikibot.Page(self.site, new, ns=10)
