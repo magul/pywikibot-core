@@ -13,6 +13,7 @@ __version__ = '$Id$'
 import collections
 import logging
 import re
+import requests
 import string
 import sys
 import warnings
@@ -1268,7 +1269,16 @@ class Family(object):
         Use L{pywikibot.tools.MediaWikiVersion} to compare version strings.
         """
         # Here we return the latest mw release for downloading
-        return '1.28.1'
+        try:
+            return self._stable_version
+        except AttributeError:
+            stable_version = requests.get(
+                'https://www.mediawiki.org/w/api.php?action=expandtemplates'
+                '&text={{MW_stable_release_number}}'
+                '&prop=wikitext&format=json'
+            ).json()['expandtemplates']['wikitext']
+            self._stable_version = stable_version
+            return stable_version
 
     def force_version(self, code):
         """
