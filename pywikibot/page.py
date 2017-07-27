@@ -3914,7 +3914,22 @@ class WikibasePage(BasePage):
         self.clear_cache()
 
     @staticmethod
-    def _normalizeLanguages(data):
+    def _normalizeLanguage(value):
+        """
+        Helper function to replace a site object with its language code.
+
+        @param value: The value to normalize
+        @type value: str|pywikibot.site.BaseSite
+
+        @return: the language string
+        @rtype: str
+        """
+        if isinstance(value, pywikibot.site.BaseSite):
+            return value.lang
+        return value
+
+    @classmethod
+    def _normalizeLanguages(cls, data):
         """
         Helper function to replace site objects with their language codes.
 
@@ -3924,11 +3939,10 @@ class WikibasePage(BasePage):
         @return: the altered dict from parameter data.
         @rtype: dict
         """
-        for key in data:
-            if isinstance(key, pywikibot.site.BaseSite):
-                data[key.lang] = data[key]
-                del data[key]
-        return data
+        return {
+            cls._normalizeLanguage(key): value
+            for key, value in data.items()
+        }
 
     @classmethod
     def _normalizeData(cls, data):
@@ -4013,17 +4027,70 @@ class WikibasePage(BasePage):
         self._content = updates['entity']
         self.get()
 
+    @allow_asynchronous
+    def setLabel(self, language, value, **kwargs):
+        """
+        Set/edit a label using the Wikibase wbsetlabel API.
+
+        To set labels in multiple languages, use the editLabels method instead.
+
+        @param language: Label language code or Site
+        @type language: str or L{pywikibot.site.BaseSite}
+        @param value: Label value string
+        @type value: str
+        @keyword asynchronous: if True, launch a separate thread to add claim
+            asynchronously
+        @type asynchronous: bool
+        @keyword callback: a callable object that will be called after the entity
+            has been updated. It must take two arguments: (1) a WikibasePage
+            object, and (2) an exception instance, which will be None if the
+            page was saved successfully. This is intended for use by bots that
+            need to keep track of which saves were successful.
+        @type callback: callable
+        """
+        self.repo.setLabel(self, self._normalizeLanguage(language), value,
+                           **kwargs)
+
     def editLabels(self, labels, **kwargs):
         """
         Edit entity labels.
 
-        Labels should be a dict, with the key
-        as a language or a site object. The
-        value should be the string to set it to.
-        You can set it to '' to remove the label.
+        @param labels: Dict with the key as a language or a site object.
+            The value should be the string to set it to. You can set it
+            to '' to remove the label.
+        @type labels: dict
         """
         data = {'labels': labels}
-        self.editEntity(data, **kwargs)
+        if len(labels.items()) == 1:
+            language, value = list(labels.items())[0]
+            self.setLabel(language, value)
+        else:
+            self.editEntity(data, **kwargs)
+
+    @allow_asynchronous
+    def setDescription(self, language, value, **kwargs):
+        """
+        Set/edit a description using the Wikibase wbsetdescription API.
+
+        To set descriptions in multiple languages, use the editDescriptions
+        method instead.
+
+        @param language: Description language code or Site
+        @type language: str or L{pywikibot.site.BaseSite}
+        @param value: Description value string
+        @type value: str
+        @keyword asynchronous: if True, launch a separate thread to add claim
+            asynchronously
+        @type asynchronous: bool
+        @keyword callback: a callable object that will be called after the entity
+            has been updated. It must take two arguments: (1) a WikibasePage
+            object, and (2) an exception instance, which will be None if the
+            page was saved successfully. This is intended for use by bots that
+            need to keep track of which saves were successful.
+        @type callback: callable
+        """
+        self.repo.setDescription(self, self._normalizeLanguage(language), value,
+                                 **kwargs)
 
     def editDescriptions(self, descriptions, **kwargs):
         """
@@ -4035,7 +4102,11 @@ class WikibasePage(BasePage):
         You can set it to '' to remove the description.
         """
         data = {'descriptions': descriptions}
-        self.editEntity(data, **kwargs)
+        if len(descriptions.items()) == 1:
+            language, value = list(descriptions.items())[0]
+            self.setDescription(language, value)
+        else:
+            self.editEntity(data, **kwargs)
 
     def editAliases(self, aliases, **kwargs):
         """

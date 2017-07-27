@@ -7928,3 +7928,57 @@ class DataSite(APISite):
         if limit is not None:
             gen.set_maximum_items(limit)
         return gen
+
+    @must_be(group='user')
+    def setLabel(self, item, language, value, bot=True, summary=None):
+        """
+        Set or edit a label.
+
+        @param item: Entity to modify
+        @type item: WikibasePage
+        @param language: Label language code
+        @type language: str
+        @param value: Label value
+        @type value: str
+        @param bot: Whether to mark the edit as a bot edit
+        @type bot: bool
+        @param summary: Edit summary
+        @type summary: str
+        """
+        params = {'action': 'wbsetlabel', 'id': item.getID(),
+                  'baserevid': item.latest_revision_id,
+                  'language': language, 'value': value,
+                  'summary': summary, 'bot': bot,
+                  'token': self.tokens['edit']}
+        req = self._simple_request(**params)
+        data = req.submit()
+        # Update the item
+        item.labels[language] = value
+        item.latest_revision_id = data['entity']['lastrevid']
+
+    @must_be(group='user')
+    def setDescription(self, item, language, value, bot=True, summary=None):
+        """
+        Set or edit a description.
+
+        @param item: Entity to modify
+        @type item: WikibasePage
+        @param language: Description language code
+        @type language: str
+        @param value: Description value
+        @type value: str
+        @param bot: Whether to mark the edit as a bot edit
+        @type bot: bool
+        @param summary: Edit summary
+        @type summary: str
+        """
+        params = {'action': 'wbsetdescription', 'id': item.getID(),
+                  'baserevid': item.latest_revision_id,
+                  'language': language, 'value': value,
+                  'summary': summary, 'bot': bot,
+                  'token': self.tokens['edit']}
+        req = self._simple_request(**params)
+        data = req.submit()
+        # Update the item
+        item.descriptions[language] = value
+        item.latest_revision_id = data['entity']['lastrevid']
