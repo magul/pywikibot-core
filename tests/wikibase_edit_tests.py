@@ -40,6 +40,27 @@ class TestWikibaseWriteGeneral(WikibaseTestCase):
         item.get(force=True)
         self.assertEqual(item.labels['en'], 'Test123')
 
+    def test_label_set_using_wbsetlabel(self):
+        """Test setting a Bokmål label using the wbsetlabel endpoint."""
+        item = pywikibot.ItemPage(self.get_repo(), 'Q68')
+        self.assertIsInstance(item, pywikibot.ItemPage)
+        item.setLabel('nb', 'Testetikett æøå')
+        self.assertEqual(item.labels['nb'], 'Testetikett æøå')
+        item.get(force=True)
+        self.assertEqual(item.labels['nb'], 'Testetikett æøå')
+
+    def test_label_set_using_wbsetlabel_with_invalid_language_code(self):
+        """Test setting a Bokmål label using wbsetlabel."""
+        item = pywikibot.ItemPage(self.get_repo(), 'Q68')
+        self.assertIsInstance(item, pywikibot.ItemPage)
+        try:
+            item.setLabel('123', 'Test')
+        except pywikibot.exceptions.OtherPageSaveError as err:
+            self.assertEqual('unknown_language', err.reason.code)
+            self.assertEqual('Unrecognized value for parameter "language": 123.',
+                             err.reason.info)
+            self.assertIsNone(item.labels.get('123'))
+
     def test_label_remove(self):
         """Test adding a Farsi and English label and removing the Farsi one."""
         testsite = self.get_repo()
@@ -58,6 +79,15 @@ class TestWikibaseWriteGeneral(WikibaseTestCase):
         item = pywikibot.ItemPage(testsite, 'Q68')
         item.get()
         self.assertNotIn('fa', item.labels.keys())
+
+    def test_description_set_using_wbsetdescription(self):
+        """Test setting a Bokmål description using wbsetdescription."""
+        item = pywikibot.ItemPage(self.get_repo(), 'Q68')
+        self.assertIsInstance(item, pywikibot.ItemPage)
+        item.setDescription('nb', 'testbeskrivelse æøå')
+        self.assertEqual(item.descriptions['nb'], 'testbeskrivelse æøå')
+        item.get(force=True)
+        self.assertEqual(item.descriptions['nb'], 'testbeskrivelse æøå')
 
     def test_alias_set(self):
         """Test setting an English alias."""
