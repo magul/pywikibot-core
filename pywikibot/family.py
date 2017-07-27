@@ -29,9 +29,7 @@ else:
 from warnings import warn
 
 import pywikibot
-
 from pywikibot import config
-
 from pywikibot.exceptions import UnknownFamily, FamilyMaintenanceWarning
 from pywikibot.tools import (
     deprecated, deprecated_args, issue_deprecation_warning,
@@ -1268,7 +1266,14 @@ class Family(object):
         Use L{pywikibot.tools.MediaWikiVersion} to compare version strings.
         """
         # Here we return the latest mw release for downloading
-        return '1.28.1'
+        version = getattr(self, '_version', None)
+        if version:
+            return version
+        version = pywikibot.Site('mediawiki', 'mediawiki').expand_text(
+            '{{MW stable release number}}'
+        )
+        self._version = version
+        return version
 
     def force_version(self, code):
         """
