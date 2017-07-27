@@ -101,9 +101,14 @@ class HarvestRobot(WikidataBot):
         link = pywikibot.Link(link_text)
         linked_page = pywikibot.Page(link)
 
-        if not linked_page.exists():
-            pywikibot.output('%s does not exist so it cannot be linked. '
-                             'Skipping.' % (linked_page))
+        try:
+            if not linked_page.exists():
+                pywikibot.output('"%s" does not exist so it cannot be linked. '
+                                 'Skipping.' % (linked_page))
+                return
+        except pywikibot.exceptions.InvalidTitle:
+            pywikibot.error('"%s" is not a valid title so it cannot be linked. '
+                            'Skipping.' % link_text)
             return
 
         if linked_page.isRedirectPage():
