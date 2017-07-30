@@ -198,7 +198,10 @@ def _get_closest_memento_url(url, when=None, timegate_uri=None):
     retry_count = 0
     while retry_count <= config2.max_retries:
         try:
-            memento_info = mc.get_memento_info(url, when)
+            memento_info = mc.get_memento_info(
+                url, when, req_uri_response=None, org_response=None,
+                tg_response=None,
+            )
             break
         except requests.ConnectionError as e:
             error = e
