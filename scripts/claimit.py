@@ -3,16 +3,12 @@
 """
 A script that adds claims to Wikidata items based on a list of pages.
 
-------------------------------------------------------------------------------
-
 Usage:
 
     python pwb.py claimit [pagegenerators] P1 Q2 P123 Q456
 
 You can use any typical pagegenerator (like categories) to provide with a
 list of pages. Then list the property-->target pairs to add.
-
-------------------------------------------------------------------------------
 
 For geographic coordinates:
 
@@ -25,8 +21,6 @@ not DMS. If [prec] is omitted, the default precision is 0.0001 degrees.
 Example:
 
     python pwb.py claimit [pagegenerators] P625 -23.3991,-52.0910,0.0001
-
-------------------------------------------------------------------------------
 
 By default, claimit.py does not add a claim if one with the same property
 already exists on the page. To override this behavior, use the 'exists' option:

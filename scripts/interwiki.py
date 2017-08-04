@@ -14,6 +14,8 @@ These command-line arguments can be used to specify which pages to work on:
 
 &pagegenerators_help;
 
+Furthermore, the following command line parameters are supported:
+
     -days:         Like -years, but runs through all date pages. Stops at
                    Dec 31. If the argument is given in the form -days:X,
                    it will start at month no. X through Dec 31. If the
