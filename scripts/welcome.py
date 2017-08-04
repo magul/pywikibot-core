@@ -431,8 +431,6 @@ class WelcomeBot(object):
 
         if globalvar.randomSign:
             self.defineSign(True)
-        if __name__ != '__main__':  # use only in module call
-            self._checkQueue = []
 
     def check_managed_sites(self):
         """Check that site is managed by welcome.py."""
