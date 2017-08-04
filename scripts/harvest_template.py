@@ -5,10 +5,11 @@ Template harvesting script.
 
 Usage:
 
-* python pwb.py harvest_template -transcludes:"..." \
-    template_parameter PID [template_parameter PID]
-* python pwb.py harvest_template [generators] -template:"..." \
-    template_parameter PID [template_parameter PID]
+    python pwb.py harvest_template -transcludes:"..." \
+        template_parameter PID [template_parameter PID]
+
+    python pwb.py harvest_template [generators] -template:"..." \
+        template_parameter PID [template_parameter PID]
 
 This will work on all pages that transclude the template in the article
 namespace
