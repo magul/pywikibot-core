@@ -15,7 +15,7 @@ threshold are then moved to another page (the archive), which can be named
 either basing on the thread's name or then name can contain a counter which
 will be incremented when the archive reaches a certain size.
 
-Trancluded template may contain the following parameters:
+Trancluded template may contain the following parameters\:
 
 {{TEMPLATE_PAGE
 |archive             =
