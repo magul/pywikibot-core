@@ -2978,6 +2978,16 @@ class APISite(BaseSite):
                                 coprimary='all')
         self._update_page(page, query)
 
+    def loadpageimages(self, page):
+        """Load [[mw:Extension:PageImages]] info."""
+        title = page.title(withSection=False)
+        query = self._generator(api.PropertyGenerator,
+                                type_arg="pageimages",
+                                titles=title.encode(self.encoding()),
+                                piprop=['name'],
+                                pithumbsize='50')
+        self._update_page(page, query)
+
     def loadpageprops(self, page):
         """Load page props for the given page."""
         title = page.title(withSection=False)

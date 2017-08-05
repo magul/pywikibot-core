@@ -162,7 +162,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         '_text', '_pageid', '_catinfo', '_templates', '_protection',
         '_contentmodel', '_langlinks', '_isredir', '_coords',
         '_preloadedtext', '_timestamp', '_applicable_protections',
-        '_flowinfo', '_quality', '_pageprops', '_revid', '_quality_text'
+        '_flowinfo', '_quality', '_pageprops', '_revid', '_quality_text',
+        '_pageimage'
     )
 
     def __init__(self, source, title=u"", ns=0):
@@ -1621,6 +1622,21 @@ class BasePage(UnicodeMixin, ComparableMixin):
             return self._coords[0] if len(self._coords) > 0 else None
         else:
             return self._coords
+
+    def pageImage(self):
+        """
+        Return a most appropriate image on the page.
+
+        Uses the MediaWiki extension PageImages.
+
+        @return: A FilePage object
+        @rtype: FilePage
+        """
+        if not hasattr(self, '_pageimage'):
+            self._pageimage = None
+            self.site.loadpageimages(self)
+
+        return self._pageimage
 
     def getRedirectTarget(self):
         """
