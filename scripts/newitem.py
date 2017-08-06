@@ -109,6 +109,10 @@ class NewItemRobot(WikidataBot):
                 u'Page creation of %s on %s is too recent. Skipping.'
                 % (page, page.editTime().isoformat()))
             return
+        if page.namespace() == 14:
+            if page.isCategoryRedirect():
+                pywikibot.output(u'%s is a category redirect. Skipping.' % page)
+                return
 
         if page.langlinks():
             # FIXME: Implement this
