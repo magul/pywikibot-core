@@ -550,6 +550,19 @@ class TestPageObject(DefaultSiteTestCase):
         page_d3 = pywikibot.Page(site, 'User:Sn1per/ProtectTest1/test/test')
         self.assertEqual(page_d3.depth, 3)
 
+    def test_page_image(self):
+        """
+        Test C{Page.page_image} function.
+
+        Since we are not sure what the wiki will return, we mainly test types
+        """
+        site = self.get_site()
+        mainpage = self.get_mainpage()
+        file = pywikibot.FilePage(site, u"File:Jean-Léon Gérôme 003.jpg")
+        self.assertIsInstance(mainpage.page_image(), pywikibot.FilePage)
+        # for file pages, the API should return the file itself
+        self.assertEqual(file.page_image(), file)
+
 
 class TestPageDeprecation(DefaultSiteTestCase, DeprecationTestCase):
 
