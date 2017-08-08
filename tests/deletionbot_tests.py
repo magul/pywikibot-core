@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for scripts/delete.py."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -123,7 +123,5 @@ def undelete_dummy(self, reason):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

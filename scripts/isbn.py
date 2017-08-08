@@ -47,18 +47,15 @@ from functools import partial
 
 import pywikibot
 from pywikibot import i18n, pagegenerators, textlib, Bot, WikidataBot
+from pywikibot.tools import suppress
 
 try:
     import stdnum.isbn
 except ImportError:
-    try:
+    with suppress(ImportError):
         import isbnlib
-    except ImportError:
-        pass
-    try:
+    with suppress(ImportError):
         import isbn_hyphenate
-    except ImportError:
-        pass
 
 docuReplacements = {
     '&params;': pagegenerators.parameterHelp,

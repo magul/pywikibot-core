@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test tools.chars package."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -11,7 +11,7 @@ import unicodedata
 
 from distutils.version import StrictVersion
 
-from pywikibot.tools import chars
+from pywikibot.tools import chars, suppress
 
 from tests.aspects import unittest, TestCase
 
@@ -47,7 +47,5 @@ class CharsTestCase(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

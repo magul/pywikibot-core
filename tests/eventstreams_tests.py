@@ -14,6 +14,7 @@ import mock
 from pywikibot.comms.eventstreams import EventStreams
 from pywikibot import config
 from pywikibot.family import WikimediaFamily
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, TestCase, DefaultSiteTestCase
 
@@ -222,7 +223,5 @@ class TestEventStreamsFilterTests(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

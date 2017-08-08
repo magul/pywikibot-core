@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """Tests for deprecation tools."""
 #
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.tools import (
-    deprecated, deprecate_arg, deprecated_args, add_full_name, remove_last_args
+    deprecated, deprecate_arg, deprecated_args, add_full_name,
+    remove_last_args, suppress
 )
 from tests.aspects import unittest, DeprecationTestCase
 
@@ -807,7 +808,5 @@ class DeprecatorTestCase(DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

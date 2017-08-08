@@ -11,7 +11,7 @@ import pywikibot.site
 
 from pywikibot.exceptions import UnknownFamily
 from pywikibot.family import Family, SingleSiteFamily
-from pywikibot.tools import StringTypes as basestring
+from pywikibot.tools import suppress, StringTypes as basestring
 
 from tests.aspects import (
     unittest,
@@ -299,7 +299,5 @@ class TestOldFamilyMethod(DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

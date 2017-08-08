@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test textlib module."""
 #
-# (C) Pywikibot team, 2011-2016
+# (C) Pywikibot team, 2011-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -22,7 +22,7 @@ from pywikibot.textlib import _MultiTemplateMatchBuilder
 
 from pywikibot import config, UnknownSite
 from pywikibot.site import _IWEntry
-from pywikibot.tools import OrderedDict
+from pywikibot.tools import OrderedDict, suppress
 
 from tests.aspects import (
     unittest, require_modules, TestCase, DefaultDrySiteTestCase,
@@ -1533,7 +1533,5 @@ class TestStarList(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

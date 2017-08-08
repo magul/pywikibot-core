@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test cases for the SPARQL API."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 import pywikibot.data.sparql as sparql
-from pywikibot.tools import UnicodeType
+from pywikibot.tools import UnicodeType, suppress
 
 from tests.aspects import unittest, TestCase, WikidataTestCase
 
@@ -216,7 +216,5 @@ class URITests(Shared.SparqlNodeTests):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

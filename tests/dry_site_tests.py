@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests against a fake Site object."""
 #
-# (C) Pywikibot team, 2012-2014
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -288,4 +288,5 @@ class TestNeedVersion(DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

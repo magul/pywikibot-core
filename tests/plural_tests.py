@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """Test plural module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot import plural
+from pywikibot.tools import suppress
 
 from tests.aspects import (
     unittest, TestCase, MetaTestCaseClass,
@@ -67,7 +68,5 @@ class TestPluralRules(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

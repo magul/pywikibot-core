@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """API tests which do not interact with a site."""
 #
-# (C) Pywikibot team, 2012-2014
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -474,4 +474,5 @@ class QueryGenTests(DefaultDrySiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

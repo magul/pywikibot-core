@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests Python features."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -13,7 +13,7 @@ try:
 except ImportError:
     unicodedata2 = None
 
-from pywikibot.tools import PYTHON_VERSION
+from pywikibot.tools import PYTHON_VERSION, suppress
 
 from tests.aspects import TestCase, unittest
 from tests.utils import expected_failure_if
@@ -63,7 +63,5 @@ class PythonTestCase(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

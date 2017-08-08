@@ -24,6 +24,7 @@ from pywikibot import InvalidTitle
 from pywikibot.tools import (
     MediaWikiVersion,
     PY2,
+    suppress,
     StringTypes as basestring,
     UnicodeType as unicode,
 )
@@ -1098,7 +1099,5 @@ class HtmlEntity(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

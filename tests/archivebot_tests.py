@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for archivebot scripts."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -13,7 +13,7 @@ import pywikibot
 import pywikibot.page
 
 from pywikibot.textlib import TimeStripper
-from pywikibot.tools import StringTypes as basestring
+from pywikibot.tools import suppress, StringTypes as basestring
 
 from scripts import archivebot
 
@@ -229,7 +229,5 @@ class TestArchiveBotAfterDateUpdate(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for archivebot.py/Timestripper."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -11,6 +11,7 @@ import datetime
 import re
 
 from pywikibot.textlib import TimeStripper, tzoneFixedOffset
+from pywikibot.tools import suppress
 
 from tests.aspects import (
     unittest,
@@ -429,7 +430,5 @@ class TestTimeStripperDoNotArchiveUntil(TestTimeStripperCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

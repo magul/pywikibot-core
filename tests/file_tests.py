@@ -11,7 +11,7 @@ import os
 
 import pywikibot
 
-from pywikibot.tools import UnicodeType as unicode
+from pywikibot.tools import suppress, UnicodeType as unicode
 
 from tests import join_images_path
 
@@ -283,7 +283,5 @@ class TestFilePageDownload(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

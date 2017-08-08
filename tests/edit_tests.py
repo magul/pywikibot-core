@@ -13,7 +13,7 @@ import pywikibot
 
 from pywikibot import config
 from pywikibot import page_put_queue
-from pywikibot.tools import MediaWikiVersion
+from pywikibot.tools import MediaWikiVersion, suppress
 
 from tests.aspects import unittest, TestCase
 from tests.oauth_tests import OAuthSiteTestCase
@@ -217,7 +217,5 @@ class OAuthEditTest(OAuthSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

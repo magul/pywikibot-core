@@ -2,8 +2,8 @@
 """Module to determine the pywikibot version (tag, revision and date)."""
 #
 # (C) Merlijn 'valhallasw' van Deen, 2007-2014
-# (C) xqt, 2010-2016
-# (C) Pywikibot team, 2007-2016
+# (C) xqt, 2010-2017
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -36,7 +36,7 @@ except ImportError:
 import pywikibot
 
 from pywikibot import config2 as config
-from pywikibot.tools import deprecated, PY2
+from pywikibot.tools import deprecated, suppress, PY2
 
 if not PY2:
     basestring = (str, )
@@ -64,12 +64,10 @@ def getversion(online=True):
     data['cmp_ver'] = 'n/a'
 
     if online:
-        try:
+        with suppress(Exception):
             hsh2 = getversion_onlinerepo()
             hsh1 = data['hsh']
             data['cmp_ver'] = 'OUTDATED' if hsh1 != hsh2 else 'ok'
-        except Exception:
-            pass
 
     data['hsh'] = data['hsh'][:7]  # make short hash from full hash
     return '%(tag)s (%(hsh)s, %(rev)s, %(date)s, %(cmp_ver)s)' % data
@@ -403,10 +401,8 @@ def getfileversion(filename):
         with codecs.open(fn, 'r', "utf-8") as f:
             for line in f.readlines():
                 if line.find('__version__') == 0:
-                    try:
+                    with suppress(Exception):
                         exec(line)
-                    except:
-                        pass
                     break
         stat = os.stat(fn)
         mtime = datetime.datetime.fromtimestamp(stat.st_mtime).isoformat(' ')
