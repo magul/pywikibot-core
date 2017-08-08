@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the category bot script."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -70,7 +70,5 @@ class CfdActions(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

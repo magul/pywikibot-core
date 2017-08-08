@@ -73,7 +73,7 @@ from pywikibot.tools import (
     redirect_func, issue_deprecation_warning,
     manage_wrapping, MediaWikiVersion, first_upper, normalize_username,
     merge_unique_dicts,
-    PY2,
+    PY2, suppress,
     filter_unique,
 )
 from pywikibot.tools.ip import is_IP
@@ -2067,14 +2067,14 @@ class APISite(BaseSite):
         # check whether a login cookie already exists for this user
         # or check user identity when OAuth enabled
         self._loginstatus = LoginStatus.IN_PROGRESS
-        try:
+
+        # APIError may occur if you are not logged in (no API read permissions)
+        with suppress(api.APIError):
             self.getuserinfo(force=True)
             if self.userinfo['name'] == self._username[sysop] and \
                self.logged_in(sysop):
                 return
-        # May occur if you are not logged in (no API read permissions).
-        except api.APIError:
-            pass
+
         if self.is_oauth_token_available():
             if sysop:
                 raise NoUsername('No sysop is permitted with OAuth')
@@ -4872,10 +4872,8 @@ class APISite(BaseSite):
         if not self.logged_in():
             self.login()
         if "deletedhistory" not in self.userinfo['rights']:
-            try:
+            with suppress(NoUsername):
                 self.login(True)
-            except NoUsername:
-                pass
             if "deletedhistory" not in self.userinfo['rights']:
                 raise Error(
                     "deletedrevs: "
@@ -4883,10 +4881,8 @@ class APISite(BaseSite):
                     % self.user())
         if get_text:
             if "undelete" not in self.userinfo['rights']:
-                try:
+                with suppress(NoUsername):
                     self.login(True)
-                except NoUsername:
-                    pass
                 if "undelete" not in self.userinfo['rights']:
                     raise Error(
                         "deletedrevs: "

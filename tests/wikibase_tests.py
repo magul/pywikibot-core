@@ -22,7 +22,7 @@ import pywikibot
 from pywikibot import pagegenerators
 from pywikibot.page import WikibasePage, ItemPage, PropertyPage, Page
 from pywikibot.site import Namespace, NamespacesDict
-from pywikibot.tools import MediaWikiVersion
+from pywikibot.tools import MediaWikiVersion, suppress
 
 from tests import join_pages_path
 from tests.aspects import (
@@ -1961,7 +1961,5 @@ class TestDeprecatedDataSiteMethods(WikidataTestCase, DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

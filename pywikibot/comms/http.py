@@ -58,6 +58,7 @@ from pywikibot.tools import (
     file_mode_checker,
     issue_deprecation_warning,
     PY2,
+    suppress,
     StringTypes,
 )
 
@@ -253,17 +254,13 @@ def fake_user_agent():
 
     @rtype: str
     """
-    try:
+    with suppress(ImportError):
         import browseragents
         return browseragents.core.random()
-    except ImportError:
-        pass
 
-    try:
+    with suppress(ImportError):
         import fake_useragent
         return fake_useragent.fake.UserAgent().random
-    except ImportError:
-        pass
 
     raise ImportError(  # Actually complain when neither is installed.
         'Either browseragents or fake_useragent must be installed to get fake UAs.')

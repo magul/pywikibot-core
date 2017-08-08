@@ -8,7 +8,7 @@ unless something has broken badly.
 These tests use special code 'write = -1' for edit failures.
 """
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -183,7 +183,5 @@ class TestWikibaseSaveTest(WikibaseTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -9,6 +9,7 @@ from __future__ import absolute_import, unicode_literals
 __version__ = '$Id$'
 
 import collections
+import contextlib
 import gzip
 import hashlib
 import inspect
@@ -153,6 +154,18 @@ else:
     Counter = collections.Counter
     OrderedDict = collections.OrderedDict
     count = itertools.count
+
+if PYTHON_VERSION < (3, 4):
+
+    @contextlib.contextmanager
+    def suppress(*exceptions):
+        """Context manager method to ignore exceptions."""
+        try:
+            yield
+        except exceptions:
+            pass
+else:
+    suppress = contextlib.suppress
 
 
 def has_module(module):
@@ -687,13 +700,11 @@ def islice_with_ellipsis(iterable, *args, **kwargs):
     """
     s = slice(*args)
     marker = kwargs.pop('marker', '…')
-    try:
+    with suppress(KeyError):
         k, v = kwargs.popitem()
         raise TypeError(
             "islice_with_ellipsis() take only 'marker' as keyword arg, not %s"
             % k)
-    except KeyError:
-        pass
 
     _iterable = iter(iterable)
     for el in itertools.islice(_iterable, *args):
@@ -1697,7 +1708,7 @@ class ModuleDeprecationWrapper(types.ModuleType):
             if self._deprecated[attr][1]:
                 return self._deprecated[attr][1]
             elif '.' in self._deprecated[attr][0]:
-                try:
+                with suppress(Exception):
                     package_name = self._deprecated[attr][0].split('.', 1)[0]
                     module = __import__(package_name)
                     context = {package_name: module}
@@ -1708,8 +1719,6 @@ class ModuleDeprecationWrapper(types.ModuleType):
                         self._deprecated[attr][2]
                     )
                     return replacement
-                except Exception:
-                    pass
         return getattr(self._module, attr)
 
 

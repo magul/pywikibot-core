@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test for site detection."""
 #
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -273,7 +273,5 @@ class OtherSiteTestCase(SiteDetectionTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

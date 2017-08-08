@@ -57,3 +57,8 @@ class TestGetSDTemplateNoSysop(DefaultSiteTestCase):
                 bot = RedirectRobot('broken', **options)
         w.assert_called_with('No speedy deletion template "n" available.')
         self.assertEqual(bot.sdtemplate, None)
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

@@ -109,7 +109,7 @@ This will move all pages in the category US to the category United States.
 # (C) leogregianin, 2004-2008
 # (C) Ben McIlwain (CydeWeys), 2006-2015
 # (C) Anreas J Schwab, 2007
-# (C) xqt, 2009-2016
+# (C) xqt, 2009-2017
 # (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
@@ -132,7 +132,7 @@ from pywikibot.bot import (
 from pywikibot.tools import (
     deprecated_args, deprecated, ModuleDeprecationWrapper, open_archive
 )
-from pywikibot.tools.formatter import color_format
+from pywikibot.tools.formatter import color_format, suppress
 
 if sys.version_info[0] > 2:
     basestring = (str, )
@@ -272,10 +272,8 @@ class CategoryDatabase(object):
             }
             # store dump to disk in binary format
             with open_archive(filename, 'wb') as f:
-                try:
+                with suppress(pickle.PicklingError):
                     pickle.dump(databases, f, protocol=config.pickle_protocol)
-                except pickle.PicklingError:
-                    pass
         else:
             try:
                 os.remove(filename)

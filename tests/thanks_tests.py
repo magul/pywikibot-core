@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for thanks-related code."""
 #
-# (C) Pywikibot team, 2016-17
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -105,3 +105,8 @@ class TestThankRevisionErrors(TestCase):
         for invalid_revid in invalid_revids:
             self.assertAPIError('invalidrevision', None, Revision._thank,
                                 invalid_revid, site, source='pywikibot test')
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

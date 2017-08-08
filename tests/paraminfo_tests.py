@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test confirming paraminfo contains expected values."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -247,4 +247,5 @@ class WikibaseKnownTypesTests(KnownTypesTestBase,
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

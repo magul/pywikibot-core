@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for data_ingestion.py script."""
 #
-# (C) Pywikibot team, 2012-2015
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -123,4 +123,5 @@ class TestDataIngestionBot(ScriptMainTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

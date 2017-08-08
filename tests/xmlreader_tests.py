@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for xmlreader module."""
 #
-# (C) Pywikibot team, 2009-2014
+# (C) Pywikibot team, 2009-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -126,7 +126,5 @@ class ExportDotTenTestCase(XmlReaderTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

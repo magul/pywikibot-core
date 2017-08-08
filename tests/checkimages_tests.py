@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Unit tests for checkimages script."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -32,4 +32,5 @@ class TestSettings(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

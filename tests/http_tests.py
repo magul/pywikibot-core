@@ -19,6 +19,7 @@ from pywikibot import config2 as config
 from pywikibot.comms import http, threadedhttp
 from pywikibot.tools import (
     PYTHON_VERSION,
+    suppress,
     UnicodeType as unicode,
 )
 
@@ -635,7 +636,5 @@ class DataBodyParameterTestCase(HttpbinTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

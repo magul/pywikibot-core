@@ -15,7 +15,7 @@ from __future__ import absolute_import, unicode_literals
 import time
 
 import pywikibot
-from pywikibot.tools import MediaWikiVersion
+from pywikibot.tools import MediaWikiVersion, suppress
 
 from tests.aspects import unittest, WikibaseTestCase
 
@@ -439,7 +439,5 @@ class TestWikibaseRemoveQualifier(WikibaseTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

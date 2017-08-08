@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the date module."""
 #
-# (C) Pywikibot team, 2012-2015
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -96,7 +96,5 @@ class TestMonthDelta(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

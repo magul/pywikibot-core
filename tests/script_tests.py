@@ -14,6 +14,7 @@ from pywikibot.tools import (
     PY2,
     PYTHON_VERSION,
     StringTypes,
+    suppress,
 )
 
 from tests import join_root_path
@@ -392,12 +393,10 @@ class TestScriptHelp(PwbTestCase):
 
     _expected_failures = failed_dep_script_list
     # -help supported not explicitly
-    try:
+    with suppress(ValueError):
         _expected_failures.remove('imageharvest')
-    except ValueError:
-        pass
-    _allowed_failures = []
 
+    _allowed_failures = []
     _argument = 'help'
     _results = None
 
@@ -438,7 +437,5 @@ class TestScriptSimulate(DefaultSiteTestCase, PwbTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

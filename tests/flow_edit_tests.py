@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Edit tests for the flow module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 from pywikibot.exceptions import LockedPage
 from pywikibot.flow import Board, Topic, Post
-from pywikibot.tools import UnicodeType as unicode
+from pywikibot.tools import suppress, UnicodeType as unicode
 
 from tests.aspects import TestCase
 
@@ -320,3 +320,8 @@ class TestFlowEditFailure(TestCase):
         self.assertRaises(LockedPage, topic_root.reply, content, 'wikitext')
         topic_reply = topic.root.replies(force=True)[0]
         self.assertRaises(LockedPage, topic_reply.reply, content, 'wikitext')
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with suppress(SystemExit):
+        unittest.main()

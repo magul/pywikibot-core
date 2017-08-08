@@ -262,4 +262,5 @@ def editEntity_dummy(self, data=None, **kwargs):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()

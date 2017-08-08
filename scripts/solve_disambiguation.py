@@ -83,7 +83,7 @@ import re
 
 import pywikibot
 from pywikibot import editor as editarticle
-from pywikibot.tools import first_lower, first_upper as firstcap
+from pywikibot.tools import suppress, first_lower, first_upper as firstcap
 from pywikibot import pagegenerators, config, i18n
 from pywikibot.bot import (
     Bot, QuitKeyboardInterrupt,
@@ -459,20 +459,17 @@ class PrimaryIgnoreManager(object):
         """
         filename = os.path.join(
             folder, self.disambPage.title(as_filename=True) + '.txt')
-        try:
+        with suppress(IOError):
             # The file is stored in the disambiguation/ subdir.
             # Create if necessary.
-            f = codecs.open(filename, 'r', 'utf-8')
-            for line in f.readlines():
-                # remove trailing newlines and carriage returns
-                while line[-1] in ['\n', '\r']:
-                    line = line[:-1]
-                # skip empty lines
-                if line != '':
-                    self.ignorelist.append(line)
-            f.close()
-        except IOError:
-            pass
+            with codecs.open(filename, 'r', 'utf-8') as f:
+                for line in f.readlines():
+                    # remove trailing newlines and carriage returns
+                    while line[-1] in ['\n', '\r']:
+                        line = line[:-1]
+                    # skip empty lines
+                    if line:
+                        self.ignorelist.append(line)
 
     def isIgnored(self, refPage):
         """Return if refPage is to be ignored.
@@ -495,13 +492,10 @@ class PrimaryIgnoreManager(object):
             filename = config.datafilepath(
                 'disambiguations',
                 self.disambPage.title(asUrl=True) + '.txt')
-            try:
+            with suppress(IOError):
                 # Open file for appending. If none exists, create a new one.
-                f = codecs.open(filename, 'a', 'utf-8')
-                f.write(refPage.title(asUrl=True) + '\n')
-                f.close()
-            except IOError:
-                pass
+                with codecs.open(filename, 'a', 'utf-8') as f:
+                    f.write(refPage.title(asUrl=True) + '\n')
 
 
 class AddAlternativeOption(OutputProxyOption):

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the tests package."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -50,7 +50,5 @@ class TestPageAssert(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

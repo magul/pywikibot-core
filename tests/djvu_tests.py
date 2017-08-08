@@ -14,7 +14,7 @@ import os
 import subprocess
 
 from pywikibot.tools.djvu import DjVuFile
-from pywikibot.tools import PY2
+from pywikibot.tools import PY2, suppress
 
 from tests import join_data_path, create_path_func
 from tests.aspects import unittest, TestCase
@@ -141,7 +141,5 @@ class TestDjVuFile(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

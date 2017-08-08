@@ -74,7 +74,7 @@ from pywikibot.tools import (
     add_full_name, manage_wrapping,
     ModuleDeprecationWrapper as _ModuleDeprecationWrapper,
     first_upper, redirect_func, remove_last_args, _NotImplementedWarning,
-    OrderedDict, Counter,
+    OrderedDict, Counter, suppress,
 )
 from pywikibot.tools.ip import ip_regexp
 from pywikibot.tools.ip import is_IP
@@ -1371,10 +1371,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         """Clear the cached attributes of the page."""
         self._revisions = {}
         for attr in self._cache_attrs:
-            try:
+            with suppress(AttributeError):
                 delattr(self, attr)
-            except AttributeError:
-                pass
 
     def purge(self, **kwargs):
         """
@@ -5054,11 +5052,10 @@ class Claim(Property):
                 precision = coord_args[2]
             else:
                 precision = 0.0001  # Default value (~10 m at equator)
-            try:
+
+            with suppress(TypeError):
                 if self.target.precision is not None:
                     precision = max(precision, self.target.precision)
-            except TypeError:
-                pass
 
             return (abs(self.target.lat - coord_args[0]) <= precision and
                     abs(self.target.lon - coord_args[1]) <= precision)
@@ -5977,6 +5974,6 @@ def url2unicode(title, encodings='utf-8'):
         except UnicodeError as ex:
             if not firstException:
                 firstException = ex
-            pass
+
     # Couldn't convert, raise the original exception
     raise firstException

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test plural module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -67,7 +67,5 @@ class TestPluralRules(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with pywikibot.tools.suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass
