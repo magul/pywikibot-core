@@ -73,6 +73,7 @@ from pywikibot.tools import (
     normalize_username,
     MediaWikiVersion,
     redirect_func,
+    suppress,
     ModuleDeprecationWrapper as _ModuleDeprecationWrapper,
     PY2,
     UnicodeMixin,
@@ -1326,11 +1327,9 @@ def _flush(stop=True):
                 return
 
     # only need one drop() call because all throttles use the same global pid
-    try:
+    with suppress(IndexError):
         list(_sites.values())[0].throttle.drop()
         log(u"Dropped throttle(s).")
-    except IndexError:
-        pass
 
 
 atexit.register(_flush)
@@ -1352,10 +1351,8 @@ def async_request(request, *args, **kwargs):
     if not _putthread.isAlive():
         try:
             page_put_queue.mutex.acquire()
-            try:
+            with suppress(AssertionError, RuntimeError):
                 _putthread.start()
-            except (AssertionError, RuntimeError):
-                pass
         finally:
             page_put_queue.mutex.release()
     page_put_queue.put((request, args, kwargs))

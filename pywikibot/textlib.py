@@ -45,7 +45,8 @@ from pywikibot.tools import (
     OrderedDict,
     StringTypes,
     UnicodeType,
-    issue_deprecation_warning
+    issue_deprecation_warning,
+    suppress
 )
 
 # cache for replaceExcept to avoid recompile or regexes each call
@@ -399,10 +400,8 @@ def replaceExcept(text, old, new, exceptions, caseInsensitive=False,
                 last = 0
                 for group_match in group_regex.finditer(new):
                     group_id = group_match.group(1) or group_match.group(2)
-                    try:
+                    with suppress(ValueError):
                         group_id = int(group_id)
-                    except ValueError:
-                        pass
                     try:
                         replacement += new[last:group_match.start()]
                         replacement += match.group(group_id) or ''

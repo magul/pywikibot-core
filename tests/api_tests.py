@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """API test module."""
 #
-# (C) Pywikibot team, 2007-2016
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -19,7 +19,7 @@ import pywikibot.site
 from pywikibot.throttle import Throttle
 from pywikibot.tools import (
     MediaWikiVersion,
-    PY2,
+    PY2, suppress,
     UnicodeType,
 )
 
@@ -1082,7 +1082,5 @@ class TestLagpattern(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

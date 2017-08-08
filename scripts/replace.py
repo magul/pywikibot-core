@@ -162,6 +162,7 @@ from pywikibot.tools import (
     deprecated,
     deprecated_args,
     issue_deprecation_warning,
+    suppress,
 )
 
 from pywikibot.tools.formatter import color_format
@@ -457,13 +458,11 @@ class XmlDumpReplacePageGenerator(object):
                     yield pywikibot.Page(self.site, entry.title)
 
         except KeyboardInterrupt:
-            try:
+            with suppress(NameError):
                 if not self.skipping:
                     pywikibot.output(
                         u'To resume, use "-xmlstart:%s" on the command line.'
                         % entry.title)
-            except NameError:
-                pass
 
     def isTitleExcepted(self, title):
         """

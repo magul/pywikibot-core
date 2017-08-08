@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Classes for detecting a MediaWiki site."""
 #
-# (C) Pywikibot team, 2010-2015
+# (C) Pywikibot team, 2010-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -19,7 +19,7 @@ import pywikibot
 
 from pywikibot.comms.http import fetch
 from pywikibot.exceptions import ServerError
-from pywikibot.tools import MediaWikiVersion, PY2, PYTHON_VERSION
+from pywikibot.tools import MediaWikiVersion, PY2, PYTHON_VERSION, suppress
 
 if not PY2:
     from html.parser import HTMLParser
@@ -134,11 +134,9 @@ class MWSite(object):
             pywikibot.log(
                 'wgEnableApi is not enabled in HTML of %s'
                 % self.fromurl)
-        try:
+        with suppress(AttributeError):
             self.version = MediaWikiVersion(
                 self.REwgVersion.search(data).group(1))
-        except AttributeError:
-            pass
 
         self.server = self.REwgServer.search(data).groups()[0]
         self.scriptpath = self.REwgScriptPath.search(data).groups()[0]
@@ -289,11 +287,9 @@ class WikiHTMLPageParser(HTMLParser):
         if tag == "meta":
             if attrs.get('name') == 'generator':
                 self.generator = attrs["content"]
-                try:
+                with suppress(ValueError):
                     self.version = MediaWikiVersion.from_generator(
                         self.generator)
-                except ValueError:
-                    pass
         elif tag == 'link' and 'rel' in attrs and 'href' in attrs:
             if attrs['rel'] in ('EditURI', 'stylesheet', 'search'):
                 self.set_api_url(attrs['href'])
