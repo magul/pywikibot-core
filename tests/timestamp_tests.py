@@ -12,6 +12,7 @@ import datetime
 import re
 
 from pywikibot import Timestamp
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, TestCase
 
@@ -132,7 +133,5 @@ class TestTimestamp(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

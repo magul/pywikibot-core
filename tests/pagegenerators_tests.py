@@ -30,7 +30,7 @@ from pywikibot.pagegenerators import (
     CategorizedPageGenerator
 )
 
-from pywikibot.tools import has_module
+from pywikibot.tools import has_module, suppress
 
 from tests import join_data_path
 from tests.aspects import (
@@ -1486,7 +1486,5 @@ class TestUnconnectedPageGenerator(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test confirming paraminfo contains expected values."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 from pywikibot.family import WikimediaFamily
 from pywikibot.page import Claim, Property
 from pywikibot.site import DataSite
-from pywikibot.tools import MediaWikiVersion
+from pywikibot.tools import MediaWikiVersion, suppress
 
 from tests.aspects import (
     unittest,
@@ -247,4 +247,5 @@ class WikibaseKnownTypesTests(KnownTypesTestBase,
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with suppress(SystemExit):
+        unittest.main()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test logentries module."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -14,6 +14,7 @@ import pywikibot
 from pywikibot.logentries import LogEntryFactory
 from pywikibot.tools import (
     MediaWikiVersion,
+    suppress,
     UnicodeType as unicode,
 )
 
@@ -304,7 +305,5 @@ class TestDeprecatedMethods(TestLogentriesBase, DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

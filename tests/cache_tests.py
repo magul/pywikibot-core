@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """API Request cache tests."""
 #
-# (C) Pywikibot team, 2012-2014
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.site import BaseSite
+from pywikibot.tools import suppress
 
 import scripts.maintenance.cache as cache
 
@@ -39,4 +40,5 @@ class RequestCacheTests(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with suppress(SystemExit):
+        unittest.main()

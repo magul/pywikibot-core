@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """Bot tests for input_choice options."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot import bot, bot_choice
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, TestCase
 
@@ -119,7 +120,5 @@ class TestChoiceOptions(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

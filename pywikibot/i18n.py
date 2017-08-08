@@ -41,7 +41,8 @@ from pywikibot import config
 from pywikibot.exceptions import Error
 from pywikibot.plural import plural_rules
 from pywikibot.tools import (
-    deprecated, deprecated_args, issue_deprecation_warning, StringTypes)
+    deprecated, deprecated_args, issue_deprecation_warning, StringTypes,
+    suppress)
 
 PLURAL_PATTERN = r'{{PLURAL:(?:%\()?([^\)]*?)(?:\)d)?\|(.*?)}}'
 
@@ -517,11 +518,10 @@ def translate(code, xdict, parameters=None, fallback=False):
     # else we check for PLURAL variants
     trans = _extract_plural(code, trans, plural_parameters)
     if parameters:
-        try:
+        # On error: parameter is for PLURAL variants only,
+        # don't change the string
+        with suppress(KeyError, TypeError):
             return trans % parameters
-        except (KeyError, TypeError):
-            # parameter is for PLURAL variants only, don't change the string
-            pass
     return trans
 
 
@@ -645,10 +645,8 @@ def twtranslate(source, twtitle, parameters=None, fallback=True,
         # This is called due to the old twntranslate function which ignored
         # KeyError. Instead only_plural should be used.
         if isinstance(parameters.source, dict):
-            try:
+            with suppress(KeyError):
                 trans %= parameters.source
-            except KeyError:
-                pass
         parameters = None
 
     if parameters is not None and not isinstance(parameters, Mapping):

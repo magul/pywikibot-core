@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
 """Tests for thanks-related code."""
 #
-# (C) Pywikibot team, 2016-17
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.page import Page, Revision, User
+from pywikibot.tools import suppress
 
-from tests.aspects import TestCase
+from tests.aspects import TestCase, unittest
 
 
 NO_THANKABLE_REVS = 'There is no recent change which can be test thanked.'
@@ -105,3 +106,8 @@ class TestThankRevisionErrors(TestCase):
         for invalid_revid in invalid_revids:
             self.assertAPIError('invalidrevision', None, Revision._thank,
                                 invalid_revid, site, source='pywikibot test')
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with suppress(SystemExit):
+        unittest.main()

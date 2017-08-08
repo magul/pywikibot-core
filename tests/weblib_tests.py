@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Weblib test module."""
 #
-# (C) Pywikibot team, 2014-2015
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from pywikibot.tools import PY2
+from pywikibot.tools import PY2, suppress
 
 if not PY2:
     from urllib.parse import urlparse
@@ -89,7 +89,5 @@ class TestWebCite(DeprecationTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

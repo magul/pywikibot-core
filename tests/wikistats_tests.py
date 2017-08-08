@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from pywikibot.data.wikistats import WikiStats, csv
-from pywikibot.tools import UnicodeType
+from pywikibot.tools import suppress, UnicodeType
 
 from tests.aspects import unittest, TestCase
 
@@ -96,7 +96,5 @@ class WikiStatsTestCase(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

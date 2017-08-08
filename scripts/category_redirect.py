@@ -38,6 +38,7 @@ from datetime import timedelta
 import pywikibot
 
 from pywikibot import i18n, pagegenerators, config
+from pywikibot.tools import suppress
 
 if sys.version_info[0] > 2:
     import pickle as cPickle
@@ -332,18 +333,14 @@ class CategoryRedirectBot(pywikibot.Bot):
             if cat_title not in record:
                 # make sure every redirect has a record entry
                 record[cat_title] = {today: None}
-                try:
+                with suppress(pywikibot.Error):
                     newredirs.append("*# %s -> %s"
                                      % (cat.title(asLink=True, textlink=True),
                                         cat.getCategoryRedirectTarget().title(
                                             asLink=True, textlink=True)))
-                except pywikibot.Error:
-                    pass
                 # do a null edit on cat
-                try:
+                with suppress(Exception):
                     cat.save()
-                except:
-                    pass
 
         # delete record entries for non-existent categories
         for cat_name in record.keys():
@@ -378,10 +375,8 @@ class CategoryRedirectBot(pywikibot.Bot):
                                         dest.title(asLink=True, textlink=True)))
                 # do a null edit on cat to update any special redirect
                 # categories this wiki might maintain
-                try:
+                with suppress(Exception):
                     cat.save()
-                except:
-                    pass
                 continue
             if dest.isCategoryRedirect():
                 double = dest.getCategoryRedirectTarget()
@@ -390,10 +385,8 @@ class CategoryRedirectBot(pywikibot.Bot):
                                          % dest.title(asLink=True,
                                                       textlink=True))
                     # do a null edit on cat
-                    try:
+                    with suppress(Exception):
                         cat.save()
-                    except:
-                        pass
                 else:
                     self.log_text.append(
                         u"* Fixed double-redirect: %s -> %s -> %s"
@@ -430,10 +423,8 @@ class CategoryRedirectBot(pywikibot.Bot):
                     % (self.catprefix, cat_title, found, moved))
             counts[cat_title] = found
             # do a null edit on cat
-            try:
+            with suppress(Exception):
                 cat.save()
-            except:
-                pass
 
         with open(datafile, "wb") as f:
             cPickle.dump(record, f, protocol=config.pickle_protocol)

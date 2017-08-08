@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test i18n module."""
 #
-# (C) Pywikibot team, 2007-2014
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 import pywikibot
 
 from pywikibot import i18n, bot, plural
-from pywikibot.tools import StringTypes
+from pywikibot.tools import StringTypes, suppress
 
 from tests.aspects import (
     unittest, TestCase, DefaultSiteTestCase, PwbTestCase,
@@ -469,7 +469,5 @@ class TestExtractPlural(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

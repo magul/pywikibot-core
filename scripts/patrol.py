@@ -58,6 +58,7 @@ import pywikibot
 from pywikibot import pagegenerators
 
 from pywikibot.bot import SingleSiteBot
+from pywikibot.tools import suppress
 
 _logger = 'patrol'
 
@@ -277,10 +278,8 @@ class PatrolBot(SingleSiteBot):
             return
 
         author_ns = 0
-        try:
+        with suppress(Exception):
             author_ns = self.site.family.authornamespaces[self.site.lang][0]
-        except:
-            pass
         if author_ns:
             author_ns_prefix = self.site.namespace(author_ns)
         pywikibot.debug(u'Author ns: %d; name: %s'

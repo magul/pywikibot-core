@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the category bot script."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -13,6 +13,7 @@ except ImportError:
     from mock import patch, Mock
 
 from pywikibot import BaseSite
+from pywikibot.tools import suppress
 
 from scripts.category import CategoryMoveRobot
 
@@ -70,7 +71,5 @@ class CfdActions(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

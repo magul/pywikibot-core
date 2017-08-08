@@ -133,7 +133,7 @@ from pywikibot.bot import ExistingPageBot, SingleSiteBot
 from pywikibot.pagegenerators import (
     XMLDumpPageGenerator as _XMLDumpPageGenerator,
 )
-from pywikibot.tools import deprecated
+from pywikibot.tools import deprecated, suppress
 from pywikibot.tools.formatter import color_format
 
 import requests
@@ -352,7 +352,7 @@ class LinkChecker(object):
     def getEncodingUsedByServer(self):
         """Get encodung used by server."""
         if not self.serverEncoding:
-            try:
+            with suppress(Exception):
                 pywikibot.output(
                     u'Contacting server %s to find out its default encoding...'
                     % self.host)
@@ -360,8 +360,6 @@ class LinkChecker(object):
                 conn.request('HEAD', '/', None, self.header)
                 self.response = conn.getresponse()
                 self.readEncodingFromResponse(self.response)
-            except:
-                pass
             if not self.serverEncoding:
                 # TODO: We might also load a page, then check for an encoding
                 # definition in a HTML meta tag.
@@ -374,13 +372,11 @@ class LinkChecker(object):
     def readEncodingFromResponse(self, response):
         """Read encoding from response."""
         if not self.serverEncoding:
-            try:
+            with suppress(Exception):
                 ct = response.getheader('Content-Type')
                 charsetR = re.compile('charset=(.+)')
                 charset = charsetR.search(ct).group(1)
                 self.serverEncoding = charset
-            except:
-                pass
 
     def changeUrl(self, url):
         """Change url."""
@@ -740,11 +736,8 @@ class History(object):
         """
         if url in self.historyDict:
             self.semaphore.acquire()
-            try:
+            with suppress(KeyError):  # Unsure why this can happen
                 del self.historyDict[url]
-            except KeyError:
-                # Not sure why this can happen, but I guess we can ignore this.
-                pass
             self.semaphore.release()
             return True
         else:

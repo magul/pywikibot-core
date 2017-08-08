@@ -8,6 +8,7 @@
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, TestCase
 
@@ -400,7 +401,5 @@ class TestCosmeticChangesPersian(TestCosmeticChanges):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

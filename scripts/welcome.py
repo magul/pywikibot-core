@@ -177,7 +177,7 @@ import pywikibot
 
 from pywikibot import config, i18n
 from pywikibot.tools.formatter import color_format
-from pywikibot.tools import issue_deprecation_warning, UnicodeType
+from pywikibot.tools import issue_deprecation_warning, suppress, UnicodeType
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -525,22 +525,18 @@ class WelcomeBot(object):
             self._whitelist = list_white + whitelist_default
             del list_white, whitelist_default
 
-        try:
+        with suppress(UnicodeEncodeError):
             for wname in self._whitelist:
                 if wname.lower() in str(name).lower():
                     name = name.lower().replace(wname.lower(), '')
                     for bname in self._blacklist:
                         self.bname[name] = bname
                         return bname.lower() in name.lower()
-        except UnicodeEncodeError:
-            pass
-        try:
+        with suppress(UnicodeEncodeError):
             for bname in self._blacklist:
                 if bname.lower() in str(name).lower():  # bad name positive
                     self.bname[name] = bname
                     return True
-        except UnicodeEncodeError:
-            pass
         return False
 
     def reportBadAccount(self, name=None, final=False):
@@ -748,10 +744,8 @@ class WelcomeBot(object):
                             if self.site.family.name != 'wikinews':
                                 welcome_text = (welcome_text
                                                 % choice(self.defineSign()))
-                            if self.site.family.name == 'wiktionary' and \
-                               self.site.code == 'it':
-                                pass
-                            else:
+                            if self.site.family.name != 'wiktionary' or \
+                               self.site.code != 'it':
                                 welcome_text += timeselected
                         elif (self.site.family.name != 'wikinews' and
                               self.site.code != 'it'):

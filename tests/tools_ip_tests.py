@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 """Test IP module/regex."""
 #
-# (C) Pywikibot team, 2012-2015
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
 
 from distutils.version import StrictVersion
 
-from pywikibot.tools import ip
+from pywikibot.tools import ip, suppress
 
 from tests import unittest_print
 from tests.aspects import unittest, TestCase, DeprecationTestCase
@@ -691,7 +691,5 @@ class IPAddressModuleTestCase(TestIPBase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

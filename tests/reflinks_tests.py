@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 """Tests for reflinks script."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
+
+from pywikibot.tools import suppress
 
 from scripts.reflinks import XmlDumpPageGenerator, ReferencesRobot, main
 
@@ -215,4 +217,5 @@ def dummy_constructor(self, *args, **kwargs):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with suppress(SystemExit):
+        unittest.main()

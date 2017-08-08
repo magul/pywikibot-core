@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 """Test Interwiki Graph functionality."""
 #
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot import interwiki_graph
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, require_modules, SiteAttributeTestCase
 from tests.utils import DryPage
@@ -89,7 +90,5 @@ class TestWiktionaryGraph(SiteAttributeTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

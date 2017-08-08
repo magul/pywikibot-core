@@ -7,13 +7,15 @@ should be added locally.
 https://bitbucket.org/ned/coveragepy/src/default/tests/test_execfile.py
 """
 #
-# (C) Pywikibot team, 2007-2014
+# (C) Pywikibot team, 2007-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 import sys
+
+from pywikibot.tools import suppress
 
 from tests import join_tests_path, create_path_func
 from tests.utils import execute, execute_pwb
@@ -77,4 +79,5 @@ class TestPwb(PwbTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main(verbosity=10)
+    with suppress(SystemExit):
+        unittest.main(verbosity=10)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the Tk UI."""
 #
-# (C) Pywikibot team, 2008-2014
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,7 +9,7 @@ from __future__ import absolute_import, unicode_literals
 
 import os
 
-from pywikibot.tools import PY2
+from pywikibot.tools import PY2, suppress
 
 if os.environ.get('PYWIKIBOT2_TEST_GUI', '0') == '1':
     if not PY2:
@@ -72,7 +72,5 @@ class TestTkinter(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

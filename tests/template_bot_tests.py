@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test template bot module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -140,4 +140,5 @@ class TestXMLPageGenerator(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    unittest.main()
+    with pywikibot.tools.suppress(SystemExit):
+        unittest.main()
