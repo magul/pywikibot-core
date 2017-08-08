@@ -5,13 +5,15 @@ UploadRobot test.
 These tests write to the wiki.
 """
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
 import os
+
+from pywikibot.tools import suppress
 
 from scripts import upload
 
@@ -62,7 +64,5 @@ class TestUploadbot(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the Namespace class."""
 #
-# (C) Pywikibot team, 2014
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -12,6 +12,7 @@ from collections import Iterable
 from pywikibot.site import Namespace, NamespacesDict
 from pywikibot.tools import (
     PY2,
+    suppress,
     StringTypes as basestring,
     UnicodeType as unicode,
 )
@@ -424,7 +425,5 @@ class TestNamespacesDictGetItem(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -39,7 +39,7 @@ from pywikibot.exceptions import (
 )
 from pywikibot.tools import (
     MediaWikiVersion, deprecated, itergroup, ip, PY2, getargspec,
-    UnicodeType
+    suppress, UnicodeType
 )
 from pywikibot.tools.formatter import color_format
 
@@ -1994,12 +1994,10 @@ class Request(MutableMapping):
                     if param.endswith("limit"):
                         # param values are stored a list of str
                         value = self._params[param][0]
-                        try:
+                        with suppress(BaseException):
                             self._params[param] = [str(int(value) // 2)]
                             pywikibot.output(u"Set %s = %s"
                                              % (param, self._params[param]))
-                        except:
-                            pass
                 self.wait()
                 continue
             if not result:
@@ -2259,11 +2257,8 @@ class CachedRequest(Request):
         @return: directory name
         @rtype: basestring
         """
-        try:
+        with suppress(OSError):  # directory might already exists
             os.makedirs(dir)
-        except OSError:
-            # directory already exists
-            pass
         return dir
 
     def _uniquedescriptionstr(self):

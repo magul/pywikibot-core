@@ -47,7 +47,7 @@ from pywikibot.data.api import Request as _original_Request
 from pywikibot.exceptions import ServerError, NoUsername
 from pywikibot.family import WikimediaFamily
 from pywikibot.site import BaseSite
-from pywikibot.tools import PY2, StringTypes
+from pywikibot.tools import PY2, StringTypes, suppress
 
 import tests
 
@@ -174,14 +174,12 @@ class TestCaseBase(unittest.TestCase):
 
         gen_pages = list(gen)
 
-        try:
+        with suppress(StopIteration):
             gen_pages.append(next(original_iter))
             next(original_iter)
             if not site:
                 site = gen_pages[0].site
             gen_pages.append(pywikibot.Page(site, '...'))
-        except StopIteration:
-            pass
 
         for page in gen_pages:
             self.assertIsInstance(page, pywikibot.Page)
@@ -546,7 +544,6 @@ class CheckHostnameMixin(TestCaseBase):
                                 % (cls.__name__, hostname))
                 pywikibot.exception(e2, tb=True)
                 e = e2
-                pass
 
             if e:
                 cls._checked_hostnames[hostname] = e
@@ -645,10 +642,8 @@ class RequireUserMixin(TestCaseBase):
             if hasattr(cls, 'oauth') and cls.oauth:
                 continue
 
-            try:
+            with suppress(NoUsername):
                 site['site'].login(sysop)
-            except NoUsername:
-                pass
 
             if not site['site'].user():
                 raise unittest.SkipTest(
@@ -963,12 +958,8 @@ class TestCase(TestTimerMixin, TestCaseBase):
                 data['site'] = Site(data['code'], data['family'],
                                     interface=interface)
             if 'hostname' not in data and 'site' in data:
-                try:
+                with suppress(KeyError):  # obsolete family without mapping
                     data['hostname'] = data['site'].base_url(data['site'].path())
-                except KeyError:
-                    # The family has defined this as obsolete
-                    # without a mapping to a hostname.
-                    pass
 
         cm.__exit__(None, None, None)
 

@@ -358,7 +358,7 @@ from pywikibot import config, i18n, pagegenerators, textlib, interwiki_graph
 from pywikibot import titletranslate
 
 from pywikibot.bot import ListOption, StandardOption
-from pywikibot.tools import first_upper
+from pywikibot.tools import first_upper, suppress
 from pywikibot.tools.formatter import color_format
 
 if sys.version_info[0] > 2:
@@ -565,12 +565,8 @@ class InterwikiBotConfig(object):
         elif arg.startswith('-whenneeded'):
             self.limittwo = True
             self.strictlimittwo = False
-            try:
+            with suppress(KeyError, ValueError):
                 self.needlimit = int(arg[12:])
-            except KeyError:
-                pass
-            except ValueError:
-                pass
         elif arg.startswith('-skipfile:'):
             skipfile = arg[10:]
             skipPageGen = pagegenerators.TextfilePageGenerator(skipfile)
@@ -735,11 +731,9 @@ class PageTree(object):
 
     def filter(self, site):
         """Iterate over pages that are in Site site."""
-        try:
+        with suppress(KeyError):
             for page in self.tree[site]:
                 yield page
-        except KeyError:
-            pass
 
     def __len__(self):
         """Length of the object."""
@@ -755,19 +749,15 @@ class PageTree(object):
 
     def remove(self, page):
         """Remove a page from the tree."""
-        try:
+        with suppress(ValueError):
             self.tree[page.site].remove(page)
             self.size -= 1
-        except ValueError:
-            pass
 
     def removeSite(self, site):
         """Remove all pages from Site site."""
-        try:
+        with suppress(KeyError):
             self.size -= len(self.tree[site])
             del self.tree[site]
-        except KeyError:
-            pass
 
     def siteCounts(self):
         """Yield (Site, number of pages in site) pairs."""
@@ -1813,7 +1803,9 @@ class Subject(interwiki_graph.Subject):
 
         # remove interwiki links to ignore
         for iw in re.finditer(r'<!-- *\[\[(.*?:.*?)\]\] *-->', pagetext):
-            try:
+            with suppress(KeyError,
+                          pywikibot.SiteDefinitionError,
+                          pywikibot.InvalidTitle):
                 ignorepage = pywikibot.Page(page.site, iw.groups()[0])
                 if (new[ignorepage.site] == ignorepage) and \
                    (ignorepage.site != page.site):
@@ -1829,12 +1821,6 @@ class Subject(interwiki_graph.Subject):
                             '%(to)s (exists both commented and non-commented)'
                             % {'to': ignorepage,
                                'from': page})
-            except KeyError:
-                pass
-            except pywikibot.SiteDefinitionError:
-                pass
-            except pywikibot.InvalidTitle:
-                pass
 
         # sanity check - the page we are fixing must be the only one for that
         # site.
@@ -2176,11 +2162,9 @@ class InterwikiBot(object):
                         continue
                     if page.namespace() == 10:
                         loc = None
-                        try:
+                        with suppress(KeyError):
                             tmpl, loc = moved_links[page.site.code]
                             del tmpl
-                        except KeyError:
-                            pass
                         if loc is not None and loc in page.title():
                             pywikibot.output(
                                 'Skipping: %s is a templates subpage'
@@ -2262,11 +2246,9 @@ class InterwikiBot(object):
                         break
             # If we have a few, getting the home language is a good thing.
             if not self.conf.restoreAll:
-                try:
+                with suppress(KeyError):
                     if self.counts[pywikibot.Site()] > 4:
                         return pywikibot.Site()
-                except KeyError:
-                    pass
         # If getting the home language doesn't make sense, see how many
         # foreign page queries we can find.
         return self.maxOpenSite()
@@ -2402,16 +2384,12 @@ def compareLanguages(old, new, insite, summary):
 def botMayEdit(page):
     """Test for allowed edits."""
     tmpl = []
-    try:
+    with suppress(KeyError):
         tmpl, loc = moved_links[page.site.code]
-    except KeyError:
-        pass
     if not isinstance(tmpl, list):
         tmpl = [tmpl]
-    try:
+    with suppress(KeyError):
         tmpl += ignoreTemplates[page.site.code]
-    except KeyError:
-        pass
     tmpl += ignoreTemplates['_default']
     if tmpl != []:
         templates = page.templatesWithParams()
@@ -2638,17 +2616,13 @@ def main(*args):
         if iwconf.contentsondisk:
             StoredPage.SPdeleteStore()
         if dumpFileName:
-            try:
+            with suppress(ValueError):
                 restoredFiles.remove(dumpFileName)
-            except ValueError:
-                pass
         for dumpFileName in restoredFiles:
-            try:
+            with suppress(OSError):
                 os.remove(dumpFileName)
                 pywikibot.output('Dumpfile {0} deleted'
                                  .format(dumpFileName.split('\\')[-1]))
-            except OSError:
-                pass
 
 
 if __name__ == "__main__":

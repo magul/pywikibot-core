@@ -21,7 +21,7 @@ except ImportError as e:
     mock = e
 
 from pywikibot import tools
-from pywikibot.tools import classproperty
+from pywikibot.tools import classproperty, suppress
 
 from tests import join_xml_data_path
 
@@ -846,7 +846,5 @@ class TestClassProperty(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

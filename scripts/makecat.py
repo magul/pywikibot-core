@@ -50,7 +50,7 @@ import pywikibot
 
 from pywikibot import pagegenerators, i18n, textlib
 
-from pywikibot.tools import DequeGenerator
+from pywikibot.tools import DequeGenerator, suppress
 
 
 def needcheck(pl):
@@ -79,7 +79,6 @@ def include(pl, checklinks=True, realinclude=True, linkterm=None, summary=''):
             pass
         except pywikibot.IsRedirectPage:
             cl = True
-            pass
         else:
             cats = [x for x in pl.categories()]
             if workingcat not in cats:
@@ -229,11 +228,9 @@ try:
         f = codecs.open(filename, 'r', encoding=mysite.encoding())
         for line in f.readlines():
             # remove trailing newlines and carriage returns
-            try:
+            with suppress(IndexError):
                 while line[-1] in ['\n', '\r']:
                     line = line[:-1]
-            except IndexError:
-                pass
             pl = pywikibot.Page(mysite, line)
             checked[pl] = pl
         f.close()
@@ -283,7 +280,5 @@ try:
             asktoadd(page, summary)
 
 finally:
-    try:
+    with suppress(Exception):
         excludefile.close()
-    except:
-        pass

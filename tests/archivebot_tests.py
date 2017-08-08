@@ -13,7 +13,8 @@ import pywikibot
 import pywikibot.page
 
 from pywikibot.textlib import TimeStripper
-from pywikibot.tools import suppress_warnings, StringTypes as basestring
+from pywikibot.tools import (
+    suppress, suppress_warnings, StringTypes as basestring)
 
 from scripts import archivebot
 
@@ -230,7 +231,5 @@ class TestArchiveBotAfterDateUpdate(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

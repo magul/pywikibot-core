@@ -90,7 +90,7 @@ from pywikibot.bot import OptionHandler, SingleSiteBot
 from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot.textlib import extract_templates_and_params_regex_simple
 from pywikibot.tools.formatter import color_format
-from pywikibot.tools import issue_deprecation_warning
+from pywikibot.tools import issue_deprecation_warning, suppress
 
 if sys.version_info[0] > 2:
     basestring = (str, )
@@ -282,16 +282,13 @@ class RedirectGenerator(OptionHandler):
                 try:
                     if pages[target]:
                         final = target
-                        try:
+                        with suppress(KeyError):
                             while result <= maxlen:
                                 result += 1
                                 final = redirects[final]
                             # result = None
-                        except KeyError:
-                            pass
                 except KeyError:
                     result = None
-                    pass
                 yield (redirect, result, target, final)
 
     def retrieve_broken_redirects(self):
@@ -513,16 +510,12 @@ class RedirectRobot(SingleSiteBot):
                 pywikibot.warning(
                     u'Redirect target %s is not a valid page title.'
                     % str(e)[10:])
-                pass
             except pywikibot.InvalidTitle:
                 pywikibot.exception()
-                pass
             except pywikibot.NoPage:
                 movedTarget = None
-                try:
+                with suppress(pywikibot.NoMoveTarget):
                     movedTarget = targetPage.moved_target()
-                except pywikibot.NoMoveTarget:
-                    pass
                 if movedTarget:
                     if not movedTarget.exists():
                         # FIXME: Test to another move
@@ -611,8 +604,7 @@ class RedirectRobot(SingleSiteBot):
                         u'Skipping: Redirect target %s is not a redirect.'
                         % newRedir.title(asLink=True))
                     break  # do nothing
-                else:
-                    pass  # target found
+                # else target found
             except pywikibot.SectionError:
                 pywikibot.warning(
                     u"Redirect target section %s doesn't exist."
@@ -683,7 +675,6 @@ class RedirectRobot(SingleSiteBot):
                     if targetPage.isStaticRedirect():
                         pywikibot.output(
                             u"   Redirect target is STATICREDIRECT.")
-                        pass
                     else:
                         newRedir = targetPage
                         continue
@@ -794,12 +785,11 @@ def main(*args):
             # or number
             if ns == '':
                 ns = '0'
-            try:
+
+            # ValueError may occure with -namespace:all Process all namespaces.
+            # Only works with the API read interface.
+            with suppress(ValueError):
                 ns = int(ns)
-            except ValueError:
-                # -namespace:all Process all namespaces.
-                # Only works with the API read interface.
-                pass
             if ns not in namespaces:
                 namespaces.append(ns)
         elif option == 'offset':

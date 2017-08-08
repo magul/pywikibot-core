@@ -26,6 +26,7 @@ from pywikibot import async_request, page_put_queue
 from pywikibot.tools import (
     MediaWikiVersion,
     PY2,
+    suppress,
     StringTypes as basestring,
     UnicodeType as unicode,
 )
@@ -3469,7 +3470,5 @@ class TestCategoryFromWikibase(DefaultSiteTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

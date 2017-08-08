@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test for site detection."""
 #
-# (C) Pywikibot team, 2014-2016
+# (C) Pywikibot team, 2014-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -12,6 +12,7 @@ from requests.exceptions import ConnectionError, Timeout
 
 from pywikibot.exceptions import ServerError
 from pywikibot.site_detect import MWSite
+from pywikibot.tools import suppress
 
 from tests.aspects import unittest, TestCase
 
@@ -273,7 +274,5 @@ class OtherSiteTestCase(SiteDetectionTestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

@@ -15,10 +15,11 @@ except ImportError:
 import pywikibot
 
 from pywikibot import site, Page, i18n
+from pywikibot.tools import suppress
 
 from scripts.redirect import RedirectRobot
 
-from tests.aspects import DefaultSiteTestCase
+from tests.aspects import DefaultSiteTestCase, unittest
 
 
 # To make `self.site.logged_in(sysop=True)` always return False
@@ -57,3 +58,8 @@ class TestGetSDTemplateNoSysop(DefaultSiteTestCase):
                 bot = RedirectRobot('broken', **options)
         w.assert_called_with('No speedy deletion template "n" available.')
         self.assertEqual(bot.sdtemplate, None)
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with suppress(SystemExit):
+        unittest.main()

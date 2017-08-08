@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the flow module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,10 +9,10 @@ from __future__ import absolute_import, unicode_literals
 
 from pywikibot.exceptions import NoPage
 from pywikibot.flow import Board, Topic, Post
-from pywikibot.tools import UnicodeType as unicode
+from pywikibot.tools import suppress, UnicodeType as unicode
 
 from tests.aspects import (
-    TestCase,
+    unittest, TestCase,
 )
 from tests.basepage_tests import (
     BasePageMethodsTestBase,
@@ -211,3 +211,8 @@ class TestFlowFactoryErrors(TestCase):
         self.assertRaises(AssertionError, Post.fromJSON, real_topic, 'abc',
                           {'posts': {'abc': ['123']},
                            'revisions': {'123': {'content': 789}}})
+
+
+if __name__ == '__main__':  # pragma: no cover
+    with suppress(SystemExit):
+        unittest.main()

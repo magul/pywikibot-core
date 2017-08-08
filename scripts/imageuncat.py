@@ -23,7 +23,7 @@ from datetime import timedelta
 import pywikibot
 from pywikibot.exceptions import ArgumentDeprecationWarning
 from pywikibot import pagegenerators
-from pywikibot.tools import issue_deprecation_warning
+from pywikibot.tools import issue_deprecation_warning, suppress
 
 docuReplacements = {
     '&params;': pagegenerators.parameterHelp,
@@ -1294,19 +1294,12 @@ def addUncat(page):
     Add the uncat template to the page.
 
     @param page: Page to be modified
-    @rtype: Page
+    @type page: pywikibot.Page
     """
     newtext = page.get() + puttext
     pywikibot.showDiff(page.get(), newtext)
-    try:
+    with suppress(pywikibot.EditConflict, pywikibot.LockedPage):
         page.put(newtext, putcomment)
-    except pywikibot.EditConflict:
-        # Skip this page
-        pass
-    except pywikibot.LockedPage:
-        # Skip this page
-        pass
-    return
 
 
 def main(*args):

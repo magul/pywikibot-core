@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """Tests for the C{pywikibot.tools.formatter} module."""
 #
-# (C) Pywikibot team, 2015
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
 from __future__ import absolute_import, unicode_literals
 
-from pywikibot.tools import formatter
-from pywikibot.tools import UnicodeMixin
+from pywikibot.tools import formatter, suppress, UnicodeMixin
 
 from tests.aspects import unittest, TestCase
 
@@ -108,7 +107,5 @@ class TestColorFormat(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass

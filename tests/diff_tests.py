@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test diff module."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
@@ -10,7 +10,7 @@ from __future__ import absolute_import, unicode_literals
 import sys
 
 from pywikibot.diff import cherry_pick, html_comparator, PatchManager
-from pywikibot.tools import PY2
+from pywikibot.tools import PY2, suppress
 
 from tests import join_html_data_path
 from tests.aspects import TestCase, require_modules, unittest
@@ -262,7 +262,5 @@ class TestCherryPick(TestCase):
 
 
 if __name__ == '__main__':  # pragma: no cover
-    try:
+    with suppress(SystemExit):
         unittest.main()
-    except SystemExit:
-        pass
