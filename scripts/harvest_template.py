@@ -71,6 +71,15 @@ Examples:
     page won't be skipped if the item already has that property but there is
     not the new value.
 
+    python pwb.py harvest_template -lang:en -family:wikipedia -namespace:0 \
+        -template:"Infobox musical artist" current_members P527 -exists:p -multi
+
+    will import band members from the "current_members" parameter of "Infobox
+    musical artist" on English Wikipedia as Wikidata property "P527" (has part).
+    This will only extract multiple band members if each is linked, and will not
+    add duplicate claims for the same member.
+
+    TODO: 'multi' implies at least exists:p - set that automatically?
 """
 #
 # (C) Multichill, Amir, 2013
@@ -109,8 +118,9 @@ class PropertyOptionHandler(OptionHandler):
     """Class holding options for a param-property pair."""
 
     availableOptions = {
-        'islink': False,
         'exists': '',
+        'islink': False,
+        'multi': False,
     }
 
 
@@ -133,11 +143,15 @@ class HarvestRobot(WikidataBot):
         @keyword exists: pattern for merging existing claims with harvested
             values
         @type exists: str
+        @keyword multi: Whether multiple values should be extracted from a
+            single parameter
+        @type multi: bool
         """
         self.availableOptions.update({
             'always': True,
             'exists': '',
             'islink': False,
+            'multi': False,
         })
         super(HarvestRobot, self).__init__(**kwargs)
         self.generator = generator
@@ -249,25 +263,43 @@ class HarvestRobot(WikidataBot):
                 # This field contains something useful for us
                 prop, options = self.fields[field]
                 claim = pywikibot.Claim(self.repo, prop)
+                claims = []  # FIXME: this is a horrid way to do multiples
                 if claim.type == 'wikibase-item':
-                    # Try to extract a valid page
-                    match = pywikibot.link_regex.search(value)
-                    if match:
-                        link_text = match.group(1)
-                    else:
-                        if self._get_option_with_fallback(options, 'islink'):
-                            link_text = value
-                        else:
+                    if self._get_option_with_fallback(options, 'multi'):
+                        matches = pywikibot.link_regex.findall(value)
+                        if matches:
+                            for match in matches:
+                                link_text = match[0]
+                                linked_item = self._template_link_target(item, link_text)
+                                if not linked_item:
+                                    continue
+                                claim.setTarget(linked_item)
+                                claims.append(claim)
+                                claim = pywikibot.Claim(self.repo, prop)
+                        if len(claims) == 0:
                             pywikibot.output(
-                                '%s field %s value %s is not a wikilink. '
+                                '%s field %s value %s contains no wikilinks to data items. '
                                 'Skipping.' % (claim.getID(), field, value))
                             continue
+                    else:
+                        # Try to extract a valid page
+                        match = pywikibot.link_regex.search(value)
+                        if match:
+                            link_text = match.group(1)
+                        else:
+                            if self._get_option_with_fallback(options, 'islink'):
+                                link_text = value
+                            else:
+                                pywikibot.output(
+                                    '%s field %s value %s is not a wikilink. '
+                                    'Skipping.' % (claim.getID(), field, value))
+                                continue
 
-                    linked_item = self._template_link_target(item, link_text)
-                    if not linked_item:
-                        continue
+                        linked_item = self._template_link_target(item, link_text)
+                        if not linked_item:
+                            continue
 
-                    claim.setTarget(linked_item)
+                        claim.setTarget(linked_item)
                 elif claim.type in ('string', 'external-id'):
                     claim.setTarget(value.strip())
                 elif claim.type == 'url':
@@ -293,11 +325,14 @@ class HarvestRobot(WikidataBot):
                                      % claim.type)
                     continue
 
-                # A generator might yield pages from multiple sites
-                self.user_add_claim_unless_exists(
-                    item, claim, self._get_option_with_fallback(
-                        options, 'exists'),
-                    page.site, pywikibot.output)
+                if len(claims) == 0:
+                    claims.append(claim)
+                for add_claim in claims:
+                    # A generator might yield pages from multiple sites
+                    self.user_add_claim_unless_exists(
+                        item, add_claim, self._get_option_with_fallback(
+                            options, 'exists'),
+                        page.site, pywikibot.output)
 
 
 def main(*args):
