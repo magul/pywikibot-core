@@ -71,6 +71,13 @@ Examples:
     page won't be skipped if the item already has that property but there is
     not the new value.
 
+    python pwb.py harvest_template -lang:en -family:wikipedia -namespace:0 \
+        -template:"Infobox musical artist" current_members P527 -exists:p -multi
+
+    will import band members from the "current_members" parameter of "Infobox
+    musical artist" on English Wikipedia as Wikidata property "P527" (has part).
+    This will only extract multiple band members if each is linked, and will not
+    add duplicate claims for the same member.
 """
 #
 # (C) Multichill, Amir, 2013
@@ -109,8 +116,9 @@ class PropertyOptionHandler(OptionHandler):
     """Class holding options for a param-property pair."""
 
     availableOptions = {
-        'islink': False,
         'exists': '',
+        'islink': False,
+        'multi': False,
     }
 
 
@@ -133,11 +141,15 @@ class HarvestRobot(WikidataBot):
         @keyword exists: pattern for merging existing claims with harvested
             values
         @type exists: str
+        @keyword multi: Whether multiple values should be extracted from a
+            single parameter
+        @type multi: bool
         """
         self.availableOptions.update({
             'always': True,
             'exists': '',
             'islink': False,
+            'multi': False,
         })
         super(HarvestRobot, self).__init__(**kwargs)
         self.generator = generator
@@ -251,17 +263,39 @@ class HarvestRobot(WikidataBot):
                 claim = pywikibot.Claim(self.repo, prop)
                 if claim.type == 'wikibase-item':
                     # Try to extract a valid page
-                    match = pywikibot.link_regex.search(value)
-                    if match:
-                        link_text = match.group(1)
+                    matches = list(pywikibot.link_regex.finditer(value))
+                    if matches:
+                        do_multi = self._get_option_with_fallback(
+                            options, 'multi')
+                        exists_arg = self._get_option_with_fallback(
+                            options, 'exists')
+                        for match in matches:
+                            link_text = match.group(1)
+                            linked_item = self._template_link_target(
+                                item, link_text)
+                            added = False
+                            if linked_item:
+                                claim.setTarget(linked_item)
+                                added = self.user_add_claim_unless_exists(
+                                    item, claim, exists_arg, page.site,
+                                    pywikibot.output)
+                                claim = pywikibot.Claim(self.repo, prop)
+                            # stop after the first match if not supposed to add
+                            # multiple values
+                            if not do_multi:
+                                break
+                            # update exists_arg, so we can add more values
+                            if 'p' not in exists_arg and added:
+                                exists_arg += 'p'
+                        continue
+
+                    if self._get_option_with_fallback(options, 'islink'):
+                        link_text = value
                     else:
-                        if self._get_option_with_fallback(options, 'islink'):
-                            link_text = value
-                        else:
-                            pywikibot.output(
-                                '%s field %s value %s is not a wikilink. '
-                                'Skipping.' % (claim.getID(), field, value))
-                            continue
+                        pywikibot.output(
+                            '%s field %s value %s contains no wikilinks. '
+                            'Skipping.' % (claim.getID(), field, value))
+                        continue
 
                     linked_item = self._template_link_target(item, link_text)
                     if not linked_item:
