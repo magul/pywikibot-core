@@ -128,6 +128,7 @@ class PropertyOptionHandler(OptionHandler):
         'exists': '',
         'islink': False,
         'multi': False,
+        'reciprocal': '',
     }
 
 
@@ -155,6 +156,8 @@ class HarvestRobot(WikidataBot):
         @keyword multi: Whether multiple values should be extracted from a
             single parameter
         @type multi: bool
+        @keyword reciprocal: a property to populate on the target, pointing to the page item
+        @type reciprocal: string
         """
         self.availableOptions.update({
             'always': True,
@@ -162,6 +165,7 @@ class HarvestRobot(WikidataBot):
             'exists': '',
             'islink': False,
             'multi': False,
+            'reciprocal': '',
         })
         super(HarvestRobot, self).__init__(**kwargs)
         self.generator = generator
@@ -326,10 +330,17 @@ class HarvestRobot(WikidataBot):
             return
 
         # A generator might yield pages from multiple sites
+        exists_option = self._get_option_with_fallback(options, 'exists')
         self.user_add_claim_unless_exists(
-            item, claim, self._get_option_with_fallback(
-                options, 'exists'),
+            item, claim, exists_option,
             page.site, pywikibot.output)
+        reciprocal = self._get_option_with_fallback(options, 'reciprocal')
+        if reciprocal != '':
+            reciprocal_claim = pywikibot.Claim(self.repo, reciprocal)
+            reciprocal_claim.setTarget(item)
+            self.user_add_claim_unless_exists(
+                claim.getTarget(), reciprocal_claim,
+                exists_option, page.site, pywikibot.output)
 
     @staticmethod
     def split_list(value):
