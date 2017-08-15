@@ -97,6 +97,25 @@ dn_template = {
     'fr': u'{{Lien vers un homonyme}}',
 }
 
+# Regexes of disambiguation template titles to exclude links from
+disamb_templates = {
+    'cs': [
+        '[Rr]ozcestník',
+        '[Rr]ozcestník - [^\}]+'
+    ],
+    'en': [
+        '[Dd]isambiguation',
+        '.+? disambiguation',
+        '[Dd]isambiguation cleanup',
+        '[Gg]eodis',
+        '[Hh]ndis-cleanup',
+        '[Ll]etter-Number Combination Disambiguation',
+        '[Mm]il-unit-dis',
+        '[Nn]umberdis',
+        '[Dd]isambig-plants'
+    ]
+}
+
 # disambiguation page name format for "primary topic" disambiguations
 # (Begriffsklärungen nach Modell 2)
 primary_topic_format = {
@@ -964,6 +983,33 @@ class DisambiguationRobot(Bot):
                     pywikibot.output(u'Page not saved: %s' % error.args)
         return True
 
+    def removeDisambTemplateLinks(self, disambPage, links):
+        """Remove patterns in disamb_templates.linkedPages from links.
+
+        @param disambPage: the disambiguation page
+        @type disambPage: pywikibot.Page
+        @param links: list of links to process
+        @type links: list of pywikibot.Page.title
+        @return: list of processed links
+        @rtype: list of pywikibot.Page.title
+
+        """
+        site_disamb_templates = i18n.translate(self.site, disamb_templates)
+        if site_disamb_templates:
+            disamb_templates_regex = re.compile(
+                r'\{\{ *(?:' + self.site.namespace(10) + ':)?(' +
+                '|'.join([t for t in site_disamb_templates]) + ')[^\}]*\}\}'
+            )
+            page_disamb_templates = disamb_templates_regex.findall(
+                disambPage.text)
+            template_links = []
+            for template in page_disamb_templates:
+                disamb_template = pywikibot.Page(
+                    self.site, self.site.namespace(10) + ":" + template)
+                template_links += disamb_template.linkedPages()
+            links = [l for l in links if l not in template_links]
+        return links
+
     def findAlternatives(self, disambPage):
         """Extend self.alternatives using correctcap of disambPage.linkedPages.
 
@@ -989,11 +1035,13 @@ class DisambiguationRobot(Bot):
                     disambPage2 = pywikibot.Page(
                         pywikibot.Link(disambTitle, self.mysite))
                     links = disambPage2.linkedPages()
+                    links = self.removeDisambTemplateLinks(disambPage2, links)
                     links = [correctcap(l, disambPage2.get()) for l in links]
                 except pywikibot.NoPage:
                     pywikibot.output(u"No page at %s, using redirect target."
                                      % disambTitle)
                     links = disambPage.linkedPages()[:1]
+                    links = self.removeDisambTemplateLinks(disambPage, links)
                     links = [correctcap(l, disambPage.get(get_redirect=True))
                              for l in links]
                 self.alternatives += links
@@ -1025,6 +1073,8 @@ or press enter to quit:""")
                                 % disambPage.title(),
                                 self.mysite))
                         links = disambPage2.linkedPages()
+                        links = self.removeDisambTemplateLinks(
+                            disambPage2, links)
                         links = [correctcap(l, disambPage2.get())
                                  for l in links]
                     except pywikibot.NoPage:
@@ -1032,11 +1082,15 @@ or press enter to quit:""")
                             'Page does not exist; using first link in page %s.'
                             % disambPage.title())
                         links = disambPage.linkedPages()[:1]
+                        links = self.removeDisambTemplateLinks(
+                            disambPage, links)
                         links = [correctcap(l, disambPage.get())
                                  for l in links]
                 else:
                     try:
                         links = disambPage.linkedPages()
+                        links = self.removeDisambTemplateLinks(
+                            disambPage, links)
                         links = [correctcap(l, disambPage.get())
                                  for l in links]
                     except pywikibot.NoPage:
