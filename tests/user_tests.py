@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the User page."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -9,9 +9,10 @@ from __future__ import absolute_import, unicode_literals
 
 import pywikibot
 
-from pywikibot import User
+from pywikibot import Page, Timestamp, User
+from pywikibot.tools import StringTypes
 
-from tests.aspects import TestCase, unittest
+from tests.aspects import DefaultSiteTestCase, TestCase, unittest
 
 
 class TestUserClass(TestCase):
@@ -76,6 +77,40 @@ class TestUserClass(TestCase):
         self.assertIsNone(user.registration())
         self.assertFalse(user.isEmailable())
         self.assertIn('invalid', user.getprops())
+
+
+class TestUserMethods(DefaultSiteTestCase):
+
+    """Test User methods with bot user."""
+
+    user = True
+
+    def test_contribution(self):
+        """Test the User.usercontribs() method."""
+        mysite = self.get_site()
+        user = User(mysite, mysite.user())
+        uc = list(user.contributions(total=10))
+        self.assertLessEqual(len(uc), 10)
+        last = uc[0]
+        for contrib in uc:
+            self.assertIsInstance(contrib, tuple)
+            self.assertEqual(len(contrib), 4)
+            p, i, t, c = contrib
+            self.assertIsInstance(p, Page)
+            self.assertIsInstance(i, int)
+            self.assertIsInstance(t, Timestamp)
+            self.assertIsInstance(c, StringTypes)
+        self.assertEqual(last, user.last_edit)
+
+    def test_logevents(self):
+        """Test the User.logevents() method."""
+        mysite = self.get_site()
+        user = User(mysite, mysite.user())
+        le = list(user.logevents(total=10))
+        self.assertLessEqual(len(le), 10)
+        last = le[0]
+        self.assertTrue(all(event.user() == user.username for event in le))
+        self.assertEqual(last, user.last_event)
 
 
 if __name__ == '__main__':  # pragma: no cover

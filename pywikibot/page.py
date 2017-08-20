@@ -3428,6 +3428,40 @@ class User(Page):
         """
         self.site.unblockuser(self, reason)
 
+    def logevents(self, **leargs):
+        """Yield user activities.
+
+        @keyword logtype: only iterate entries of this type
+            (see mediawiki api documentation for available types)
+        @type logtype: basestring
+        @keyword page: only iterate entries affecting this page
+        @type page: Page or basestring
+        @keyword namespace: namespace to retrieve logevents from
+        @type namespace: int or Namespace
+        @keyword start: only iterate entries from and after this Timestamp
+        @type start: Timestamp or ISO date string
+        @keyword end: only iterate entries up to and through this Timestamp
+        @type end: Timestamp or ISO date string
+        @keyword reverse: if True, iterate oldest entries first
+            (default: newest)
+        @type reverse: bool
+        @keyword tag: only iterate entries tagged with this tag
+        @type tag: basestring
+        @keyword total: maximum number of events to iterate
+        @type total: int
+        @rtype: iterable
+        """
+        return self.site.logevents(user=self.username, **leargs)
+
+    @property
+    def last_event(self):
+        """Return last user activity.
+
+        @return: last user log entry
+        @rtype: LogEntry
+        """
+        return next(iter(self.logevents(total=1)))
+
     @deprecated("contributions")
     @deprecate_arg("limit", "total")  # To be consistent with rest of framework
     def editedPages(self, total=500):
@@ -3445,7 +3479,7 @@ class User(Page):
             yield item[0]
 
     @deprecated_args(limit='total', namespace='namespaces')
-    def contributions(self, total=500, namespaces=[]):
+    def contributions(self, total=500, **ucargs):
         """
         Yield tuples describing this user edits.
 
@@ -3456,16 +3490,47 @@ class User(Page):
 
         @param total: limit result to this number of pages
         @type total: int
-        @param namespaces: only iterate links in these namespaces
-        @type namespaces: list
+        @keyword start: Iterate contributions starting at this Timestamp
+        @keyword end: Iterate contributions ending at this Timestamp
+        @keyword reverse: Iterate oldest contributions first (default: newest)
+        @keyword namespaces: only iterate pages in these namespaces
+        @type namespaces: iterable of basestring or Namespace key,
+            or a single instance of those types. May be a '|' separated
+            list of namespace identifiers.
+        @keyword showMinor: if True, iterate only minor edits; if False and
+            not None, iterate only non-minor edits (default: iterate both)
+        @keyword top_only: if True, iterate only edits which are the latest
+            revision (default: False)
+        @return tuple of pywikibot.Page, revid, pywikibot.Timestamp, comment
+        @rtype: tuple
         """
         for contrib in self.site.usercontribs(
-                user=self.username, namespaces=namespaces, total=total):
+                user=self.username, total=total, **ucargs):
             ts = pywikibot.Timestamp.fromISOformat(contrib['timestamp'])
             yield (Page(self.site, contrib['title'], contrib['ns']),
                    contrib['revid'],
                    ts,
                    contrib.get('comment'))
+
+    @property
+    def first_edit(self):
+        """Return first user contribution.
+
+        @return: first user contribution entry
+        @return tuple of pywikibot.Page, revid, pywikibot.Timestamp, comment
+        @rtype: tuple
+        """
+        return next(self.contributions(reverse=True, total=1))
+
+    @property
+    def last_edit(self):
+        """Return last user contribution.
+
+        @return: last user contribution entry
+        @return tuple of pywikibot.Page, revid, pywikibot.Timestamp, comment
+        @rtype: tuple
+        """
+        return next(self.contributions(total=1))
 
     @deprecate_arg("number", "total")
     def uploadedImages(self, total=10):
@@ -3481,8 +3546,8 @@ class User(Page):
         """
         if not self.isRegistered():
             raise StopIteration
-        for item in self.site.logevents(
-                logtype='upload', user=self.username, total=total):
+        for item in self.logevents(
+                logtype='upload', total=total):
             yield (item.page(),
                    unicode(item.timestamp()),
                    item.comment(),
@@ -3501,12 +3566,7 @@ class User(Page):
 
         @rtype: bool
         """
-        if self.isAnonymous():
-            return False
-        if 'bot' in self.groups():
-            return False
-
-        return True
+        return not (self.isAnonymous() or 'bot' in self.groups())
 
 
 class WikibasePage(BasePage):
