@@ -47,7 +47,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
             'gn', 'mr', 'so', 'csb', 'ug', 'gd', 'mt', 'st', 'roa-rup', 'si',
             'ia', 'ie', 'ay', 'mi', 'kl', 'fo', 'jbo', 'ln', 'zu', 'na', 'gu',
             'gv', 'kw', 'rw', 'ts', 'ne', 'om', 'qu', 'ss', 'su', 'ha', 'iu',
-            'am', 'dv', 'tpi', 'yi', 'ti', 'sg', 'tn', 'ks',
+            'am', 'dv', 'tpi', 'yi', 'ti', 'sg', 'tn', 'ks', 'hif',
         ]
 
         super(Family, self).__init__()
@@ -103,7 +103,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
             'uk', 'kk', 'hy', 'yi', 'he', 'ur', 'ar', 'tk', 'sd', 'fa', 'ha',
             'ps', 'dv', 'ks', 'ne', 'pi', 'bh', 'mr', 'sa', 'hi', 'as', 'bn',
             'pa', 'pnb', 'gu', 'or', 'ta', 'te', 'kn', 'ml', 'si', 'th', 'lo',
-            'dz', 'ka', 'ti', 'am', 'chr', 'iu', 'km', 'zh', 'ja', 'ko',
+            'dz', 'ka', 'ti', 'am', 'chr', 'iu', 'km', 'zh', 'ja', 'ko', 'hif',
         ]
 
         self.interwiki_putfirst = {
