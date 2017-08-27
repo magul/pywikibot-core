@@ -30,6 +30,7 @@ Arguments:
   -recursive    When the filename is a directory it also uploads the files from
                 the subdirectories.
   -summary      Pick a custom edit summary for the bot.
+  -descriptionfile  Specify a filename where the description is stored
 
 It is possible to combine -abortonwarn and -ignorewarn so that if the specific
 warning is given it won't apply the general one but more specific one. So if it
@@ -54,6 +55,7 @@ parameter, and for a description.
 #
 from __future__ import absolute_import, unicode_literals
 
+import codecs
 import math
 import os
 import re
@@ -85,6 +87,7 @@ def main(*args):
     chunk_size_regex = r'^-chunked(?::(\d+(?:\.\d+)?)[ \t]*(k|ki|m|mi)?b?)?$'
     chunk_size_regex = re.compile(chunk_size_regex, re.I)
     recursive = False
+    description_file = None
 
     # process all global bot args
     # returns a list of non-global args, i.e. args for upload.py
@@ -138,6 +141,8 @@ def main(*args):
                         chunk_size = 1 << 20  # default to 1 MiB
                 else:
                     pywikibot.error('Chunk size parameter is not valid.')
+            elif arg.startswith('-descriptionfile:'):
+                description_file = arg[len('-descriptionfile:'):]
             elif url == u'':
                 url = arg
             else:
@@ -156,6 +161,9 @@ def main(*args):
         else:
             pywikibot.output(error)
         url = pywikibot.input(u'URL, file or directory where files are now:')
+    if description_file:
+        with codecs.open(description_file, encoding='utf-8') as f:
+            description = '\n'.join(f.readlines())
     if always and ((aborts is not True and ignorewarn is not True) or
                    not description or url is None):
         additional = ''
