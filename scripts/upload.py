@@ -30,6 +30,7 @@ Arguments:
   -recursive    When the filename is a directory it also uploads the files from
                 the subdirectories.
   -summary      Pick a custom edit summary for the bot.
+  -descfile     Specify a filename where the description is stored
 
 It is possible to combine -abortonwarn and -ignorewarn so that if the specific
 warning is given it won't apply the general one but more specific one. So if it
@@ -54,6 +55,7 @@ parameter, and for a description.
 #
 from __future__ import absolute_import, unicode_literals
 
+import codecs
 import math
 import os
 import re
@@ -85,6 +87,7 @@ def main(*args):
     chunk_size_regex = r'^-chunked(?::(\d+(?:\.\d+)?)[ \t]*(k|ki|m|mi)?b?)?$'
     chunk_size_regex = re.compile(chunk_size_regex, re.I)
     recursive = False
+    descriptionFile = None
 
     # process all global bot args
     # returns a list of non-global args, i.e. args for upload.py
@@ -138,11 +141,26 @@ def main(*args):
                         chunk_size = 1 << 20  # default to 1 MiB
                 else:
                     pywikibot.error('Chunk size parameter is not valid.')
+            elif arg.startswith('-descfile:'):
+                descriptionFile = arg[len('-descfile:'):]
             elif url == u'':
                 url = arg
             else:
                 description.append(arg)
-    description = u' '.join(description)
+
+    if descriptionFile:
+        if description:
+            pywikibot.error('A file specifying the description was provided via'
+                            ' -descfile: at the same time as it was provided '
+                            'via the command line. Maybe there are invalid '
+                            'arguments? Here is the content of the description '
+                            'defined by the CLI:\n' + ' '.join(description))
+            return False
+        with codecs.open(descriptionFile, encoding='utf-8') as f:
+            description = '\n'.join(f.readlines())
+    else:
+        description = ' '.join(description)
+
     while not ("://" in url or os.path.exists(url)):
         if not url:
             error = 'No input filename given.'
@@ -156,6 +174,9 @@ def main(*args):
         else:
             pywikibot.output(error)
         url = pywikibot.input(u'URL, file or directory where files are now:')
+    if descriptionFile:
+        with codecs.open(descriptionFile, encoding='utf-8') as f:
+            description = '\n'.join(f.readlines())
     if always and ((aborts is not True and ignorewarn is not True) or
                    not description or url is None):
         additional = ''
