@@ -1177,7 +1177,9 @@ LIMIT 200""" % (whereClause, exceptClause)
     # Explicitly call pywikibot.stopme(). It will make sure the callback is
     # triggered before replace.py is unloaded.
     pywikibot.stopme()
-    pywikibot.output(u'\n%s pages changed.' % bot.changed_pages)
+
+    # TODO: T147178: Fix the edit counter that gives wrong result
+    pywikibot.output(u'\nApproximately %s pages changed.' % bot.changed_pages)
 
 
 if __name__ == "__main__":
