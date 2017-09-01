@@ -21,6 +21,10 @@ You can use any typical pagegenerator to provide with a list of pages:
     python pwb.py coordinate_import -lang:it -family:wikipedia \
         -namespace:0 -transcludes:Infobox_stazione_ferroviaria
 
+The following command line parameters are supported:
+
+-create           Create items for pages without one.
+
 &params;
 """
 #
@@ -40,16 +44,18 @@ class CoordImportRobot(WikidataBot):
 
     """A bot to import coordinates to Wikidata."""
 
-    def __init__(self, generator):
+    def __init__(self, generator, **kwargs):
         """
         Constructor.
 
         @param generator: A generator that yields Page objects.
         """
-        super(CoordImportRobot, self).__init__()
+        self.availableOptions['create'] = False
+        super(CoordImportRobot, self).__init__(**kwargs)
         self.generator = generator
         self.cacheSources()
         self.prop = 'P625'
+        self.create_missing_item = self.getOption('create')
 
     def has_coord_qualifier(self, claims):
         """
@@ -115,14 +121,17 @@ def main(*args):
     local_args = pywikibot.handle_args(args)
     generator_factory = pagegenerators.GeneratorFactory()
 
+    create_new = False
     for arg in local_args:
         if generator_factory.handleArg(arg):
             continue
+        if arg == '-create':
+            create_new = True
 
     generator = generator_factory.getCombinedGenerator(preload=True)
 
     if generator:
-        coordbot = CoordImportRobot(generator)
+        coordbot = CoordImportRobot(generator, create=create_new)
         coordbot.run()
         return True
     else:
