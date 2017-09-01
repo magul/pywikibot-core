@@ -11,6 +11,11 @@ Usage:
 This will work on all pages in the category "coordinates not on Wikidata" and
 will import the coordinates on these pages to Wikidata.
 
+    python pwb.py coordinate_import -lang:en -family:wikipedia \
+        -namespace:0 -cat:Coordinates_not_on_Wikidata -create
+
+If you specify -create, it will create items for pages without one.
+
 The data from the "GeoData" extension
 (https://www.mediawiki.org/wiki/Extension:GeoData)
 is used so that extension has to be setup properly. You can look at the
@@ -40,16 +45,18 @@ class CoordImportRobot(WikidataBot):
 
     """A bot to import coordinates to Wikidata."""
 
-    def __init__(self, generator):
+    def __init__(self, generator, **kwargs):
         """
         Constructor.
 
         @param generator: A generator that yields Page objects.
         """
-        super(CoordImportRobot, self).__init__()
+        self.availableOptions['create'] = False
+        super(CoordImportRobot, self).__init__(**kwargs)
         self.generator = generator
         self.cacheSources()
         self.prop = 'P625'
+        self.create_missing_item = self.getOption('create')
 
     def has_coord_qualifier(self, claims):
         """
@@ -115,14 +122,17 @@ def main(*args):
     local_args = pywikibot.handle_args(args)
     generator_factory = pagegenerators.GeneratorFactory()
 
+    create_new = False
     for arg in local_args:
         if generator_factory.handleArg(arg):
             continue
+        if arg == '-create':
+            create_new = True
 
     generator = generator_factory.getCombinedGenerator(preload=True)
 
     if generator:
-        coordbot = CoordImportRobot(generator)
+        coordbot = CoordImportRobot(generator, create=create_new)
         coordbot.run()
         return True
     else:
