@@ -77,6 +77,8 @@ It may require the following programs to function properly:
 
 * `7za`: To extract 7z files
 
+.. include:: HISTORY.rst
+
 Contributing
 ------------
 
@@ -87,3 +89,6 @@ started.
 .. image:: https://secure.travis-ci.org/wikimedia/pywikibot-core.png?branch=master
    :alt: Build Status
    :target: https://travis-ci.org/wikimedia/pywikibot-core
+.. image:: https://img.shields.io/pypi/v/pywikibot.svg
+   :alt: Pywikibot release
+   :target: https://pypi.python.org/pypi/pywikibot
