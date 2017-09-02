@@ -201,12 +201,17 @@ except Exception as e:
     version = version + "-dev"
 
 github_url = 'https://github.com/wikimedia/pywikibot-core'
+with open('pypi_description.rst') as f:
+    long_description = f.read()
+with open('HISTORY.rst') as f:
+    history = f.read()
+long_description += '\n\n' + history
 
 setup(
     name=name,
     version=version,
     description='Python MediaWiki Bot Framework',
-    long_description=open('pypi_description.rst').read(),
+    long_description=long_description,
     keywords=('pywikibot', 'python', 'mediawiki', 'bot', 'wiki', 'framework',
               'wikimedia', 'wikipedia', 'pwb', 'pywikipedia', 'API'),
     maintainer='The Pywikibot team',

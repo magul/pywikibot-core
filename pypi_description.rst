@@ -87,3 +87,6 @@ started.
 .. image:: https://secure.travis-ci.org/wikimedia/pywikibot-core.png?branch=master
    :alt: Build Status
    :target: https://travis-ci.org/wikimedia/pywikibot-core
+.. image:: https://img.shields.io/pypi/v/pywikibot.svg
+   :alt: Pywikibot release
+   :target: https://pypi.python.org/pypi/pywikibot
