@@ -52,21 +52,43 @@ The contents of the package
 ----------------------------
 
     +----------------------------------------------------------------------------------+
-    |  Directories                                                                     |
+    |    README and config files:                                                      |
     +===========================+======================================================+
-    |  pywikibot                | Library routines, control files and global settings  |
+    |    ChangeLog              | Log file to keep track of major changes versionwise  |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/comms          | Communication layer                                  |
+    |    CREDITS                | List of major contributors to this module            |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/compat         | Package to provide compatibility with compat scripts |
+    |    ez_setup.py            | Bootstrap distribute installation file, can also be  |
+    |                           | run to install or upgrade setuptools.                |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/data           | Module with several layers for data access to wiki   |
+    |    generate_family_file.py| Creates a new family file.                           |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/families       | wiki-specific information and settings               |
+    |    generate_user_files.py | Creates user-config.py or user-fixes.py              |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/tools          | Miscellaneous helper functions (not wiki-dependent)  |
+    |    LICENSE                | a reference to the MIT license                       |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/userinterfaces | GUI and terminal interface                           |
+    |    pwb.py                 | Wrapper script to use Pywikibot in 'directory' mode  |
+    +---------------------------+------------------------------------------------------+
+    |    README-conversion.txt  | Guide to converting bot scripts from version 1       |
+    |                           | of the Pywikibot framework to version 3              |
+    +---------------------------+------------------------------------------------------+
+    |    README.rst             | Short info string used by Pywikibot Nightlies        |
+    +---------------------------+------------------------------------------------------+
+    |    requirements.txt       | PIP requirements file                                |
+    +---------------------------+------------------------------------------------------+
+    |    setup.py               | Installer script for Pywikibot 3.0 framework         |
+    +---------------------------+------------------------------------------------------+
+    |    user-config.py.sample  | Example user-config.py file for reference            |
+    +---------------------------+------------------------------------------------------+
+
+    +----------------------------------------------------------------------------------+
+    |    Directories                                                                   |
+    +===========================+======================================================+
+    |    pywikibot              | Contains some libraries and control files            |
+    +---------------------------+------------------------------------------------------+
+    |    scripts                | Contains all bots and utility scripts                |
+    +---------------------------+------------------------------------------------------+
+    |    tests                  | Some test stuff for the developing team              |
     +---------------------------+------------------------------------------------------+
 
 
@@ -87,3 +109,6 @@ started.
 .. image:: https://secure.travis-ci.org/wikimedia/pywikibot-core.png?branch=master
    :alt: Build Status
    :target: https://travis-ci.org/wikimedia/pywikibot-core
+.. image:: https://img.shields.io/pypi/v/pywikibot.svg
+   :alt: Pywikibot release
+   :target: https://pypi.python.org/pypi/pywikibot
