@@ -6,3 +6,5 @@
 mylang = 'en'
 family = 'wikipedia'
 usernames['wikipedia']['en'] = 'Test'
+# Optional (add this line to you need not ever type a password)
+authenticate['en.wikipedia.org'] = ('Test','XXXXX') # where Test is your login name, and XXXXX your password.
