@@ -95,7 +95,7 @@ textlib_methods = (
 __all__ = (
     'config', 'ui', 'Site', 'UnicodeMixin', 'translate',
     'Page', 'FilePage', 'Category', 'Link', 'User',
-    'ItemPage', 'PropertyPage', 'Claim',
+    'WikibasePage', 'ItemPage', 'PropertyPage', 'Claim',
     'html2unicode', 'url2unicode', 'unicode2html',
     'stdout', 'output', 'warning', 'error', 'critical', 'debug',
     'exception', 'input_choice', 'input', 'input_yn', 'inputChoice',
