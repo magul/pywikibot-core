@@ -28,16 +28,16 @@ if PYTHON_VERSION < (2, 7, 3):
     # unittest2 is a backport of python 2.7s unittest module to python 2.6
     # Also use unittest2 for python 2.7.2 (T106512)
     import unittest2 as unittest
+    from mock import Mock, patch
 else:
     import unittest
-
-import pywikibot.data.api
+    from unittest.mock import Mock, patch
 
 from pywikibot import config
-from pywikibot import i18n
-
+import pywikibot.data.api
 from pywikibot.data.api import CachedRequest
 from pywikibot.data.api import Request as _original_Request
+from pywikibot import i18n
 
 _root_dir = os.path.split(os.path.split(__file__)[0])[0]
 
@@ -333,3 +333,7 @@ def unpatch_request():
     """Un-patch Request classes with TestRequest."""
     pywikibot.data.api.Request = _original_Request
     pywikibot.data.api.CachedRequest._expired = original_expired
+
+
+force_cache_update = patch.object(
+    TestRequest, '_expired', Mock(return_value=True))
