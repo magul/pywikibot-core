@@ -31,7 +31,7 @@ from pywikibot.tools import (
     UnicodeType as unicode,
 )
 
-from tests import unittest_print
+from tests import unittest_print, freezed_cache
 from tests.aspects import (
     unittest, TestCase, DeprecationTestCase,
     TestCaseBase,
@@ -551,8 +551,11 @@ class TestSiteGenerators(DefaultSiteTestCase):
 
     def test_pagetemplates(self):
         """Test Site.pagetemplates."""
-        pagetemplates_all = set(self.site.pagetemplates(self.mainpage))
-        pagetemplates_ns_10 = set(self.site.pagetemplates(self.mainpage, namespaces=[10]))
+        with freezed_cache('&generator=templates', 'test_pagetemplates_all'):
+            pagetemplates_all = set(self.site.pagetemplates(self.mainpage))
+        with freezed_cache('&generator=templates', 'test_pagetemplates_10'):
+            pagetemplates_ns_10 = set(
+                self.site.pagetemplates(self.mainpage, namespaces=[10]))
 
         for te in pagetemplates_all:
             self.assertIsInstance(te, pywikibot.Page)
@@ -571,23 +574,14 @@ class TestSiteGenerators(DefaultSiteTestCase):
 
     def test_pagelinks(self):
         """Test Site.pagelinks."""
-        links = set(self.site.pagelinks(self.mainpage))
+        with freezed_cache('&generator=links', 'test_pagelinks_all'):
+            links = set(self.site.pagelinks(self.mainpage))
         for pl in links:
             self.assertIsInstance(pl, pywikibot.Page)
-        # test links arguments
-        # TODO: There have been build failures because the following assertion
-        # wasn't true. Bug: T92856
-        # Example: https://travis-ci.org/wikimedia/pywikibot-core/jobs/54552081#L505
-        namespace_links = set(self.site.pagelinks(self.mainpage, namespaces=[0, 1]))
-        if namespace_links - links:
-            unittest_print(
-                'FAILURE wrt T92856:\nSym. difference: "{0}"'.format(
-                    '", "'.join(
-                        '{0}@{1}'.format(link.namespace(),
-                                         link.title(withNamespace=False))
-                        for link in namespace_links ^ links)))
-        self.assertCountEqual(
-            set(self.site.pagelinks(self.mainpage, namespaces=[0, 1])) - links, [])
+        with freezed_cache('&generator=links', 'test_pagelinks_10'):
+            namespace_links = set(
+                self.site.pagelinks(self.mainpage, namespaces=[0, 1]))
+        self.assertCountEqual(namespace_links - links, [])
         for target in self.site.preloadpages(
                 self.site.pagelinks(self.mainpage, follow_redirects=True, total=5)):
             self.assertIsInstance(target, pywikibot.Page)
