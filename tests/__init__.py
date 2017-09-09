@@ -7,6 +7,7 @@
 #
 from __future__ import absolute_import, print_function, unicode_literals
 
+from contextlib import contextmanager
 import functools
 import os
 import warnings
@@ -333,3 +334,32 @@ def unpatch_request():
     """Un-patch Request classes with TestRequest."""
     pywikibot.data.api.Request = _original_Request
     pywikibot.data.api.CachedRequest._expired = original_expired
+
+
+@contextmanager
+def freezed_cache(param_str, cache_title):
+    """Make CachedRequest.submit fetch the data from test.wikipedia.org.
+
+    If the `param` is found in CachedRequest._http_param_string() then return
+    contents of [[testwiki:User:Pywikibot-test/apicache/<cache_title>.json]] as
+    submit response. Otherwise submit as usual.
+
+    @param param_str: the value that should be found in
+        CachedRequest._http_param_string() in order to activate testwiki cache.
+    @type param_str: str
+    @param cache_title: title of the cache page without the ".json"
+    @type cache_title: str
+    """
+    original_submit = _original_Request.submit
+
+    def overriding_submit(self):
+        """Mimic CachedRequest.submit but return the designated data."""
+        if param_str not in self._http_param_string():
+            return original_submit(self)
+        return requests.get(
+            'https://test.wikipedia.org/w/index.php?title=User:Pywikibot-test/'
+            'apicache/' + cache_title + '.json&action=raw').json()
+
+    _original_Request.submit = overriding_submit
+    yield
+    _original_Request.submit = original_submit
