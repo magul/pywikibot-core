@@ -551,13 +551,31 @@ class TestSiteGenerators(DefaultSiteTestCase):
 
     def test_pagetemplates(self):
         """Test Site.pagetemplates."""
-        pagetemplates_all = set(self.site.pagetemplates(self.mainpage))
-        pagetemplates_ns_10 = set(self.site.pagetemplates(self.mainpage, namespaces=[10]))
+        tl_gen = self.site.pagetemplates(self.mainpage)
+        self.assertEqual(
+            tl_gen.request._params,
+            {'titles': ['Main Page'],
+                'prop': ['info', 'imageinfo', 'categoryinfo'],
+                'inprop': ['protection'],
+                'iiprop': ['timestamp', 'user', 'comment', 'url', 'size',
+                           'sha1', 'metadata'],
+                'generator': ['templates'], 'action': ['query'],
+                'indexpageids': [True], 'continue': [True]})
 
-        for te in pagetemplates_all:
+        tl_gen = self.site.pagetemplates(self.mainpage, namespaces=[10])
+        self.assertEqual(
+            tl_gen.request._params, {
+                'titles': ['Main Page'],
+                'prop': ['info', 'imageinfo', 'categoryinfo'],
+                'inprop': ['protection'],
+                'iiprop': ['timestamp', 'user', 'comment', 'url', 'size',
+                           'sha1', 'metadata'],
+                'generator': ['templates'], 'action': ['query'],
+                'indexpageids': [True], 'continue': [True],
+                'gtlnamespace': [10]})
+        for te in tl_gen:
             self.assertIsInstance(te, pywikibot.Page)
-
-        self.assertLessEqual(pagetemplates_ns_10, pagetemplates_all)
+            self.assertEqual(te.namespace(), 10)
 
     def test_pagelanglinks(self):
         """Test Site.pagelanglinks."""
@@ -571,23 +589,32 @@ class TestSiteGenerators(DefaultSiteTestCase):
 
     def test_pagelinks(self):
         """Test Site.pagelinks."""
-        links = set(self.site.pagelinks(self.mainpage))
-        for pl in links:
-            self.assertIsInstance(pl, pywikibot.Page)
-        # test links arguments
-        # TODO: There have been build failures because the following assertion
-        # wasn't true. Bug: T92856
-        # Example: https://travis-ci.org/wikimedia/pywikibot-core/jobs/54552081#L505
-        namespace_links = set(self.site.pagelinks(self.mainpage, namespaces=[0, 1]))
-        if namespace_links - links:
-            unittest_print(
-                'FAILURE wrt T92856:\nSym. difference: "{0}"'.format(
-                    '", "'.join(
-                        '{0}@{1}'.format(link.namespace(),
-                                         link.title(withNamespace=False))
-                        for link in namespace_links ^ links)))
-        self.assertCountEqual(
-            set(self.site.pagelinks(self.mainpage, namespaces=[0, 1])) - links, [])
+        links_gen = self.site.pagelinks(self.mainpage)
+        gen_params = links_gen.request._params.copy()
+        self.assertTrue(gen_params.pop('pageids') or
+                        gen_params.pop('titles') == 'Main Page')
+        self.assertEqual(gen_params, {
+            'redirects': [False],
+            'prop': ['info', 'imageinfo', 'categoryinfo'],
+            'inprop': ['protection'],
+            'iiprop': ['timestamp', 'user', 'comment', 'url', 'size',
+                       'sha1', 'metadata'], 'generator': ['links'],
+            'action': ['query'], 'indexpageids': [True], 'continue': [True]})
+
+        links_gen = self.site.pagelinks(self.mainpage, namespaces=[0, 1])
+        gen_params = links_gen.request._params.copy()
+        self.assertTrue(gen_params.pop('pageids') or
+                        gen_params.pop('titles') == 'Main Page')
+        self.assertEqual(gen_params, {
+            'redirects': [False],
+            'prop': ['info', 'imageinfo', 'categoryinfo'],
+            'inprop': ['protection'],
+            'iiprop': ['timestamp', 'user', 'comment', 'url', 'size', 'sha1',
+                       'metadata'], 'generator': ['links'],
+            'action': ['query'], 'indexpageids': [True], 'continue': [True],
+            'gplnamespace': [0, 1]})
+        self.assertPagesInNamespaces(links_gen, set([0, 1]))
+
         for target in self.site.preloadpages(
                 self.site.pagelinks(self.mainpage, follow_redirects=True, total=5)):
             self.assertIsInstance(target, pywikibot.Page)
