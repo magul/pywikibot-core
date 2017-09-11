@@ -75,6 +75,15 @@ Examples:
     page won't be skipped if the item already has that property but there is
     not the new value.
 
+    python pwb.py harvest_template -lang:en -family:wikipedia -namespace:0 \
+        -template:"Infobox musical artist" current_members P527 -exists:p -multi
+
+    will import band members from the "current_members" parameter of "Infobox
+    musical artist" on English Wikipedia as Wikidata property "P527" (has part).
+    This will only extract multiple band members if each is linked, and will not
+    add duplicate claims for the same member.
+
+    TODO: 'multi' implies at least exists:p - set that automatically?
 """
 #
 # (C) Multichill, Amir, 2013
@@ -101,11 +110,14 @@ def _signal_handler(signal, frame):
 
 signal.signal(signal.SIGINT, _signal_handler)
 
+import re
 import pywikibot
 from pywikibot import pagegenerators as pg, textlib
 from pywikibot.bot import WikidataBot, OptionHandler
 
 docuReplacements = {'&params;': pywikibot.pagegenerators.parameterHelp}
+list_template_regex = re.compile(r'{{\s*(plain|flat)list\s*\|(?P<items>.*)}}')
+list_delimiter_regex = re.compile(r',?\s?<br ?/?>\n?', re.IGNORECASE)
 
 
 class PropertyOptionHandler(OptionHandler):
@@ -113,8 +125,9 @@ class PropertyOptionHandler(OptionHandler):
     """Class holding options for a param-property pair."""
 
     availableOptions = {
-        'islink': False,
         'exists': '',
+        'islink': False,
+        'multi': False,
     }
 
 
@@ -139,12 +152,16 @@ class HarvestRobot(WikidataBot):
         @keyword exists: pattern for merging existing claims with harvested
             values
         @type exists: str
+        @keyword multi: Whether multiple values should be extracted from a
+            single parameter
+        @type multi: bool
         """
         self.availableOptions.update({
             'always': True,
             'create': False,
             'exists': '',
             'islink': False,
+            'multi': False,
         })
         super(HarvestRobot, self).__init__(**kwargs)
         self.generator = generator
@@ -226,7 +243,7 @@ class HarvestRobot(WikidataBot):
             return local or default
 
     def treat_page_and_item(self, page, item):
-        """Process a single page/item."""
+        """Process a single page/item, possibly including multiple values."""
         if willstop:
             raise KeyboardInterrupt
 
@@ -253,59 +270,94 @@ class HarvestRobot(WikidataBot):
 
                 if field not in self.fields:
                     continue
-
                 # This field contains something useful for us
                 prop, options = self.fields[field]
-                claim = pywikibot.Claim(self.repo, prop)
-                if claim.type == 'wikibase-item':
-                    # Try to extract a valid page
-                    match = pywikibot.link_regex.search(value)
-                    if match:
-                        link_text = match.group(1)
-                    else:
-                        if self._get_option_with_fallback(options, 'islink'):
-                            link_text = value
-                        else:
-                            pywikibot.output(
-                                '%s field %s value %s is not a wikilink. '
-                                'Skipping.' % (claim.getID(), field, value))
-                            continue
-
-                    linked_item = self._template_link_target(item, link_text)
-                    if not linked_item:
-                        continue
-
-                    claim.setTarget(linked_item)
-                elif claim.type in ('string', 'external-id'):
-                    claim.setTarget(value.strip())
-                elif claim.type == 'url':
-                    match = self.linkR.search(value)
-                    if not match:
-                        continue
-                    claim.setTarget(match.group('url'))
-                elif claim.type == 'commonsMedia':
-                    commonssite = pywikibot.Site('commons', 'commons')
-                    imagelink = pywikibot.Link(
-                        value, source=commonssite, defaultNamespace=6)
-                    image = pywikibot.FilePage(imagelink)
-                    if image.isRedirectPage():
-                        image = pywikibot.FilePage(image.getRedirectTarget())
-                    if not image.exists():
-                        pywikibot.output(
-                            "{0} doesn't exist. I can't link to it"
-                            ''.format(image.title(asLink=True)))
-                        continue
-                    claim.setTarget(image)
+                if self._get_option_with_fallback(options, 'multi'):
+                    for sub_value in self.split_list(value):
+                        self.treat_item_value(page, item, field, sub_value, prop, options)
                 else:
-                    pywikibot.output('%s is not a supported datatype.'
-                                     % claim.type)
-                    continue
+                    self.treat_item_value(page, item, field, value, prop, options)
 
-                # A generator might yield pages from multiple sites
-                self.user_add_claim_unless_exists(
-                    item, claim, self._get_option_with_fallback(
-                        options, 'exists'),
-                    page.site, pywikibot.output)
+    def treat_item_value(self, page, item, field, value, prop, options):
+        """Saves a single value for a single page/item."""
+        claim = pywikibot.Claim(self.repo, prop)
+        if claim.type == 'wikibase-item':
+            # Try to extract a valid page
+            match = pywikibot.link_regex.search(value)
+            if match:
+                link_text = match.group(1)
+            else:
+                if self._get_option_with_fallback(options, 'islink'):
+                    link_text = value
+                else:
+                    pywikibot.output(
+                        '%s field %s value %s is not a wikilink. '
+                        'Skipping.' % (claim.getID(), field, value))
+                    return
+
+            linked_item = self._template_link_target(item, link_text)
+            if not linked_item:
+                return
+
+            claim.setTarget(linked_item)
+        elif claim.type in ('string', 'external-id'):
+            claim.setTarget(value.strip())
+        elif claim.type == 'url':
+            match = self.linkR.search(value)
+            if not match:
+                return
+            claim.setTarget(match.group('url'))
+        elif claim.type == 'commonsMedia':
+            commonssite = pywikibot.Site('commons', 'commons')
+            imagelink = pywikibot.Link(
+                value, source=commonssite, defaultNamespace=6)
+            image = pywikibot.FilePage(imagelink)
+            if image.isRedirectPage():
+                image = pywikibot.FilePage(image.getRedirectTarget())
+            if not image.exists():
+                pywikibot.output(
+                    "{0} doesn't exist. I can't link to it"
+                    ''.format(image.title(asLink=True)))
+                return
+            claim.setTarget(image)
+        else:
+            pywikibot.output('%s is not a supported datatype.'
+                             % claim.type)
+            return
+
+        # A generator might yield pages from multiple sites
+        self.user_add_claim_unless_exists(
+            item, claim, self._get_option_with_fallback(
+                options, 'exists'),
+            page.site, pywikibot.output)
+
+    @staticmethod
+    def split_list(value):
+        """Extracts multiple items from a list."""
+        template_list = list_template_regex.match(value)
+        if template_list:
+            list_body = str(template_list.group('items'))
+            first_separator_position = len(list_body)
+            chosen_separator = None
+            for separator in ['*', '#']:
+                separator_position = list_body.find(separator)
+                if list_body.count(separator) and separator_position < first_separator_position:
+                    chosen_separator = separator
+                    first_separator_position = separator_position
+            if chosen_separator is None:
+                items = [list_body]
+            else:
+                items = list_body.split(chosen_separator)
+        elif list_delimiter_regex.search(value):
+            items = list_delimiter_regex.split(value)
+        elif ',' in value:
+            # don't split on commas inside links
+            placeholder = u'\ufffc'
+            value = textlib.replaceExcept(value, ',', placeholder, ['link'])
+            items = value.split(placeholder)
+        else:
+            items = [value]
+        return list(map(str.strip, items))
 
 
 def main(*args):
