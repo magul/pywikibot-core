@@ -1251,6 +1251,8 @@ from pywikibot.page import html2unicode, url2unicode, unicode2html
 
 
 link_regex = re.compile(r'\[\[(?P<title>[^\]|[<>{}]*)(\|.*?)?\]\]')
+list_template_regex = re.compile(r'{{\s*(plain|flat)list\s*\|(?P<items>.*)}}')
+list_delimiter_regex = re.compile(r',?\s?<br ?/?>\n?', re.IGNORECASE)
 
 
 @__deprecated('comment parameter for page saving method')
