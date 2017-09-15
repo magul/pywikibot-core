@@ -1047,9 +1047,9 @@ class TestSiteGeneratorsUncached(DefaultSiteTestCase):
             raise unittest.SkipTest('test.wikipedia is misconfigured; T85358')
         cnt = 0
         # Pages which have been connected recently may still be reported as
-        # unconnected. So try on a version that is a few minutes older if the
+        # unconnected. So try on a version that is a day older if the
         # tested site appears as a sitelink.
-        start_time = datetime.utcnow() - timedelta(minutes=30)
+        start_time = datetime.utcnow() - timedelta(days=1)
         for page in self.site.unconnected_pages(total=3):
             try:
                 item = pywikibot.ItemPage.fromPage(page)
