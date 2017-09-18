@@ -538,7 +538,7 @@ debug_log = []
 #
 # sample:
 # user_script_paths = ['scripts.myscripts']
-user_script_paths = []
+user_script_paths = ['userscripts']
 
 # ############# INTERWIKI SETTINGS ##############
 
