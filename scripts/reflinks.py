@@ -108,6 +108,7 @@ deadLinkTag = {
     'en': u'[%s] {{dead link}}',
     'pl': u'[%s] {{Martwy link}}',
     'ru': u'[%s] {{subst:dead}}',
+    'sr': '[%s] {{dead link}}',
 }
 
 
