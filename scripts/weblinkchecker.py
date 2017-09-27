@@ -226,7 +226,7 @@ def get_archive_url(url):
     try:
         archive = _get_closest_memento_url(
             url,
-            timegate_uri='http://web.archive.org/web/')
+            timegate_uri='https://web.archive.org/web/')
     except Exception:
         archive = _get_closest_memento_url(
             url,
