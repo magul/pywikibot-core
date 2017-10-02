@@ -215,14 +215,30 @@ except Exception as e:
     version = version + "-dev"
 
 github_url = 'https://github.com/wikimedia/pywikibot-core'
-with open('README.rst') as f:
-    long_description = f.read()
+
+
+def read_desc(filename):
+    """Read long description."""
+    desc = []
+    with open(filename) as f:
+        for line in f:
+            if line.strip().startswith('.. include::'):
+                include = os.path.relpath(line.rsplit('::')[1].strip())
+                if os.path.exists(include):
+                    with open(include) as g:
+                        desc.append(g.read())
+                else:
+                    print('Cannot include {0}; file not founf'.format(include))
+            else:
+                desc.append(line)
+    return ''.join(desc)
+
 
 setup(
     name=name,
     version=version,
     description='Python MediaWiki Bot Framework',
-    long_description=long_description,
+    long_description=read_desc('README.rst'),
     keywords=('pywikibot', 'python', 'mediawiki', 'bot', 'wiki', 'framework',
               'wikimedia', 'wikipedia', 'pwb', 'pywikipedia', 'API'),
     maintainer='The Pywikibot team',
