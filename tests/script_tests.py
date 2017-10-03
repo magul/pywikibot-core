@@ -139,6 +139,7 @@ auto_run_script_list = [
     'shell',
     'standardize_interwiki',
     'states_redirect',
+    'subster',
     'unusedfiles',
     'upload',
     'watchlist',
