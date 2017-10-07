@@ -117,6 +117,9 @@ FILE_LINK_REGEX = r"""
 \]\]
 """
 
+# regex to find a defaulsort magic word line
+DEFAULTSORT_REGEX = r'(?m)^\{\{(?:%s)[^}]+\}\}\s*$'
+
 NON_LATIN_DIGITS = {
     'ckb': u'٠١٢٣٤٥٦٧٨٩',
     'fa': u'۰۱۲۳۴۵۶۷۸۹',
@@ -1093,6 +1096,11 @@ def getCategoryLinks(text, site=None, include=[], expand_text=False):
     # Ignore category links within nowiki tags, pre tags, includeonly tags,
     # and HTML comments
     text = removeDisabledParts(text, include=include)
+    match = re.search(DEFAULTSORT_REGEX %
+                      '|'.join(site.getmagicwords('defaultsort')),
+                      text)
+    if match:
+        result.append(match.group())
     catNamespace = '|'.join(site.namespaces.CATEGORY)
     R = re.compile(r'\[\[\s*(?P<namespace>%s)\s*:\s*(?P<rest>.+?)\]\]'
                    % catNamespace, re.I)
@@ -1132,6 +1140,12 @@ def removeCategoryLinks(text, site=None, marker=''):
     # ASCII letters and hyphens.
     if site is None:
         site = pywikibot.Site()
+    defaultsort_aliases = '|'.join(site.getmagicwords('defaultsort'))
+    defaultsortR = DEFAULTSORT_REGEX % defaultsort_aliases
+    text = replaceExcept(text, defaultsortR, '',
+                         ['nowiki', 'comment', 'math', 'pre', 'source', 'includeonly'],
+                         marker=marker,
+                         site=site)
     catNamespace = '|'.join(site.namespaces.CATEGORY)
     categoryR = re.compile(r'\[\[\s*(%s)\s*:.*?\]\]\s*' % catNamespace, re.I)
     text = replaceExcept(text, categoryR, '',
@@ -1290,8 +1304,15 @@ def categoryFormat(categories, insite=None):
         insite = pywikibot.Site()
 
     catLinks = []
+    defaultsort_aliases = '|'.join(insite.getmagicwords('defaultsort'))
+    defaultsortR = DEFAULTSORT_REGEX % defaultsort_aliases
     for category in categories:
         if isinstance(category, basestring):
+            match = re.search(defaultsortR, category)
+            if match:
+                # category is a defaultsort magic word
+                catLinks.append(match.group())
+                continue
             category, separator, sortKey = category.strip('[]').partition('|')
             sortKey = sortKey if separator else None
             prefix = category.split(":", 1)[0]  # whole word if no ":" is present
