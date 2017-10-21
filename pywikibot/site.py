@@ -4924,7 +4924,7 @@ class APISite(BaseSite):
             'users', ususers=usernames, site=self, usprop=usprop)
         return usgen
 
-    @deprecated("Site.randompages()")
+    @deprecated('Site.randompages(total=1)')
     def randompage(self, redirect=False):
         """
         DEPRECATED.
@@ -4934,7 +4934,7 @@ class APISite(BaseSite):
         """
         return self.randompages(total=1, redirects=redirect)
 
-    @deprecated("Site.randompages()")
+    @deprecated('Site.randompages(total=1, redirects=True)')
     def randomredirectpage(self):
         """
         DEPRECATED: Use Site.randompages() instead.
