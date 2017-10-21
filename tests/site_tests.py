@@ -28,6 +28,7 @@ from pywikibot.tools import (
     PY2,
     StringTypes as basestring,
     UnicodeType as unicode,
+    suppress_warnings,
 )
 
 from tests import unittest_print
@@ -2002,9 +2003,26 @@ class SiteRandomTestCase(DefaultSiteTestCase):
     def test_redirects(self):
         """Test site.randompages() with redirects."""
         mysite = self.get_site()
-        for rndpage in mysite.randompages(total=5, redirects=True):
+        for rndpage in mysite.randompages(total=5, redirects='redirects'):
             self.assertIsInstance(rndpage, pywikibot.Page)
             self.assertTrue(rndpage.isRedirectPage())
+
+    def test_all(self):
+        """Test site.randompages() with 'all'."""
+        mysite = self.get_site()
+        for rndpage in mysite.randompages(total=5, redirects='all'):
+            self.assertIsInstance(rndpage, pywikibot.Page)
+
+    def test_deprecated_params(self):
+        """Test site.randompages() with deprecated parameters."""
+        mysite = self.get_site()
+        with suppress_warnings():
+            for rndpage in mysite.randompages(total=5, redirects=True):
+                self.assertIsInstance(rndpage, pywikibot.Page)
+                self.assertTrue(rndpage.isRedirectPage())
+            for rndpage in mysite.randompages(total=5, redirects=False):
+                self.assertIsInstance(rndpage, pywikibot.Page)
+                self.assertFalse(rndpage.isRedirectPage())
 
     def test_namespaces(self):
         """Test site.randompages() with namespaces."""
