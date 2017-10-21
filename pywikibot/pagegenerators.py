@@ -2376,9 +2376,8 @@ def RandomRedirectPageGenerator(total=None, site=None, namespaces=None):
     """
     if site is None:
         site = pywikibot.Site()
-    for page in site.randompages(total=total, namespaces=namespaces,
-                                 redirects=True):
-        yield page
+    return site.randompages(total=total, namespaces=namespaces,
+                            redirects='redirects')
 
 
 @deprecated_args(link='url', euprotocol='protocol', step=None)

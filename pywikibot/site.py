@@ -4924,8 +4924,8 @@ class APISite(BaseSite):
             'users', ususers=usernames, site=self, usprop=usprop)
         return usgen
 
-    @deprecated("Site.randompages()")
-    def randompage(self, redirect=False):
+    @deprecated('Site.randompages(total=1)')
+    def randompage(self, redirect=None):
         """
         DEPRECATED.
 
@@ -4934,18 +4934,18 @@ class APISite(BaseSite):
         """
         return self.randompages(total=1, redirects=redirect)
 
-    @deprecated("Site.randompages()")
+    @deprecated("Site.randompages(total=1, redirects='redirects')")
     def randomredirectpage(self):
         """
         DEPRECATED: Use Site.randompages() instead.
 
         @return: Return a random redirect page
         """
-        return self.randompages(total=1, redirects=True)
+        return self.randompages(total=1, redirects='redirects')
 
     @deprecated_args(step=None)
     def randompages(self, total=None, namespaces=None,
-                    redirects=False, content=False):
+                    redirects=None, content=False):
         """Iterate a number of random pages.
 
         Pages are listed in a fixed sequence, only the starting point is
@@ -4956,17 +4956,38 @@ class APISite(BaseSite):
         @type namespaces: iterable of basestring or Namespace key,
             or a single instance of those types. May be a '|' separated
             list of namespace identifiers.
-        @param redirects: if True, include only redirect pages in results
-            (default: include only non-redirects)
+        @param redirects: if 'redirects, include only redirect pages in
+            results, 'nonredirects' does not include redirects and 'all'
+            include both types. (default: 'nonredirects')
+        @type redirects: str (one of 'nonredirects', 'redirects', 'all')
         @param content: if True, load the current content of each iterated page
             (default False)
         @raises KeyError: a namespace identifier was not resolved
         @raises TypeError: a namespace identifier has an inappropriate
             type such as NoneType or bool
+        @raises AssertError: unsupported redirects parameter
         """
+        filteritems = ('nonredirects', 'redirects', 'all')
+        if isinstance(redirects, bool):
+            issue_deprecation_warning(
+                'Parameter redirects={0}'.format(redirects),
+                "redirects='{0}'".format(filteritems[redirects]) +
+                ('' if redirects else ' or redirects=None'), 2)
+            redirects = filteritems[redirects]
+        params = {}
+        if redirects is not None:
+            assert(redirects in filteritems)
+            if MediaWikiVersion(self.version()) < MediaWikiVersion('1.26'):
+                if redirects == 'all':
+                    warn("parameter redirects='all' is not supported by mw "
+                         'version {0}. Ignoring it.'.format(self.version()),
+                         UserWarning)
+                params['grnredirect'] = redirects == 'redirects'
+            else:
+                params['grnfilterredir'] = redirects
         rngen = self._generator(api.PageGenerator, type_arg="random",
                                 namespaces=namespaces, total=total,
-                                g_content=content, grnredirect=redirects)
+                                g_content=content, **params)
         return rngen
 
     # Catalog of editpage error codes, for use in generating messages.
