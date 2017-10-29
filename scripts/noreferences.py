@@ -287,11 +287,13 @@ referencesSections = {
         u'Viitteet',
     ],
     'fr': [             # [[fr:Aide:Note]]
-        u'Notes et références',
-        u'Références',
-        u'References',
-        'Notes',
-        'Sources',
+        'Notes et références',
+        'Notes? et références?',
+        'Références?',
+        'Réferences?',
+        'References?'
+        'Notes?',
+        'Sources?',
     ],
     'he': [
         u'הערות שוליים',
