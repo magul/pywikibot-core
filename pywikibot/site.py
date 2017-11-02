@@ -2079,11 +2079,17 @@ class APISite(BaseSite):
             if sysop:
                 raise NoUsername('No sysop is permitted with OAuth')
             elif self.userinfo['name'] != self._username[sysop]:
-                raise NoUsername('Logged in on %(site)s via OAuth as '
-                                 '%(wrong)s, but expect as %(right)s'
-                                 % {'site': self,
-                                    'wrong': self.userinfo['name'],
-                                    'right': self._username[sysop]})
+                if self._username == [None, None]:
+                    raise NoUsername('No username has been defined in user-config.py: you have to '
+                                     'add in this file the following line:\n'
+                                     "usernames['%s']['%s'] = '%s'"
+                                     % (self.family, self.lang, self.userinfo['name']))
+                else:
+                    raise NoUsername('Logged in on %(site)s via OAuth as '
+                                     '%(wrong)s, but expect as %(right)s'
+                                     % {'site': self,
+                                        'wrong': self.userinfo['name'],
+                                        'right': self._username[sysop]})
             else:
                 raise NoUsername('Logging in on %s via OAuth failed' % self)
         loginMan = api.LoginManager(site=self, sysop=sysop,
