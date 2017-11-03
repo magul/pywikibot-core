@@ -1241,9 +1241,9 @@ class TestFactoryGeneratorWikibase(WikidataTestCase):
         # American Broadcasting Company
         page1 = next(gen)
         self.assertEqual(page1.title(), 'Q169889')
-        # Australian Broadcasting Corporation
+        # ABC, Wikimedia disambiguation page
         page2 = next(gen)
-        self.assertEqual(page2.title(), 'Q781365')
+        self.assertEqual(page2.title(), 'Q286874')
 
     def test_get_category_site(self):
         """Test the getCategory method."""
