@@ -304,8 +304,8 @@ class TestLiveCosmeticChanges(TestCosmeticChanges):
 
     def test_cleanUpLinks_pipes(self):
         """Test cleanUpLinks method."""
-        self.assertEqual('[[No|no change]]',
-                         self.cct.cleanUpLinks('[[no|no change]]'))
+        self.assertEqual('[[No|No change]]',
+                         self.cct.cleanUpLinks('[[No|No change]]'))
         self.assertEqual('[[title]]',
                          self.cct.cleanUpLinks('[[title|title]]'))
         self.assertEqual('[[title]]',
@@ -316,6 +316,8 @@ class TestLiveCosmeticChanges(TestCosmeticChanges):
                          self.cct.cleanUpLinks('[[sand|sand]]box'))
         self.assertEqual('[[Sand|demospace]]',
                          self.cct.cleanUpLinks('[[sand|demo]]space'))
+        self.assertEqual('[[ß|Eszett]]',
+                         self.cct.cleanUpLinks('[[ß|Eszett]]'))
         self.assertEqual('[[Title]]',
                          self.cct.cleanUpLinks('[[title|Title]]'))
         self.assertEqual('[[Sand]]box',
