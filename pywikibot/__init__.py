@@ -333,7 +333,7 @@ class Coordinate(_WbRepresentation):
         return {'latitude': self.lat,
                 'longitude': self.lon,
                 'altitude': self.alt,
-                'globe': self.entity,
+                'globe': self.entity.replace('http://', 'https://', 1),
                 'precision': self.precision,
                 }
 
@@ -556,7 +556,7 @@ class WbTime(_WbRepresentation):
                 if site is None:
                     raise ValueError('Site %s has no data repository' % Site())
             calendarmodel = site.calendarmodel()
-        self.calendarmodel = calendarmodel
+        self.calendarmodel = calendarmodel.replace('http://', 'https://', 1)
 
         # if precision is given it overwrites the autodetection above
         if precision is not None:
@@ -840,7 +840,7 @@ class WbQuantity(_WbRepresentation):
         json = {'amount': self._fromdecimal(self.amount),
                 'upperBound': self._fromdecimal(self.upperBound),
                 'lowerBound': self._fromdecimal(self.lowerBound),
-                'unit': self.unit
+                'unit': self.unit.replace('http://', 'https://', 1)
                 }
         return json
 

@@ -4243,8 +4243,8 @@ class ItemPage(WikibasePage):
         if not isinstance(site, DataSite):
             raise TypeError('{0} is not a data repository.'.format(site))
 
-        base_uri, _, qid = uri.rpartition('/')
-        if base_uri != site.concept_base_uri.rstrip('/'):
+        base_uri, _, qid = uri.partition('//')[2].rpartition('/')
+        if base_uri != site.concept_base_uri.partition('//')[2].rstrip('/'):
             raise ValueError(
                 'The supplied data repository ({repo}) does not correspond to '
                 'that of the item ({item})'.format(
