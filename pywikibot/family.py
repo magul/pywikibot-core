@@ -1550,6 +1550,7 @@ class WikimediaFamily(Family):
     other_content_families = [
         'wikidata',
         'mediawiki',
+        'translatewiki',
     ]
 
     content_families = set(
