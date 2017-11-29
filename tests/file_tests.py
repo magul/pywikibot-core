@@ -73,7 +73,10 @@ class TestShareFiles(TestCase):
         self.assertTrue(commons_file.get_file_url())
 
         self.assertIn('/wikipedia/commons/', itwp_file.get_file_url())
-        self.assertRaises(pywikibot.NoPage, itwp_file.get)
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                r'Page \[\[it:File:Sepp Maier 1\.JPG\]\] doesn\'t exist\.'):
+            itwp_file.get()
 
     def testLocalOnly(self):
         """Test fileIsShared() on file page with local file only."""
@@ -93,10 +96,28 @@ class TestShareFiles(TestCase):
         self.assertFalse(commons_file.exists())
 
         self.assertFalse(enwp_file.fileIsShared())
-        self.assertRaises(pywikibot.NoPage, commons_file.fileIsShared)
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                (r'Page \[\[commons:File:Untitled \(Three Forms\), stainless'
+                 r' steel sculpture by --James Rosati--, 1975-1976, --Honolulu'
+                 r' Academy of Arts--\.JPG\]\] doesn\'t exist.')):
+            commons_file.fileIsShared()
 
-        self.assertRaises(pywikibot.NoPage, commons_file.get_file_url)
-        self.assertRaises(pywikibot.NoPage, commons_file.get)
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                (r'Page \[\[commons:File:Untitled \(Three Forms\), '
+                 r'stainless steel sculpture by --James Rosati--, '
+                 r'1975-1976, --Honolulu Academy of Arts--\.JPG\]\]'
+                 r' doesn\'t exist.')):
+            commons_file.get_file_url()
+
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                (r'Page \[\[commons:File:Untitled \(Three Forms\),'
+                 r' stainless steel sculpture by --James Rosati--,'
+                 r' 1975-1976, --Honolulu Academy of Arts--.JPG\]\]'
+                 r' doesn\'t exist\.')):
+            commons_file.get()
 
     def testOnBoth(self):
         """Test fileIsShared() on file page with both local and shared file."""
@@ -155,7 +176,10 @@ class TestFilePage(TestCase):
         site = self.get_site()
         image = pywikibot.FilePage(site, u'File:NoPage')
         self.assertFalse(image.exists())
-        with self.assertRaises(pywikibot.NoPage):
+
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                r'Page \[\[test:File:NoPage\]\] doesn\'t exist.'):
             image = image.latest_file_info
 
     def test_file_info_with_no_file(self):
@@ -163,7 +187,10 @@ class TestFilePage(TestCase):
         site = self.get_site()
         image = pywikibot.FilePage(site, u'File:Test with no image')
         self.assertTrue(image.exists())
-        with self.assertRaises(pywikibot.PageRelatedError):
+        with self.assertRaisesRegex(
+            pywikibot.PageRelatedError,
+                (r'loadimageinfo: Query on \[\[test:File:Test with no image\]\]'
+                 r' returned no imageinfo')):
             image = image.latest_file_info
 
 
@@ -278,7 +305,11 @@ class TestFilePageDownload(TestCase):
         """Test not existing download."""
         page = pywikibot.FilePage(self.site, 'File:Albert Einstein.jpg_notexisting')
         filename = join_images_path('Albert Einstein.jpg')
-        with self.assertRaises(pywikibot.NoPage):
+
+        with self.assertRaisesRegex(
+            pywikibot.NoPage,
+                r'Page \[\[commons:File:Albert Einstein.jpg '
+                r'notexisting\]\] doesn\'t exist.'):
             page.download(filename)
 
 
