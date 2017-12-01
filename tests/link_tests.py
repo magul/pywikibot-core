@@ -7,6 +7,8 @@
 #
 from __future__ import absolute_import, unicode_literals
 
+import re
+
 import pywikibot
 
 from pywikibot import config2 as config
@@ -103,43 +105,155 @@ class TestLink(DefaultDrySiteTestCase):
 
     def test_invalid(self):
         """Test that invalid titles raise InvalidTitle exception."""
-        self.assertRaises(InvalidTitle, Link('', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link(':', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('__  __', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('  __  ', self.get_site()).parse)
+        exception_message_regex = re.escape(
+            'The link does not contain a page title')
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                exception_message_regex):
+            Link('', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                exception_message_regex):
+            Link(':', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                exception_message_regex):
+            Link('__  __', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                exception_message_regex):
+            Link('  __  ', self.get_site()).parse()
         # Bad characters forbidden regardless of wgLegalTitleChars
-        self.assertRaises(InvalidTitle, Link('A [ B', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A ] B', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A { B', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A } B', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A < B', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A > B', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \[ B\' contains illegal char\(s\) (u|)\'\[\''):
+            Link('A [ B', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \] B\' contains illegal char\(s\) (u|)\'\]\''):
+            Link('A ] B', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \{ B\' contains illegal char\(s\) (u|)\'\{\''):
+            Link('A { B', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \} B\' contains illegal char\(s\) (u|)\'\}\''):
+            Link('A } B', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \< B\' contains illegal char\(s\) (u|)\'\<\''):
+            Link('A < B', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A \> B\' contains illegal char\(s\) (u|)\'\>\''):
+            Link('A > B', self.get_site()).parse()
+
         # URL encoding
         # %XX is understood by wikimedia but not %XXXX
-        self.assertRaises(InvalidTitle, Link('A%2523B', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'A%23B\' contains illegal char\(s\) (u|)\'%23\''):
+            Link('A%2523B', self.get_site()).parse()
         # A link is invalid if their (non-)talk page would be in another
         # namespace than the link's "other" namespace
-        self.assertRaises(InvalidTitle, Link('Talk:File:Example.svg', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                (r'The \(non-\)talk page of (u|)\'Talk:File:Example.svg\''
+                 r' is a valid title in another namespace.')):
+            Link('Talk:File:Example.svg', self.get_site()).parse()
         # Directory navigation
-        self.assertRaises(InvalidTitle, Link('.', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('..', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('./Sandbox', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('../Sandbox', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Foo/./Sandbox', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Foo/../Sandbox', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Sandbox/.', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Sandbox/..', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'.\''):
+            Link('.', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'..\''):
+            Link('..', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'./Sandbox\''):
+            Link('./Sandbox', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'../Sandbox\''):
+            Link('../Sandbox', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'Foo/./Sandbox\''):
+            Link('Foo/./Sandbox', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'Foo/../Sandbox\''):
+            Link('Foo/../Sandbox', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'Sandbox/.\''):
+            Link('Sandbox/.', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains . / combinations\): (u|)\'Sandbox/..\''):
+            Link('Sandbox/..', self.get_site()).parse()
+
         # Tilde
-        self.assertRaises(InvalidTitle, Link('A ~~~ Name', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A ~~~~ Signature', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('A ~~~~~ Timestamp', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains ~~~\): (u|)\'A ~~~ Name\''):
+            Link('A ~~~ Name', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains ~~~\): (u|)\'A ~~~~ Signature\''):
+            Link('A ~~~~ Signature', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(contains ~~~\): (u|)\'A ~~~~~ Timestamp\''):
+            Link('A ~~~~~ Timestamp', self.get_site()).parse()
+
         # Overlength
-        self.assertRaises(InvalidTitle, Link('x' * 256, self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Invalid:' + 'X' * 248, self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(over 255 bytes\): (u|)\'%s\'' % ('x' * 256)):
+            Link('x' * 256, self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'\(over 255 bytes\): (u|)\'Invalid:%s\'' % ('X' * 248)):
+            Link('Invalid:' + 'X' * 248, self.get_site()).parse()
+
         # Namespace prefix without actual title
-        self.assertRaises(InvalidTitle, Link('Talk:', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Category: ', self.get_site()).parse)
-        self.assertRaises(InvalidTitle, Link('Category: #bar', self.get_site()).parse)
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'Talk:\' has no title.'):
+            Link('Talk:', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'Category:\' has no title.'):
+            Link('Category: ', self.get_site()).parse()
+
+        with self.assertRaisesRegex(
+                InvalidTitle,
+                r'(u|)\'Category: #bar\' has no title.'):
+            Link('Category: #bar', self.get_site()).parse()
 
     def test_relative(self):
         """Test that relative links are handled properly."""
@@ -183,7 +297,13 @@ class Issue10254TestCase(DefaultDrySiteTestCase):
         """Test Python issue 10254 causes an exception."""
         pywikibot.page.unicodedata = __import__('unicodedata')
         title = 'Li̍t-sṳ́'
-        self.assertRaises(UnicodeError, Link, title, self.site)
+        with self.assertRaisesRegex(
+                UnicodeError,
+                re.escape('Link(%r, %s): combining characters detected, which '
+                          'are not supported by Pywikibot on Python 2.6.6. '
+                          'See https://phabricator.wikimedia.org/T102461'
+                          % (title, self.site))):
+            Link(title, self.site)
 
 
 # ---- The first set of tests are explicit links, starting with a ':'.
