@@ -109,13 +109,13 @@ class Formatter(object):
     """Structure with Page attributes exposed for formatting from cmd line."""
 
     fmt_options = {
-        '1': u"{num:4d} {page.title}",
-        '2': u"{num:4d} [[{page.title}]]",
-        '3': u"{page.title}",
-        '4': u"[[{page.title}]]",
-        '5': u"{num:4d} \03{{lightred}}{page.loc_title:<40}\03{{default}}",
-        '6': u"{num:4d} {page.loc_title:<40} {page.can_title:<40}",
-        '7': u"{num:4d} {page.loc_title:<40} {page.trs_title:<40}",
+        '1': u"{num:4d} {page.title}<br/>",
+        '2': u"{num:4d} [[{page.title}]]<br/>",
+        '3': u"{page.title}<br/>",
+        '4': u"[[{page.title}]]<br/>",
+        '5': u"{num:4d} \03{{lightred}}{page.loc_title:<40}\03{{default}}<br/>",
+        '6': u"{num:4d} {page.loc_title:<40} {page.can_title:<40}<br/>",
+        '7': u"{num:4d} {page.loc_title:<40} {page.trs_title:<40}<br/>",
     }
 
     # Identify which formats need outputlang
