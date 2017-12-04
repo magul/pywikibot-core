@@ -750,7 +750,10 @@ class CategoryMoveRobot(object):
         @param var: Either the title as a string or a Category object.
         """
         if not isinstance(var, pywikibot.Category):
-            var = pywikibot.Category(self.site, var)
+            if re.search(r'(' + r'|'.join(self.site.namespaces[14]) + r'):', var, flags=re.I):
+                var = pywikibot.Category(self.site, var)
+            else:
+                var = pywikibot.Category(self.site, self.site.namespace(14) + ':' + var)
         return var
 
 
