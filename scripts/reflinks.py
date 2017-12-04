@@ -179,11 +179,6 @@ linksInRef = re.compile(
     # unbracketed without ()
     r'[^\[\]\s<>"]+[^\[\]\s\)\.:;\\,<>\?"]+|[^\[\]\s<>"]+))[!?,\s]*\]?\s*</ref>')
 
-# Download this file :
-# http://www.twoevils.org/files/wikipedia/404-links.txt.gz
-# ( maintained by User:Dispenser )
-listof404pages = '404-links.txt'
-
 XmlDumpPageGenerator = partial(
     _XMLDumpPageGenerator, text_predicate=linksInRef.search)
 
@@ -487,14 +482,6 @@ class ReferencesRobot(Bot):
 
     def run(self):
         """Run the Bot."""
-        try:
-            deadLinks = codecs.open(listof404pages, 'r', 'latin_1').read()
-        except IOError:
-            raise NotImplementedError(
-                '404-links.txt is required for reflinks.py\n'
-                'You need to download\n'
-                'http://www.twoevils.org/files/wikipedia/404-links.txt.gz\n'
-                'and to unzip it in the same directory')
 
         editedpages = 0
         for page in self.generator:
