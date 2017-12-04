@@ -1232,7 +1232,10 @@ def replaceCategoryLinks(oldtext, new, site=None, addOnly=False):
             'German\nWikipedia on pages that contain the Personendaten '
             'template because of the\nnon-standard placement of that template.\n'
             'See https://de.wikipedia.org/wiki/Hilfe:Personendaten#Kopiervorlage')
-    separator = site.family.category_text_separator
+    if re.search(r'\{\{(' + r'|'.join(site.getmagicwords('defaultsort')) + ')', new, flags=re.I):
+        separator = config.line_separator
+    else:
+        separator = site.family.category_text_separator
     iseparator = site.family.interwiki_text_separator
     separatorstripped = separator.strip()
     iseparatorstripped = iseparator.strip()
