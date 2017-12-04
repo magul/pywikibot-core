@@ -56,6 +56,21 @@ def _get_program_dir():
     return _program_dir
 
 
+def get_toolforge_info():
+    """Get info of a Toolforge environment.
+
+    @return: The uname of Wikimedia Toolforge environment, if not in Wikimedia
+             Toolforge environment, return None.
+    @rtype: str or None
+    """
+    process = subprocess.Popen(['hostname', '-d'], stdout=subprocess.PIPE)
+    output = process.communicate()[0]
+
+    if b'tools.eqiad.wmflabs' in output.splitlines():
+        instance_uname = ' '.join(os.uname())
+        return instance_uname
+
+
 def getversion(online=True):
     """Return a pywikibot version string.
 

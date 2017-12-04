@@ -16,7 +16,7 @@ import sys
 
 import pywikibot
 
-from pywikibot.version import getversion
+from pywikibot.version import getversion, get_toolforge_info
 
 try:
     import requests
@@ -66,6 +66,10 @@ def main(*args):
             '  Please reinstall requests!')
 
     pywikibot.output('Python: %s' % sys.version)
+
+    toolforge_env_uname = get_toolforge_info()
+    if toolforge_env_uname:
+        pywikibot.output('Toolforge uname: %s' % toolforge_env_uname)
 
     check_environ('PYWIKIBOT2_DIR')
     check_environ('PYWIKIBOT2_DIR_PWB')
