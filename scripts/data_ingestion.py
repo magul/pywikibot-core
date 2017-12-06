@@ -16,6 +16,7 @@ from __future__ import absolute_import, unicode_literals
 
 import base64
 import codecs
+from contextlib import closing
 import hashlib
 import io
 import os
@@ -291,7 +292,7 @@ def main(*args):
             pywikibot.error('%s could not be opened: %s' % (filename, e))
             continue
 
-        try:
+        with closing(f):
             files = CSVReader(f, urlcolumn='url',
                               site=config_page.site,
                               dialect=configuration['csvDialect'],
@@ -303,8 +304,6 @@ def main(*args):
                                    site=None)
 
             bot.run()
-        finally:
-            f.close()
 
 
 if __name__ == "__main__":
