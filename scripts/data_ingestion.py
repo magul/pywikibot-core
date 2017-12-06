@@ -16,6 +16,7 @@ from __future__ import absolute_import, unicode_literals
 
 import base64
 import codecs
+from contextlib import closing
 import hashlib
 import io
 import os
@@ -275,36 +276,29 @@ def main(*args):
         return False
 
     for config_page in config_generator:
-        try:
-            config_page.get()
-        except pywikibot.NoPage:
+        if not config_page.exists():
             pywikibot.error('%s does not exist' % config_page)
             continue
 
         configuration = DataIngestionBot.parseConfigurationPage(config_page)
-
         filename = os.path.join(csv_dir, configuration['csvFile'])
-        try:
 
+        try:
             f = codecs.open(filename, 'r', configuration['csvEncoding'])
         except (IOError, OSError) as e:
             pywikibot.error('%s could not be opened: %s' % (filename, e))
-            continue
+        else:
+            with closing(f):
+                files = CSVReader(f, urlcolumn='url',
+                                  site=config_page.site,
+                                  dialect=configuration['csvDialect'],
+                                  delimiter=str(configuration['csvDelimiter']))
 
-        try:
-            files = CSVReader(f, urlcolumn='url',
-                              site=config_page.site,
-                              dialect=configuration['csvDialect'],
-                              delimiter=str(configuration['csvDelimiter']))
-
-            bot = DataIngestionBot(files,
-                                   configuration['titleFormat'],
-                                   configuration['formattingTemplate'],
-                                   site=None)
-
-            bot.run()
-        finally:
-            f.close()
+                bot = DataIngestionBot(files,
+                                       configuration['titleFormat'],
+                                       configuration['formattingTemplate'],
+                                       site=None)
+                bot.run()
 
 
 if __name__ == "__main__":
