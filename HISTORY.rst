@@ -4,6 +4,7 @@ Release history
 Current release
 ---------------
 
+* compat module has been dropped
 * Bugfixes and improvements
 * Localisation updates
 
