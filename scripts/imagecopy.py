@@ -213,6 +213,7 @@ class imageTransfer(threading.Thread):
     def __init__(self, imagePage, newname, category):
         """Constructor."""
         self.imagePage = imagePage
+        self.image_repo = imagePage.site.image_repository()
         self.newname = newname
         self.category = category
         threading.Thread.__init__(self)
@@ -258,11 +259,11 @@ class imageTransfer(threading.Thread):
         bot = UploadRobot(url=self.imagePage.fileUrl(), description=CH,
                           useFilename=self.newname, keepFilename=True,
                           verifyDescription=False, ignoreWarning=True,
-                          targetSite=pywikibot.Site('commons', 'commons'))
+                          targetSite=self.image_repo)
         bot.run()
 
         # Should check if the image actually was uploaded
-        if pywikibot.Page(pywikibot.Site('commons', 'commons'),
+        if pywikibot.Page(self.image_repo,
                           u'Image:' + self.newname).exists():
             # Get a fresh copy, force to get the page so we dont run into edit
             # conflicts
@@ -523,7 +524,7 @@ def main(*args):
 
                         # Check if the image already exists
                         CommonsPage = pywikibot.Page(
-                            pywikibot.Site('commons', 'commons'),
+                            imagepage.site.image_repository(),
                             u'File:' + newname)
                         if not CommonsPage.exists():
                             break
