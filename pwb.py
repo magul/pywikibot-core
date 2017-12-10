@@ -9,7 +9,7 @@ Run scripts using:
 and it will use the package directory to store all user files, will fix up
 search paths so the package does not need to be installed, etc.
 """
-# (C) Pywikibot team, 2015-2016
+# (C) Pywikibot team, 2015-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -146,9 +146,8 @@ def abspath(path):
 absolute_path = abspath(os.path.dirname(sys.argv[0]))
 rewrite_path = absolute_path
 
-sys.path = [sys.path[0], rewrite_path,
-            os.path.join(rewrite_path, 'pywikibot', 'compat'),
-            ] + sys.path[1:]
+if len(sys.path) == 1 or len(sys.path) > 1 and sys.path[1] != rewrite_path:
+    sys.path = [sys.path[0], rewrite_path] + sys.path[1:]
 
 try:
     import requests
