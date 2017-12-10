@@ -27,6 +27,9 @@ Work on all images in a category:<cat>
  python pwb.py imagecopy.py -cat:<cat>
 Work on all images which transclude a template
  python pwb.py imagecopy.py -transcludes:<template>
+Work on a single image and delete the image when the transfer is complete
+(just work if the user has sysops privilege)
+ python pwb.py imagecopy.py -page:Image:<imagename> -delete
 
 See pagegenerators.py for more ways to get a list of images.
 By default the bot works on your home wiki (set in user-config)
@@ -210,11 +213,12 @@ class imageTransfer(threading.Thread):
 
     """Facilitate transfer of image/file to commons."""
 
-    def __init__(self, imagePage, newname, category):
+    def __init__(self, imagePage, newname, category, delete_after_done):
         """Constructor."""
         self.imagePage = imagePage
         self.newname = newname
         self.category = category
+        self.delete_after_done = delete_after_done
         threading.Thread.__init__(self)
 
     def run(self):
@@ -262,8 +266,9 @@ class imageTransfer(threading.Thread):
         bot.run()
 
         # Should check if the image actually was uploaded
-        if pywikibot.Page(pywikibot.Site('commons', 'commons'),
-                          u'Image:' + self.newname).exists():
+        commons_page = pywikibot.Page(pywikibot.Site('commons', 'commons'),
+                                      u'Image:' + self.newname)
+        if commons_page.exists():
             # Get a fresh copy, force to get the page so we dont run into edit
             # conflicts
             imtxt = self.imagePage.get(force=True)
@@ -309,6 +314,14 @@ class imageTransfer(threading.Thread):
                     newImage=self.newname,
                     summary=moveSummary, always=True, loose=True)
                 imagebot.run()
+
+            # If the user want to delete the page and
+            # the user has sysops privilege, delete the page.
+            if self.delete_after_done:
+                self.imagePage.delete(
+                    'Image moved to Commons ({0})'.format(
+                        commons_page.full_url()),
+                    False)
         return
 
     def fixAuthor(self, pageText):
@@ -460,6 +473,7 @@ def main(*args):
     imagepage = None
     always = False
     category = u''
+    delete_after_done = False
     # Load a lot of default generators
     local_args = pywikibot.handle_args(args)
     genFactory = pagegenerators.GeneratorFactory()
@@ -471,6 +485,9 @@ def main(*args):
             category = arg[len('-cc:'):]
         else:
             genFactory.handleArg(arg)
+
+        if arg == '-delete':
+            delete_after_done = True
 
     pregenerator = genFactory.getCombinedGenerator(preload=True)
     if not pregenerator:
@@ -535,7 +552,8 @@ def main(*args):
                         # the start of the loop
 
             if not skip:
-                imageTransfer(imagepage, newname, category).start()
+                imageTransfer(imagepage, newname, category,
+                              delete_after_done).start()
 
     pywikibot.output('Still ' + str(threading.activeCount()) +
                      ' active threads, lets wait')
