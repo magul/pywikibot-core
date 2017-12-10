@@ -99,19 +99,6 @@ The contents of the package
 
 
     +---------------------------+-------------------------------------------------------+
-    | compat                    | Package to provide compatibility with compat scripts. |
-    |                           | (should never be used)                                |
-    +===========================+=======================================================+
-    | catlib.py                 | Library routines written especially to handle         |
-    |                           | category pages and recurse over category contents.    |
-    +---------------------------+-------------------------------------------------------+
-    | query.py                  | API query library                                     |
-    +---------------------------+-------------------------------------------------------+
-    | userlib.py                | Library to work with users, their pages and talk page |
-    +---------------------------+-------------------------------------------------------+
-
-
-    +---------------------------+-------------------------------------------------------+
     | data                      | Module providing several layers of data access to wiki|
     +===========================+=======================================================+
     | api.py                    | Interface to Mediawiki's api.php                      |

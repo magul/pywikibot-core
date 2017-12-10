@@ -4,6 +4,7 @@ Release history
 Current release
 ---------------
 
+* compat module has been dropped
 * Ship wikimania family file
 * Drop battlestarwiki family file
 * Bugfixes and improvements
