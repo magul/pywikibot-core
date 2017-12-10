@@ -8,8 +8,6 @@ The contents of the package
     +---------------------------+------------------------------------------------------+
     |  pywikibot/comms          | Communication layer                                  |
     +---------------------------+------------------------------------------------------+
-    |  pywikibot/compat         | Package to provide compatibility with compat scripts |
-    +---------------------------+------------------------------------------------------+
     |  pywikibot/data           | Module with several layers for data access to wiki   |
     +---------------------------+------------------------------------------------------+
     |  pywikibot/families       | wiki-specific information and settings               |
