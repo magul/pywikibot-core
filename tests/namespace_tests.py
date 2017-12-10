@@ -233,7 +233,7 @@ class TestNamespaceDictDeprecated(AutoDeprecationTestCase):
         r'identifiers contains inappropriate types: (.*?)'
     )
     INTARGNOTSTRINGORNUMBER_RE = (
-        r"int\(\) argument must be a string or a number, not '(.*?)'"
+        r"int\(\) argument must be a string(, a bytes-like object)? or a number, not '(.*?)'"
     )
     NAMESPACEIDNOTRECOGNISED_RE = (
         r'Namespace identifier\(s\) not recognised: (.*?)'
