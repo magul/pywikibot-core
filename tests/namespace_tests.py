@@ -377,8 +377,8 @@ class TestNamespacesDictGetItem(TestCase):
 
     """Test NamespacesDict.__getitem__."""
 
-    VALIDNUMBER_RE = '-?(0|[1-9]\d*)'
-    EMPTYTEXT_RE = '\s*'
+    VALIDNUMBER_RE = r'-?(0|[1-9]\d*)'
+    EMPTYTEXT_RE = r'\s*'
 
     net = False
 
