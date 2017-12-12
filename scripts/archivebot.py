@@ -109,8 +109,7 @@ import pywikibot
 
 from pywikibot.date import apply_month_delta
 from pywikibot import i18n
-from pywikibot.textlib import TimeStripper
-from pywikibot.textlib import to_local_digits
+from pywikibot.textlib import TimeStripper, replaceExcept, _get_regexes, to_local_digits
 from pywikibot.tools import issue_deprecation_warning, FrozenDict
 
 ZERO = datetime.timedelta(0)
@@ -453,11 +452,21 @@ class DiscussionPage(pywikibot.Page):
         self.threads = []
         self.archives = {}
         self.archived_threads = 0
-        lines = self.get().split('\n')
+        text = self.get()
+        # Do not search thread headers in following exceptions
+        exceptions = ['comment', 'pre', 'source', 'nowiki']
+        exc_regexes = _get_regexes(exceptions, self.site)
+        stripped_text = text
+        for regex in exc_regexes:
+            stripped_text = replaceExcept(stripped_text, regex, r'', ['header'])
+
+        thread_headers = re.findall('^== *[^=].*? *== *$', stripped_text, re.M)
+        lines = text.split('\n')
         found = False  # Reading header
         cur_thread = None
         for line in lines:
-            thread_header = re.search('^== *([^=].*?) *== *$', line)
+            if line in thread_headers:
+                thread_header = re.search('^== *([^=].*?) *== *$', line)
             if thread_header:
                 found = True  # Reading threads now
                 if cur_thread:
