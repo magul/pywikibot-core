@@ -109,7 +109,7 @@ import pywikibot
 
 from pywikibot.date import apply_month_delta
 from pywikibot import i18n
-from pywikibot.textlib import TimeStripper
+from pywikibot.textlib import TimeStripper, replaceExcept, _get_regexes
 from pywikibot.textlib import to_local_digits
 from pywikibot.tools import issue_deprecation_warning, FrozenDict
 
@@ -453,12 +453,33 @@ class DiscussionPage(pywikibot.Page):
         self.threads = []
         self.archives = {}
         self.archived_threads = 0
-        lines = self.get().split('\n')
+        text = self.get()
+        # Replace text in following exceptions by spaces, but don't change line
+        # numbers
+        exceptions = ['comment', 'code', 'pre', 'source', 'nowiki']
+        exc_regexes = _get_regexes(exceptions, self.site)
+        stripped_text = text
+        for regex in exc_regexes:
+            for match in re.finditer(regex, stripped_text):
+                for i in range(match.start(), match.end()):
+                    if stripped_text[i] != '\n':
+                        stripped_text[i] = ' '
+        # Find thread headers in stripped text and return their line numbers
+        stripped_lines = stripped_text.split('\n')
+        line_number = 1
+        thread_headers = []
+        for line in stripped_lines:
+            if re.search(r'^== *[^=].*? *== *$', line):
+                thread_headers.append(line_number)
+            line_number += 1
+        # Fill self by original thread headers on returned line numbers
+        lines = text.split('\n')
+        line_number = 1
         found = False  # Reading header
         cur_thread = None
         for line in lines:
-            thread_header = re.search('^== *([^=].*?) *== *$', line)
-            if thread_header:
+            if line_number in thread_headers:
+                thread_header = re.search('^== *([^=].*?) *== *$', line)
                 found = True  # Reading threads now
                 if cur_thread:
                     self.threads.append(cur_thread)
@@ -469,6 +490,7 @@ class DiscussionPage(pywikibot.Page):
                     cur_thread.feed_line(line)
                 else:
                     self.header += line + '\n'
+            line_number += 1
         if cur_thread:
             self.threads.append(cur_thread)
         # This extra info is not desirable when run under the unittest
