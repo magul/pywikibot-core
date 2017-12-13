@@ -164,8 +164,10 @@ class TestLogentryParams(TestLogentriesBase):
                 # Check that there are no empty strings
                 self.assertTrue(all(logentry.flags()))
                 if logentry.expiry() is not None:
-                    self.assertIsInstance(logentry.expiry(), pywikibot.Timestamp)
-                    self.assertIsInstance(logentry.duration(), datetime.timedelta)
+                    self.assertIsInstance(
+                        logentry.expiry(), pywikibot.Timestamp)
+                    self.assertIsInstance(
+                        logentry.duration(), datetime.timedelta)
                     self.assertEqual(logentry.timestamp() + logentry.duration(),
                                      logentry.expiry())
                 else:

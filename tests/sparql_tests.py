@@ -127,10 +127,13 @@ class TestSparql(WikidataTestCase):
                          'Wrong URI representation')
         self.assertEqual(res[0]['cat'].getID(), 'Q498787', 'Wrong URI ID')
 
-        self.assertIsInstance(res[0]['catLabel'], sparql.Literal, 'Wrong type for Literal')
-        self.assertEqual(repr(res[0]['catLabel']), 'Muezza@en', 'Wrong literal representation')
+        self.assertIsInstance(res[0]['catLabel'],
+                              sparql.Literal, 'Wrong type for Literal')
+        self.assertEqual(repr(res[0]['catLabel']),
+                         'Muezza@en', 'Wrong literal representation')
 
-        self.assertIsInstance(res[0]['d'], sparql.Literal, 'Wrong type for Literal')
+        self.assertIsInstance(
+            res[0]['d'], sparql.Literal, 'Wrong type for Literal')
         self.assertEqual(repr(res[0]['d']),
                          '1955-01-01T00:00:00Z^^http://www.w3.org/2001/XMLSchema#dateTime',
                          'Wrong URI representation')
@@ -186,14 +189,16 @@ class Shared(object):
 
         def test__unicode__returnsUnicodeType(self):
             """__unicode__ should return type unicode."""
-            self.assertIsInstance(self.object_under_test.__unicode__(), UnicodeType)
+            self.assertIsInstance(
+                self.object_under_test.__unicode__(), UnicodeType)
 
 
 class LiteralTests(Shared.SparqlNodeTests):
     """Tests for sparql.Literal."""
 
     net = False
-    object_under_test = sparql.Literal({'datatype': '', 'lang': 'en', 'value': 'value'})
+    object_under_test = sparql.Literal(
+        {'datatype': '', 'lang': 'en', 'value': 'value'})
 
 
 class BnodeTests(Shared.SparqlNodeTests):
@@ -207,7 +212,8 @@ class URITests(Shared.SparqlNodeTests):
     """Tests for sparql.URI."""
 
     net = False
-    object_under_test = sparql.URI({'value': 'http://foo.com'}, 'http://bar.com')
+    object_under_test = sparql.URI(
+        {'value': 'http://foo.com'}, 'http://bar.com')
 
 
 if __name__ == '__main__':  # pragma: no cover

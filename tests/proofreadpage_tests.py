@@ -360,8 +360,10 @@ class TestProofreadPageIndexProperty(TestCase):
 
         # Page without Index.
         page = ProofreadPage(self.site, self.existing_multilinked['title'])
-        index_page_1 = IndexPage(self.site, self.existing_multilinked['index_1'])
-        index_page_2 = IndexPage(self.site, self.existing_multilinked['index_2'])
+        index_page_1 = IndexPage(
+            self.site, self.existing_multilinked['index_1'])
+        index_page_2 = IndexPage(
+            self.site, self.existing_multilinked['index_2'])
         self.assertEqual(page.index, index_page_1)
         self.assertNotEqual(page.index, index_page_2)
         self.assertEqual(page._index, (index_page_1, [index_page_2]))
@@ -608,7 +610,8 @@ class TestIndexPageMappings(IndexPageTestCase):
                              page_set)
 
         # Error if label does not exists.
-        self.assertRaises(KeyError, index_page.get_page_from_label, 'dummy label')
+        self.assertRaises(
+            KeyError, index_page.get_page_from_label, 'dummy label')
 
         # Test get_page.
         for n in num_set:

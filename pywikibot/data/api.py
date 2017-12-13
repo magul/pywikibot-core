@@ -816,7 +816,8 @@ class ParamInfo(Container):
                 if path in result_data:
                     # Only warn first time
                     if result_data[path] is not False:
-                        pywikibot.warning('Path "{0}" is ambiguous.'.format(path))
+                        pywikibot.warning(
+                            'Path "{0}" is ambiguous.'.format(path))
                     else:
                         pywikibot.log('Found another path "{0}"'.format(path))
                     result_data[path] = False
@@ -1882,7 +1883,8 @@ class Request(MutableMapping):
                 for single_warning in text.splitlines():
                     if (not callable(self._warning_handler) or
                             not self._warning_handler(mod, single_warning)):
-                        pywikibot.warning(u"API warning (%s): %s" % (mod, single_warning))
+                        pywikibot.warning('API warning (%s): %s' %
+                                          (mod, single_warning))
 
     def submit(self):
         """
@@ -1931,7 +1933,8 @@ class Request(MutableMapping):
                         self._encoded_items(), self.mime_params)
                     use_get = False  # MIME requests require HTTP POST
                 else:
-                    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+                    headers = {
+                        'Content-Type': 'application/x-www-form-urlencoded'}
                     if (not self.site.maximum_GET_length() or
                             self.site.maximum_GET_length() < len(paramstring)):
                         use_get = False
@@ -2576,7 +2579,8 @@ class QueryGenerator(_RequestWrapper):
             # Default values will only cause more requests and make the query
             # slower.
             for module in limited_modules:
-                param = self.site._paraminfo.parameter('query+' + module, 'limit')
+                param = self.site._paraminfo.parameter(
+                    'query+' + module, 'limit')
                 prefix = self.site._paraminfo['query+' + module]['prefix']
                 if self.site.logged_in() and self.site.has_right('apihighlimits'):
                     self.request[prefix + 'limit'] = int(param['highmax'])
@@ -2589,7 +2593,8 @@ class QueryGenerator(_RequestWrapper):
             self.api_limit = None
 
         if self.limited_module:
-            self.prefix = self.site._paraminfo['query+' + self.limited_module]['prefix']
+            self.prefix = \
+                self.site._paraminfo['query+' + self.limited_module]['prefix']
             self._update_limit()
 
         if self.api_limit is not None and 'generator' in parameters:
@@ -2896,10 +2901,12 @@ class PageGenerator(QueryGenerator):
         if g_content:
             # retrieve the current revision
             appendParams(parameters, 'prop', 'revisions')
-            appendParams(parameters, 'rvprop', 'ids|timestamp|flags|comment|user|content')
+            appendParams(parameters, 'rvprop',
+                         'ids|timestamp|flags|comment|user|content')
         if not ('inprop' in parameters and 'protection' in parameters['inprop']):
             appendParams(parameters, 'inprop', 'protection')
-        appendParams(parameters, 'iiprop', 'timestamp|user|comment|url|size|sha1|metadata')
+        appendParams(parameters, 'iiprop',
+                     'timestamp|user|comment|url|size|sha1|metadata')
         parameters['generator'] = generator
         QueryGenerator.__init__(self, **kwargs)
         self.resultkey = "pages"  # element to look for in result
@@ -3077,7 +3084,8 @@ class LoginManager(login.LoginManager):
         while True:
             login_result = login_request.submit()
             if u"login" not in login_result:
-                raise RuntimeError("API login response does not have 'login' key.")
+                raise RuntimeError(
+                    "API login response does not have 'login' key.")
             if login_result['login']['result'] == "Success":
                 return ''
             elif login_result['login']['result'] == "NeedToken":
@@ -3172,7 +3180,8 @@ def update_page(page, pagedict, props=[]):
         # Something is wrong.
         if page.site.sametitle(page.title(), pagedict['title']):
             if 'invalid' in pagedict:
-                raise InvalidTitle('%s: %s' % (page, pagedict['invalidreason']))
+                raise InvalidTitle('%s: %s' %
+                                   (page, pagedict['invalidreason']))
         if int(pagedict['ns']) < 0:
             raise UnsupportedPage(page)
         raise AssertionError(
@@ -3253,7 +3262,8 @@ def update_page(page, pagedict, props=[]):
                                          typ=co.get('type', ''),
                                          name=co.get('name', ''),
                                          dim=int(co['dim']),
-                                         globe=co['globe'],  # See [[gerrit:67886]]
+                                         # See [[gerrit:67886]]
+                                         globe=co['globe'],
                                          )
             coords.append(coord)
         page._coords = coords

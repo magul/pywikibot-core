@@ -301,7 +301,8 @@ class TestFilePageDownload(TestCase):
 
     def test_not_existing_download(self):
         """Test not existing download."""
-        page = pywikibot.FilePage(self.site, 'File:Albert Einstein.jpg_notexisting')
+        page = pywikibot.FilePage(
+            self.site, 'File:Albert Einstein.jpg_notexisting')
         filename = join_images_path('Albert Einstein.jpg')
 
         with self.assertRaisesRegex(

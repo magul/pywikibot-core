@@ -275,7 +275,8 @@ class TestOldFamilyMethod(DeprecationTestCase):
         self.assertEqual(f.name, 'i18n')
         self.assertDeprecationParts('pywikibot.site.Family',
                                     'pywikibot.family.Family.load')
-        self.assertDeprecationParts('fatal argument of pywikibot.family.Family.load')
+        self.assertDeprecationParts(
+            'fatal argument of pywikibot.family.Family.load')
 
     def test_old_site_family_function_invalid(self):
         """Test that an invalid family raised UnknownFamily exception."""
@@ -295,7 +296,8 @@ class TestOldFamilyMethod(DeprecationTestCase):
             'unknown')
         self.assertDeprecationParts('pywikibot.site.Family',
                                     'pywikibot.family.Family.load')
-        self.assertDeprecationParts('fatal argument of pywikibot.family.Family.load')
+        self.assertDeprecationParts(
+            'fatal argument of pywikibot.family.Family.load')
 
 
 if __name__ == '__main__':  # pragma: no cover

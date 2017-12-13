@@ -394,7 +394,8 @@ def register_families_folder(folder_path):
     for file_name in os.listdir(folder_path):
         if file_name.endswith("_family.py"):
             family_name = file_name[:-len("_family.py")]
-            register_family_file(family_name, os.path.join(folder_path, file_name))
+            register_family_file(
+                family_name, os.path.join(folder_path, file_name))
 
 
 # Get the names of all known families, and initialize with empty dictionaries.
@@ -851,7 +852,8 @@ proxy = None
 # in user-config.py for wikis with extra write actions.
 actions_to_block = []
 
-# Set simulate to True or use -simulate option to block all actions given above.
+# Set simulate to True or use -simulate option to block all actions given
+# above.
 simulate = False
 
 # How many pages should be put to a queue in asynchronous mode.
@@ -949,8 +951,9 @@ def _win32_extension_command(extension):
             return cmd[:-1].strip()
     except WindowsError as e:
         # Catch any key lookup errors
-        output('Unable to detect program for file extension "{0}": {1!r}'.format(
-            extension, e))
+        output(
+            'Unable to detect program for file extension "{0}": {1!r}'.format(
+                extension, e))
 
 
 def _detect_win32_editor():

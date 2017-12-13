@@ -53,7 +53,8 @@ class ParseError(Exception):
 
 
 def _get_program_dir():
-    _program_dir = os.path.normpath(os.path.split(os.path.dirname(__file__))[0])
+    _program_dir = os.path.normpath(
+        os.path.split(os.path.dirname(__file__))[0])
     return _program_dir
 
 

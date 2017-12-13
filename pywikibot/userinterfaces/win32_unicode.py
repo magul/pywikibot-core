@@ -78,7 +78,8 @@ class UnicodeInput(IOBase):
         """Read one line from the input."""
         maxnum = DWORD(self.bufsize - 1)
         numrecv = DWORD(0)
-        result = ReadConsoleW(self._hConsole, self.buffer, maxnum, byref(numrecv), None)
+        result = ReadConsoleW(self._hConsole, self.buffer,
+                              maxnum, byref(numrecv), None)
         if not result:
             raise Exception("stdin failure")
         data = self.buffer.value[:numrecv.value]
@@ -181,7 +182,8 @@ def _complain(message):
 def register_cp65001():
     """Register codecs cp65001 as utf-8."""
     # Work around <http://bugs.python.org/issue6058>.
-    codecs.register(lambda name: name == 'cp65001' and codecs.lookup('utf-8') or None)
+    codecs.register(lambda name: name ==
+                    'cp65001' and codecs.lookup('utf-8') or None)
 
 
 def force_truetype_console(h_stdout):
@@ -265,11 +267,13 @@ def get_unicode_console():
         # <https://msdn.microsoft.com/en-us/library/ms683167(VS.85).aspx>
         # BOOL WINAPI GetConsoleMode(HANDLE hConsole, LPDWORD lpMode);
 
-        GetStdHandle = WINFUNCTYPE(HANDLE, DWORD)(("GetStdHandle", windll.kernel32))
+        GetStdHandle = WINFUNCTYPE(HANDLE, DWORD)(
+            ('GetStdHandle', windll.kernel32))
         STD_INPUT_HANDLE = DWORD(-10)
         STD_OUTPUT_HANDLE = DWORD(-11)
         STD_ERROR_HANDLE = DWORD(-12)
-        GetFileType = WINFUNCTYPE(DWORD, DWORD)(("GetFileType", windll.kernel32))
+        GetFileType = WINFUNCTYPE(DWORD, DWORD)(
+            ('GetFileType', windll.kernel32))
         FILE_TYPE_CHAR = 0x0002
         FILE_TYPE_REMOTE = 0x8000
         GetConsoleMode = (WINFUNCTYPE(BOOL, HANDLE, POINTER(DWORD))

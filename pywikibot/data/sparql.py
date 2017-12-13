@@ -120,9 +120,11 @@ class SparqlQuery(object):
                     if var in row:
                         if full_data:
                             if row[var]['type'] not in VALUE_TYPES:
-                                raise ValueError('Unknown type: %s' % row[var]['type'])
+                                raise ValueError(
+                                    'Unknown type: %s' % row[var]['type'])
                             valtype = VALUE_TYPES[row[var]['type']]
-                            values[var] = valtype(row[var], entity_url=self.entity_url)
+                            values[var] = valtype(
+                                row[var], entity_url=self.entity_url)
                         else:
                             values[var] = row[var]['value']
                     else:

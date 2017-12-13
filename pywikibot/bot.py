@@ -2022,7 +2022,8 @@ class WikidataBot(Bot, ExistingPageBot):
             # If claim with same property already exists...
             if 'p' not in exists_arg:
                 logger_callback(
-                    'Skipping %s because claim with same property already exists'
+                    'Skipping %s because claim with same property '
+                    'already exists'
                     % (claim.getID(),))
                 log('Use -exists:p option to override this behavior')
                 return False
@@ -2034,13 +2035,15 @@ class WikidataBot(Bot, ExistingPageBot):
             # 'exists' argument overrides it.
             if 't' not in exists_arg:
                 logger_callback(
-                    'Skipping %s because claim with same target already exists'
+                    'Skipping %s because claim with same target '
+                    'already exists'
                     % (claim.getID(),))
                 log("Append 't' to -exists argument to override this behavior")
                 return False
             if 'q' not in exists_arg and not existing.qualifiers:
                 logger_callback(
-                    'Skipping %s because claim without qualifiers already exists'
+                    'Skipping %s because claim without qualifiers '
+                    'already exists'
                     % (claim.getID(),))
                 log("Append 'q' to -exists argument to override this behavior")
                 return False
@@ -2056,7 +2059,8 @@ class WikidataBot(Bot, ExistingPageBot):
                             for snak in ref[source.getID()])
                         for ref in existing.sources)):
                 logger_callback(
-                    'Skipping %s because claim with the same source already exists'
+                    'Skipping %s because claim with the same source '
+                    'already exists'
                     % (claim.getID(),))
                 log("Append 's' to -exists argument to override this behavior")
                 return False

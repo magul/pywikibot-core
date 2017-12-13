@@ -208,7 +208,8 @@ class CosmeticChangesToolkit(object):
         try:
             self.namespace = self.site.namespaces.resolve(namespace).pop(0)
         except (KeyError, TypeError, IndexError):
-            raise ValueError('%s needs a valid namespace' % self.__class__.__name__)
+            raise ValueError(
+                '%s needs a valid namespace' % self.__class__.__name__)
         self.template = (self.namespace == 10)
         self.talkpage = self.namespace >= 0 and self.namespace % 2 == 1
         self.title = pageTitle
@@ -272,7 +273,9 @@ class CosmeticChangesToolkit(object):
             new_text = self._change(text)
         except Exception as e:
             if self.ignore == CANCEL_PAGE:
-                pywikibot.warning(u'Skipped "{0}", because an error occurred.'.format(self.title))
+                pywikibot.warning(
+                    'Skipped "{0}", because an error occurred.'.format(
+                        self.title))
                 pywikibot.exception(e)
                 return False
             else:
@@ -377,7 +380,8 @@ class CosmeticChangesToolkit(object):
             thisNs = namespaces.pop(0)
             if namespace.id == 6 and family.name == 'wikipedia':
                 if self.site.code in ('en', 'fr') and \
-                   MediaWikiVersion(self.site.version()) >= MediaWikiVersion('1.14'):
+                   MediaWikiVersion(
+                       self.site.version()) >= MediaWikiVersion('1.14'):
                     # do not change "Image" on en-wiki and fr-wiki
                     assert u'Image' in namespaces
                     namespaces.remove(u'Image')
@@ -618,11 +622,12 @@ class CosmeticChangesToolkit(object):
 
     def removeUselessSpaces(self, text):
         """Cleanup multiple or trailing spaces."""
-        exceptions = ['comment', 'math', 'nowiki', 'pre', 'startspace', 'table']
+        exceptions = [
+            'comment', 'math', 'nowiki', 'pre', 'startspace', 'table']
         if self.site.sitename != 'wikipedia:cs':
             exceptions.append('template')
-        text = textlib.replaceExcept(text, r'(?m)[\t ]+( |$)', r'\1', exceptions,
-                                     site=self.site)
+        text = textlib.replaceExcept(
+            text, r'(?m)[\t ]+( |$)', r'\1', exceptions, site=self.site)
         return text
 
     def removeNonBreakingSpaceBeforePercent(self, text):
@@ -665,11 +670,13 @@ class CosmeticChangesToolkit(object):
         wikis. If there are any complaints, please file a bug report.
         """
         if not self.template:
-            exceptions = ['comment', 'math', 'nowiki', 'pre', 'source', 'template',
-                          'timeline', self.site.redirectRegex()]
+            exceptions = [
+                'comment', 'math', 'nowiki', 'pre', 'source', 'template',
+                'timeline', self.site.redirectRegex()]
             text = textlib.replaceExcept(
                 text,
-                r'(?m)^(?P<bullet>[:;]*(\*+|#+)[:;\*#]*)(?P<char>[^\s\*#:;].+?)',
+                r'(?m)^(?P<bullet>[:;]*(\*+|#+)[:;\*#]*)'
+                r'(?P<char>[^\s\*#:;].+?)',
                 r'\g<bullet> \g<char>',
                 exceptions)
         return text
@@ -800,7 +807,8 @@ class CosmeticChangesToolkit(object):
 
     def fixReferences(self, text):
         """Fix references tags."""
-        # See also https://en.wikipedia.org/wiki/User:AnomieBOT/source/tasks/OrphanReferenceFixer.pm
+        # See also
+        # https://en.wikipedia.org/wiki/User:AnomieBOT/source/tasks/OrphanReferenceFixer.pm
         exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
                       'startspace']
 
@@ -828,7 +836,8 @@ class CosmeticChangesToolkit(object):
     def fixTypo(self, text):
         """Fix units."""
         exceptions = ['nowiki', 'comment', 'math', 'pre', 'source',
-                      'startspace', 'gallery', 'hyperlink', 'interwiki', 'link']
+                      'startspace', 'gallery', 'hyperlink', 'interwiki',
+                      'link']
         # change <number> ccm -> <number> cm³
         text = textlib.replaceExcept(text, r'(\d)\s*(?:&nbsp;)?ccm',
                                      r'\1&nbsp;cm³', exceptions,
@@ -838,7 +847,8 @@ class CosmeticChangesToolkit(object):
         pattern = re.compile(u'«.*?»', re.UNICODE)
         exceptions.append(pattern)
         text = textlib.replaceExcept(text, r'(\d)\s*(?:&nbsp;)?[º°]([CF])',
-                                     r'\1&nbsp;°\2', exceptions, site=self.site)
+                                     r'\1&nbsp;°\2', exceptions,
+                                     site=self.site)
         text = textlib.replaceExcept(text, u'º([CF])', u'°' + r'\1',
                                      exceptions,
                                      site=self.site)
@@ -877,7 +887,8 @@ class CosmeticChangesToolkit(object):
         # not to let bot edits in latin content
         exceptions.append(re.compile(u"[^%(fa)s] *?\"*? *?, *?[^%(fa)s]"
                                      % {'fa': faChrs}))
-        text = textlib.replaceExcept(text, ',', '،', exceptions, site=self.site)
+        text = textlib.replaceExcept(
+            text, ',', '،', exceptions, site=self.site)
         if self.site.code == 'ckb':
             text = textlib.replaceExcept(text,
                                          '\u0647([.\u060c_<\\]\\s])',
@@ -935,14 +946,16 @@ class CosmeticChangesToolkit(object):
             r"\1== {{int:license-header}} ==", exceptions, True)
         text = textlib.replaceExcept(
             text,
-            r"([\r\n])\=\= *(Licensing|License information|{{int:license}}) *\=\=",
-            r"\1== {{int:license-header}} ==", exceptions, True)
+            r'([\r\n])'
+            r'\=\= *(Licensing|License information|{{int:license}}) *\=\=',
+            r'\1== {{int:license-header}} ==', exceptions, True)
 
         # frequent field values to {{int:}} versions
         text = textlib.replaceExcept(
             text,
             r'([\r\n]\|[Ss]ource *\= *)'
-            r'(?:[Oo]wn work by uploader|[Oo]wn work|[Ee]igene [Aa]rbeit) *([\r\n])',
+            r'(?:[Oo]wn work by uploader|[Oo]wn work|[Ee]igene [Aa]rbeit) *'
+            r'([\r\n])',
             r'\1{{own}}\2', exceptions, True)
         text = textlib.replaceExcept(
             text,
@@ -963,7 +976,9 @@ class CosmeticChangesToolkit(object):
         # duplicated section headers
         text = textlib.replaceExcept(
             text,
-            r'([\r\n]|^)\=\= *{{int:filedesc}} *\=\=(?:[\r\n ]*)\=\= *{{int:filedesc}} *\=\=',
+            r'([\r\n]|^)'
+            r'\=\= *{{int:filedesc}} *\=\='
+            r'(?:[\r\n ]*)\=\= *{{int:filedesc}} *\=\=',
             r'\1== {{int:filedesc}} ==', exceptions, True)
         text = textlib.replaceExcept(
             text,

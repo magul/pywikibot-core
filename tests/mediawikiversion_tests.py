@@ -74,9 +74,12 @@ class TestMediaWikiVersion(TestCase):
 
     def test_invalid_versions(self):
         """Verify that insufficient version fail creating."""
-        self.assertRaisesRegex(ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, 'invalid')
-        self.assertRaisesRegex(ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, '1number')
-        self.assertRaisesRegex(ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, '1.missing')
+        self.assertRaisesRegex(
+            ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, 'invalid')
+        self.assertRaisesRegex(
+            ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, '1number')
+        self.assertRaisesRegex(
+            ValueError, self.INVALID_VERSION_RE, MediaWikiVersion, '1.missing')
 
         self.assertRaisesRegex(AssertionError, 'Found \"wmf\" in \"wmf-1\"',
                                MediaWikiVersion, '1.23wmf-1')

@@ -39,7 +39,8 @@ class MetaPluralRulesTest(MetaTestCaseClass):
                                         '(greater than {2})'.format(num, index,
                                                                     rule['nplurals']))
                     num_plurals.add(index)
-                self.assertCountEqual(num_plurals, list(range(rule['nplurals'])))
+                self.assertCountEqual(
+                    num_plurals, list(range(rule['nplurals'])))
 
             # Don't already fail on creation
             if callable(rule.get('plural')):

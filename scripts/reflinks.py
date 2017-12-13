@@ -398,7 +398,8 @@ class ReferencesRobot(Bot):
         super(ReferencesRobot, self).__init__(**kwargs)
         self.generator = generator
         self.site = pywikibot.Site()
-        self._use_fake_user_agent = config.fake_user_agent_default.get('reflinks', False)
+        self._use_fake_user_agent = config.fake_user_agent_default.get(
+            'reflinks', False)
         # Check
         manual = 'mw:Manual:Pywikibot/refLinks'
         code = None
@@ -506,7 +507,8 @@ class ReferencesRobot(Bot):
                                      % page.title(asLink=True))
                     continue
             except pywikibot.NoPage:
-                pywikibot.output(u'Page %s not found' % page.title(asLink=True))
+                pywikibot.output('Page %s not found' %
+                                 page.title(asLink=True))
                 continue
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u'Page %s is a redirect'
@@ -637,7 +639,8 @@ class ReferencesRobot(Bot):
                 else:
                     pywikibot.output(u'No charset found for %s' % ref.link)
                 if not contentType:
-                    pywikibot.output(u'No content-type found for %s' % ref.link)
+                    pywikibot.output(
+                        'No content-type found for %s' % ref.link)
                     continue
                 elif not self.MIME.search(contentType):
                     pywikibot.output(color_format(
@@ -668,7 +671,8 @@ class ReferencesRobot(Bot):
                 try:
                     u = linkedpagetext.decode(enc[0])   # Bug T69410
                 except (UnicodeDecodeError, LookupError) as e:
-                    pywikibot.output(u'%s : Decoding error - %s' % (ref.link, e))
+                    pywikibot.output(
+                        '%s : Decoding error - %s' % (ref.link, e))
                     continue
 
                 # Retrieves the first non empty string inside <title> tags
@@ -726,7 +730,8 @@ class ReferencesRobot(Bot):
                 editedpages += 1
 
             if self.getOption('limit') and editedpages >= self.getOption('limit'):
-                pywikibot.output('Edited %s pages, stopping.' % self.getOption('limit'))
+                pywikibot.output('Edited %s pages, stopping.' %
+                                 self.getOption('limit'))
                 return
 
             if self.site_stop_page and editedpages % 20 == 0:

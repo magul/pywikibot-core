@@ -681,7 +681,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         @rtype: dict
         """
         if not hasattr(self, '_pageprops') or force:
-            self._pageprops = {}  # page may not have pageprops (see bug T56868)
+            # page may not have pageprops (see bug T56868)
+            self._pageprops = {}
             self.site.loadpageprops(self)
         return self._pageprops
 
@@ -1870,7 +1871,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         """
         if reason is None:
             pywikibot.output(u'Deleting %s.' % (self.title(asLink=True)))
-            reason = pywikibot.input(u'Please enter a reason for the deletion:')
+            reason = pywikibot.input(
+                'Please enter a reason for the deletion:')
 
         # If user is a sysop, delete the page
         if self.site.username(sysop=True):
@@ -1955,7 +1957,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
         if not hasattr(self, "_deletedRevs"):
             self.loadDeletedRevisions()
         if timestamp not in self._deletedRevs:
-            raise ValueError(u'Timestamp %d is not a deleted revision' % timestamp)
+            raise ValueError(
+                'Timestamp %d is not a deleted revision' % timestamp)
         self._deletedRevs[timestamp]['marked'] = undelete
 
     @deprecated_args(comment='reason', throttle=None)
@@ -1991,7 +1994,8 @@ class BasePage(UnicodeMixin, ComparableMixin):
             warn('Not passing a reason for undelete() is deprecated.',
                  DeprecationWarning)
             pywikibot.output(u'Undeleting %s.' % (self.title(asLink=True)))
-            reason = pywikibot.input(u'Please enter a reason for the undeletion:')
+            reason = pywikibot.input(
+                'Please enter a reason for the undeletion:')
         self.site.undelete_page(self, reason, undelete_revs)
 
     @deprecate_arg("throttle", None)
@@ -2690,7 +2694,8 @@ class FilePage(Page):
             sha1 = compute_file_hash(filename)
             return sha1 == revision.sha1
         else:
-            pywikibot.warning('Unsuccesfull request (%s): %s' % (req.status, req.uri))
+            pywikibot.warning('Unsuccesfull request (%s): %s' %
+                              (req.status, req.uri))
             return False
 
     def globalusage(self, total=None):
@@ -3804,7 +3809,8 @@ class WikibasePage(BasePage):
         self.labels = {}
         if 'labels' in self._content:
             for lang in self._content['labels']:
-                if 'removed' not in self._content['labels'][lang]:  # Bug T56767
+                # Bug T56767
+                if 'removed' not in self._content['labels'][lang]:
                     self.labels[lang] = self._content['labels'][lang]['value']
 
         # descriptions
@@ -3876,7 +3882,8 @@ class WikibasePage(BasePage):
                              in diffto['aliases'][lang]) == Counter(strings):
                     del aliases[lang]
             if lang in aliases:
-                aliases[lang] = [{'language': lang, 'value': i} for i in strings]
+                aliases[lang] = [
+                    {'language': lang, 'value': i} for i in strings]
 
         if aliases:
             data['aliases'] = aliases
@@ -4046,7 +4053,8 @@ class WikibasePage(BasePage):
             baserevid = None
 
         if data is None:
-            data = self.toJSON(diffto=(self._content if hasattr(self, '_content') else None))
+            data = self.toJSON(
+                diffto=(self._content if hasattr(self, '_content') else None))
         else:
             data = WikibasePage._normalizeData(data)
 
@@ -4698,7 +4706,8 @@ class Claim(Property):
         self.isReference = isReference
         self.isQualifier = isQualifier
         if self.isQualifier and self.isReference:
-            raise ValueError(u'Claim cannot be both a qualifier and reference.')
+            raise ValueError(
+                'Claim cannot be both a qualifier and reference.')
         self.sources = []
         self.qualifiers = OrderedDict()
         self.target = None
@@ -4826,11 +4835,13 @@ class Claim(Property):
                 for prop, qualifiers in self.qualifiers.items():
                     for qualifier in qualifiers:
                         assert qualifier.isQualifier is True
-                    data['qualifiers'][prop] = [qualifier.toJSON() for qualifier in qualifiers]
+                    data['qualifiers'][prop] = [
+                        qualifier.toJSON() for qualifier in qualifiers]
             if len(self.sources) > 0:
                 data['references'] = []
                 for collection in self.sources:
-                    reference = {'snaks': {}, 'snaks-order': list(collection.keys())}
+                    reference = {
+                        'snaks': {}, 'snaks-order': list(collection.keys())}
                     for prop, val in collection.items():
                         reference['snaks'][prop] = []
                         for source in val:

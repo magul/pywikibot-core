@@ -177,7 +177,9 @@ class ContextOption(OutputOption, StandardOption):
 
     """An option to show more and more context."""
 
-    def __init__(self, option, shortcut, text, context, delta=100, start=0, end=0):
+    def __init__(
+        self, option, shortcut, text, context, delta=100, start=0, end=0
+    ):
         """Constructor."""
         super(ContextOption, self).__init__(option, shortcut, False)
         self.text = text

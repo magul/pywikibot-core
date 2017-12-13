@@ -207,7 +207,8 @@ version = '3.0'
 
 try:
     import subprocess
-    date = subprocess.check_output(['git', 'log', '-1', '--format=%ci']).strip()
+    date = subprocess.check_output(
+        ['git', 'log', '-1', '--format=%ci']).strip()
     date = date.decode().split(' ')[0].replace('-', '')
     version = version + "." + date
 except Exception as e:

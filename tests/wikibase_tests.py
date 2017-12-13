@@ -144,7 +144,8 @@ class TestGeneral(WikidataTestCase):
         with self.assertRaisesRegex(ValueError, regex):
             claim.setTarget(value="test")
         claim.setTarget(ItemPage(repo, 'q1'))
-        self.assertEqual(claim._formatValue(), {'entity-type': 'item', 'numeric-id': 1})
+        self.assertEqual(claim._formatValue(), {
+                         'entity-type': 'item', 'numeric-id': 1})
 
     def test_cmp(self):
         """Test WikibasePage.__cmp__."""
@@ -629,7 +630,8 @@ class TestWbMonolingualText(WbRepresentationTestCase):
 
     def test_WbMonolingualText_string(self):
         """Test WbMonolingualText string."""
-        q = pywikibot.WbMonolingualText(text='Test that basics work', language='en')
+        q = pywikibot.WbMonolingualText(
+            text='Test that basics work', language='en')
         q_dict = {'text': 'Test that basics work', 'language': 'en'}
         self.assertEqual(q.toWikibase(), q_dict)
 
@@ -641,7 +643,8 @@ class TestWbMonolingualText(WbRepresentationTestCase):
 
     def test_WbMonolingualText_equality(self):
         """Test WbMonolingualText equality."""
-        q = pywikibot.WbMonolingualText(text='Thou shall test this!', language='en-gb')
+        q = pywikibot.WbMonolingualText(
+            text='Thou shall test this!', language='en-gb')
         self.assertEqual(q, q)
 
     def test_WbMonolingualText_fromWikibase(self):
@@ -1441,7 +1444,8 @@ class TestClaimSetValue(WikidataTestCase):
         wikidata = self.get_repo()
         claim = pywikibot.Claim(wikidata, 'P569')
         self.assertEqual(claim.type, 'time')
-        claim.setTarget(pywikibot.WbTime(year=2001, month=1, day=1, site=wikidata))
+        claim.setTarget(pywikibot.WbTime(
+            year=2001, month=1, day=1, site=wikidata))
         self.assertEqual(claim.target.year, 2001)
         self.assertEqual(claim.target.month, 1)
         self.assertEqual(claim.target.day, 1)
@@ -1567,7 +1571,8 @@ class TestLinks(WikidataTestCase):
     def test_iterlinks_page_object(self):
         """Test iterlinks for page objects."""
         page = [pg for pg in self.wdp.iterlinks() if pg.site.code == 'af'][0]
-        self.assertEqual(page, pywikibot.Page(self.get_site('afwiki'), u'New York Stad'))
+        self.assertEqual(page, pywikibot.Page(
+            self.get_site('afwiki'), 'New York Stad'))
 
     def test_iterlinks_filtering(self):
         """Test iterlinks for a given family."""
@@ -1657,7 +1662,8 @@ class TestPreloadingItemGenerator(TestCase):
         """Test TestPreloadingItemGenerator with ReferringPageGenerator."""
         site = self.get_site()
         instance_of_page = pywikibot.Page(site, 'Property:P31')
-        ref_gen = pagegenerators.ReferringPageGenerator(instance_of_page, total=5)
+        ref_gen = pagegenerators.ReferringPageGenerator(
+            instance_of_page, total=5)
         gen = pagegenerators.PreloadingItemGenerator(ref_gen)
         self.assertTrue(all(isinstance(item, ItemPage) for item in gen))
 

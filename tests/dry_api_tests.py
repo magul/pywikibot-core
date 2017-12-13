@@ -72,7 +72,8 @@ class DryCachedRequestTests(SiteAttributeTestCase):
     def test_expired(self):
         """Test if the request is expired."""
         self.assertFalse(self.req._expired(datetime.datetime.now()))
-        self.assertTrue(self.req._expired(datetime.datetime.now() - datetime.timedelta(days=2)))
+        self.assertTrue(self.req._expired(
+            datetime.datetime.now() - datetime.timedelta(days=2)))
 
     def test_parameter_types(self):
         """Test _uniquedescriptionstr is identical using different ways."""
@@ -98,24 +99,31 @@ class DryCachedRequestTests(SiteAttributeTestCase):
 
     def test_create_file_name(self):
         """Test the file names for the cache."""
-        self.assertEqual(self.req._create_file_name(), self.req._create_file_name())
-        self.assertEqual(self.req._create_file_name(), self.expreq._create_file_name())
+        self.assertEqual(self.req._create_file_name(),
+                         self.req._create_file_name())
+        self.assertEqual(self.req._create_file_name(),
+                         self.expreq._create_file_name())
         self.assertEqual(self.req._create_file_name(),
                          self.deprecated_explicit._create_file_name())
         self.assertEqual(self.req._create_file_name(),
                          self.deprecated_asterisks._create_file_name())
-        self.assertNotEqual(self.req._create_file_name(), self.diffreq._create_file_name())
+        self.assertNotEqual(self.req._create_file_name(),
+                            self.diffreq._create_file_name())
 
     def test_cachefile_path(self):
         """Test the file paths for the cache."""
-        self.assertEqual(self.req._cachefile_path(), self.req._cachefile_path())
-        self.assertEqual(self.req._cachefile_path(), self.expreq._cachefile_path())
+        self.assertEqual(self.req._cachefile_path(),
+                         self.req._cachefile_path())
+        self.assertEqual(self.req._cachefile_path(),
+                         self.expreq._cachefile_path())
         self.assertEqual(self.req._cachefile_path(),
                          self.deprecated_explicit._cachefile_path())
         self.assertEqual(self.req._cachefile_path(),
                          self.deprecated_asterisks._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffreq._cachefile_path())
-        self.assertNotEqual(self.req._cachefile_path(), self.diffsite._cachefile_path())
+        self.assertNotEqual(self.req._cachefile_path(),
+                            self.diffreq._cachefile_path())
+        self.assertNotEqual(self.req._cachefile_path(),
+                            self.diffsite._cachefile_path())
 
 
 class MockCachedRequestKeyTests(TestCase):
@@ -470,7 +478,8 @@ class QueryGenTests(DefaultDrySiteTestCase):
                                parameters={'action': 'query', 'meta': 'siteinfo'})
         qGen2 = QueryGenerator(site=self.site,
                                parameters={'meta': 'siteinfo'})
-        self.assertCountEqual(qGen1.request._params.items(), qGen2.request._params.items())
+        self.assertCountEqual(qGen1.request._params.items(),
+                              qGen2.request._params.items())
 
 
 if __name__ == '__main__':  # pragma: no cover

@@ -35,7 +35,8 @@ class TestCategoryObject(TestCase):
         """Test if category is empty or not."""
         site = self.get_site()
         cat_empty = pywikibot.Category(site, 'Category:foooooo')
-        cat_not_empty = pywikibot.Category(site, 'Category:Wikipedia categories')
+        cat_not_empty = pywikibot.Category(
+            site, 'Category:Wikipedia categories')
         self.assertTrue(cat_empty.isEmptyCategory())
         self.assertFalse(cat_not_empty.isEmptyCategory())
 
@@ -56,10 +57,12 @@ class TestCategoryObject(TestCase):
         self.assertTrue(categoryinfo['pages'] >= 0)
         self.assertTrue(categoryinfo['size'] > 0)
         self.assertTrue(categoryinfo['subcats'] > 0)
-        members_sum = categoryinfo['files'] + categoryinfo['pages'] + categoryinfo['subcats']
+        members_sum = categoryinfo['files'] + \
+            categoryinfo['pages'] + categoryinfo['subcats']
         self.assertEqual(members_sum, categoryinfo['size'])
 
-        cat_files = pywikibot.Category(site, 'Category:Files lacking an author')
+        cat_files = pywikibot.Category(
+            site, 'Category:Files lacking an author')
         categoryinfo2 = cat_files.categoryinfo
         self.assertTrue(categoryinfo2['files'] > 0)
 
@@ -177,7 +180,8 @@ class TestCategoryDryObject(TestCase):
         self.assertEqual(cat_missing.namespace(), 14)
 
         cat_duplicate = pywikibot.Category(site, 'Category:Category:Foo')
-        self.assertEqual(cat_duplicate.title(withNamespace=False), 'Category:Foo')
+        self.assertEqual(cat_duplicate.title(
+            withNamespace=False), 'Category:Foo')
         self.assertEqual(cat_duplicate.namespace(), 14)
 
         cat_dup_ns = pywikibot.Category(site, 'Category:Wikipedia:Test')
@@ -201,7 +205,8 @@ class TestCategoryDryObject(TestCase):
         cat = pywikibot.Category(site, 'Category:Wikipedia Categories')
         self.assertEqual(cat.title(asLink=True, insite=cat.site),
                          u'[[Category:Wikipedia Categories]]')
-        cat_section = pywikibot.Category(site, 'Category:Wikipedia Categories#Foo')
+        cat_section = pywikibot.Category(
+            site, 'Category:Wikipedia Categories#Foo')
         self.assertEqual(cat_section.title(asLink=True, insite=cat_section.site),
                          u'[[Category:Wikipedia Categories#Foo]]')
         cat_dup = pywikibot.Category(site, 'Category:Wikipedia:Test')
@@ -211,9 +216,12 @@ class TestCategoryDryObject(TestCase):
     def test_sortkey(self):
         """Test the sortKey attribute."""
         site = self.get_site()
-        cat = pywikibot.Category(site, 'Category:Wikipedia categories', 'Example')
-        self.assertEqual(cat.aslink(), '[[Category:Wikipedia categories|Example]]')
-        self.assertEqual(cat.aslink(sortKey='Foo'), '[[Category:Wikipedia categories|Foo]]')
+        cat = pywikibot.Category(
+            site, 'Category:Wikipedia categories', 'Example')
+        self.assertEqual(
+            cat.aslink(), '[[Category:Wikipedia categories|Example]]')
+        self.assertEqual(cat.aslink(sortKey='Foo'),
+                         '[[Category:Wikipedia categories|Foo]]')
 
 
 class CategoryNewestPages(TestCase):
@@ -227,7 +235,8 @@ class CategoryNewestPages(TestCase):
 
     def test_newest_pages(self):
         """Test that the pages are getting older."""
-        cat = pywikibot.Category(self.get_site(), u'Catégorie:Yukon Quest 2015')
+        cat = pywikibot.Category(
+            self.get_site(), 'Catégorie:Yukon Quest 2015')
         last = pywikibot.Timestamp.max
         count = 0
         for page in cat.newest_pages():

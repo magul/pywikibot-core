@@ -164,7 +164,8 @@ class CaseChecker(object):
         self.wikilog = self.OpenLogFile(self.wikilogfile)
 
         if not os.path.isabs(self.failedTitles):
-            self.failedTitles = pywikibot.config.datafilepath(self.failedTitles)
+            self.failedTitles = pywikibot.config.datafilepath(
+                self.failedTitles)
 
         if self.doFailed:
             with codecs.open(self.failedTitles, 'r', 'utf-8') as f:
@@ -771,8 +772,10 @@ class CaseChecker(object):
             if len(frmParts[i]) != len(toParts[i]):
                 raise ValueError(u'Splitting parts do not match word length')
             if len(frmParts[i]) > 0:
-                text = text.replace(first_lower(frmParts[i]), first_lower(toParts[i]))
-                text = text.replace(first_upper(frmParts[i]), first_upper(toParts[i]))
+                text = text.replace(first_lower(
+                    frmParts[i]), first_lower(toParts[i]))
+                text = text.replace(first_upper(
+                    frmParts[i]), first_upper(toParts[i]))
         return text
 
 

@@ -1107,7 +1107,8 @@ def getCategoryLinks(text, site=None, include=[], expand_text=False):
             title, sortKey = rest, None
         try:
             cat = pywikibot.Category(pywikibot.Link(
-                                     '%s:%s' % (match.group('namespace'), title),
+                                     '%s:%s' % (match.group(
+                                         'namespace'), title),
                                      site),
                                      sortKey=sortKey)
         except InvalidTitle:
@@ -1135,7 +1136,8 @@ def removeCategoryLinks(text, site=None, marker=''):
     catNamespace = '|'.join(site.namespaces.CATEGORY)
     categoryR = re.compile(r'\[\[\s*(%s)\s*:.*?\]\]\s*' % catNamespace, re.I)
     text = replaceExcept(text, categoryR, '',
-                         ['nowiki', 'comment', 'math', 'pre', 'source', 'includeonly'],
+                         ['nowiki', 'comment', 'math',
+                             'pre', 'source', 'includeonly'],
                          marker=marker,
                          site=site)
     if marker:
@@ -1294,7 +1296,8 @@ def categoryFormat(categories, insite=None):
         if isinstance(category, basestring):
             category, separator, sortKey = category.strip('[]').partition('|')
             sortKey = sortKey if separator else None
-            prefix = category.split(":", 1)[0]  # whole word if no ":" is present
+            # whole word if no ':' is present
+            prefix = category.split(':', 1)[0]
             if prefix not in insite.namespaces[14]:
                 category = u'{0}:{1}'.format(insite.namespace(14), category)
             category = pywikibot.Category(pywikibot.Link(category,
@@ -1340,7 +1343,8 @@ def compileLinkR(withoutBracketed=False, onlyBracketed=False):
     # .'' shouldn't be considered as part of the link.
     regex = r'(?P<url>http[s]?://[^%(notInside)s]*?[^%(notAtEnd)s]' \
             r'(?=[%(notAtEnd)s]*\'\')|http[s]?://[^%(notInside)s]*' \
-            r'[^%(notAtEnd)s])' % {'notInside': notInside, 'notAtEnd': notAtEnd}
+            r'[^%(notAtEnd)s])' % {
+                'notInside': notInside, 'notAtEnd': notAtEnd}
 
     if withoutBracketed:
         regex = r'(?<!\[)' + regex

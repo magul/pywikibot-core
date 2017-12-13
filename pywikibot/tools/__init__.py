@@ -522,7 +522,8 @@ class MediaWikiVersion(Version):
             for handled in ('wmf', 'alpha', 'beta', 'rc'):
                 # if any of those pops up here our parser has failed
                 assert handled not in version_match.group(2), \
-                    'Found "{0}" in "{1}"'.format(handled, version_match.group(2))
+                    'Found "{0}" in "{1}"'.format(
+                        handled, version_match.group(2))
             if version_match.group(2):
                 debug('Additional unused version part '
                       '"{0}"'.format(version_match.group(2)),
@@ -1389,7 +1390,8 @@ def deprecated(*args, **kwargs):
 
         return wrapper
 
-    without_parameters = len(args) == 1 and len(kwargs) == 0 and callable(args[0])
+    without_parameters = len(args) == 1 and len(
+        kwargs) == 0 and callable(args[0])
     if 'instead' in kwargs:
         instead = kwargs['instead']
     elif not without_parameters and len(args) == 1:
@@ -1542,7 +1544,8 @@ def remove_last_args(arg_names):
             if len(__args) > len(args):
                 deprecated.update(arg_names[:len(__args) - len(args)])
             # remove at most |arg_names| entries from the back
-            new_args = tuple(__args[:max(len(args), len(__args) - len(arg_names))])
+            new_args = tuple(
+                __args[:max(len(args), len(__args) - len(arg_names))])
             new_kwargs = dict((arg, val) for arg, val in __kw.items()
                               if arg not in arg_names)
 

@@ -15,7 +15,8 @@ import sys
 from pywikibot.userinterfaces import terminal_interface_base
 
 unixColors = {
-    'default':     chr(27) + '[0m',     # Unix end tag to switch back to default
+    # Unix end tag to switch back to default
+    'default':     chr(27) + '[0m',
     'black':       chr(27) + '[30m',    # Black start tag
     'red':         chr(27) + '[31m',    # Red start tag
     'green':       chr(27) + '[32m',    # Green start tag

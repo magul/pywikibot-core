@@ -62,7 +62,8 @@ class TestIPBase(TestCase):
         self.ipv6test(True, "FF01:0:0:0:0:0:0:101")  # multicast, full
         self.ipv6test(True, "2001:DB8::8:800:200C:417A")  # unicast, compressed
         self.ipv6test(True, "FF01::101")  # multicast, compressed
-        self.ipv6test(False, "2001:DB8:0:0:8:800:200C:417A:221")  # unicast, full
+        # unicast, full
+        self.ipv6test(False, '2001:DB8:0:0:8:800:200C:417A:221')
         self.ipv6test(False, "FF01::101::2")  # multicast, compressed
         self.ipv6test(True, "fe80::217:f2ff:fe07:ed62")
 
@@ -71,18 +72,24 @@ class TestIPBase(TestCase):
         self.ipv6test(True, "FF02:0000:0000:0000:0000:0000:0000:0001")
         self.ipv6test(True, "0000:0000:0000:0000:0000:0000:0000:0001")
         self.ipv6test(True, "0000:0000:0000:0000:0000:0000:0000:0000")
-        self.ipv6test(False, " 2001:0000:1234:0000:0000:C1C0:ABCD:0876")  # leading space
-        self.ipv6test(False, "2001:0000:1234:0000:0000:C1C0:ABCD:0876 ")  # trailing space
+        # leading space
+        self.ipv6test(False, ' 2001:0000:1234:0000:0000:C1C0:ABCD:0876')
+        # trailing space
+        self.ipv6test(False, '2001:0000:1234:0000:0000:C1C0:ABCD:0876 ')
         # leading and trailing space
         self.ipv6test(False, ' 2001:0000:1234:0000:0000:C1C0:ABCD:0876 ')
         # junk after valid address
         self.ipv6test(False, '2001:0000:1234:0000:0000:C1C0:ABCD:0876  0')
-        self.ipv6test(False, "2001:0000:1234: 0000:0000:C1C0:ABCD:0876")  # internal space
+        # internal space
+        self.ipv6test(False, '2001:0000:1234: 0000:0000:C1C0:ABCD:0876')
 
-        self.ipv6test(False, "3ffe:0b00:0000:0001:0000:0000:000a")  # seven segments
-        self.ipv6test(False, "FF02:0000:0000:0000:0000:0000:0000:0000:0001")  # nine segments
+        # seven segments
+        self.ipv6test(False, '3ffe:0b00:0000:0001:0000:0000:000a')
+        # nine segments
+        self.ipv6test(False, 'FF02:0000:0000:0000:0000:0000:0000:0000:0001')
         self.ipv6test(False, "3ffe:b00::1::a")  # double "::"
-        self.ipv6test(False, "::1111:2222:3333:4444:5555:6666::")  # double "::"
+        # double "::"
+        self.ipv6test(False, '::1111:2222:3333:4444:5555:6666::')
         self.ipv6test(True, "2::10")
         self.ipv6test(True, "ff02::1")
         self.ipv6test(True, "fe80::")
@@ -187,14 +194,18 @@ class TestIPBase(TestCase):
         self.ipv6test(False, "::3000.30.30.30")
         self.ipv6test(True, "fe80::217:f2ff:254.7.237.98")
         self.ipv6test(True, "::ffff:192.168.1.26")
-        self.ipv6test(False, "2001:1:1:1:1:1:255Z255X255Y255")  # garbage instead of "." in IPv4
+        # garbage instead of "." in IPv4
+        self.ipv6test(False, "2001:1:1:1:1:1:255Z255X255Y255")
         self.ipv6test(False, "::ffff:192x168.1.26")  # ditto
         self.ipv6test(True, "::ffff:192.168.1.1")
         # IPv4-compatible IPv6 address, full, deprecated
         self.ipv6test(True, '0:0:0:0:0:0:13.1.68.3')
-        self.ipv6test(True, "0:0:0:0:0:FFFF:129.144.52.38")  # IPv4-mapped IPv6 address, full
-        self.ipv6test(True, "::13.1.68.3")  # IPv4-compatible IPv6 address, compressed, deprecated
-        self.ipv6test(True, "::FFFF:129.144.52.38")  # IPv4-mapped IPv6 address, compressed
+        # IPv4-mapped IPv6 address, full
+        self.ipv6test(True, '0:0:0:0:0:FFFF:129.144.52.38')
+        # IPv4-compatible IPv6 address, compressed, deprecated
+        self.ipv6test(True, '::13.1.68.3')
+        # IPv4-mapped IPv6 address, compressed
+        self.ipv6test(True, '::FFFF:129.144.52.38')
         self.ipv6test(True, "fe80:0:0:0:204:61ff:254.157.241.86")
         self.ipv6test(True, "fe80::204:61ff:254.157.241.86")
         self.ipv6test(True, "::ffff:12.34.56.78")
@@ -214,20 +225,29 @@ class TestIPBase(TestCase):
         # Update: The BNF in RFC-3986 explicitly defines the dec-octet
         # (for IPv4 addresses) not to have a leading zero
         self.ipv6test(False, "fe80:0000:0000:0000:0204:61ff:254.157.241.086")
-        self.ipv6test(True, "::ffff:192.0.2.128")   # but this is OK, since there's a single digit
+        # but this is OK, since there's a single digit
+        self.ipv6test(True, '::ffff:192.0.2.128')
         self.ipv6test(False, "XXXX:XXXX:XXXX:XXXX:XXXX:XXXX:1.2.3.4")
         self.ipv6test(False, "1111:2222:3333:4444:5555:6666:256.256.256.256")
 
         # Subnet mask not accepted
-        self.ipv6test(False, "2001:0DB8:0000:CD30:0000:0000:0000:0000/60")  # full, with prefix
-        self.ipv6test(False, "2001:0DB8::CD30:0:0:0:0/60")  # compressed, with prefix
-        self.ipv6test(False, "2001:0DB8:0:CD30::/60")  # compressed, with prefix #2
-        self.ipv6test(False, "::/128")  # compressed, unspecified address type, non-routable
-        self.ipv6test(False, "::1/128")  # compressed, loopback address type, non-routable
+        # full, with prefix
+        self.ipv6test(False, '2001:0DB8:0000:CD30:0000:0000:0000:0000/60')
+        # compressed, with prefix
+        self.ipv6test(False, '2001:0DB8::CD30:0:0:0:0/60')
+        # compressed, with prefix #2
+        self.ipv6test(False, '2001:0DB8:0:CD30::/60')
+        # compressed, unspecified address type, non-routable
+        self.ipv6test(False, '::/128')
+        # compressed, loopback address type, non-routable
+        self.ipv6test(False, '::1/128')
         self.ipv6test(False, "FF00::/8")  # compressed, multicast address type
-        self.ipv6test(False, "FE80::/10")  # compressed, link-local unicast, non-routable
-        self.ipv6test(False, "FEC0::/10")  # compressed, site-local unicast, deprecated
-        self.ipv6test(False, "124.15.6.89/60")  # standard IPv4, prefix not allowed
+        # compressed, link-local unicast, non-routable
+        self.ipv6test(False, 'FE80::/10')
+        # compressed, site-local unicast, deprecated
+        self.ipv6test(False, 'FEC0::/10')
+        # standard IPv4, prefix not allowed
+        self.ipv6test(False, '124.15.6.89/60')
 
         self.ipv6test(True, "fe80:0000:0000:0000:0204:61ff:fe9d:f156")
         self.ipv6test(True, "fe80:0:0:0:204:61ff:fe9d:f156")
@@ -633,8 +653,10 @@ class TestIPBase(TestCase):
 
     def _test_T105443_failures(self):
         """Test known bugs with ipaddr v2.1.10."""
-        self.ipv6test(False, "02001:0000:1234:0000:0000:C1C0:ABCD:0876")  # extra 0 not allowed!
-        self.ipv6test(False, "2001:0000:1234:0000:00001:C1C0:ABCD:0876")  # extra 0 not allowed!
+        # extra 0 not allowed!
+        self.ipv6test(False, '02001:0000:1234:0000:0000:C1C0:ABCD:0876')
+        # extra 0 not allowed!
+        self.ipv6test(False, '2001:0000:1234:0000:00001:C1C0:ABCD:0876')
 
 
 class IPRegexTestCase(TestIPBase, DeprecationTestCase):

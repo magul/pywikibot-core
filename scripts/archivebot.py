@@ -574,7 +574,8 @@ class PageArchiver(object):
 
     def load_config(self):
         """Load and validate archiver template."""
-        pywikibot.output(u'Looking for: {{%s}} in %s' % (self.tpl.title(), self.page))
+        pywikibot.output(
+            'Looking for: {{%s}} in %s' % (self.tpl.title(), self.page))
         for tpl in self.page.templatesWithParams():
             if tpl[0] == pywikibot.Page(self.site, self.tpl.title(), ns=10):
                 for param in tpl[1]:
@@ -671,7 +672,8 @@ class PageArchiver(object):
                     "Couldn't find the template in the header"
                 )
 
-            pywikibot.output(u'Archiving %d thread(s).' % self.archived_threads)
+            pywikibot.output(
+                'Archiving %d thread(s).' % self.archived_threads)
             # Save the archives first (so that bugs don't cause a loss of data)
             for a in sorted(self.archives.keys()):
                 self.comment_params['count'] = self.archives[a].archived_threads
@@ -751,12 +753,14 @@ def main(*args):
         if page.exists():
             calc = page.title()
         else:
-            pywikibot.output(u'NOTE: the specified page "%s" does not (yet) exist.' % calc)
+            pywikibot.output(
+                'NOTE: the specified page "%s" does not (yet) exist.' % calc)
         pywikibot.output('key = %s' % calc_md5_hexdigest(calc, salt))
         return
 
     if not args:
-        pywikibot.bot.suggest_help(additional_text='No template was specified.')
+        pywikibot.bot.suggest_help(
+            additional_text='No template was specified.')
         return False
 
     for a in args:
@@ -787,7 +791,8 @@ def main(*args):
                 pywikibot.error('Missing or malformed template in page %s: %s'
                                 % (pg, e))
             except Exception:
-                pywikibot.error(u'Error occurred while processing page %s' % pg)
+                pywikibot.error(
+                    'Error occurred while processing page %s' % pg)
                 pywikibot.exception(tb=True)
 
 

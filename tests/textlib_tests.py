@@ -94,7 +94,8 @@ class TestSectionFunctions(TestCase):
     def test_link_in_section(self):
         """Test with link inside section."""
         # section is ==[[Wiki markup]]==
-        self.assertContains("enwiki_help_editing", u"[[Wiki markup]]", "Link as section header")
+        self.assertContains('enwiki_help_editing',
+                            '[[Wiki markup]]', 'Link as section header')
         self.assertContains('enwiki_help_editing', '[[:Wiki markup]]',
                             'section header link with preleading colon')
         self.assertNotContains('enwiki_help_editing', 'Wiki markup',
@@ -216,28 +217,37 @@ class TestCategoryRearrangement(DefaultDrySiteTestCase):
         cats = textlib.getCategoryLinks(self.old, site=self.site)
 
         # Sanity checking
-        temp = textlib.replaceCategoryInPlace(self.old, cats[0], dummy, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[0], dummy, site=self.site)
         self.assertNotEqual(temp, self.old)
-        new = textlib.replaceCategoryInPlace(temp, dummy, cats[0], site=self.site)
+        new = textlib.replaceCategoryInPlace(
+            temp, dummy, cats[0], site=self.site)
         self.assertEqual(self.old, new)
 
-        temp = textlib.replaceCategoryInPlace(self.old, cats[1], dummy, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[1], dummy, site=self.site)
         self.assertNotEqual(temp, self.old)
-        new = textlib.replaceCategoryInPlace(temp, dummy, cats[1], site=self.site)
+        new = textlib.replaceCategoryInPlace(
+            temp, dummy, cats[1], site=self.site)
         self.assertEqual(self.old, new)
 
-        temp = textlib.replaceCategoryInPlace(self.old, cats[2], dummy, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[2], dummy, site=self.site)
         self.assertNotEqual(temp, self.old)
-        new = textlib.replaceCategoryInPlace(temp, dummy, cats[2], site=self.site)
+        new = textlib.replaceCategoryInPlace(
+            temp, dummy, cats[2], site=self.site)
         self.assertEqual(self.old, new)
 
-        temp = textlib.replaceCategoryInPlace(self.old, cats[3], dummy, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[3], dummy, site=self.site)
         self.assertNotEqual(temp, self.old)
-        new = textlib.replaceCategoryInPlace(temp, dummy, cats[3], site=self.site)
+        new = textlib.replaceCategoryInPlace(
+            temp, dummy, cats[3], site=self.site)
         self.assertEqual(self.old, new)
 
         # Testing removing categories
-        temp = textlib.replaceCategoryInPlace(self.old, cats[0], None, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[0], None, site=self.site)
         self.assertNotEqual(temp, self.old)
         temp_cats = textlib.getCategoryLinks(temp, site=self.site)
         self.assertNotIn(cats[0], temp_cats)
@@ -257,7 +267,8 @@ class TestCategoryRearrangement(DefaultDrySiteTestCase):
 
         self.assertEqual(cats[3].sortKey, 'key')
         orig_sortkey = cats[3].sortKey
-        temp = textlib.replaceCategoryInPlace(self.old, cats[3], dummy, site=self.site)
+        temp = textlib.replaceCategoryInPlace(
+            self.old, cats[3], dummy, site=self.site)
         self.assertNotEqual(self.old, temp)
         new_dummy = textlib.getCategoryLinks(temp, site=self.site)[3]
         self.assertIsNotNone(new_dummy.sortKey)
@@ -316,30 +327,44 @@ class TestTemplateParams(TestCase):
         self.assertEqual(func('{{a }}'), [('a', OrderedDict())])
         self.assertEqual(func('{{ a }}'), [('a', OrderedDict())])
 
-        self.assertEqual(func('{{a|b=c}}'), [('a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{a|b|c=d}}'), [('a', OrderedDict((('1', 'b'), ('c', 'd'))))])
+        self.assertEqual(func('{{a|b=c}}'), [
+                         ('a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{a|b|c=d}}'), [
+                         ('a', OrderedDict((('1', 'b'), ('c', 'd'))))])
         self.assertEqual(func('{{a|b=c|f=g|d=e|1=}}'),
                          [('a', OrderedDict((('b', 'c'), ('f', 'g'), ('d', 'e'), ('1', ''))))])
-        self.assertEqual(func('{{a|1=2|c=d}}'), [('a', OrderedDict((('1', '2'), ('c', 'd'))))])
-        self.assertEqual(func('{{a|c=d|1=2}}'), [('a', OrderedDict((('c', 'd'), ('1', '2'))))])
-        self.assertEqual(func('{{a|5=d|a=b}}'), [('a', OrderedDict((('5', 'd'), ('a', 'b'))))])
+        self.assertEqual(func('{{a|1=2|c=d}}'), [
+                         ('a', OrderedDict((('1', '2'), ('c', 'd'))))])
+        self.assertEqual(func('{{a|c=d|1=2}}'), [
+                         ('a', OrderedDict((('c', 'd'), ('1', '2'))))])
+        self.assertEqual(func('{{a|5=d|a=b}}'), [
+                         ('a', OrderedDict((('5', 'd'), ('a', 'b'))))])
         self.assertEqual(func('{{a|=2}}'), [('a', OrderedDict((('', '2'), )))])
 
         self.assertEqual(func('{{a|}}'), [('a', OrderedDict((('1', ''), )))])
-        self.assertEqual(func('{{a|=|}}'), [('a', OrderedDict((('', ''), ('1', ''))))])
-        self.assertEqual(func('{{a||}}'), [('a', OrderedDict((('1', ''), ('2', ''))))])
+        self.assertEqual(func('{{a|=|}}'), [
+                         ('a', OrderedDict((('', ''), ('1', ''))))])
+        self.assertEqual(func('{{a||}}'), [
+                         ('a', OrderedDict((('1', ''), ('2', ''))))])
 
-        self.assertEqual(func('{{a|b={{{1}}}}}'), [('a', OrderedDict((('b', '{{{1}}}'), )))])
+        self.assertEqual(func('{{a|b={{{1}}}}}'), [
+                         ('a', OrderedDict((('b', '{{{1}}}'), )))])
         self.assertEqual(func('{{a|b=<noinclude>{{{1}}}</noinclude>}}'),
                          [('a', OrderedDict((('b', '<noinclude>{{{1}}}</noinclude>'), )))])
-        self.assertEqual(func('{{subst:a|b=c}}'), [('subst:a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{subst:a|b=c}}'), [
+                         ('subst:a', OrderedDict((('b', 'c'), )))])
         self.assertEqual(func('{{safesubst:a|b=c}}'),
                          [('safesubst:a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{msgnw:a|b=c}}'), [('msgnw:a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{Template:a|b=c}}'), [('Template:a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{template:a|b=c}}'), [('template:a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{:a|b=c}}'), [(':a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{subst::a|b=c}}'), [('subst::a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{msgnw:a|b=c}}'), [
+                         ('msgnw:a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{Template:a|b=c}}'), [
+                         ('Template:a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{template:a|b=c}}'), [
+                         ('template:a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{:a|b=c}}'), [
+                         (':a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{subst::a|b=c}}'), [
+                         ('subst::a', OrderedDict((('b', 'c'), )))])
 
         self.assertEqual(func('{{a|b={{{1}}}|c={{{2}}}}}'),
                          [('a', OrderedDict((('b', '{{{1}}}'), ('c', '{{{2}}}'))))])
@@ -360,14 +385,21 @@ class TestTemplateParams(TestCase):
         self.assertEqual(func('{{a|b=<!--{{{1}}}-->}}'),
                          [('a', OrderedDict((('b', '<!--{{{1}}}-->'), )))])
 
-        self.assertEqual(func('{{a|  }}'), [('a', OrderedDict((('1', '  '), )))])
-        self.assertEqual(func('{{a| | }}'), [('a', OrderedDict((('1', ' '), ('2', ' '))))])
-        self.assertEqual(func('{{a| =|}}'), [('a', OrderedDict(((' ', ''), ('1', ''))))])
+        self.assertEqual(func('{{a|  }}'), [
+                         ('a', OrderedDict((('1', '  '), )))])
+        self.assertEqual(func('{{a| | }}'), [
+                         ('a', OrderedDict((('1', ' '), ('2', ' '))))])
+        self.assertEqual(func('{{a| =|}}'), [
+                         ('a', OrderedDict(((' ', ''), ('1', ''))))])
 
-        self.assertEqual(func('{{a| b=c}}'), [('a', OrderedDict(((' b', 'c'), )))])
-        self.assertEqual(func('{{a|b =c}}'), [('a', OrderedDict((('b ', 'c'), )))])
-        self.assertEqual(func('{{a|b= c}}'), [('a', OrderedDict((('b', ' c'), )))])
-        self.assertEqual(func('{{a|b=c }}'), [('a', OrderedDict((('b', 'c '), )))])
+        self.assertEqual(func('{{a| b=c}}'), [
+                         ('a', OrderedDict(((' b', 'c'), )))])
+        self.assertEqual(func('{{a|b =c}}'), [
+                         ('a', OrderedDict((('b ', 'c'), )))])
+        self.assertEqual(func('{{a|b= c}}'), [
+                         ('a', OrderedDict((('b', ' c'), )))])
+        self.assertEqual(func('{{a|b=c }}'), [
+                         ('a', OrderedDict((('b', 'c '), )))])
 
         self.assertEqual(func('{{a| foo |2= bar }}'),
                          [('a', OrderedDict((('1', ' foo '), ('2', ' bar '))))])
@@ -381,14 +413,21 @@ class TestTemplateParams(TestCase):
 
     def _stripped(self, func):
         """Common cases of stripped results."""
-        self.assertEqual(func('{{a|  }}'), [('a', OrderedDict((('1', '  '), )))])
-        self.assertEqual(func('{{a| | }}'), [('a', OrderedDict((('1', ' '), ('2', ' '))))])
-        self.assertEqual(func('{{a| =|}}'), [('a', OrderedDict((('', ''), ('1', ''))))])
+        self.assertEqual(func('{{a|  }}'), [
+                         ('a', OrderedDict((('1', '  '), )))])
+        self.assertEqual(func('{{a| | }}'), [
+                         ('a', OrderedDict((('1', ' '), ('2', ' '))))])
+        self.assertEqual(func('{{a| =|}}'), [
+                         ('a', OrderedDict((('', ''), ('1', ''))))])
 
-        self.assertEqual(func('{{a| b=c}}'), [('a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{a|b =c}}'), [('a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{a|b= c}}'), [('a', OrderedDict((('b', 'c'), )))])
-        self.assertEqual(func('{{a|b=c }}'), [('a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{a| b=c}}'), [
+                         ('a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{a|b =c}}'), [
+                         ('a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{a|b= c}}'), [
+                         ('a', OrderedDict((('b', 'c'), )))])
+        self.assertEqual(func('{{a|b=c }}'), [
+                         ('a', OrderedDict((('b', 'c'), )))])
 
         self.assertEqual(func('{{a| foo |2= bar }}'),
                          [('a', OrderedDict((('1', ' foo '), ('2', 'bar'))))])
@@ -402,7 +441,8 @@ class TestTemplateParams(TestCase):
     def _etp_regex_differs(self, func):
         """Common cases not handled the same by ETP_REGEX."""
         # inner {} should be treated as part of the value
-        self.assertEqual(func('{{a|b={} }}'), [('a', OrderedDict((('b', '{} '), )))])
+        self.assertEqual(func('{{a|b={} }}'), [
+                         ('a', OrderedDict((('b', '{} '), )))])
 
     def _order_differs(self, func):
         """Common cases where the order of templates differs."""
@@ -850,7 +890,8 @@ class TestReplaceLinks(TestCase):
     def test_replace_invalid_link_text(self):
         """Test that it doesn't pipe a link when it's an invalid link."""
         self.assertEqual(
-            textlib.replace_links('[[Target|Foo:]]', ('Target', 'Foo'), self.wp_site),
+            textlib.replace_links(
+                '[[Target|Foo:]]', ('Target', 'Foo'), self.wp_site),
             '[[Foo|Foo:]]')
 
     def test_replace_modes(self):
@@ -870,7 +911,8 @@ class TestReplaceLinks(TestCase):
                                   self.wp_site),
             '[[Bar]]')
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'Bar#snafu'), self.wp_site),
+            textlib.replace_links(
+                source_text, ('Foo', 'Bar#snafu'), self.wp_site),
             '[[Bar#bar|baz]]')
         self.assertEqual(
             textlib.replace_links(source_text,
@@ -883,7 +925,8 @@ class TestReplaceLinks(TestCase):
                                   self.wp_site),
             '[[Bar#snafu]]')
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'Bar|foo'), self.wp_site),
+            textlib.replace_links(
+                source_text, ('Foo', 'Bar|foo'), self.wp_site),
             '[[Bar#bar|baz]]')
         self.assertEqual(
             textlib.replace_links(source_text,
@@ -896,16 +939,19 @@ class TestReplaceLinks(TestCase):
                                   self.wp_site),
             '[[Bar|foo]]')
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'Bar#snafu|foo'), self.wp_site),
+            textlib.replace_links(
+                source_text, ('Foo', 'Bar#snafu|foo'), self.wp_site),
             '[[Bar#bar|baz]]')
         self.assertEqual(
             textlib.replace_links(source_text,
-                                  ('Foo', pywikibot.Page(self.wp_site, 'Bar#snafu|foo')),
+                                  ('Foo', pywikibot.Page(
+                                      self.wp_site, 'Bar#snafu|foo')),
                                   self.wp_site),
             '[[Bar#bar|baz]]')
         self.assertEqual(
             textlib.replace_links(source_text,
-                                  ('Foo', pywikibot.Link('Bar#snafu|foo', self.wp_site)),
+                                  ('Foo', pywikibot.Link(
+                                      'Bar#snafu|foo', self.wp_site)),
                                   self.wp_site),
             '[[Bar#snafu|foo]]')
 
@@ -913,13 +959,16 @@ class TestReplaceLinks(TestCase):
         """Test that it uses piped links when the case is different."""
         source_text = '[[Foo|Bar]] and [[Foo|bar]]'
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'bar'), self.get_site('wp')),
+            textlib.replace_links(
+                source_text, ('Foo', 'bar'), self.get_site('wp')),
             '[[Bar]] and [[bar]]')
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'bar'), self.get_site('wt')),
+            textlib.replace_links(
+                source_text, ('Foo', 'bar'), self.get_site('wt')),
             '[[bar|Bar]] and [[bar]]')
         self.assertEqual(
-            textlib.replace_links(source_text, ('Foo', 'Bar'), self.get_site('wt')),
+            textlib.replace_links(
+                source_text, ('Foo', 'Bar'), self.get_site('wt')),
             '[[Bar]] and [[Bar|bar]]')
 
     @unittest.expectedFailure
@@ -929,23 +978,28 @@ class TestReplaceLinks(TestCase):
         # (interwiki and namespace prefixes) which could be then compared
         # case insensitive.
         self.assertEqual(
-            textlib.replace_links('[[Image:Foobar]]', ('File:Foobar', 'File:Foo'), self.wp_site),
-            '[[File:Foo|Image:Foobar]]')
+            textlib.replace_links(
+                '[[Image:Foobar]]', ('File:Foobar', 'File:Foo'), self.wp_site
+            ), '[[File:Foo|Image:Foobar]]')
         self.assertEqual(
-            textlib.replace_links('[[en:File:Foobar]]', ('File:Foobar', 'File:Foo'), self.wp_site),
-            '[[File:Foo|en:File:Foobar]]')
+            textlib.replace_links(
+                '[[en:File:Foobar]]', ('File:Foobar', 'File:Foo'), self.wp_site
+            ), '[[File:Foo|en:File:Foobar]]')
 
     def test_linktrails(self):
         """Test that the linktrails are used or applied."""
         self.assertEqual(
-            textlib.replace_links('[[Foobar]]', ('Foobar', 'Foo'), self.wp_site),
-            '[[Foo]]bar')
+            textlib.replace_links(
+                '[[Foobar]]', ('Foobar', 'Foo'), self.wp_site
+            ), '[[Foo]]bar')
         self.assertEqual(
-            textlib.replace_links('[[Talk:test]]s', ('Talk:Test', 'Talk:Tests'), self.wp_site),
-            '[[Talk:tests]]')
+            textlib.replace_links(
+                '[[Talk:test]]s', ('Talk:Test', 'Talk:Tests'), self.wp_site
+            ), '[[Talk:tests]]')
         self.assertEqual(
-            textlib.replace_links('[[Talk:test]]s', ('Talk:Test', 'Project:Tests'), self.wp_site),
-            '[[Project:Tests|Talk:tests]]')
+            textlib.replace_links(
+                '[[Talk:test]]s', ('Talk:Test', 'Project:Tests'), self.wp_site
+            ), '[[Project:Tests|Talk:tests]]')
 
     def test_unicode_callback(self):
         """Test returning unicode in the callback."""

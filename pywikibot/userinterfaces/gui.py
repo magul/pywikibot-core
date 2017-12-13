@@ -457,7 +457,8 @@ class ListBoxWindow(object):
         self.bottom_frame = Tkinter.Frame(parent)
         self.bottom_frame.pack(side=Tkinter.BOTTOM)
 
-        buttonOK = Tkinter.Button(self.bottom_frame, text='OK', command=self.pressedOK)
+        buttonOK = Tkinter.Button(
+            self.bottom_frame, text='OK', command=self.pressedOK)
         buttonOK.pack(side=Tkinter.LEFT, fill=Tkinter.X)
         # idea: set title to cur_disambiguation
 
@@ -505,7 +506,8 @@ class Tkdialog(object):
         self.image_panel.image = self.image
 
         # The filename
-        self.filename_label = Tkinter.Label(self.root, text=u"Suggested filename")
+        self.filename_label = Tkinter.Label(
+            self.root, text='Suggested filename')
         self.filename_field = Tkinter.Entry(self.root, width=100)
         self.filename_field.insert(Tkinter.END, filename)
 

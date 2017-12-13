@@ -345,16 +345,19 @@ class LiveFakeUserAgentTestCase(HttpbinTestCase):
         self.assertEqual(r.headers['user-agent'], 'EXISTING')
 
         # Argument value changes
-        r = http.fetch(self.get_httpbin_url('/status/200'), use_fake_user_agent=True)
+        r = http.fetch(self.get_httpbin_url(
+            '/status/200'), use_fake_user_agent=True)
         self.assertNotEqual(r.headers['user-agent'], http.user_agent())
-        r = http.fetch(self.get_httpbin_url('/status/200'), use_fake_user_agent=False)
+        r = http.fetch(self.get_httpbin_url(
+            '/status/200'), use_fake_user_agent=False)
         self.assertEqual(r.headers['user-agent'], http.user_agent())
         r = http.fetch(
             self.get_httpbin_url('/status/200'), use_fake_user_agent='ARBITRARY')
         self.assertEqual(r.headers['user-agent'], 'ARBITRARY')
 
         # Manually overridden domains
-        config.fake_user_agent_exceptions = {self.get_httpbin_hostname(): 'OVERRIDDEN'}
+        config.fake_user_agent_exceptions = {
+            self.get_httpbin_hostname(): 'OVERRIDDEN'}
         r = http.fetch(
             self.get_httpbin_url('/status/200'), use_fake_user_agent=False)
         self.assertEqual(r.headers['user-agent'], 'OVERRIDDEN')
@@ -389,7 +392,8 @@ class GetFakeUserAgentTestCase(TestCase):
     def _test_fake_user_agent_randomness(self):
         """Test if user agent returns are randomized."""
         config.fake_user_agent = True
-        self.assertNotEqual(http.get_fake_user_agent(), http.get_fake_user_agent())
+        self.assertNotEqual(http.get_fake_user_agent(),
+                            http.get_fake_user_agent())
 
     def _test_config_settings(self):
         """Test if method honours configuration toggle."""
@@ -564,9 +568,11 @@ class CharsetTestCase(TestCase):
         req = CharsetTestCase._create_request('utf16',
                                               CharsetTestCase.LATIN1_BYTES)
         self.assertEqual('utf16', req.charset)
-        self.assertRaisesRegex(UnicodeDecodeError, self.CODEC_CANT_DECODE_RE, lambda: req.encoding)
+        self.assertRaisesRegex(
+            UnicodeDecodeError, self.CODEC_CANT_DECODE_RE, lambda: req.encoding)
         self.assertEqual(req.raw, CharsetTestCase.LATIN1_BYTES)
-        self.assertRaisesRegex(UnicodeDecodeError, self.CODEC_CANT_DECODE_RE, lambda: req.content)
+        self.assertRaisesRegex(
+            UnicodeDecodeError, self.CODEC_CANT_DECODE_RE, lambda: req.content)
 
 
 class BinaryTestCase(TestCase):
@@ -642,7 +648,8 @@ class QueryStringParamsTestCase(HttpbinTestCase):
         HTTPBin returns the args in their urldecoded form, so what we put in should be
         the same as what we get out.
         """
-        r = http.fetch(uri=self.get_httpbin_url('/get'), params={'fish&chips': 'delicious'})
+        r = http.fetch(uri=self.get_httpbin_url('/get'),
+                       params={'fish&chips': 'delicious'})
         self.assertEqual(r.status, 200)
 
         content = json.loads(r.content)

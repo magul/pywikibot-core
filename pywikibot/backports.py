@@ -137,7 +137,8 @@ def _showwarning(message, category, filename, lineno, file=None, line=None):
     """
     if file is not None:
         if _warnings_showwarning is not None:
-            _warnings_showwarning(message, category, filename, lineno, file, line)
+            _warnings_showwarning(
+                message, category, filename, lineno, file, line)
     else:
         s = warnings.formatwarning(message, category, filename, lineno, line)
         logger = logging.getLogger("py.warnings")

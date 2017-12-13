@@ -507,7 +507,8 @@ class NoReferencesBot(Bot):
         if self.referencesR.search(oldTextCleaned) or \
            self.referencesTagR.search(oldTextCleaned):
             if self.getOption('verbose'):
-                pywikibot.output(u'No changes necessary: references tag found.')
+                pywikibot.output(
+                    'No changes necessary: references tag found.')
             return False
         elif self.referencesTemplates:
             templateR = u'{{(' + u'|'.join(self.referencesTemplates) + ')'
@@ -687,7 +688,8 @@ class NoReferencesBot(Bot):
             if self.lacksReferences(text):
                 newText = self.addReferences(text)
                 try:
-                    self.userPut(page, page.text, newText, summary=self.comment)
+                    self.userPut(page, page.text, newText,
+                                 summary=self.comment)
                 except pywikibot.EditConflict:
                     pywikibot.warning('Skipping %s because of edit conflict'
                                       % page.title(asLink=True))
@@ -721,7 +723,8 @@ def main(*args):
                 xmlFilename = i18n.input('pywikibot-enter-xml-filename')
             else:
                 xmlFilename = arg[5:]
-            genFactory.gens.append(XmlDumpNoReferencesPageGenerator(xmlFilename))
+            genFactory.gens.append(
+                XmlDumpNoReferencesPageGenerator(xmlFilename))
         elif arg == '-always':
             options['always'] = True
         elif arg == '-quiet':

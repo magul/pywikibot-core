@@ -95,7 +95,8 @@ def categorizeImages(generator, onlyFilter, onlyUncat):
                     usage = []
                     galleries = []
                 else:
-                    (commonshelperCats, usage, galleries) = getCommonshelperCats(imagepage)
+                    (commonshelperCats, usage,
+                     galleries) = getCommonshelperCats(imagepage)
                 newcats = applyAllFilters(commonshelperCats + currentCats)
 
                 if len(newcats) > 0 and not(set(currentCats) == set(newcats)):
@@ -224,10 +225,12 @@ def getOpenStreetMap(latitude, longitude):
     """
     result = []
     gotInfo = False
-    parameters = urlencode({'lat': latitude, 'lon': longitude, 'accept-language': 'en'})
+    parameters = urlencode(
+        {'lat': latitude, 'lon': longitude, 'accept-language': 'en'})
     while not gotInfo:
         try:
-            page = fetch('https://nominatim.openstreetmap.org/reverse?format=xml&%s' % parameters)
+            page = fetch(
+                'https://nominatim.openstreetmap.org/reverse?format=xml&%s' % parameters)
             et = xml.etree.ElementTree.fromstring(page.content)
             gotInfo = True
         except IOError:
@@ -244,7 +247,8 @@ def getOpenStreetMap(latitude, longitude):
         if addresspart.tag in validParts:
             result.append(addresspart.text)
         elif addresspart.tag in invalidParts:
-            pywikibot.output(u'Dropping %s, %s' % (addresspart.tag, addresspart.text))
+            pywikibot.output(
+                'Dropping %s, %s' % (addresspart.tag, addresspart.text))
         else:
             pywikibot.warning('%s, %s is not in addressparts lists'
                               % (addresspart.tag, addresspart.text))
@@ -255,16 +259,19 @@ def getCategoryByName(name, parent=u'', grandparent=u''):
     """Get category by name."""
     if not parent == u'':
         workname = name.strip() + u',_' + parent.strip()
-        workcat = pywikibot.Category(pywikibot.Site(u'commons', u'commons'), workname)
+        workcat = pywikibot.Category(
+            pywikibot.Site('commons', 'commons'), workname)
         if workcat.exists():
             return workname
     if not grandparent == u'':
         workname = name.strip() + u',_' + grandparent.strip()
-        workcat = pywikibot.Category(pywikibot.Site(u'commons', u'commons'), workname)
+        workcat = pywikibot.Category(
+            pywikibot.Site('commons', 'commons'), workname)
         if workcat.exists():
             return workname
     workname = name.strip()
-    workcat = pywikibot.Category(pywikibot.Site(u'commons', u'commons'), workname)
+    workcat = pywikibot.Category(
+        pywikibot.Site('commons', 'commons'), workname)
     if workcat.exists():
         return workname
     return u''
@@ -440,7 +447,8 @@ def getCheckCategoriesTemplate(usage, galleries, ncats):
         usageCounter += 1
     galleryCounter = 1
     for gallery in galleries:
-        result += u'|gallery%d=%s' % (galleryCounter, gallery.replace('_', ' ')) + u'\n'
+        result += '|gallery%d=%s' % (
+            galleryCounter, gallery.replace('_', ' ')) + '\n'
         galleryCounter += 1
     result += u'|ncats=%d\n' % ncats
     result += u'}}\n'

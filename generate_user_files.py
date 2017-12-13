@@ -127,7 +127,8 @@ def get_site_and_lang(default_family='wikipedia', default_lang='en',
         known_langs = []
 
     if len(known_langs) == 0:
-        pywikibot.output('There were no known languages found in {0}.'.format(fam.name))
+        pywikibot.output(
+            'There were no known languages found in {0}.'.format(fam.name))
         default_lang = None
     elif len(known_langs) == 1:
         pywikibot.output('The only known language: {0}'.format(known_langs[0]))

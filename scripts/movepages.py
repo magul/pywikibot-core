@@ -95,7 +95,8 @@ class MovePagesBot(MultipleSitesBot):
         """Treat a single page."""
         self.current_page = page
         if self.getOption('skipredirects') and page.isRedirectPage():
-            pywikibot.output(u'Page %s is a redirect; skipping.' % page.title())
+            pywikibot.output(
+                'Page %s is a redirect; skipping.' % page.title())
             return
         pagetitle = page.title(withNamespace=False)
         namesp = page.site.namespace(page.namespace())
