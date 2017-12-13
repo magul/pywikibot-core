@@ -69,7 +69,8 @@ class FixingRedirectBot(SingleSiteBot, ExistingPageBot, NoRedirectPageBot,
                mysite.isInterwikiLink(m.group('title')):
                 continue
             else:
-                actualLinkPage = pywikibot.Page(targetPage.site, m.group('title'))
+                actualLinkPage = pywikibot.Page(
+                    targetPage.site, m.group('title'))
                 # Check whether the link found is to page.
                 if actualLinkPage != linkedPage:
                     continue

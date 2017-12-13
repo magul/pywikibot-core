@@ -43,7 +43,8 @@ image_builtin_ns['Image talk'] = 7
 file_builtin_ns = dict(_base_builtin_ns)
 file_builtin_ns['File'] = 6
 file_builtin_ns['File talk'] = 7
-builtin_ns = dict(list(image_builtin_ns.items()) + list(file_builtin_ns.items()))
+builtin_ns = dict(
+    list(image_builtin_ns.items()) + list(file_builtin_ns.items()))
 
 
 def builtin_NamespacesDict():

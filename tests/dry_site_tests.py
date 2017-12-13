@@ -79,7 +79,9 @@ class TestDrySite(DefaultDrySiteTestCase):
         old_config = '{script}/{version} Pywikibot/2.0 (User:{username})'
 
         pywikibot.version.getversiondict()
-        script_value = pywikibot.calledModuleName() + '/' + pywikibot.version.cache['rev']
+        script_value = (
+            pywikibot.calledModuleName() + '/' + pywikibot.version.cache['rev']
+        )
 
         self.assertEqual(script_value + ' Pywikibot/2.0 (User:foo_bar)',
                          user_agent(x, format_string=old_config))
@@ -185,7 +187,8 @@ class TestMustBe(DebugOnlyTestCase):
         """Test overriding the required group."""
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
-        retval = self.call_this_user_req_function(*args, as_group='sysop', **kwargs)
+        retval = self.call_this_user_req_function(
+            *args, as_group='sysop', **kwargs)
         self.assertEqual(retval[0], args)
         self.assertEqual(retval[1], kwargs)
         self.assertEqual(self._logged_in_as, 'sysop')
@@ -195,7 +198,8 @@ class TestMustBe(DebugOnlyTestCase):
         self.obsolete = True
         args = (1, 2, 'a', 'b')
         kwargs = {'i': 'j', 'k': 'l'}
-        self.assertRaises(UnknownSite, self.call_this_user_req_function, args, kwargs)
+        self.assertRaises(
+            UnknownSite, self.call_this_user_req_function, args, kwargs)
 
 
 class TestNeedVersion(DeprecationTestCase):

@@ -129,17 +129,20 @@ class LonelyPagesBot(SingleSiteBot):
                 orphan_template = e
         if orphan_template is None or isinstance(orphan_template, ValueError):
             err_message = 'Missing configuration for site %s' % self.site
-            suggest_help(exception=orphan_template, additional_text=err_message)
+            suggest_help(exception=orphan_template,
+                         additional_text=err_message)
             sys.exit(err_message)
         else:
             self._settings = orphan_template
         # DisambigPage part
         if self.getOption('disambigPage') is not None:
-            self.disambigpage = pywikibot.Page(self.site, self.getOption('disambigPage'))
+            self.disambigpage = pywikibot.Page(
+                self.site, self.getOption('disambigPage'))
             try:
                 self.disambigtext = self.disambigpage.get()
             except pywikibot.NoPage:
-                pywikibot.output(u"%s doesn't esist, skip!" % self.disambigpage.title())
+                pywikibot.output("%s doesn't esist, skip!" %
+                                 self.disambigpage.title())
                 self.disambigtext = ''
             except pywikibot.IsRedirectPage:
                 pywikibot.output(u"%s is a redirect, don't use it!"
@@ -206,7 +209,8 @@ class LonelyPagesBot(SingleSiteBot):
                 pywikibot.output(u'%s is a disambig page, report..'
                                  % page.title())
                 if not page.title().lower() in self.disambigtext.lower():
-                    self.disambigtext = u"%s\n*[[%s]]" % (self.disambigtext, page.title())
+                    self.disambigtext = '%s\n*[[%s]]' % (
+                        self.disambigtext, page.title())
                     self.disambigpage.text = self.disambigtext
                     self.disambigpage.save(self.commentdisambig)
                     return

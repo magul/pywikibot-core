@@ -151,7 +151,8 @@ class UI(object):
 
     def _print(self, text, target_stream):
         """Write the text to the target stream handling the colors."""
-        colorized = config.colorized_output and self.support_color(target_stream)
+        colorized = config.colorized_output and self.support_color(
+            target_stream)
         colored_line = False
         # Color tags might be cascaded, e.g. because of transliteration.
         # Therefore we need this stack.
@@ -415,7 +416,8 @@ class UI(object):
         message = question
         clist = answers
 
-        line_template = u"{{0: >{0}}}: {{1}}".format(int(math.log10(len(clist)) + 1))
+        line_template = '{{0: >{0}}}: {{1}}'.format(
+            int(math.log10(len(clist)) + 1))
         for n, i in enumerate(clist):
             pywikibot.output(line_template.format(n + 1, i))
 

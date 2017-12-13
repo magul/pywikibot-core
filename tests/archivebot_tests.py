@@ -92,8 +92,10 @@ class TestArchiveBotFunctions(TestCase):
         self.assertEqual(archivebot.str2time('7d'), archivebot.str2time('1w'))
         self.assertEqual(archivebot.str2time('3y'), timedelta(1096))
         self.assertEqual(archivebot.str2time('3y', date), timedelta(1095))
-        self.assertRaises(archivebot.MalformedConfigError, archivebot.str2time, '4000@')
-        self.assertRaises(archivebot.MalformedConfigError, archivebot.str2time, '$1')
+        self.assertRaises(archivebot.MalformedConfigError,
+                          archivebot.str2time, '4000@')
+        self.assertRaises(archivebot.MalformedConfigError,
+                          archivebot.str2time, '$1')
 
     def test_checkstr(self):
         """Test for extracting key and duration from shorthand notation of durations."""
@@ -159,7 +161,8 @@ class TestArchiveBot(TestCase):
                 self.assertIsInstance(thread.timestamp, datetime)
             except AssertionError:
                 if thread.code not in self.expected_failures:
-                    pywikibot.output('code %s: %s' % (thread.code, thread.content))
+                    pywikibot.output('code %s: %s' %
+                                     (thread.code, thread.content))
                 raise
 
     expected_failures = ['ar', 'eo', 'pdc', 'th']
@@ -223,7 +226,8 @@ class TestArchiveBotAfterDateUpdate(TestCase):
                 self.assertIsInstance(thread.timestamp, datetime)
             except AssertionError:
                 if thread.code not in self.expected_failures:
-                    pywikibot.output('code %s: %s' % (thread.code, thread.content))
+                    pywikibot.output('code %s: %s' %
+                                     (thread.code, thread.content))
                 raise
 
     expected_failures = []

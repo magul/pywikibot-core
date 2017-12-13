@@ -430,7 +430,8 @@ def main(*args):
         return
 
     if 'api_secret' in config.flickr and config.flickr['api_secret']:
-        flickr = flickrapi.FlickrAPI(config.flickr['api_key'], config.flickr['api_secret'])
+        flickr = flickrapi.FlickrAPI(
+            config.flickr['api_key'], config.flickr['api_secret'])
     else:
         pywikibot.output('Accessing public content only')
         flickr = flickrapi.FlickrAPI(config.flickr['api_key'])
@@ -469,7 +470,7 @@ def main(*args):
     for arg in local_args:
         if arg.startswith('-group_id'):
             if len(arg) == 9:
-                group_id = pywikibot.input(u'What is the group_id of the pool?')
+                group_id = pywikibot.input('What is the group_id of the pool?')
             else:
                 group_id = arg[10:]
         elif arg.startswith('-photoset_id'):

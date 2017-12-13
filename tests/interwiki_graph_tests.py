@@ -70,7 +70,8 @@ class TestWiktionaryGraph(SiteAttributeTestCase):
 
         drawer = interwiki_graph.GraphDrawer(data)
 
-        self.assertEqual(set([self.pages['en'].site]), drawer._octagon_site_set())
+        self.assertEqual(set([self.pages['en'].site]),
+                         drawer._octagon_site_set())
 
         drawer.createGraph()
 

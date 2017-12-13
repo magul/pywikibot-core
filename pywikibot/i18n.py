@@ -352,7 +352,8 @@ def _extract_plural(code, message, parameters):
         num = parameters[selector]
         if not isinstance(num, int):
             issue_deprecation_warning(
-                'type {0} for value {1} ({2})'.format(type(num), selector, num),
+                'type {0} for value {1} ({2})'.format(
+                    type(num), selector, num),
                 'an int', 1)
             num = int(num)
 
@@ -366,7 +367,8 @@ def _extract_plural(code, message, parameters):
                 specific_entries[int(number)] = plural
             else:
                 assert not specific_entries, \
-                    'generic entries defined after specific in "{0}"'.format(variants)
+                    'generic entries defined after specific in "{0}"'.format(
+                        variants)
                 plural_entries += [plural]
 
         if num in specific_entries:

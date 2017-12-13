@@ -351,7 +351,7 @@ class CommonscatBot(Bot):
         if linktitle and newcat != page.title(withNamespace=False):
             newtext = re.sub(r'(?i)\{\{%s\|?[^{}]*(?:\{\{.*\}\})?\}\}'
                              % oldtemplate,
-                             u'{{%s|%s|%s}}' % (newtemplate, newcat, linktitle),
+                             '{{%s|%s|%s}}' % (newtemplate, newcat, linktitle),
                              page.get())
         elif newcat == page.title(withNamespace=False):
             newtext = re.sub(r'(?i)\{\{%s\|?[^{}]*(?:\{\{.*\}\})?\}\}'
@@ -395,7 +395,8 @@ class CommonscatBot(Bot):
                     continue
                 (currentTemplate,
                  possibleCommonscat, linkText, Note) = commonscatLink
-                checkedCommonscat = self.checkCommonscatLink(possibleCommonscat)
+                checkedCommonscat = self.checkCommonscatLink(
+                    possibleCommonscat)
                 if (checkedCommonscat != u''):
                     pywikibot.output(
                         u"Found link for %s at [[%s:%s]] to %s."
@@ -450,8 +451,11 @@ class CommonscatBot(Bot):
             commonsPage = pywikibot.Page(commonsSite, "Category:" + name)
 
             if not commonsPage.exists():
-                pywikibot.output(u'Commons category does not exist. Examining deletion log...')
-                logpages = commonsSite.logevents(logtype='delete', page=commonsPage)
+                pywikibot.output(
+                    'Commons category does not exist. '
+                    'Examining deletion log...')
+                logpages = commonsSite.logevents(
+                    logtype='delete', page=commonsPage)
                 for logitem in logpages:
                     loguser = logitem.user()
                     logcomment = logitem.comment()
@@ -473,11 +477,12 @@ class CommonscatBot(Bot):
                         return u''
                 return u''
             elif commonsPage.isRedirectPage():
-                pywikibot.log(u"getCommonscat: The category is a redirect")
+                pywikibot.log('getCommonscat: The category is a redirect')
                 return self.checkCommonscatLink(
                     commonsPage.getRedirectTarget().title(withNamespace=False))
             elif "Category redirect" in commonsPage.templates():
-                pywikibot.log(u"getCommonscat: The category is a category redirect")
+                pywikibot.log(
+                    u"getCommonscat: The category is a category redirect")
                 for template in commonsPage.templatesWithParams():
                     if (template[0].title(withNamespace=False) == "Category redirect" and
                             len(template[1]) > 0):
@@ -511,7 +516,8 @@ def main(*args):
     for arg in local_args:
         if arg.startswith('-summary'):
             if len(arg) == 8:
-                options['summary'] = pywikibot.input(u'What summary do you want to use?')
+                options['summary'] = pywikibot.input(
+                    'What summary do you want to use?')
             else:
                 options['summary'] = arg[9:]
         elif arg.startswith('-checkcurrent'):

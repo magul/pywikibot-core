@@ -40,10 +40,13 @@ cfdTemplates = ['Cfd full', 'Cfr full']
 nobots = re.compile(r"NO\s*BOTS", re.IGNORECASE)
 example = re.compile(r"\[\[:Category:(.)\1\1\1\1\]\]", re.IGNORECASE)
 speedymode = re.compile(r"^===*\s*Speedy Moves\s*===*\s*$", re.IGNORECASE)
-movemode = re.compile(r"^===*\s*Move/Merge then delete\s*===*\s*$", re.IGNORECASE)
+movemode = re.compile(
+    r"^===*\s*Move/Merge then delete\s*===*\s*$", re.IGNORECASE)
 emptymode = re.compile(r"^===*\s*Empty then delete\s*===*\s*$", re.IGNORECASE)
-deletemode = re.compile(r"^===*\s*Ready for deletion\s*===*\s*$", re.IGNORECASE)
-maintenance = re.compile(r"^===*\s*Old by month categories with entries\s*===*\s*$", re.IGNORECASE)
+deletemode = re.compile(
+    r"^===*\s*Ready for deletion\s*===*\s*$", re.IGNORECASE)
+maintenance = re.compile(
+    r"^===*\s*Old by month categories with entries\s*===*\s*$", re.IGNORECASE)
 dateheader = re.compile(
     r'(\[\[Wikipedia:Categories[_ ]for[_ ](?:discussion|deletion)/Log/([^\]]*?)\]\])',
     re.IGNORECASE)
@@ -83,7 +86,8 @@ def main(*args):
     for arg in local_args:
         if arg.startswith('-page'):
             if len(arg) == len('-page'):
-                cfd_page = pywikibot.input('Enter the CFD working page to use:')
+                cfd_page = pywikibot.input(
+                    'Enter the CFD working page to use:')
             else:
                 cfd_page = arg[len('-page:'):]
 
@@ -137,7 +141,8 @@ def main(*args):
                 summary = (
                     'Robot - Moving category ' + src + ' to [[:Category:' +
                     dest + ']] per [[WP:CFD|CFD]] at ' + thisDay + '.')
-                action_summary = 'Robot - Result of [[WP:CFD|CFD]] at ' + thisDay + '.'
+                action_summary = 'Robot - Result of [[WP:CFD|CFD]] at ' + \
+                    thisDay + '.'
             elif mode == "Speedy":
                 summary = (
                     'Robot - Speedily moving category ' + src +
@@ -172,7 +177,8 @@ def main(*args):
                 summary = (
                     'Robot - Removing category {0} per [[WP:CFD|CFD]] '
                     'at {1}.'.format(src, thisDay))
-                action_summary = 'Robot - Result of [[WP:CFD|CFD]] at ' + thisDay + '.'
+                action_summary = 'Robot - Result of [[WP:CFD|CFD]] at ' + \
+                    thisDay + '.'
             else:
                 continue
             robot = CategoryMoveBot(oldcat=src, batch=True, comment=summary,

@@ -416,7 +416,8 @@ def main(*args):
                 text, changes = re.subn('<noinclude>(%s)</noinclude>'
                                         % replaceToPerform, '', text)
                 if changes == 0:
-                    text, changes = re.subn('(%s)' % replaceToPerform, '', text)
+                    text, changes = re.subn(
+                        '(%s)' % replaceToPerform, '', text)
             elif moveRestr[0] == 'sysop':
                 # move-total-protection
                 if (TemplateInThePage[0] == 'sysop-move' and TTMP) or \

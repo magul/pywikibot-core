@@ -1151,7 +1151,8 @@ class checkImagesBot(object):
             for nameLicense in self.load(pageAllowedText):
                 pageLicense = pywikibot.Page(self.site, nameLicense)
                 if pageLicense not in list_licenses:
-                    list_licenses.append(pageLicense)  # the list has wiki-pages
+                    # the list has wiki-pages
+                    list_licenses.append(pageLicense)
         return list_licenses
 
     def miniTemplateCheck(self, template):

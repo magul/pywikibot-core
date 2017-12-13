@@ -515,7 +515,8 @@ class PatchManager(object):
                         0 <= next_hunk_position < len(super_hunks)):
                     position = next_hunk_position
                 elif next_hunk:  # nothing entered is silently ignored
-                    pywikibot.error('Invalid hunk number "{0}"'.format(next_hunk))
+                    pywikibot.error(
+                        'Invalid hunk number "{0}"'.format(next_hunk))
             elif choice == 'j':
                 position = next_pending
             elif choice == 'J':
@@ -528,7 +529,8 @@ class PatchManager(object):
                 super_hunks = (super_hunks[:position] +
                                super_hunks[position].split() +
                                super_hunks[position + 1:])
-                pywikibot.output('Split into {0} hunks'.format(len(super_hunk._hunks)))
+                pywikibot.output('Split into {0} hunks'.format(
+                    len(super_hunk._hunks)))
             elif choice == '?':
                 pywikibot.output(color_format(
                     '{purple}{0}{default}', '\n'.join(

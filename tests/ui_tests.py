@@ -152,7 +152,8 @@ def patched_print(text, targetStream):
     try:
         stream = patched_streams[targetStream]
     except KeyError:
-        assert isinstance(targetStream, pywikibot.userinterfaces.win32_unicode.UnicodeOutput)
+        assert isinstance(
+            targetStream, pywikibot.userinterfaces.win32_unicode.UnicodeOutput)
         assert targetStream._stream
         stream = patched_streams[targetStream._stream]
     org_print(text, stream)
@@ -336,7 +337,8 @@ class TestTerminalOutput(UITestCase):
         except TestException:
             pywikibot.exception('exception')
         self.assertEqual(newstdout.getvalue(), '')
-        self.assertEqual(newstderr.getvalue(), 'ERROR: TestException: Testing Exception\n')
+        self.assertEqual(newstderr.getvalue(),
+                         'ERROR: TestException: Testing Exception\n')
 
     def test_exception_tb(self):
         class TestException(Exception):
@@ -349,9 +351,11 @@ class TestTerminalOutput(UITestCase):
             pywikibot.exception('exception', tb=True)
         self.assertEqual(newstdout.getvalue(), '')
         stderrlines = newstderr.getvalue().split('\n')
-        self.assertEqual(stderrlines[0], 'ERROR: TestException: Testing Exception')
+        self.assertEqual(
+            stderrlines[0], 'ERROR: TestException: Testing Exception')
         self.assertEqual(stderrlines[1], 'Traceback (most recent call last):')
-        self.assertEqual(stderrlines[3], "    raise TestException('Testing Exception')")
+        self.assertEqual(
+            stderrlines[3], "    raise TestException('Testing Exception')")
         self.assertTrue(stderrlines[4].endswith(': Testing Exception'))
 
         self.assertNotEqual(stderrlines[-1], '\n')
@@ -590,7 +594,8 @@ class WindowsTerminalTestCase(UITestCase):
 
     def setclip(self, text):
         win32clipboard.OpenClipboard()
-        win32clipboard.SetClipboardData(win32clipboard.CF_UNICODETEXT, unicode(text))
+        win32clipboard.SetClipboardData(
+            win32clipboard.CF_UNICODETEXT, unicode(text))
         win32clipboard.CloseClipboard()
 
     def getclip(self):
@@ -605,7 +610,8 @@ class WindowsTerminalTestCase(UITestCase):
         self.setclip(text.replace(u'\n', u'\r\n'))
         self._app.window_().SetFocus()
         self.waitForWindow()
-        self._app.window_().TypeKeys('% {UP}{UP}{UP}{RIGHT}{DOWN}{DOWN}{ENTER}', with_spaces=True)
+        self._app.window_().TypeKeys(
+            '% {UP}{UP}{UP}{RIGHT}{DOWN}{DOWN}{ENTER}', with_spaces=True)
 
 
 class TestWindowsTerminalUnicode(WindowsTerminalTestCase):
@@ -616,7 +622,8 @@ class TestWindowsTerminalUnicode(WindowsTerminalTestCase):
     def setUpClass(cls):
         super(TestWindowsTerminalUnicode, cls).setUpClass()
         fn = inspect.getfile(inspect.currentframe())
-        cls.setUpProcess(['python', 'pwb.py', fn, '--run-as-slave-interpreter'])
+        cls.setUpProcess(
+            ['python', 'pwb.py', fn, '--run-as-slave-interpreter'])
 
         _manager.connect()
         cls.pywikibot = _manager.pywikibot()
@@ -748,7 +755,8 @@ class FakeUITest(TestCase):
 
     def test_flat_color(self):
         """Test using colors with defaulting in between."""
-        self._colors = (('red', 6), ('default', 6), ('yellow', 3), ('default', 1))
+        self._colors = (('red', 6), ('default', 6),
+                        ('yellow', 3), ('default', 1))
         self.ui_obj._print('Hello \03{red}world \03{default}you\03{yellow}!',
                            self.stream)
         self.assertEqual(self._getvalue(), self.expected)

@@ -825,7 +825,8 @@ class GeneratorFactory(object):
                         '-subcatsr': (True, SubCategoriesPageGenerator),
                         }
             recurse, gen_func = arg_dict[arg]
-            gen = self.getCategoryGen(value, recurse=recurse, gen_func=gen_func)
+            gen = self.getCategoryGen(
+                value, recurse=recurse, gen_func=gen_func)
         elif arg == '-catfilter':
             cat, _ = self.getCategory(value)
             self.catfilter_list.append(cat)
@@ -956,7 +957,8 @@ class GeneratorFactory(object):
             if not value:
                 value = pywikibot.input('Which claim do you want to filter?')
 
-            p = re.compile(r'(?<!\\),')  # Match "," only if there no "\" before
+            # Match "," only if there no "\" before
+            p = re.compile(r'(?<!\\),')
             temp = []  # Array to store split argument
             for arg in p.split(value):
                 temp.append(arg.replace(r'\,', ',').split('='))
@@ -976,7 +978,8 @@ class GeneratorFactory(object):
         elif arg == '-sparql':
             if not value:
                 value = pywikibot.input('SPARQL query:')
-            gen = WikidataSPARQLPageGenerator(value, site=self.site, endpoint=self._sparql)
+            gen = WikidataSPARQLPageGenerator(
+                value, site=self.site, endpoint=self._sparql)
         elif arg == '-mysqlquery':
             if not value:
                 value = pywikibot.input('Mysql query string:')
@@ -2484,7 +2487,7 @@ class YahooSearchPageGenerator(object):
             'pagegenerator YahooSearchPageGenerator is not functional.\n'
             'See https://phabricator.wikimedia.org/T106085')
 
-        self.query = query or pywikibot.input(u'Please enter the search query:')
+        self.query = query or pywikibot.input('Please enter the search query:')
         self.total = total
         if site is None:
             site = pywikibot.Site()
@@ -2543,7 +2546,7 @@ class GoogleSearchPageGenerator(object):
         @param site: Site for generator results.
         @type site: L{pywikibot.site.BaseSite}
         """
-        self.query = query or pywikibot.input(u'Please enter the search query:')
+        self.query = query or pywikibot.input('Please enter the search query:')
         if site is None:
             site = pywikibot.Site()
         self.site = site

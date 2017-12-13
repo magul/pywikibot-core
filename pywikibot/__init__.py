@@ -424,7 +424,9 @@ class Coordinate(_WbRepresentation):
             radius = 6378137
             self._dim = int(
                 round(
-                    math.radians(self._precision) * radius * math.cos(math.radians(self.lat))
+                    math.radians(self._precision)
+                    * radius
+                    * math.cos(math.radians(self.lat))
                 )
             )
         return self._dim
@@ -723,7 +725,9 @@ class WbQuantity(_WbRepresentation):
                 "WbQuantity now expects a 'site' parameter. This is needed to "
                 "ensure correct handling of error bounds.")
             return False
-        return MediaWikiVersion(site.version()) < MediaWikiVersion('1.29.0-wmf.2')
+        return (
+            MediaWikiVersion(site.version()) < MediaWikiVersion('1.29.0-wmf.2')
+        )
 
     @staticmethod
     def _todecimal(value):

@@ -157,10 +157,12 @@ class TestLinkObject(SiteAttributeTestCase):
         # wikisource:it kept Autore as canonical name
         l2 = pywikibot.page.Link('Autore:Albert Einstein', source=self.itws)
         self.assertEqual(l2.ns_title(), 'Autore:Albert Einstein')
-        self.assertEqual(l2.ns_title(onsite=self.enws), 'Author:Albert Einstein')
+        self.assertEqual(l2.ns_title(onsite=self.enws),
+                         'Author:Albert Einstein')
 
         # Translation namespace does not exist on wikisource:it
-        l3 = pywikibot.page.Link('Translation:Albert Einstein', source=self.enws)
+        l3 = pywikibot.page.Link(
+            'Translation:Albert Einstein', source=self.enws)
         self.assertEqual(l3.ns_title(), 'Translation:Albert Einstein')
         self.assertRaisesRegex(pywikibot.Error,
                                'No corresponding namespace found for '
@@ -268,7 +270,8 @@ class TestPageObjectEnglish(TestCase):
         """Test Page.oldest_revision."""
         mainpage = self.get_mainpage()
         self.assertEqual(mainpage.oldest_revision.user, 'TwoOneTwo')
-        self.assertIsInstance(mainpage.oldest_revision.timestamp, pywikibot.Timestamp)
+        self.assertIsInstance(
+            mainpage.oldest_revision.timestamp, pywikibot.Timestamp)
 
 
 class TestPageObject(DefaultSiteTestCase):
@@ -449,7 +452,8 @@ class TestPageObject(DefaultSiteTestCase):
         """Test the integration with Extension:Disambiguator."""
         site = self.get_site()
         if not site.has_extension('Disambiguator'):
-            raise unittest.SkipTest('Disambiguator extension not loaded on test site')
+            raise unittest.SkipTest(
+                'Disambiguator extension not loaded on test site')
         pg = pywikibot.Page(site, 'Random')
         pg._pageprops = set(['disambiguation', ''])
         self.assertTrue(pg.isDisambig())
@@ -519,7 +523,8 @@ class TestPageObject(DefaultSiteTestCase):
         for page in site.allpages(filterredir=True, total=1):
             break
         else:
-            raise unittest.SkipTest('No redirect pages on site {0!r}'.format(site))
+            raise unittest.SkipTest(
+                'No redirect pages on site {0!r}'.format(site))
         # This page is already initialised
         self.assertTrue(hasattr(page, '_isredir'))
         # call api.update_page without prop=info
@@ -680,7 +685,8 @@ class TestPageRepr(TestPageBaseUnicode):
         """Test u'{x!r}'.format(Page(u'<non-ascii>')) raises exception on Python 2."""
         # This raises an exception on Python 2, but passes on Python 3
         page = pywikibot.Page(self.get_site(), u'Ō')
-        self.assertRaisesRegex(UnicodeDecodeError, '', unicode.format, u'{0!r}', page)
+        self.assertRaisesRegex(UnicodeDecodeError, '',
+                               unicode.format, '{0!r}', page)
 
     @unittest.skipIf(PY2, 'Python 3+ specific test')
     def test_unicode_value_py3(self):
@@ -927,7 +933,8 @@ class TestPageUserAction(DefaultSiteTestCase):
         """Test purging the mainpage."""
         mainpage = self.get_mainpage()
         self.assertIsInstance(mainpage.purge(), bool)
-        self.assertEqual(mainpage.purge(), mainpage.purge(forcelinkupdate=None))
+        self.assertEqual(mainpage.purge(),
+                         mainpage.purge(forcelinkupdate=None))
 
     def test_watch(self):
         """Test Page.watch, with and without unwatch enabled."""
@@ -1067,18 +1074,25 @@ class HtmlEntity(TestCase):
         """Test valid entities."""
         self.assertEqual(pywikibot.page.html2unicode('A&amp;O'), 'A&O')
         self.assertEqual(pywikibot.page.html2unicode('&#x70;&#x79;'), 'py')
-        self.assertEqual(pywikibot.page.html2unicode('&#x10000;'), u'\U00010000')
-        self.assertEqual(pywikibot.page.html2unicode('&#x70;&amp;&#x79;'), 'p&y')
+        self.assertEqual(pywikibot.page.html2unicode(
+            '&#x10000;'), '\U00010000')
+        self.assertEqual(pywikibot.page.html2unicode(
+            '&#x70;&amp;&#x79;'), 'p&y')
         self.assertEqual(pywikibot.page.html2unicode('&#128;'), '€')
 
     def test_ignore_entities(self):
         """Test ignore entities."""
-        self.assertEqual(pywikibot.page.html2unicode('A&amp;O', [38]), 'A&amp;O')
-        self.assertEqual(pywikibot.page.html2unicode('A&#38;O', [38]), 'A&#38;O')
-        self.assertEqual(pywikibot.page.html2unicode('A&#x26;O', [38]), 'A&#x26;O')
+        self.assertEqual(pywikibot.page.html2unicode(
+            'A&amp;O', [38]), 'A&amp;O')
+        self.assertEqual(pywikibot.page.html2unicode(
+            'A&#38;O', [38]), 'A&#38;O')
+        self.assertEqual(pywikibot.page.html2unicode(
+            'A&#x26;O', [38]), 'A&#x26;O')
         self.assertEqual(pywikibot.page.html2unicode('A&amp;O', [37]), 'A&O')
-        self.assertEqual(pywikibot.page.html2unicode('&#128;', [128]), '&#128;')
-        self.assertEqual(pywikibot.page.html2unicode('&#128;', [8364]), '&#128;')
+        self.assertEqual(pywikibot.page.html2unicode(
+            '&#128;', [128]), '&#128;')
+        self.assertEqual(pywikibot.page.html2unicode(
+            '&#128;', [8364]), '&#128;')
         self.assertEqual(pywikibot.page.html2unicode('&#129;&#141;&#157'),
                          '&#129;&#141;&#157')
 
@@ -1088,7 +1102,8 @@ class HtmlEntity(TestCase):
 
     def test_invalid_entities(self):
         """Test texts with invalid entities."""
-        self.assertEqual(pywikibot.page.html2unicode('A&notaname;O'), 'A&notaname;O')
+        self.assertEqual(pywikibot.page.html2unicode(
+            'A&notaname;O'), 'A&notaname;O')
         self.assertEqual(pywikibot.page.html2unicode('A&#7f;O'), 'A&#7f;O')
         self.assertEqual(pywikibot.page.html2unicode('&#7f'), '&#7f')
         self.assertEqual(pywikibot.page.html2unicode('&#x70&#x79;'), '&#x70y')

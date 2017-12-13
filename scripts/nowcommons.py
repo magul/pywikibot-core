@@ -227,7 +227,8 @@ class NowCommonsDeleteBot(Bot):
         for templateName, params in localImagePage.templatesWithParams():
             if templateName in self.nc_templates:
                 if params == []:
-                    filenameOnCommons = localImagePage.title(withNamespace=False)
+                    filenameOnCommons = localImagePage.title(
+                        withNamespace=False)
                 elif self.site.lang in namespaceInTemplate:
                     skip = False
                     filenameOnCommons = None
@@ -237,11 +238,13 @@ class NowCommonsDeleteBot(Bot):
                             filenameOnCommons = par[par.index(':') + 1:]
                             break
                         if val[0].strip() == '1':
-                            filenameOnCommons = val[1].strip()[val[1].strip().index(':') + 1:]
+                            filenameOnCommons = \
+                                val[1].strip()[val[1].strip().index(':') + 1:]
                             break
                         skip = True
                     if not filenameOnCommons:
-                        filenameOnCommons = localImagePage.title(withNamespace=False)
+                        filenameOnCommons = localImagePage.title(
+                            withNamespace=False)
                 else:
                     val = params[0].split('=')
                     if len(val) == 1:
@@ -286,7 +289,8 @@ class NowCommonsDeleteBot(Bot):
                                 bot = ImageBot(
                                     pg.FileLinksGenerator(localImagePage),
                                     localImagePage.title(withNamespace=False),
-                                    commonsImagePage.title(withNamespace=False),
+                                    commonsImagePage.title(
+                                        withNamespace=False),
                                     '', self.getOption('replacealways'),
                                     self.getOption('replaceloose'))
                                 bot.run()

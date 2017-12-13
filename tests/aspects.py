@@ -502,7 +502,8 @@ class CheckHostnameMixin(TestCaseBase):
         if issubclass(cls, HttpbinTestCase):
             # If test uses httpbin, then check is pytest test runner is used
             # and pytest_httpbin module is installed.
-            httpbin_used = hasattr(sys, '_test_runner_pytest') and pytest_httpbin
+            httpbin_used = hasattr(
+                sys, '_test_runner_pytest') and pytest_httpbin
         else:
             httpbin_used = False
 
@@ -963,7 +964,8 @@ class TestCase(TestTimerMixin, TestCaseBase):
                                     interface=interface)
             if 'hostname' not in data and 'site' in data:
                 try:
-                    data['hostname'] = data['site'].base_url(data['site'].path())
+                    data['hostname'] = data['site'].base_url(
+                        data['site'].path())
                 except KeyError:
                     # The family has defined this as obsolete
                     # without a mapping to a hostname.

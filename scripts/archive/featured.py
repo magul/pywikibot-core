@@ -439,7 +439,8 @@ class FeaturedBot(pywikibot.Bot):
                 pywikibot.output(u"%s -> not in the main namespace, skipping"
                                  % page.title())
             elif ourpage.isRedirectPage():
-                pywikibot.output(u"%s -> double redirect, skipping" % page.title())
+                pywikibot.output(
+                    '%s -> double redirect, skipping' % page.title())
             elif not ourpage.exists():
                 pywikibot.output(u"%s -> page doesn't exist, skipping"
                                  % ourpage.title())
@@ -450,7 +451,8 @@ class FeaturedBot(pywikibot.Bot):
                         backpage = pywikibot.Page(link)
                         break
                 if not backpage:
-                    pywikibot.output(u"%s -> no back interwiki ref" % page.title())
+                    pywikibot.output(
+                        '%s -> no back interwiki ref' % page.title())
                 elif backpage == page:
                     # everything is ok
                     yield ourpage

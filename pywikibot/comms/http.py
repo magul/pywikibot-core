@@ -144,7 +144,8 @@ class _UserAgentFormatter(Formatter):
         if key == 'version' or key == 'revision':
             return pywikibot.version.getversiondict()['rev']
         else:
-            return super(_UserAgentFormatter, self).get_value(key, args, kwargs)
+            return super(_UserAgentFormatter, self).get_value(
+                key, args, kwargs)
 
 
 _USER_AGENT_FORMATTER = _UserAgentFormatter()
@@ -409,8 +410,10 @@ def error_handling_callback(request):
         warning('Http response status {0}'.format(request.data.status_code))
 
 
-def _enqueue(uri, method="GET", params=None, body=None, headers=None, data=None,
-             **kwargs):
+def _enqueue(
+    uri, method='GET', params=None, body=None, headers=None, data=None,
+    **kwargs
+):
     """
     Enqueue non-blocking threaded HTTP request with callback.
 
@@ -491,7 +494,8 @@ def fetch(uri, method="GET", params=None, body=None, headers=None,
     # Change user agent depending on fake UA settings.
     # Set header to new UA if needed.
     headers = headers or {}
-    if not headers.get('user-agent', None):  # Skip if already specified in request.
+    # Skip if already specified in request.
+    if not headers.get('user-agent', None):
         # Get fake UA exceptions from `fake_user_agent_exceptions` config.
         uri_domain = urlparse(uri).netloc
         use_fake_user_agent = config.fake_user_agent_exceptions.get(
@@ -504,7 +508,8 @@ def fetch(uri, method="GET", params=None, body=None, headers=None,
             headers['user-agent'] = fake_user_agent()
 
     request = _enqueue(uri, method, params, body, headers, **kwargs)
-    assert(request._data is not None)  # if there's no data in the answer we're in trouble
+    # if there's no data in the answer we're in trouble
+    assert(request._data is not None)
     # Run the error handling callback in the callers thread so exceptions
     # may be caught.
     if default_error_handling:

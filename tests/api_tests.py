@@ -496,7 +496,8 @@ class TestOptionSet(TestCase):
         """Test OptionSet with initialised site."""
         options = api.OptionSet(self.get_site(), 'recentchanges', 'show')
         self.assertRaises(KeyError, options.__setitem__, 'invalid_name', True)
-        self.assertRaises(ValueError, options.__setitem__, 'anon', 'invalid_value')
+        self.assertRaises(ValueError, options.__setitem__,
+                          'anon', 'invalid_value')
         options['anon'] = True
         self.assertCountEqual(['anon'], options._enabled)
         self.assertEqual(set(), options._disabled)
@@ -545,7 +546,8 @@ class TestDryOptionSet(DefaultDrySiteTestCase):
         self.assertCountEqual(['a', 'b'], list(options.keys()))
         self.assertCountEqual([True, False], list(options.values()))
         self.assertEqual(set(), set(options.values()) - set([True, False]))
-        self.assertCountEqual([('a', True), ('b', False)], list(options.items()))
+        self.assertCountEqual(
+            [('a', True), ('b', False)], list(options.items()))
 
 
 class TestDryPageGenerator(TestCase):

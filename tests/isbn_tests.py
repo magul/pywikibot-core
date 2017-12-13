@@ -68,7 +68,8 @@ class TestCosmeticChangesISBN(DefaultDrySiteTestCase):
 
     def test_ignore_invalid_isbn(self):
         """Test fixing ISBN numbers with an invalid ISBN."""
-        cc = CosmeticChangesToolkit(self.site, namespace=0, ignore=CANCEL_MATCH)
+        cc = CosmeticChangesToolkit(
+            self.site, namespace=0, ignore=CANCEL_MATCH)
 
         text = cc.fix_ISBN(' ISBN 0975229LOL ISBN 9780975229804 ')
         self.assertEqual(text, ' ISBN 0975229LOL ISBN 978-0-9752298-0-4 ')

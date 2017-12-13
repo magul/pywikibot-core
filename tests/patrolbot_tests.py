@@ -57,13 +57,15 @@ class TestPatrolBot(DefaultDrySiteTestCase):
         """Test the method which returns whether a page is in the list."""
         # Return the title if there is an exact match
         self.assertEqual(self.bot.in_list(['Foo', 'Foobar'], 'Foo'), 'Foo')
-        self.assertEqual(self.bot.in_list(['Foo', 'Foobar'], 'Foobar'), 'Foobar')
+        self.assertEqual(self.bot.in_list(
+            ['Foo', 'Foobar'], 'Foobar'), 'Foobar')
 
         # Return the first entry which starts with the title if there is no
         # exact match
         self.assertEqual(self.bot.in_list(['Foo', 'Foobar'], 'Foob'), 'Foo')
         self.assertEqual(self.bot.in_list(['Foo', 'Foobar'], 'Foobarz'), 'Foo')
-        self.assertEqual(self.bot.in_list(['Foo', 'Foobar', 'Bar'], 'Barz'), 'Bar')
+        self.assertEqual(self.bot.in_list(
+            ['Foo', 'Foobar', 'Bar'], 'Barz'), 'Bar')
 
         # '' returns .* if there is no exact match
         self.assertEqual(self.bot.in_list([''], 'Foo'), '.*')

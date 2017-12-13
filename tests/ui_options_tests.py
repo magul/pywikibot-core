@@ -74,7 +74,8 @@ class TestChoiceOptions(TestCase):
         self.assertEqual(option.format(default='r2'), 'r<number> [1-[2]-5]')
         self.assertEqual(option.format(), 'r<number> [1-5]')
         self.assertEqual(message('?', [option], None), '? (r<number> [1-5])')
-        self.assertEqual(message('?', [option], 'r3'), '? (r<number> [1-[3]-5])')
+        self.assertEqual(
+            message('?', [option], 'r3'), '? (r<number> [1-[3]-5])')
         self.assertRaisesRegex(AttributeError, self.TEST_RE, option.test, 1)
         self.assertFalse(option.test('0'))
         self.assertFalse(option.test('r0'))
@@ -87,7 +88,8 @@ class TestChoiceOptions(TestCase):
 
     def test_List(self):
         """Test ListOption."""
-        self.assertRaisesRegex(ValueError, self.SEQ_EMPTY_RE, bot.ListOption, [])
+        self.assertRaisesRegex(
+            ValueError, self.SEQ_EMPTY_RE, bot.ListOption, [])
         options = ['foo', 'bar']
         option = bot.ListOption(options)
         self.assertEqual(message('?', [option], None), '? (<number> [1-2])')
@@ -99,7 +101,8 @@ class TestChoiceOptions(TestCase):
         self.assertEqual(message('?', [option], None), '? (<number> [1])')
         self.assertEqual(message('?', [option], '1'), '? (<number> [[1]])')
         options.pop()
-        self.assertRaisesRegex(ValueError, self.SEQ_EMPTY_RE, option.format, None)
+        self.assertRaisesRegex(
+            ValueError, self.SEQ_EMPTY_RE, option.format, None)
         self.assertRaisesRegex(ValueError, self.SEQ_EMPTY_RE, option.format)
         self.assertFalse(option.test('0'))
         options += ['baz', 'quux', 'norf']

@@ -100,11 +100,13 @@ class OpenArchiveTestCase(TestCase):
 
     def test_open_archive_normal(self):
         """Test open_archive with no compression in the standard library."""
-        self.assertEqual(self._get_content(self.base_file), self.original_content)
+        self.assertEqual(self._get_content(
+            self.base_file), self.original_content)
 
     def test_open_archive_bz2(self):
         """Test open_archive with bz2 compressor in the standard library."""
-        self.assertEqual(self._get_content(self.base_file + '.bz2'), self.original_content)
+        self.assertEqual(self._get_content(
+            self.base_file + '.bz2'), self.original_content)
         self.assertEqual(self._get_content(self.base_file + '.bz2', use_extension=False),
                          self.original_content)
 
@@ -138,7 +140,8 @@ class OpenArchiveTestCase(TestCase):
 
     def test_open_archive_gz(self):
         """Test open_archive with gz compressor in the standard library."""
-        self.assertEqual(self._get_content(self.base_file + '.gz'), self.original_content)
+        self.assertEqual(self._get_content(
+            self.base_file + '.gz'), self.original_content)
 
     def test_open_archive_7z(self):
         """Test open_archive with 7za if installed."""
@@ -147,7 +150,8 @@ class OpenArchiveTestCase(TestCase):
             subprocess.Popen(['7za'], stdout=subprocess.PIPE).stdout.close()
         except OSError:
             raise unittest.SkipTest('7za not installed')
-        self.assertEqual(self._get_content(self.base_file + '.7z'), self.original_content)
+        self.assertEqual(self._get_content(
+            self.base_file + '.7z'), self.original_content)
         self.assertRaisesRegex(OSError,
                                FAILED_TO_OPEN_7ZA,
                                self._get_content,
@@ -327,7 +331,8 @@ class TestIsSliceWithEllipsis(TestCase):
         """Test marker is shown with start and stop with kwargs."""
         start = 1
         stop = 3
-        it = list(tools.islice_with_ellipsis(self.it, start, stop, marker='new'))
+        it = list(tools.islice_with_ellipsis(
+            self.it, start, stop, marker='new'))
         self.assertEqual(len(it), stop - start + 1)  # +1 to consider marker.
         self.assertEqual(it[:-1], self.it[start:stop])
         self.assertNotEqual(it[-1], '…')

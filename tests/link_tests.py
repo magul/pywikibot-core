@@ -77,16 +77,23 @@ class TestLink(DefaultDrySiteTestCase):
         self.assertEqual(Link('~', self.get_site()).title, '~')
         self.assertEqual(Link('"', self.get_site()).title, '"')
         self.assertEqual(Link('\'', self.get_site()).title, '\'')
-        self.assertEqual(Link('Talk:Sandbox', self.get_site()).title, 'Sandbox')
-        self.assertEqual(Link('Talk:Foo:Sandbox', self.get_site()).title, 'Foo:Sandbox')
-        self.assertEqual(Link('File:Example.svg', self.get_site()).title, 'Example.svg')
-        self.assertEqual(Link('File_talk:Example.svg', self.get_site()).title, 'Example.svg')
-        self.assertEqual(Link('Foo/.../Sandbox', self.get_site()).title, 'Foo/.../Sandbox')
-        self.assertEqual(Link('Sandbox/...', self.get_site()).title, 'Sandbox/...')
+        self.assertEqual(
+            Link('Talk:Sandbox', self.get_site()).title, 'Sandbox')
+        self.assertEqual(
+            Link('Talk:Foo:Sandbox', self.get_site()).title, 'Foo:Sandbox')
+        self.assertEqual(
+            Link('File:Example.svg', self.get_site()).title, 'Example.svg')
+        self.assertEqual(Link('File_talk:Example.svg',
+                         self.get_site()).title, 'Example.svg')
+        self.assertEqual(
+            Link('Foo/.../Sandbox', self.get_site()).title, 'Foo/.../Sandbox')
+        self.assertEqual(
+            Link('Sandbox/...', self.get_site()).title, 'Sandbox/...')
         self.assertEqual(Link('A~~', self.get_site()).title, 'A~~')
         self.assertEqual(Link(':A', self.get_site()).title, 'A')
         # Length is 256 total, but only title part matters
-        self.assertEqual(Link('Category:' + 'X' * 248, self.get_site()).title, 'X' * 248)
+        self.assertEqual(Link('Category:' + 'X' * 248,
+                         self.get_site()).title, 'X' * 248)
         self.assertEqual(Link('X' * 252, self.get_site()).title, 'X' * 252)
         self.assertEqual(Link('A%20B', self.get_site()).title, 'A B')
         self.assertEqual(Link('A &eacute; B', self.get_site()).title, u'A é B')

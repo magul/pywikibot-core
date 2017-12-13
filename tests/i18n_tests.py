@@ -235,7 +235,8 @@ class TestTWNTranslate(TWNTestCaseBase, AutoDeprecationTestCase):
     def testExtended(self):
         """Use additional format strings."""
         self.assertEqual(
-            i18n.twntranslate('fr', 'test-plural', {'num': 1, 'descr': 'seulement'}),
+            i18n.twntranslate('fr', 'test-plural',
+                              {'num': 1, 'descr': 'seulement'}),
             u'Robot: Changer seulement une page.')
 
     def testExtendedOutside(self):
@@ -329,10 +330,12 @@ class TestTWNTranslate(TWNTestCaseBase, AutoDeprecationTestCase):
         assert 'co' not in plural.plural_rules
         assert plural.plural_rules['fr']['plural'](0) is False
         self.assertEqual(
-            i18n.twntranslate('co', 'test-plural', {'num': 0, 'descr': 'seulement'}),
+            i18n.twntranslate('co', 'test-plural',
+                              {'num': 0, 'descr': 'seulement'}),
             u'Robot: Changer seulement une page.')
         self.assertEqual(
-            i18n.twntranslate('co', 'test-plural', {'num': 1, 'descr': 'seulement'}),
+            i18n.twntranslate('co', 'test-plural',
+                              {'num': 1, 'descr': 'seulement'}),
             u'Robot: Changer seulement une page.')
 
 
@@ -433,7 +436,8 @@ class TestExtractPlural(TestCase):
     def test_standard(self):
         """Test default usage using a dict and no specific plurals."""
         self.assertEqual(
-            i18n._extract_plural('en', '{{PLURAL:foo|one|other}}', {'foo': 42}),
+            i18n._extract_plural(
+                'en', '{{PLURAL:foo|one|other}}', {'foo': 42}),
             'other')
         self.assertEqual(
             i18n._extract_plural('en', '{{PLURAL:foo|one|other}}', {'foo': 1}),

@@ -92,7 +92,8 @@ class DjVuFile(object):
         # pattern for parsing of djvudump output.
         self._pat_form = re.compile(
             r' *?FORM:DJVU *?\[\d+\] *?(?P<id>{[^\}]*?})? *?\[P(?P<n>\d+)\]')
-        self._pat_info = re.compile(r'DjVu.*?(?P<size>\d+x\d+).*?(?P<dpi>\d+) dpi')
+        self._pat_info = re.compile(
+            r'DjVu.*?(?P<size>\d+x\d+).*?(?P<dpi>\d+) dpi')
 
     def __repr__(self):
         """Return a more complete string representation."""
@@ -310,7 +311,8 @@ class DjVuFile(object):
         # Check if page processing is as expected.
         expected_id = '{%s}' % os.path.basename(white_djvu)
         assert self.number_of_images(force=True) == n_tot
-        assert self.page_info(n) == (expected_id, (size, dpi))  # white page id.
+        # white page id.
+        assert self.page_info(n) == (expected_id, (size, dpi))
         assert self.page_info(ref_page) == info_ref_page  # ref page info.
 
         return True

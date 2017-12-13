@@ -240,7 +240,8 @@ class TestCherryPick(TestCase):
     @patch('pywikibot.userinterfaces.terminal_interface_base.UI.input', return_value='y')
     def test_by_letter_accept(self, input, mock):
         """Check output of cherry_pick if by_letter diff is enabled and changes accepted."""
-        self.assertEqual(cherry_pick(self.oldtext, self.newtext, by_letter=True), self.newtext)
+        self.assertEqual(cherry_pick(
+            self.oldtext, self.newtext, by_letter=True), self.newtext)
         self.check_headers(mock)
         mock.assert_any_call(self.diff_by_letter_message)
 
@@ -248,7 +249,8 @@ class TestCherryPick(TestCase):
     @patch('pywikibot.userinterfaces.terminal_interface_base.UI.input', return_value='q')
     def test_by_letter_quit(self, input, mock):
         """Check output of cherry_pick if by_letter diff is enabled and quitted during review."""
-        self.assertEqual(cherry_pick(self.oldtext, self.newtext, by_letter=True), self.oldtext)
+        self.assertEqual(cherry_pick(
+            self.oldtext, self.newtext, by_letter=True), self.oldtext)
         self.check_headers(mock)
         mock.assert_any_call(self.diff_by_letter_message)
         mock.assert_any_call(self.none_message)

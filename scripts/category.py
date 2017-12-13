@@ -383,7 +383,8 @@ class CategoryAddBot(MultipleSitesBot):
                                            'category-adding',
                                            {'newcat': catpl.title(withNamespace=False)})
             try:
-                self.userPut(self.current_page, old_text, text, summary=comment)
+                self.userPut(self.current_page, old_text,
+                             text, summary=comment)
             except pywikibot.PageSaveRelatedError as error:
                 pywikibot.output(u'Page %s not saved: %s'
                                  % (self.current_page.title(asLink=True),
@@ -450,7 +451,8 @@ class CategoryMoveRobot(object):
             page don't exist.
         """
         self.site = pywikibot.Site()
-        self.can_move_cats = ('move-categorypages' in self.site.userinfo['rights'])
+        self.can_move_cats = (
+            'move-categorypages' in self.site.userinfo['rights'])
         # Create attributes for the categories and their talk pages.
         self.oldcat = self._makecat(oldcat)
         self.oldtalk = self.oldcat.toggleTalkPage()
@@ -624,7 +626,8 @@ class CategoryMoveRobot(object):
                 if page.namespace() == 10:
                     docs = page.site.doc_subpage  # return tuple
                     for doc in docs:
-                        doc_page = pywikibot.Page(page.site, page.title() + doc)
+                        doc_page = pywikibot.Page(
+                            page.site, page.title() + doc)
                         template_docs.add(doc_page)
 
         for doc_page in pagegenerators.PreloadingGenerator(template_docs):
@@ -670,7 +673,8 @@ class CategoryMoveRobot(object):
         comma = self.site.mediawiki_message('comma-separator')
         authors = comma.join(self.oldcat.contributingUsers())
         template_vars = {'oldcat': self.oldcat.title(), 'authors': authors}
-        summary = i18n.twtranslate(self.site, 'category-renamed', template_vars)
+        summary = i18n.twtranslate(
+            self.site, 'category-renamed', template_vars)
         self.newcat.text = self.oldcat.text
         self._strip_cfd_templates(summary)
 
