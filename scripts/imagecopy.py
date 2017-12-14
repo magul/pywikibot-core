@@ -19,11 +19,11 @@ write him in German and English.
 
 Examples
 
-Work on a single image: ::
+Work on a single image::
 
  python pwb.py imagecopy.py -page:Image:<imagename>
 
-Work on the 100 newest images: ::
+Work on the 100 newest images::
 
  python pwb.py imagecopy.py -newimages:100
 
@@ -31,7 +31,7 @@ Work on all images in a category:<cat>::
 
  python pwb.py imagecopy.py -cat:<cat>
 
-Work on all images which transclude a template: ::
+Work on all images which transclude a template::
 
  python pwb.py imagecopy.py -transcludes:<template>
 
