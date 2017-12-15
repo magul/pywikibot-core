@@ -622,11 +622,7 @@ class BasePage(UnicodeMixin, ComparableMixin):
         @rtype: unicode
         """
         if not hasattr(self, '_text') or self._text is None:
-            try:
-                self._text = self.get(get_redirect=True)
-            except pywikibot.NoPage:
-                # TODO: what other exceptions might be returned?
-                self._text = u""
+            self._text = self.get(get_redirect=True) if self.exists() else ''
         return self._text
 
     @text.setter
