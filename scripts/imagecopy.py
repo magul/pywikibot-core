@@ -448,7 +448,7 @@ class TkdialogIC(Tkdialog):
 
     def open_in_browser(self):
         """The user pressed the View in browser button."""
-        webbrowser.open(self.url)
+        webbrowser.open('https:' + self.url)
 
     def add2_auto_skip(self):
         """The user pressed the Add to AutoSkip button."""
