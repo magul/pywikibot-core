@@ -25,7 +25,8 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
         'mus', 'ng', 'quality', 'strategy', 'ten', 'usability',
         'wikimania2005', 'wikimania2006', 'wikimania2007', 'wikimania2008',
         'wikimania2009', 'wikimania2010', 'wikimania2011', 'wikimania2012',
-        'wikimania2013', 'wikimania2014', 'wikimania2015',
+        'wikimania2013', 'wikimania2014', 'wikimania2015', 'wikimania2016',
+        'wikimania2017'
     ]
 
     removed_wikis = [
@@ -123,6 +124,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
             'species',
             'strategy',
             'test',
+            'wikimania'
         ]
 
         # Global bot allowed languages on
