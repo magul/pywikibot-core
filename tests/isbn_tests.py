@@ -39,6 +39,8 @@ class TestCosmeticChangesISBN(DefaultDrySiteTestCase):
 
     """Test CosmeticChanges ISBN fix."""
 
+    ISBN_DIGITERROR_RE = 'The ISBN [0-9]+ is not [0-9]+ digits long.'
+
     def test_valid_isbn(self):
         """Test ISBN."""
         cc = CosmeticChangesToolkit(self.site, namespace=0)
@@ -54,17 +56,17 @@ class TestCosmeticChangesISBN(DefaultDrySiteTestCase):
         cc = CosmeticChangesToolkit(self.site, namespace=0)
 
         # Invalid characters
-        self.assertRaises(AnyIsbnValidationException,
-                          cc.fix_ISBN, 'ISBN 0975229LOL')
+        self.assertRaisesRegex(AnyIsbnValidationException,
+            self.ISBN_DIGITERROR_RE, cc.fix_ISBN, 'ISBN 0975229LOL')
         # Invalid checksum
-        self.assertRaises(AnyIsbnValidationException,
-                          cc.fix_ISBN, 'ISBN 0975229801')
+        self.assertRaisesRegex(AnyIsbnValidationException,
+            'The ISBN checksum of [0-9]+ is incorrect.', cc.fix_ISBN, 'ISBN 0975229801')
         # Invalid length
-        self.assertRaises(AnyIsbnValidationException,
-                          cc.fix_ISBN, 'ISBN 09752298')
+        self.assertRaisesRegex(AnyIsbnValidationException,
+            self.ISBN_DIGITERROR_RE, cc.fix_ISBN, 'ISBN 09752298')
         # X in the middle
-        self.assertRaises(AnyIsbnValidationException,
-                          cc.fix_ISBN, 'ISBN 09752X9801')
+        self.assertRaisesRegex(AnyIsbnValidationException,
+            'The ISBN [0-9a-zA-Z]+ contains invalid characters.', cc.fix_ISBN, 'ISBN 09752X9801')
 
     def test_ignore_invalid_isbn(self):
         """Test fixing ISBN numbers with an invalid ISBN."""
