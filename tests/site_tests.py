@@ -1070,15 +1070,12 @@ class TestImageUsage(DefaultSiteTestCase):
             return self.__class__._image_page
 
         mysite = self.get_site()
-        for page in mysite.allpages(filterredir=False):
-            try:
-                imagepage = next(iter(page.imagelinks()))  # 1st image of page
-            except StopIteration:
-                pass
-            else:
-                break
-        else:
-            raise unittest.SkipTest("No images on site {0!r}".format(mysite))
+        page = pywikibot.Page(mysite, mysite.siteinfo['mainpage'])
+        try:
+            imagepage = next(iter(page.imagelinks()))  # 1st image of page
+        except StopIteration:
+            raise unittest.SkipTest(
+                'No images in the main page of site {0!r}'.format(mysite))
 
         pywikibot.output(u'site_tests.TestImageUsage found %s on %s'
                          % (imagepage, page))
