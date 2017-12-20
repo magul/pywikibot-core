@@ -19,6 +19,17 @@ from tests.basepage_tests import (
     BasePageLoadRevisionsCachingTestBase,
 )
 
+# variables to check regex used in assertRaisesRegex
+
+illegal_post_data_error = 'Illegal post data.*'
+topic_must_exist_error = 'Topic must exist:.*'
+cur_post_rev = 'Current revision of postnot found in supplied data.*'
+pywiki_flow_object_error = 'board must be a pywikibot.flow.Board object.'
+topic_uuid_string_error = 'Topic/root UUID must be a string.'
+page_topic_object_error = 'Page must be a Topic object'
+post_uuid_string_error = 'Post UUID must be a string'
+post_not_found_error = 'Post not found in supplied data.*'
+
 
 class TestMediaWikiFlowSandbox(TestCase):
 
@@ -168,46 +179,75 @@ class TestFlowFactoryErrors(TestCase):
         real_topic = Topic(self.site, 'Topic:Slbktgav46omarsd')
         fake_topic = Topic(self.site, 'Topic:Abcdefgh12345678')
         # Topic.from_topiclist_data
-        self.assertRaises(TypeError, Topic.from_topiclist_data, self.site, '', {})
-        self.assertRaises(TypeError, Topic.from_topiclist_data, board, 521, {})
-        self.assertRaises(TypeError, Topic.from_topiclist_data, board,
-                          'slbktgav46omarsd', [0, 1, 2])
-        self.assertRaises(NoPage, Topic.from_topiclist_data, board,
-                          'abc', {'stuff': 'blah'})
+        self.assertRaisesRegex(TypeError,
+                               pywiki_flow_object_error,
+                               Topic.from_topiclist_data, self.site, '', {})
+        self.assertRaisesRegex(TypeError,
+                               topic_uuid_string_error,
+                               Topic.from_topiclist_data, board, 521, {})
+        self.assertRaisesRegex(TypeError,
+                               illegal_post_data_error,
+                               Topic.from_topiclist_data, board,
+                                  'slbktgav46omarsd', [0, 1, 2])
+        self.assertRaisesRegex(NoPage,
+                               topic_must_exist_error,
+                               Topic.from_topiclist_data, board,
+                                      'abc', {'stuff': 'blah'})
 
         # Post.fromJSON
-        self.assertRaises(TypeError, Post.fromJSON, board, 'abc', {})
-        self.assertRaises(TypeError, Post.fromJSON, real_topic, 1234, {})
-        self.assertRaises(TypeError, Post.fromJSON, real_topic, 'abc', [])
-        self.assertRaises(NoPage, Post.fromJSON, fake_topic, 'abc',
-                          {'posts': [], 'revisions': []})
+        self.assertRaisesRegex(TypeError,
+                               page_topic_object_error,
+                               Post.fromJSON, board, 'abc', {})
+        self.assertRaisesRegex(TypeError,
+                               post_uuid_string_error,
+                               Post.fromJSON, real_topic, 1234, {})
+        self.assertRaisesRegex(TypeError,
+                               illegal_post_data_error,
+                               Post.fromJSON, real_topic, 'abc', [])
+        self.assertRaisesRegex(NoPage,
+                               topic_must_exist_error,
+                               Post.fromJSON, fake_topic, 'abc',
+                                  {'posts': [], 'revisions': []})
 
     def test_invalid_data(self):
         """Test invalid "API" data."""
         board = Board(self.site, 'Talk:Pywikibot test')
         real_topic = Topic(self.site, 'Topic:Slbktgav46omarsd')
         # Topic.from_topiclist_data
-        self.assertRaises(ValueError, Topic.from_topiclist_data,
-                          board, 'slbktgav46omarsd', {'stuff': 'blah'})
-        self.assertRaises(ValueError, Topic.from_topiclist_data,
-                          board, 'slbktgav46omarsd',
-                          {'posts': [], 'revisions': []})
-        self.assertRaises(ValueError, Topic.from_topiclist_data, board,
-                          'slbktgav46omarsd',
-                          {'posts': {'slbktgav46omarsd': ['123']},
-                           'revisions': {'456': []}})
-        self.assertRaises(AssertionError, Topic.from_topiclist_data, board,
-                          'slbktgav46omarsd',
-                          {'posts': {'slbktgav46omarsd': ['123']},
-                           'revisions': {'123': {'content': 789}}})
+        self.assertRaisesRegex(ValueError,
+                               illegal_post_data_error,
+                               Topic.from_topiclist_data,
+                                  board, 'slbktgav46omarsd', {'stuff': 'blah'})
+        self.assertRaisesRegex(ValueError,
+                               post_not_found_error, Topic.from_topiclist_data,
+                                  board, 'slbktgav46omarsd',
+                                  {'posts': [], 'revisions': []})
+        self.assertRaisesRegex(ValueError,
+                               cur_post_rev,
+                               Topic.from_topiclist_data, board,
+                                  'slbktgav46omarsd',
+                                  {'posts': {'slbktgav46omarsd': ['123']},
+                               'revisions': {'456': []}})
+        self.assertRaisesRegex(AssertionError,
+                               '', Topic.from_topiclist_data, board,
+                                  'slbktgav46omarsd',
+                                  {'posts': {'slbktgav46omarsd': ['123']},
+                               'revisions': {'123': {'content': 789}}})
 
         # Post.fromJSON
-        self.assertRaises(ValueError, Post.fromJSON, real_topic, 'abc', {})
-        self.assertRaises(ValueError, Post.fromJSON, real_topic, 'abc',
-                          {'stuff': 'blah'})
-        self.assertRaises(ValueError, Post.fromJSON, real_topic, 'abc',
-                          {'posts': {'abc': ['123']},
-                           'revisions': {'456': []}})
-        self.assertRaises(AssertionError, Post.fromJSON, real_topic, 'abc',
-                          {'posts': {'abc': ['123']},
-                           'revisions': {'123': {'content': 789}}})
+        self.assertRaisesRegex(ValueError,
+                               illegal_post_data_error,
+                               Post.fromJSON, real_topic, 'abc', {})
+        self.assertRaisesRegex(ValueError,
+                               illegal_post_data_error,
+                               Post.fromJSON, real_topic, 'abc',
+                                  {'stuff': 'blah'})
+        self.assertRaisesRegex(ValueError,
+                               cur_post_rev,
+                               Post.fromJSON, real_topic, 'abc',
+                                  {'posts': {'abc': ['123']},
+                               'revisions': {'456': []}})
+        self.assertRaisesRegex(AssertionError,
+                               '', Post.fromJSON, real_topic, 'abc',
+                                  {'posts': {'abc': ['123']},
+                               'revisions': {'123': {'content': 789}}})
