@@ -22,6 +22,7 @@ import threading
 import time
 import types
 
+from datetime import datetime
 from distutils.version import Version
 from functools import wraps
 from warnings import catch_warnings, showwarning, warn
@@ -1356,17 +1357,41 @@ def add_full_name(obj):
     return outer_wrapper
 
 
-def issue_deprecation_warning(name, instead, depth, warning_class=None):
+def issue_deprecation_warning(name, instead, depth, warning_class=None,
+                              since=None):
     """Issue a deprecation warning."""
+    if since:
+        days = (datetime.utcnow() - datetime.strptime(since, '%Y%m%d')).days
+        years = days // 365
+        days = days % 365
+        months = days / 30
+        days = days % 30
+        if years == 1:
+            years = 0
+            months += 12
+        years = '{0} years'.format(years) if years else ''
+        months = '{0} month{1}'.format(
+            months, 's' if months != 1 else '') if months else ''
+        if years and months:
+            years += ' and '
+        days = '{0} day{1}'.format(
+            days, 's' if days != 1 else '') if not years else ''
+        if months and days:
+            months += ' and '
+        since = ' since {0}{1}{2}'.format(years, months, days)
+    else:
+        since = ''
     if instead:
         if warning_class is None:
             warning_class = DeprecationWarning
-        warn(u'{0} is deprecated; use {1} instead.'.format(name, instead),
+        warn('{0} is deprecated{1}; use {2} instead.'
+             .format(name, since, instead),
              warning_class, depth + 1)
     else:
         if warning_class is None:
             warning_class = _NotImplementedWarning
-        warn('{0} is deprecated.'.format(name), warning_class, depth + 1)
+        warn('{0} is deprecated{1}.'
+             .format(name, since), warning_class, depth + 1)
 
 
 @add_full_name
@@ -1396,7 +1421,7 @@ def deprecated(*args, **kwargs):
             """
             name = obj.__full_name__
             depth = get_wrapper_depth(wrapper) + 1
-            issue_deprecation_warning(name, instead, depth)
+            issue_deprecation_warning(name, instead, depth, since=since)
             return obj(*args, **kwargs)
 
         def add_docstring(wrapper):
@@ -1436,6 +1461,7 @@ def deprecated(*args, **kwargs):
 
         return wrapper
 
+    since = kwargs.pop('since', None)
     without_parameters = len(args) == 1 and len(kwargs) == 0 and callable(args[0])
     if 'instead' in kwargs:
         instead = kwargs['instead']
