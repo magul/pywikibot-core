@@ -2038,7 +2038,7 @@ class APISite(BaseSite):
         auth_token = get_authentication(self.base_url(''))
         return auth_token is not None and len(auth_token) == 4
 
-    def login(self, sysop=False):
+    def login(self, sysop=False, autocreate=False):
         """
         Log the user in if not already logged in.
 
@@ -2075,6 +2075,9 @@ class APISite(BaseSite):
         # May occur if you are not logged in (no API read permissions).
         except api.APIError:
             pass
+        except NoUsername:
+            pass
+
         if self.is_oauth_token_available():
             if sysop:
                 raise NoUsername('No sysop is permitted with OAuth')
@@ -2082,13 +2085,13 @@ class APISite(BaseSite):
                 raise NoUsername('Logged in on %(site)s via OAuth as '
                                  '%(wrong)s, but expect as %(right)s'
                                  % {'site': self,
-                                    'wrong': self.userinfo['name'],
-                                    'right': self._username[sysop]})
+                                        'wrong': self.userinfo['name'],
+                                        'right': self._username[sysop]})
             else:
                 raise NoUsername('Logging in on %s via OAuth failed' % self)
         loginMan = api.LoginManager(site=self, sysop=sysop,
                                     user=self._username[sysop])
-        if loginMan.login(retry=True):
+        if loginMan.login(retry=True, autocreate=autocreate):
             self._username[sysop] = loginMan.username
             self.getuserinfo(force=True)
             self._loginstatus = (LoginStatus.AS_SYSOP
