@@ -7,7 +7,7 @@ function/method instead.
 
 """
 #
-# (C) Pywikibot team, 2008
+# (C) Pywikibot team, 2008-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -20,7 +20,7 @@ from pywikibot.tools import deprecated, deprecate_arg
 import io
 
 
-@deprecated("pywikibot.data.api.Request")
+@deprecated('pywikibot.data.api.Request', since='20120603')
 @deprecate_arg("useAPI", None)
 @deprecate_arg("retryCount", None)
 @deprecate_arg("encodeTitle", None)

@@ -1953,18 +1953,18 @@ class TimeStripper(object):
                                        self.site.siteinfo['timezone'])
 
     @property
-    @deprecated('_hyperlink_pat')
+    @deprecated('_hyperlink_pat', since='20170212')
     def linkP(self):
         """Deprecated linkP instance variable."""
         return self._hyperlink_pat
 
     @property
-    @deprecated('_comment_pat')
+    @deprecated('_comment_pat', since='20170212')
     def comment_pattern(self):
         """Deprecated comment_pattern instance variable."""
         return self._comment_pat
 
-    @deprecated('module function')
+    @deprecated('module function', since='20151118')
     def findmarker(self, text, base=u'@@', delta='@'):
         """Find a string which is not part of text."""
         return findmarker(text, base, delta)

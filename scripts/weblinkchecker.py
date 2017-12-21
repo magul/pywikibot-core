@@ -289,7 +289,7 @@ class NotAnURLError(BaseException):
     """The link is not an URL."""
 
 
-@deprecated('requests')
+@deprecated('requests', since='20160120')
 class LinkChecker(object):
 
     """
@@ -940,7 +940,7 @@ def countLinkCheckThreads():
     return i
 
 
-@deprecated('requests')
+@deprecated('requests', since='20160120')
 def check(url):
     """DEPRECATED: Use requests instead. Perform a check on URL."""
     c = LinkChecker(url)

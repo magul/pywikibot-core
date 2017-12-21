@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Miscellaneous helper functions (not wiki-dependent)."""
 #
-# (C) Pywikibot team, 2008-2017
+# (C) Pywikibot team, 2008-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -22,6 +22,7 @@ import threading
 import time
 import types
 
+from datetime import datetime
 from distutils.version import Version
 from functools import wraps
 from warnings import catch_warnings, showwarning, warn
@@ -1356,17 +1357,54 @@ def add_full_name(obj):
     return outer_wrapper
 
 
-def issue_deprecation_warning(name, instead, depth, warning_class=None):
-    """Issue a deprecation warning."""
-    if instead:
-        if warning_class is None:
-            warning_class = DeprecationWarning
-        warn(u'{0} is deprecated; use {1} instead.'.format(name, instead),
-             warning_class, depth + 1)
+def _build_msg_string(instead, since):
+    """Build a deprecation warning message format string."""
+    if since:
+        year_str = month_str = day_str = ''
+        days = (datetime.utcnow() - datetime.strptime(since, '%Y%m%d')).days
+        years = days // 365
+        days = days % 365
+        months = days // 30
+        days = days % 30
+        if years == 1:
+            years = 0
+            months += 12
+        if years:
+            year_str = '{0} years'.format(years)
+        else:
+            day_str = '{0} day{1}'.format(days, 's' if days != 1 else '')
+        if months:
+            month_str = '{0} month{1}'.format(
+                months, 's' if months != 1 else '')
+        if year_str and month_str:
+            year_str += ' and '
+        if month_str and day_str:
+            month_str += ' and '
+        since = ' since {0}{1}{2}'.format(year_str, month_str, day_str)
     else:
-        if warning_class is None:
-            warning_class = _NotImplementedWarning
-        warn('{0} is deprecated.'.format(name), warning_class, depth + 1)
+        since = ''
+    if instead:
+        msg = '{{0}} is deprecated{since}; use {{1}} instead.'
+    else:
+        msg = '{{0}} is deprecated{since}.'
+    return msg.format(since=since)
+
+
+def issue_deprecation_warning(name, instead, depth, warning_class=None,
+                              since=None):
+    """Issue a deprecation warning.
+
+    @param instead: if provided, will be used to specify the replacement
+    @type instead: string
+    @param since: a timestamps string of the date when the method was
+        deprecated.
+    @type since: string (form 'YYMMDD')
+    """
+    msg = _build_msg_string(instead, since)
+    if warning_class is None:
+        warning_class = (DeprecationWarning
+                         if instead else _NotImplementedWarning)
+    warn(msg.format(name, instead), warning_class, depth + 1)
 
 
 @add_full_name
@@ -1375,6 +1413,9 @@ def deprecated(*args, **kwargs):
 
     @kwarg instead: if provided, will be used to specify the replacement
     @type instead: string
+    @kwarg since: a timestamps string of the date when the method was
+        deprecated.
+    @type since: string (form 'YYMMDD')
     """
     def decorator(obj):
         """Outer wrapper.
@@ -1396,7 +1437,7 @@ def deprecated(*args, **kwargs):
             """
             name = obj.__full_name__
             depth = get_wrapper_depth(wrapper) + 1
-            issue_deprecation_warning(name, instead, depth)
+            issue_deprecation_warning(name, instead, depth, since=since)
             return obj(*args, **kwargs)
 
         def add_docstring(wrapper):
@@ -1436,6 +1477,7 @@ def deprecated(*args, **kwargs):
 
         return wrapper
 
+    since = kwargs.pop('since', None)
     without_parameters = len(args) == 1 and len(kwargs) == 0 and callable(args[0])
     if 'instead' in kwargs:
         instead = kwargs['instead']
@@ -1686,7 +1728,8 @@ class ModuleDeprecationWrapper(types.ModuleType):
             sys.modules[module.__name__] = self
 
     def _add_deprecated_attr(self, name, replacement=None,
-                             replacement_name=None, warning_message=None):
+                             replacement_name=None, warning_message=None,
+                             since=None):
         """
         Add the name to the local deprecated names dict.
 
@@ -1705,6 +1748,9 @@ class ModuleDeprecationWrapper(types.ModuleType):
         @param warning_message: The warning to display, with positional
             variables: {0} = module, {1} = attribute name, {2} = replacement.
         @type warning_message: basestring
+        @param since: a timestamps string of the date when the method was
+            deprecated.
+        @type since: string (form 'YYMMDD')
         """
         if '.' in name:
             raise ValueError('Deprecated name "{0}" may not contain '
@@ -1728,11 +1774,8 @@ class ModuleDeprecationWrapper(types.ModuleType):
                                 'specifically.')
 
         if not warning_message:
-            if replacement_name:
-                warning_message = '{0}.{1} is deprecated; use {2} instead.'
-            else:
-                warning_message = u"{0}.{1} is deprecated."
-
+            warning_message = _build_msg_string(
+                replacement_name, since).format('{0}.{1}', '{2}')
         if hasattr(self, name):
             # __getattr__ will only be invoked if self.<name> does not exist.
             delattr(self, name)
@@ -1769,7 +1812,7 @@ class ModuleDeprecationWrapper(types.ModuleType):
         return getattr(self._module, attr)
 
 
-@deprecated('open_archive()')
+@deprecated('open_archive()', since='20150915')
 def open_compressed(filename, use_extension=False):
     """DEPRECATED: Open a file and uncompress it if needed."""
     return open_archive(filename, use_extension=use_extension)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Family module for Wikimedia chapter wikis."""
 #
-# (C) Pywikibot team, 2012-2015
+# (C) Pywikibot team, 2012-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -26,7 +26,7 @@ class Family(family.SubdomainFamily, family.WikimediaFamily):
     ]
 
     @property
-    @deprecated
+    @deprecated(since='20150621')
     def countries(self):
         """Deprecated."""
         return self.codes

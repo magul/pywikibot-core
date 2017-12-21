@@ -58,7 +58,7 @@ from pywikibot import config, Page
 from pywikibot.tools import deprecated
 
 
-@deprecated('BaseSite.namespaces')
+@deprecated('BaseSite.namespaces', since='20150515')
 def namespaces(site):
     """Return a dictionary from namespace number to prefix."""
     return dict((n.id, n.custom_name) for n in site.namespaces)
