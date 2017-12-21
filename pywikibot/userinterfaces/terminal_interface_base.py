@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Base for terminal user interfaces."""
 #
-# (C) Pywikibot team, 2003-2016
+# (C) Pywikibot team, 2003-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -395,7 +395,7 @@ class UI(object):
         else:
             return answer
 
-    @deprecated('input_choice')
+    @deprecated('input_choice', since='20140825')
     def inputChoice(self, question, options, hotkeys, default=None):
         """
         Ask the user a question with a predefined list of acceptable answers.
