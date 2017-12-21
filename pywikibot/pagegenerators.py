@@ -1139,7 +1139,7 @@ def LogeventsPageGenerator(logtype=None, user=None, site=None, namespace=None,
             pywikibot.exception(e)
 
 
-@deprecated("LogeventsPageGenerator")
+@deprecated('LogeventsPageGenerator', since='20141210')
 @deprecated_args(number="total", mode="logtype", repeat=None)
 def LogpagesPageGenerator(total=500, logtype='', user=None,
                           site=None, namespace=[]):
@@ -2682,13 +2682,13 @@ class XMLDumpOldPageGenerator(IteratorNextMixin):
         self.parser = dump.parse()
 
     @property
-    @deprecated('self.start')
+    @deprecated('self.start', since='20160414')
     def xmlStart(self):
         """Getter for deprecated xmlStart instance variable."""
         return self.start
 
     @xmlStart.setter
-    @deprecated('self.start')
+    @deprecated('self.start', since='20160414')
     def xmlStart(self, value):
         """Setter for deprecated xmlStart instance variable."""
         self.start = value
