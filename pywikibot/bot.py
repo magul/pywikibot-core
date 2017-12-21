@@ -482,7 +482,7 @@ def input_yn(question, default=None, automatic_quit=True, force=False):
                         automatic_quit=automatic_quit, force=force) == 'y'
 
 
-@deprecated('input_choice')
+@deprecated('input_choice', since='20140825')
 def inputChoice(question, answers, hotkeys, default=None):
     """Ask the user a question with several options, return the user's choice.
 
@@ -978,7 +978,7 @@ def handle_args(args=None, do_help=True):
     return nonGlobalArgs
 
 
-@deprecated("handle_args")
+@deprecated('handle_args', since='20150409')
 def handleArgs(*args):
     """DEPRECATED. Use handle_args()."""
     return handle_args(args)
@@ -1634,7 +1634,7 @@ class MultipleSitesBot(BaseBot):
         super(MultipleSitesBot, self).__init__(**kwargs)
 
     @property
-    @deprecated("the page's site property")
+    @deprecated("the page's site property", since='20150615')
     def site(self):
         """
         Return the site if it's set and ValueError otherwise.

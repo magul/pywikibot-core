@@ -980,14 +980,14 @@ class Family(object):
         return cls
 
     @property
-    @deprecated('Family.codes or APISite.validLanguageLinks')
+    @deprecated('Family.codes or APISite.validLanguageLinks', since='20151014')
     def iwkeys(self):
         """DEPRECATED: List of (interwiki_forward's) family codes."""
         if self.interwiki_forward:
             return list(pywikibot.Family(self.interwiki_forward).langs.keys())
         return list(self.langs.keys())
 
-    @deprecated('APISite.interwiki')
+    @deprecated('APISite.interwiki', since='20151014')
     def get_known_families(self, site):
         """DEPRECATED: Return dict of inter-family interwiki links."""
         return self.known_families
@@ -1043,7 +1043,7 @@ class Family(object):
                     cr_set.add(newtitle)
         self._catredirtemplates[code] = list(cr_template_tuple) + list(cr_set)
 
-    @deprecated('site.category_redirects()')
+    @deprecated('site.category_redirects()', since='20170608')
     def get_cr_templates(self, code, fallback):
         """DEPRECATED: Build list of category redirect templates."""
         self._get_cr_templates(code, fallback)
@@ -1148,7 +1148,7 @@ class Family(object):
         """Return path to api.php."""
         return '%s/api.php' % self.scriptpath(code)
 
-    @deprecated('APISite.article_path')
+    @deprecated('APISite.article_path', since='20150905')
     def nicepath(self, code):
         """DEPRECATED: Return nice path prefix, e.g. '/wiki/'."""
         return '/wiki/'
@@ -1178,7 +1178,7 @@ class Family(object):
         """Return the path to title using index.php with redirects disabled."""
         return '%s?title=%s&redirect=no' % (self.path(code), title)
 
-    @deprecated('APISite.nice_get_address(title)')
+    @deprecated('APISite.nice_get_address(title)', since='20150628')
     def nice_get_address(self, code, title):
         """DEPRECATED: Return the nice path to title using index.php."""
         return '%s%s' % (self.nicepath(code), title)
@@ -1281,7 +1281,7 @@ class Family(object):
         return '%s%s' % (code, self.name)
 
     # Which version of MediaWiki is used?
-    @deprecated('APISite.version()')
+    @deprecated('APISite.version()', since='20141225')
     def version(self, code):
         """Return MediaWiki version number as a string.
 
@@ -1315,7 +1315,7 @@ class Family(object):
         """
         return None
 
-    @deprecated("APISite.version()")
+    @deprecated('APISite.version()', since='20141225')
     def versionnumber(self, code):
         """DEPRECATED, use version() instead.
 
@@ -1388,7 +1388,7 @@ class Family(object):
             return repo.code, repo.family.name
         return (None, None)
 
-    @deprecated("Site.server_time()")
+    @deprecated('Site.server_time()', since='20141225')
     def server_time(self, code):
         """
         DEPRECATED, use Site.server_time instead.
@@ -1664,7 +1664,7 @@ class WikimediaFamily(Family):
         """Return 'https' as the protocol."""
         return 'https'
 
-    @deprecated('eventstreams_host')
+    @deprecated('eventstreams_host', since='20170713')
     def rcstream_host(self, code):
         """DEPRECATED: use eventstreams_host instead."""
         return self.eventstreams_host(code)

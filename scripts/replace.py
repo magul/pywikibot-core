@@ -651,7 +651,7 @@ class ReplaceRobot(Bot):
 
         return new_text
 
-    @deprecated('apply_replacements')
+    @deprecated('apply_replacements', since='20160816')
     def doReplacements(self, original_text, page=None):
         """Apply replacements to the given text and page."""
         if page is None:
