@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Functions for manipulating external links or querying third-party sites."""
 #
-# (C) Pywikibot team, 2013
+# (C) Pywikibot team, 2013-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -26,7 +26,7 @@ from pywikibot import config2
 from pywikibot.tools import deprecated
 
 
-@deprecated('memento_client package')
+@deprecated('memento_client package', since='20150811')
 def getInternetArchiveURL(url, timestamp=None):
     """Return archived URL by Internet Archive.
 
@@ -66,7 +66,7 @@ def getInternetArchiveURL(url, timestamp=None):
         return None
 
 
-@deprecated('memento_client package')
+@deprecated('memento_client package', since='20150811')
 def getWebCitationURL(url, timestamp=None):
     """Return archived URL by Web Citation.
 

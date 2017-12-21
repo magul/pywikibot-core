@@ -101,7 +101,7 @@ class LogEntry(object):
         """Return the namespace id of the page handled by this log entry."""
         return self.data['ns']
 
-    @deprecated('page()')
+    @deprecated('page()', since='20150617')
     def title(self):
         """
         DEPRECATED: Alias for page().
@@ -315,7 +315,7 @@ class MoveEntry(LogEntry):
 
     _expectedType = 'move'
 
-    @deprecated('target_ns.id')
+    @deprecated('target_ns.id', since='20150518')
     def new_ns(self):
         """Return namespace id of target page."""
         return self.target_ns.id
@@ -328,7 +328,7 @@ class MoveEntry(LogEntry):
                                     if 'target_ns' in self._params
                                     else self._params['new_ns']]
 
-    @deprecated('target_page')
+    @deprecated('target_page', since='20150518')
     def new_title(self):
         """Return page object of the new title."""
         return self.target_page
@@ -451,7 +451,7 @@ class LogEntryFactory(object):
             self._creator = lambda data: logclass(data, self._site)
 
     @classproperty
-    @deprecated('LogEntryFactory.logtypes')
+    @deprecated('LogEntryFactory.logtypes', since='20160918')
     def _logtypes(cls):  # noqa: N805
         """DEPRECATED LogEntryFactory class attribute of log types."""
         return cls.logtypes
