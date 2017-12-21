@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Family module for WOW Wiki."""
 #
-# (C) Pywikibot team, 2009-2015
+# (C) Pywikibot team, 2009-2017
 #
 # Distributed under the terms of the MIT license.
 #
@@ -48,7 +48,7 @@ class Family(family.SubdomainFamily, family.WikiaFamily):
         """List of domains used by family wowwiki."""
         return (self.domain, 'wowwiki.com', 'warcraft.wikia.com')
 
-    @deprecated('APISite.version()')
+    @deprecated('APISite.version()', since='20141225')
     def version(self, code):
         """Return the version for this family."""
         return '1.19.20'

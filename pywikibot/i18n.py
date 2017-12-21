@@ -660,7 +660,7 @@ def twtranslate(source, twtitle, parameters=None, fallback=True,
         return trans
 
 
-@deprecated('twtranslate')
+@deprecated('twtranslate', since='20151009')
 @deprecated_args(code='source')
 def twntranslate(source, twtitle, parameters=None):
     """DEPRECATED: Get translated string for the key."""
