@@ -336,6 +336,7 @@ class CategoryAddBot(MultipleSitesBot):
 
     def treat(self, page):
         """Process one page."""
+        includeonly = []
         if page.isRedirectPage():
             # if it's a redirect use the redirect target instead
             redirTarget = page.getRedirectTarget()
@@ -348,7 +349,17 @@ class CategoryAddBot(MultipleSitesBot):
                 # loading it will throw an error if we don't jump out before
                 return
         else:
-            self.current_page = page
+            if page.namespace() == 10:
+                docs = page.site.doc_subpage  # return tuple
+                for doc in docs:
+                    doc_page = pywikibot.Page(
+                        page.site, page.title() + doc)
+                    if doc_page.exists():
+                        self.current_page = doc_page
+                        includeonly = ['includeonly']
+                        break
+            if not self.current_page:
+                self.current_page = page
         if self.current_page.exists():
             # Load the page
             text = self.current_page.text
@@ -362,7 +373,8 @@ class CategoryAddBot(MultipleSitesBot):
             return
         # store old text, so we don't have reload it every time
         old_text = text
-        cats = textlib.getCategoryLinks(text, self.current_page.site)
+        cats = textlib.getCategoryLinks(
+            text, self.current_page.site, include=includeonly)
         pywikibot.output(u"Current categories:")
         for cat in cats:
             pywikibot.output(u"* %s" % cat.title())
@@ -374,9 +386,28 @@ class CategoryAddBot(MultipleSitesBot):
             if self.sort:
                 catpl = self.sorted_by_last_name(catpl, self.current_page)
             pywikibot.output(u'Adding %s' % catpl.title(asLink=True))
-            cats.append(catpl)
-            text = textlib.replaceCategoryLinks(text, cats,
-                                                site=self.current_page.site)
+            if page.namespace() == 10 and includeonly == ['includeonly']:
+                if cats:
+                    last_old_cat = cats[-1]
+                    text = textlib.replaceCategoryInPlace(
+                        text, last_old_cat, catpl,
+                        site=self.current_page.site,
+                        keep_old_cat=True)
+                else:
+                    # add category into a template document
+                    # with no category existed originally
+                    text = textlib.replaceExcept(
+                        text, re.compile(r'<\/includeonly>', re.I),
+                        '[[{0}:{1}]]'.format(
+                            self.current_page.site.namespace(14),
+                            catpl.title(withNamespace=False)) +
+                        '\n</includeonly>',
+                        ['nowiki', 'comment', 'math', 'pre', 'source'],
+                        site=self.current_page.site)
+            else:
+                cats.append(catpl)
+                text = textlib.replaceCategoryLinks(
+                    text, cats, site=self.current_page.site)
             comment = self.comment
             if not comment:
                 comment = i18n.twtranslate(self.current_page.site,
