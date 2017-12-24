@@ -1164,13 +1164,14 @@ def removeCategoryLinksAndSeparator(text, site=None, marker='', separator=''):
         return removeCategoryLinks(text, site, marker)
 
 
-def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None):
+def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None, keep_old_one=False):
     """
     Replace old category with new one and return the modified text.
 
     @param oldtext: Content of the old category
     @param oldcat: pywikibot.Category object of the old category
     @param newcat: pywikibot.Category object of the new category
+    @param keep_old_one: Keep the old one (just add one after it)
     @return: the modified text
     @rtype: unicode
     """
@@ -1201,6 +1202,14 @@ def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None):
                              ['nowiki', 'comment', 'math', 'pre', 'source'],
                              site=site)
         text = replaceExcept(text, categoryR, '',
+                             ['nowiki', 'comment', 'math', 'pre', 'source'],
+                             site=site)
+    elif keep_old_one:
+        text = replaceExcept(oldtext, categoryR,
+                             '[[%s:%s\\2'.format(site.namespace(14),
+                                                 oldcat.title(withNamespace=False)) +
+                             '\n[[%s:%s\\2'.format(site.namespace(14),
+                                                   newcat.title(withNamespace=False)),
                              ['nowiki', 'comment', 'math', 'pre', 'source'],
                              site=site)
     else:
