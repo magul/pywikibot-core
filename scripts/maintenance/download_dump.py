@@ -22,7 +22,8 @@ import io
 import os.path
 import sys
 
-from shutil import copyfile, copyfileobj
+from os import remove, symlink
+from shutil import copyfileobj
 
 import pywikibot
 
@@ -72,7 +73,12 @@ class DownloadDumpBot(Bot):
             self.getOption('wikiname'), self.getOption('filename'))
         if toolforge_dump_filepath:
             pywikibot.output('Copying file from ' + toolforge_dump_filepath)
-            copyfile(toolforge_dump_filepath, file_storepath)
+
+            # https://stackoverflow.com/questions/8299386/modifying-a-symlink-in-python
+            if os.path.exists(file_storepath):
+                remove(file_storepath)
+
+            symlink(toolforge_dump_filepath, file_storepath)
         else:
             url = 'https://dumps.wikimedia.org/' + \
                 os.path.join(self.getOption('wikiname'),
