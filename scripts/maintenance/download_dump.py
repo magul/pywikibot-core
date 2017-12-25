@@ -22,7 +22,8 @@ import io
 import os.path
 import sys
 
-from shutil import copyfile, copyfileobj
+from os import symlink
+from shutil import copyfileobj
 
 import pywikibot
 
@@ -72,7 +73,8 @@ class DownloadDumpBot(Bot):
             self.getOption('wikiname'), self.getOption('filename'))
         if toolforge_dump_filepath:
             pywikibot.output('Copying file from ' + toolforge_dump_filepath)
-            copyfile(toolforge_dump_filepath, file_storepath)
+            if not os.path.exists(file_storepath):
+                symlink(toolforge_dump_filepath, file_storepath)
         else:
             url = 'https://dumps.wikimedia.org/' + \
                 os.path.join(self.getOption('wikiname'),
