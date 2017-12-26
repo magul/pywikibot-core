@@ -1630,7 +1630,10 @@ class DeprecationTestCase(DebugOnlyTestCase, TestCase):
             if (self._ignore_unknown_warning_packages and
                     'pywikibot' not in item.filename):
                 continue
-
+            # pass unclosed socket warning (T183696)
+            if ('unclosed <socket.socket' in '{0}'.format(item.message)
+                    and item.filename.endswith('socket.py')):
+                continue
             if item.filename != filename:
                 self.fail(
                     'expected warning filename %s; warning item: %s'
