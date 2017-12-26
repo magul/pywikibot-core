@@ -2120,6 +2120,7 @@ class TestDeprecatedEditTokenFunctions(TokenTestBase,
 
     def test_token(self):
         """Test ability to get page tokens using site.tokens."""
+        self._ignore_unknown_warning_packages = True
         token = self.token
         mysite = self.get_site()
         mainpage = self.get_mainpage()
