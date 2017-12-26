@@ -18,11 +18,10 @@ This script supports the following command line parameters:
 #
 from __future__ import absolute_import, division, unicode_literals
 
-import io
 import os.path
 import sys
 
-from shutil import copyfile, copyfileobj
+from shutil import copyfile
 
 import pywikibot
 
@@ -78,11 +77,12 @@ class DownloadDumpBot(Bot):
                 os.path.join(self.getOption('wikiname'),
                              'latest', download_filename)
             pywikibot.output('Downloading file from ' + url)
-            response = fetch(url)
+            response = fetch(url, stream=True)
             if response.status == 200:
                 try:
                     with open(file_storepath, 'wb') as result_file:
-                        copyfileobj(io.BytesIO(response.raw), result_file)
+                        for chunk in response.data.iter_content(100 * 1024):
+                            result_file.write(chunk)
                 except IOError:
                     pywikibot.exception()
                     return False
