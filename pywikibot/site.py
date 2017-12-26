@@ -894,6 +894,10 @@ class BaseSite(ComparableMixin):
 
     def __getattr__(self, attr):
         """Delegate undefined methods calls to the Family object."""
+        if attr in ('checkCharset', 'cookies', 'updateCookies',
+                    'solveCaptcha'):
+            raise NotImplementedError('{0}.{1} is deprecated.'
+                                      .format(self.__class__.__name__, attr))
         if hasattr(self.__class__, attr):
             return getattr(self.__class__, attr)
         try:
@@ -1285,26 +1289,6 @@ class BaseSite(ComparableMixin):
                  compress=True, cookies=None):
         """DEPRECATED."""
         return self.getUrl(address, data=data)
-
-    @deprecated
-    def checkCharset(self, charset):
-        """DEPRECATED."""
-        raise NotImplementedError
-
-    @deprecated
-    def cookies(self, sysop=False):
-        """DEPRECATED."""
-        raise NotImplementedError
-
-    @deprecated
-    def updateCookies(self, datas, sysop=False):
-        """DEPRECATED."""
-        raise NotImplementedError
-
-    @deprecated
-    def solveCaptcha(self, data):
-        """DEPRECATED."""
-        raise NotImplementedError
 
 
 def must_be(group=None, right=None):
