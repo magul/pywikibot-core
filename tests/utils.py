@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test utilities."""
 #
-# (C) Pywikibot team, 2013-2017
+# (C) Pywikibot team, 2013-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -261,6 +261,12 @@ class WarningSourceSkipContextManager(warnings.catch_warnings):
                 if (isinstance(warn_msg, DeprecationWarning) and
                         str(warn_msg.message) == PYTHON_26_CRYPTO_WARN):
                     return
+
+            # Ignore socket IO warnings (T183696)
+            if (warn_msg._category_name == 'ResourceWarning'
+                    and 'unclosed <socket.socket' in str(warn_msg.message)
+                    and warn_msg.filename.endswith('socket.py')):
+                return
 
             log.append(warn_msg)
 
