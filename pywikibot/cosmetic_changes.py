@@ -648,7 +648,7 @@ class CosmeticChangesToolkit(object):
         and it might be that it is not wanted on other wikis. If there are any
         complaints, please file a bug report.
         """
-        if self.site.sitename == 'wiktionary:jbo':
+        if self.site.sitename in ['wiktionary:jbo', 'wiktionary:en']:
             return text
         return textlib.replaceExcept(
             text,
