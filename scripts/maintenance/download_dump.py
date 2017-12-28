@@ -18,10 +18,26 @@ This script supports the following command line parameters:
 #
 from __future__ import absolute_import, division, unicode_literals
 
+from datetime import datetime
+
 import os.path
 import sys
 
-from os import remove, symlink
+from os import remove, symlink, fsync
+
+try:
+    from os import replace
+except ImportError:   # py2
+    if sys.platform == 'win32':
+        import os
+        def replace(src, dst):
+            try:
+                os.rename(src, dst)
+            except OSError:
+                os.remove(dst)
+                os.rename(src, dst)
+    else:
+        from os import rename as replace
 
 import pywikibot
 
@@ -63,7 +79,12 @@ class DownloadDumpBot(Bot):
 
         download_filename = self.getOption('wikiname') + \
             '-latest-' + self.getOption('filename')
-        file_storepath = os.path.join(
+        store_filename = download_filename + '-' + \
+            str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S')) + '.part'
+
+        file_temp_storepath = os.path.join(
+            self.getOption('storepath'), store_filename)
+        file_final_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
@@ -71,28 +92,32 @@ class DownloadDumpBot(Bot):
             self.getOption('wikiname'), self.getOption('filename'))
         if toolforge_dump_filepath:
             pywikibot.output('Symlinking file from ' + toolforge_dump_filepath)
-            if os.path.exists(file_storepath):
-                remove(file_storepath)
+            if os.path.exists(file_temp_storepath):
+                remove(file_temp_storepath)
 
-            symlink(toolforge_dump_filepath, file_storepath)
+            symlink(toolforge_dump_filepath, file_temp_storepath)
         else:
             url = 'https://dumps.wikimedia.org/' + \
-                os.path.join(self.getOption('wikiname'),
-                             'latest', download_filename)
+                self.getOption('wikiname') + '/latest/' + download_filename
             pywikibot.output('Downloading file from ' + url)
             response = fetch(url, stream=True)
             if response.status == 200:
                 try:
-                    with open(file_storepath, 'wb') as result_file:
+                    with open(file_temp_storepath, 'wb') as result_file:
                         for chunk in response.data.iter_content(100 * 1024):
                             result_file.write(chunk)
+
+                        result_file.flush()
+                        fsync(result_file.fileno())
                 except IOError:
                     pywikibot.exception()
                     return False
             else:
                 return
 
-        pywikibot.output('Done! File stored as ' + file_storepath)
+        replace(file_temp_storepath, file_final_storepath)
+
+        pywikibot.output('Done! File stored as ' + file_final_storepath)
         return
 
 
