@@ -1,4 +1,7 @@
+from __future__ import absolute_import, unicode_literals
+
 from pywikibot import daemonize
+
 import os
 
 def test_daemonize_os_exit():
