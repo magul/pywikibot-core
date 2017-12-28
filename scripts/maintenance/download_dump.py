@@ -18,10 +18,27 @@ This script supports the following command line parameters:
 #
 from __future__ import absolute_import, division, unicode_literals
 
+import binascii
+
 import os.path
 import sys
 
 from os import remove, symlink
+
+try:
+    from os import replace
+except ImportError:   # py2
+    if sys.platform == 'win32':
+        import os
+
+        def replace(src, dst):
+            try:
+                os.rename(src, dst)
+            except OSError:
+                remove(dst)
+                os.rename(src, dst)
+    else:
+        from os import rename as replace
 
 import pywikibot
 
@@ -57,42 +74,64 @@ class DownloadDumpBot(Bot):
                     return dump_filepath
         return None
 
+    def write_to_file(self, output_file, response):
+        """Writes data from a fetch() response to a file."""
+        for chunk in response.data.iter_content(100 * 1024):
+            output_file.write(chunk)
+
     def run(self):
         """Run bot."""
         pywikibot.output('Downloading dump from ' + self.getOption('wikiname'))
 
         download_filename = self.getOption('wikiname') + \
             '-latest-' + self.getOption('filename')
-        file_storepath = os.path.join(
+        temp_filename = download_filename + '-' + \
+            str(binascii.b2a_hex(os.urandom(8)))[2:-1] + '.part'
+
+        file_final_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
+        file_temp_storepath = os.path.join(
+            self.getOption('storepath'), temp_filename)
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
         toolforge_dump_filepath = self.get_dump_name(
             self.getOption('wikiname'), self.getOption('filename'))
         if toolforge_dump_filepath:
             pywikibot.output('Symlinking file from ' + toolforge_dump_filepath)
-            if os.path.exists(file_storepath):
-                remove(file_storepath)
+            if os.path.exists(file_temp_storepath):
+                remove(file_temp_storepath)
 
-            symlink(toolforge_dump_filepath, file_storepath)
+            try:
+                symlink(toolforge_dump_filepath, file_temp_storepath)
+            except IOError:
+                pywikibot.output('Cannot symlink with temporary file, ' +
+                                 'falling back to non-atomic symlink')
+                symlink(toolforge_dump_filepath, file_final_storepath)
+
         else:
-            url = 'https://dumps.wikimedia.org/' + \
-                os.path.join(self.getOption('wikiname'),
-                             'latest', download_filename)
+            url = 'https://dumps.wikimedia.org/{0}/latest/{1}'.format(
+                self.getOption('wikiname'), download_filename)
             pywikibot.output('Downloading file from ' + url)
             response = fetch(url, stream=True)
             if response.status == 200:
                 try:
-                    with open(file_storepath, 'wb') as result_file:
-                        for chunk in response.data.iter_content(100 * 1024):
-                            result_file.write(chunk)
+                    with open(file_temp_storepath, 'wb') as result_file:
+                        self.write_to_file(result_file, response)
                 except IOError:
-                    pywikibot.exception()
-                    return False
+                    pywikibot.output('Cannot write to temporary file, ' +
+                                     'falling back to non-atomic download')
+                    try:
+                        with open(file_final_storepath, 'wb') as result_file:
+                            self.write_to_file(result_file, response)
+                    except IOError:
+                        pywikibot.exception()
+                        return False
             else:
                 return
 
-        pywikibot.output('Done! File stored as ' + file_storepath)
+        replace(file_temp_storepath, file_final_storepath)
+
+        pywikibot.output('Done! File stored as ' + file_final_storepath)
         return
 
 
