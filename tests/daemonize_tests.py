@@ -18,12 +18,12 @@ def test_daemonize_changeddirectory_false():
     daemonize.daemonize(True, False, False, None)
 
 def test_redirectstd_true():
-    daemonize.daemonize(True, True, False, "Test")
+    daemonize.daemonize(True, True, False, 'Test')
 def test_daemonize_writepid_True():
     os.fork()
     #cannot be tested because spaghetti code
 
-def load_tests(loader, tests, pattern): 
+def load_tests(loader, tests, pattern):
     test_daemonize_os_exit()
     test_daemonize_closedstream_true()
     test_daemonize_closedstream_false()
