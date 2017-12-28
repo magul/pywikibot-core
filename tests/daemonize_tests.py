@@ -14,7 +14,7 @@ def test_daemonize_closedstream_false():
 def test_daemonize_changedirectory_true():
     daemonize.daemonize(True, True, False, None)
 
-def test_daemonize_changeddirectory_false(): 
+def test_daemonize_changeddirectory_false():
     daemonize.daemonize(True, False, False, None)
 
 def test_redirectstd_true():
