@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Test for daemonize
-
-Description
-
-"""
+"""Test for daemonize"""
 
 from __future__ import absolute_import, unicode_literals
 
