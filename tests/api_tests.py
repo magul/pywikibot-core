@@ -968,7 +968,7 @@ class TestBadTokenRecovery(TestCase):
         """Test the bad token recovery by corrupting the cache."""
         site = self.get_site()
         site.tokens._tokens.setdefault(site.user(), {})['edit'] = 'INVALID'
-        page = pywikibot.Page(site, 'Pywikibot bad token test')
+        page = pywikibot.Page(site, 'User:Framawiki/pwb_tests/bad_token')
         page.text = ('This page is testing whether pywikibot-core rerequests '
                      'a token when a badtoken error was received.')
         page.save(summary='Bad token test')
