@@ -18,10 +18,28 @@ This script supports the following command line parameters:
 #
 from __future__ import absolute_import, division, unicode_literals
 
+import binascii
+
+import errno
 import os.path
 import sys
 
-from os import remove, symlink
+from os import remove, symlink, urandom
+
+try:
+    from os import replace
+except ImportError:   # py2
+    if sys.platform == 'win32':
+        import os
+
+        def replace(src, dst):
+            try:
+                os.rename(src, dst)
+            except OSError:
+                remove(dst)
+                os.rename(src, dst)
+    else:
+        from os import rename as replace
 
 import pywikibot
 
@@ -63,36 +81,80 @@ class DownloadDumpBot(Bot):
 
         download_filename = self.getOption('wikiname') + \
             '-latest-' + self.getOption('filename')
-        file_storepath = os.path.join(
+        temp_filename = download_filename + '-' + \
+            bytes.decode(binascii.b2a_hex(urandom(8))) + '.part'
+
+        file_final_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
+        file_temp_storepath = os.path.join(
+            self.getOption('storepath'), temp_filename)
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
         toolforge_dump_filepath = self.get_dump_name(
             self.getOption('wikiname'), self.getOption('filename'))
-        if toolforge_dump_filepath:
-            pywikibot.output('Symlinking file from ' + toolforge_dump_filepath)
-            if os.path.exists(file_storepath):
-                remove(file_storepath)
 
-            symlink(toolforge_dump_filepath, file_storepath)
-        else:
-            url = 'https://dumps.wikimedia.org/' + \
-                os.path.join(self.getOption('wikiname'),
-                             'latest', download_filename)
-            pywikibot.output('Downloading file from ' + url)
-            response = fetch(url, stream=True)
-            if response.status == 200:
+        currentpath = file_temp_storepath
+
+        # First iteration for atomic download
+        # Second iteration for fallback non-atomic download
+        for i in range(0, 2):
+            if toolforge_dump_filepath:
+                pywikibot.output('Symlinking file from ' +
+                                 toolforge_dump_filepath)
+                if i == 1:
+                    if os.path.exists(currentpath):
+                        remove(currentpath)
                 try:
-                    with open(file_storepath, 'wb') as result_file:
-                        for chunk in response.data.iter_content(100 * 1024):
-                            result_file.write(chunk)
-                except IOError:
-                    pywikibot.exception()
-                    return False
-            else:
-                return
+                    symlink(toolforge_dump_filepath, currentpath)
+                except (OSError, IOError) as error:
+                    error_num = error.errno
+                    if (error_num == errno.ENOSPC or
+                       error_num == errno.ENOMEM):
+                        remove(currentpath)
+                        pywikibot.exception(error)
+                        return False
 
-        pywikibot.output('Done! File stored as ' + file_storepath)
+                    if i == 0:
+                        pywikibot.output('Cannot symlink with temporary' +
+                                         'file, falling back to' +
+                                         'non-atomic symlink')
+                        currentpath = file_final_storepath
+                    else:
+                        pywikibot.exception(error)
+                        return False
+            else:
+                url = 'https://dumps.wikimedia.org/{0}/latest/{1}'.format(
+                    self.getOption('wikiname'), download_filename)
+                pywikibot.output('Downloading file from ' + url)
+                response = fetch(url, stream=True)
+                if response.status == 200:
+                    try:
+                        with open(currentpath, 'wb') as result_file:
+                            for data in response.data.iter_content(100 * 1024):
+                                result_file.write(data)
+                    except (OSError, IOError) as error:
+                        error_num = error.errno
+                        if (error_num == errno.ENOSPC or
+                           error_num == errno.ENOMEM):
+                            remove(currentpath)
+                            pywikibot.exception(error)
+                            return False
+
+                        if i == 0:
+                            pywikibot.output('Cannot write to temporary' +
+                                             'file, falling back to' +
+                                             'non-atomic download')
+                            currentpath = file_final_storepath
+                        else:
+                            pywikibot.exception(error)
+                            return False
+                else:
+                    return
+            if i == 0:
+                replace(file_temp_storepath, file_final_storepath)
+                break
+
+        pywikibot.output('Done! File stored as ' + file_final_storepath)
         return
 
 
