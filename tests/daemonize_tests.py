@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-"""Test for daemonize"""
+"""Tests for BasePage subclasses."""
+#
 
 from __future__ import absolute_import, unicode_literals
 
