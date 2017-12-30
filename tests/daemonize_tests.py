@@ -43,6 +43,6 @@ def test_daemonize_writepid_True():
 
 if __name__ == '__main__':  # pragma: no cover
     try:
-        unittest.main()
+        unitest.main()
     except SystemExit:
         pass
