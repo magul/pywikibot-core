@@ -12,13 +12,13 @@ from pywikibot import editor
 
 
 def test_editor_edituserconfigpy_same():
-    result = editor.edit(text = None, jumpIndex = 200, highlight = 'test1')
+    editor.edit(text=None,jumpIndex=200,highlight='test1')
 
 
 def test_editor_edituserconfigpy():
-    result = editor.edit(text = 'test1', jumpIndex = 200, highlight = 'test1')
+    editor.edit(text='test1',jumpIndex=200,highlight='test1')
 
 
 def test_editor_command():
-    tempfile.TemporaryFile(suffix = 'test', prefix = 'txt', dir = os.getcwd())
-    editor.command(tempFilename = os.getcwd() + 'test.txt', text = 'test')
+    tempfile.TemporaryFile(suffix='test',prefix='txt',dir=os.getcwd())
+    editor.command(tempFilename=os.getcwd()+'test.txt',text='test')
