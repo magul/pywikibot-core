@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 """Tests for BasePage subclasses."""
-#
 
 from __future__ import absolute_import, unicode_literals
 
-from pywikibot import daemonize
-
 import os
+
+from pywikibot import daemonize
 
 
 def test_daemonize_os_exit():
+    os.fork()
     os.fork()
     daemonize.daemonize()
     daemonize.daemonize()
@@ -37,14 +37,11 @@ def test_redirectstd_true():
 
 def test_daemonize_writepid_True():
     os.fork()
-    # cannot be tested because spaghetti code
+    #cannot be tested because spaghetti code
 
 
-def load_tests(loader, tests, pattern):
-    test_daemonize_os_exit()
-    test_daemonize_closedstream_true()
-    test_daemonize_closedstream_false()
-    test_daemonize_changedirectory_true()
-    test_daemonize_changeddirectory_false()
-    test_daemonize_writepid_True()
-    test_redirectstd_true()
+if __name__ == '__main__':  # pragma: no cover
+    try:
+        unittest.main()
+    except SystemExit:
+pass
