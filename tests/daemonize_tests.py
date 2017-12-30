@@ -37,11 +37,11 @@ def test_redirectstd_true():
 
 def test_daemonize_writepid_True():
     os.fork()
-    #cannot be tested because spaghetti code
+    # cannot be tested because spaghetti code
 
 
 if __name__ == '__main__':  # pragma: no cover
     try:
         unittest.main()
     except SystemExit:
-pass
+        pass
