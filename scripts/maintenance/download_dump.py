@@ -9,6 +9,8 @@ This script supports the following command line parameters:
 
     -storepath:#    The stored file's path.
 
+    -revision:#     The revision date of the dump (default to `latest`)
+
 """
 #
 # (C) Pywikibot team, 2017
@@ -38,6 +40,7 @@ class DownloadDumpBot(Bot):
         'wikiname': '',
         'filename': '',
         'storepath': './',
+        'revision': 'latest',
     }
 
     def __init__(self, **kwargs):
@@ -61,8 +64,11 @@ class DownloadDumpBot(Bot):
         """Run bot."""
         pywikibot.output('Downloading dump from ' + self.getOption('wikiname'))
 
-        download_filename = self.getOption('wikiname') + \
-            '-latest-' + self.getOption('filename')
+        download_filename = '{wiki_name}-{revision}-{filename}'.format(
+            wiki_name=self.getOption('wikiname'),
+            revision=self.getOption('revision'),
+            filename=self.getOption('filename')
+        )
         file_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
 
@@ -78,7 +84,8 @@ class DownloadDumpBot(Bot):
         else:
             url = 'https://dumps.wikimedia.org/' + \
                 os.path.join(self.getOption('wikiname'),
-                             'latest', download_filename)
+                             self.getOption('revision'),
+                             download_filename)
             pywikibot.output('Downloading file from ' + url)
             response = fetch(url, stream=True)
             if response.status == 200:
@@ -89,6 +96,15 @@ class DownloadDumpBot(Bot):
                 except IOError:
                     pywikibot.exception()
                     return False
+            elif response.status == 404:
+                pywikibot.output(('File with wikiname={wikiname}, '
+                                  'revision={revision}, '
+                                  'filename={filename} isn\'t '
+                                  'available in the Wikimedia Dumps').format(
+                                      wikiname=self.getOption('wikiname'),
+                                      revision=self.getOption('revision'),
+                                      filename=self.getOption('filename')))
+                return
             else:
                 return
 
@@ -121,6 +137,11 @@ def main(*args):
                 opts[option] = os.path.abspath(value) or pywikibot.input(
                     'Enter the store path: ')
                 continue
+            elif option == 'revision':
+                opts[option] = value or pywikibot.input(
+                    'Enter the revision of the dump: ')
+                continue
+
         unknown_args += [arg]
 
     missing = []
