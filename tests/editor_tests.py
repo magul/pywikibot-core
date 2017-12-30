@@ -21,4 +21,5 @@ def test_editor_edituserconfigpy():
 
 def test_editor_command():
     tempfile.TemporaryFile(suffix='test', prefix='txt', dir=os.getcwd())
-    editor.TextEditor.command(tempFilename=os.getcwd() + 'test.txt', text='test')
+    editor.TextEditor.command(tempFilename=os.getcwd() + 'test.txt', 
+                              text='test')
