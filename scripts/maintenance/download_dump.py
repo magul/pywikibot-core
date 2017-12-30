@@ -9,6 +9,9 @@ This script supports the following command line parameters:
 
     -storepath:#    The stored file's path.
 
+    -revision:#     The revision date of the dump (default to `latest`)
+                    formatted as YYYYMMDD.
+
 """
 #
 # (C) Pywikibot team, 2017
@@ -38,37 +41,40 @@ class DownloadDumpBot(Bot):
         'wikiname': '',
         'filename': '',
         'storepath': './',
+        'revision': 'latest',
     }
 
     def __init__(self, **kwargs):
         """Constructor."""
         super(DownloadDumpBot, self).__init__(**kwargs)
 
-    def get_dump_name(self, db_name, typ):
+    def get_dump_name(self, db_name, typ, revision):
         """Check if dump file exists locally in a Toolforge server."""
         db_path = '/public/dumps/public/{0}/'.format(db_name)
         if os.path.isdir(db_path):
-            dates = map(int, os.listdir(db_path))
-            dates = sorted(dates, reverse=True)
-            for date in dates:
-                dump_filepath = ('/public/dumps/public/{0}/{1}/{2}-{3}-{4}'
-                                 .format(db_name, date, db_name, date, typ))
-                if os.path.isfile(dump_filepath):
-                    return dump_filepath
+            dump_filepath = ('/public/dumps/public/{0}/{1}/{2}-{3}-{4}'.format(
+                db_name, revision, db_name, revision, typ))
+            if os.path.isfile(dump_filepath):
+                return dump_filepath
         return None
 
     def run(self):
         """Run bot."""
         pywikibot.output('Downloading dump from ' + self.getOption('wikiname'))
 
-        download_filename = self.getOption('wikiname') + \
-            '-latest-' + self.getOption('filename')
+        download_filename = '{wiki_name}-{revision}-{filename}'.format(
+            wiki_name=self.getOption('wikiname'),
+            revision=self.getOption('revision'),
+            filename=self.getOption('filename')
+        )
         file_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
         toolforge_dump_filepath = self.get_dump_name(
-            self.getOption('wikiname'), self.getOption('filename'))
+            self.getOption('wikiname'),
+            self.getOption('filename'),
+            self.getOption('revision'))
         if toolforge_dump_filepath:
             pywikibot.output('Symlinking file from ' + toolforge_dump_filepath)
             if os.path.exists(file_storepath):
@@ -78,7 +84,8 @@ class DownloadDumpBot(Bot):
         else:
             url = 'https://dumps.wikimedia.org/' + \
                 os.path.join(self.getOption('wikiname'),
-                             'latest', download_filename)
+                             self.getOption('revision'),
+                             download_filename)
             pywikibot.output('Downloading file from ' + url)
             response = fetch(url, stream=True)
             if response.status == 200:
@@ -89,6 +96,15 @@ class DownloadDumpBot(Bot):
                 except IOError:
                     pywikibot.exception()
                     return False
+            elif response.status == 404:
+                pywikibot.output(('File with name "{filename}", '
+                                  'from revision "{revision}", '
+                                  'and wiki "{wikiname}" isn\'t '
+                                  'available in the Wikimedia Dumps').format(
+                                      filename=self.getOption('filename'),
+                                      revision=self.getOption('revision'),
+                                      wikiname=self.getOption('wikiname')))
+                return
             else:
                 return
 
@@ -121,6 +137,11 @@ def main(*args):
                 opts[option] = os.path.abspath(value) or pywikibot.input(
                     'Enter the store path: ')
                 continue
+            elif option == 'revision':
+                opts[option] = value or pywikibot.input(
+                    'Enter the revision of the dump: ')
+                continue
+
         unknown_args += [arg]
 
     missing = []
