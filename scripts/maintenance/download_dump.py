@@ -26,6 +26,8 @@ import binascii
 import os.path
 import sys
 
+from datetime import datetime
+from glob import glob
 from os import remove, symlink, urandom
 
 try:
@@ -90,10 +92,63 @@ class DownloadDumpBot(Bot):
         temp_filename = download_filename + '-' + \
             binascii.b2a_hex(urandom(8)).decode('ascii') + '.part'
 
-        file_final_storepath = os.path.join(
-            self.getOption('storepath'), download_filename)
+        if self.getOption('revision') == 'latest':
+            date_str = datetime.now().strftime('%Y%m%d')
+
+            # Make a new filename with the current date placed before the
+            # extension,
+            # for example 'idwiki-latest-abstract.xml-rss.xml'
+            # to 'idwiki-latest-abstract.xml-rss.20180101.xml'
+            # (just for the `latest` revision).
+            new_filename = download_filename.split('.')
+            new_filename.insert(-1, date_str)
+            new_filename = '.'.join(new_filename)
+
+            file_final_storepath = os.path.join(
+                self.getOption('storepath'), new_filename)
+        else:
+            file_final_storepath = os.path.join(
+                self.getOption('storepath'), download_filename)
+
         file_current_storepath = os.path.join(
             self.getOption('storepath'), temp_filename)
+
+        # Check if the file already exists in local
+        if os.path.exists(file_final_storepath):
+            pywikibot.output('File with path {path} already exists and '
+                             'will not be downloaded again.'.format(
+                                 path=file_final_storepath
+                             ))
+            return
+
+        # Warn the user if the previous `latest` revision with the same
+        # name already exists.
+        if self.getOption('revision') == 'latest':
+            # The pattern to detect the same file, but different name.
+            filepath_glob_pattern = file_final_storepath.split('.')
+            filepath_glob_pattern[-2] = (
+                '[0-9][0-9][0-9][0-9][0-1][0-9][0-3][0-9]')
+            filepath_glob_pattern = '.'.join(filepath_glob_pattern)
+
+            similar_filepaths = glob(filepath_glob_pattern)
+
+            # Search for file with the newest date
+            newest_file = [datetime(1, 1, 1), '']  # [date, filename]
+            for filepath in similar_filepaths:
+                file_date = datetime.strptime(
+                    filepath.split('.')[-2], '%Y%m%d')
+                if file_date > newest_file[0]:
+                    newest_file = [file_date, filepath]
+
+            pywikibot.output('Warning, you\'re about to download a file that '
+                             'is already exist before from the `latest`'
+                             ' revision. The newest file downloaded for this '
+                             'filename is located at {filepath} which was '
+                             'downloaded at {date}. The file content might '
+                             'be the same with the file that will be '
+                             'downloaded'.format(
+                                 filepath=newest_file[1],
+                                 date=newest_file[0].strftime('%Y-%m-%d')))
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
         toolforge_dump_filepath = self.get_dump_name(
