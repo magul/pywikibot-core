@@ -27,6 +27,7 @@ import os.path
 import sys
 
 from os import remove, symlink, urandom
+from xml.etree import ElementTree
 
 try:
     from os import replace
@@ -44,6 +45,8 @@ except ImportError:   # py2
         from os import rename as replace
 
 import pywikibot
+
+from bs4 import BeautifulSoup
 
 from pywikibot import Bot
 
@@ -65,18 +68,35 @@ class DownloadDumpBot(Bot):
         """Constructor."""
         super(DownloadDumpBot, self).__init__(**kwargs)
 
-    def get_dump_name(self, db_name, typ):
+    def get_dump_name(self, db_name, typ, date_revision):
         """Check if dump file exists locally in a Toolforge server."""
         db_path = '/public/dumps/public/{0}/'.format(db_name)
         if os.path.isdir(db_path):
-            dates = map(int, os.listdir(db_path))
-            dates = sorted(dates, reverse=True)
-            for date in dates:
-                dump_filepath = ('/public/dumps/public/{0}/{1}/{2}-{3}-{4}'
-                                 .format(db_name, date, db_name, date, typ))
-                if os.path.isfile(dump_filepath):
-                    return dump_filepath
+            dump_filepath = ('/public/dumps/public/{0}/{1}/{2}-{3}-{4}'
+                             .format(db_name, date_revision, db_name,
+                                     date_revision, typ))
+            if os.path.isfile(dump_filepath):
+                return dump_filepath
         return None
+
+    @staticmethod
+    def build_dump_file_url(wikiname, revision, download_filename):
+        """
+        Build Wikimedia dump file url.
+
+        @param wikiname: A wikiname, e.g idwiki, frwiki
+        @type wikiname: str
+        @param revision: A revision date, formatted as YYYYMMDD or `latest`
+        @type revision: str
+        @param download_filename: A filename from the dump.
+        @type download_filename: str
+        @return: A download URL of the file dump from Wikimedia dump.
+        @rtype: str
+        """
+        return 'https://dumps.wikimedia.org/{0}/{1}/{2}'.format(
+            wikiname,
+            revision,
+            download_filename)
 
     def run(self):
         """Run bot."""
@@ -90,6 +110,37 @@ class DownloadDumpBot(Bot):
         temp_filename = download_filename + '-' + \
             binascii.b2a_hex(urandom(8)).decode('ascii') + '.part'
 
+        url = None
+        latest_revision = None
+        if self.getOption('revision') == 'latest':
+            # Resolve the revision which `latest` pointer points to.
+            try:
+                rss_resp = fetch(
+                    self.build_dump_file_url(
+                        self.getOption('wikiname'),
+                        self.getOption('revision'),
+                        download_filename + '-rss.xml'))
+
+                if rss_resp.status == 200:
+                    html_text = ElementTree.fromstring(
+                        rss_resp.content).find('channel').find('item').find(
+                            'description').text
+                    html_tag = BeautifulSoup(
+                        html_text, 'html.parser').find('a')
+
+                    url = html_tag.attrs['href']
+                    download_filename = html_tag.text
+                    latest_revision = download_filename.split('-')[1]
+
+                    pywikibot.output('`latest` revision is resolved to '
+                                     '{revision} for this file.'.format(
+                                         revision=latest_revision
+                                     ))
+                else:
+                    return
+            except Exception:
+                return
+
         file_final_storepath = os.path.join(
             self.getOption('storepath'), download_filename)
         file_current_storepath = os.path.join(
@@ -97,7 +148,8 @@ class DownloadDumpBot(Bot):
 
         # https://wikitech.wikimedia.org/wiki/Help:Toolforge#Dumps
         toolforge_dump_filepath = self.get_dump_name(
-            self.getOption('wikiname'), self.getOption('filename'))
+            self.getOption('wikiname'), self.getOption('filename'),
+            latest_revision or self.getOption('revision'))
 
         # First iteration for atomic download with temporary file
         # Second iteration for fallback non-atomic download
@@ -111,10 +163,11 @@ class DownloadDumpBot(Bot):
                             remove(file_final_storepath)
                     symlink(toolforge_dump_filepath, file_current_storepath)
                 else:
-                    url = 'https://dumps.wikimedia.org/{0}/{1}/{2}'.format(
-                        self.getOption('wikiname'),
-                        self.getOption('revision'),
-                        download_filename)
+                    if not url:
+                        url = self.build_dump_file_url(
+                            self.getOption('wikiname'),
+                            self.getOption('revision'),
+                            download_filename)
                     pywikibot.output('Downloading file from ' + url)
                     response = fetch(url, stream=True)
                     if response.status == 200:
