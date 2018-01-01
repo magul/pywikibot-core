@@ -119,8 +119,34 @@ class DownloadDumpBot(Bot):
                     response = fetch(url, stream=True)
                     if response.status == 200:
                         with open(file_current_storepath, 'wb') as result_file:
+                            total = int(response.response_headers.get(
+                                'content-length'))
+                            downloaded = 0
+                            parts = 50
+
                             for data in response.data.iter_content(100 * 1024):
                                 result_file.write(data)
+
+                                if total is not None:
+                                    downloaded += len(data)
+                                    done = int(parts * downloaded /
+                                               total)
+                                    sys.stdout.write('\r|{0}{1}|'.format(
+                                        '=' * done, '-' * (parts - done)))
+
+                                    def convert_from_bytes(bytes):
+                                        for unit in ['B', 'K', 'M', 'G', 'T']:
+                                            if abs(bytes) < 1024:
+                                                return str(bytes) + unit
+                                            bytes = float(format(
+                                                bytes / 1024.0, '.2f'))
+                                        return str(bytes) + 'P'
+                                    display = map(convert_from_bytes,
+                                                  (downloaded, total))
+
+                                    sys.stdout.write('\t{0}/{1}     '.format(
+                                        *display))
+                                    sys.stdout.flush()
                     elif response.status == 404:
                         pywikibot.output(
                             'File with name "{filename}", '
