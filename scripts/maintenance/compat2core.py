@@ -26,8 +26,8 @@ to show warnings about deprecated methods:
     python pwb.py compat2core <scriptname> -warnonly
 """
 #
-# (C) xqt, 2014-2017
-# (C) Pywikibot team, 2014-2017
+# (C) xqt, 2014-2018
+# (C) Pywikibot team, 2014-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -50,8 +50,6 @@ replacements = (
     ('import wikipedia(?: as pywikibot)?', 'import pywikibot'),
     ('(?<!from pywikibot )import (config|pagegenerators)',
      r'from pywikibot import \1'),
-    ('(?<!from pywikibot.compat )import query',
-     'from pywikibot.compat import query'),
     # remove deprecated libs
     ('import catlib\r?\n', ''),
     ('import userlib\r?\n', ''),
