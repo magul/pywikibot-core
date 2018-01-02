@@ -38,6 +38,7 @@ class Family(family.WikimediaFamily):
                 u'Synonym taxon category redirect',
                 u'Invalid taxon category redirect',
                 u'Monotypic taxon category redirect',
+                u'Endashcatredirect',
             ),
         }
 
