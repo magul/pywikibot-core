@@ -3529,6 +3529,8 @@ class User(Page):
         """
         if self.isAnonymous():
             return False
+        if not self.isRegistered():
+            return False
         if 'bot' in self.groups():
             return False
 
