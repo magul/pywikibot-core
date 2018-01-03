@@ -9,7 +9,7 @@ This script supports the following command line parameters:
 
     -storepath:#    The stored file's path.
 
-    -revision:#     The revision date of the dump (default to `latest`)
+    -dumpdate:#     The dumpdate date of the dump (default to `latest`)
                     formatted as YYYYMMDD.
 
 """
@@ -58,7 +58,7 @@ class DownloadDumpBot(Bot):
         'wikiname': '',
         'filename': '',
         'storepath': './',
-        'revision': 'latest',
+        'dumpdate': 'latest',
     }
 
     def __init__(self, **kwargs):
@@ -82,9 +82,9 @@ class DownloadDumpBot(Bot):
         """Run bot."""
         pywikibot.output('Downloading dump from ' + self.getOption('wikiname'))
 
-        download_filename = '{wiki_name}-{revision}-{filename}'.format(
+        download_filename = '{wiki_name}-{dumpdate}-{filename}'.format(
             wiki_name=self.getOption('wikiname'),
-            revision=self.getOption('revision'),
+            dumpdate=self.getOption('dumpdate'),
             filename=self.getOption('filename')
         )
         temp_filename = download_filename + '-' + \
@@ -113,7 +113,7 @@ class DownloadDumpBot(Bot):
                 else:
                     url = 'https://dumps.wikimedia.org/{0}/{1}/{2}'.format(
                         self.getOption('wikiname'),
-                        self.getOption('revision'),
+                        self.getOption('dumpdate'),
                         download_filename)
                     pywikibot.output('Downloading file from ' + url)
                     response = fetch(url, stream=True)
@@ -124,11 +124,11 @@ class DownloadDumpBot(Bot):
                     elif response.status == 404:
                         pywikibot.output(
                             'File with name "{filename}", '
-                            'from revision "{revision}", '
+                            'from dumpdate "{dumpdate}", '
                             'and wiki "{wikiname}" ({url}) isn\'t '
                             'available in the Wikimedia Dumps'.format(
                                 filename=self.getOption('filename'),
-                                revision=self.getOption('revision'),
+                                dumpdate=self.getOption('dumpdate'),
                                 url=url,
                                 wikiname=self.getOption('wikiname')))
                         return
@@ -185,9 +185,9 @@ def main(*args):
                 opts[option] = os.path.abspath(value) or pywikibot.input(
                     'Enter the store path: ')
                 continue
-            elif option == 'revision':
+            elif option == 'dumpdate':
                 opts[option] = value or pywikibot.input(
-                    'Enter the revision of the dump: ')
+                    'Enter the dumpdate of the dump: ')
                 continue
 
         unknown_args += [arg]
