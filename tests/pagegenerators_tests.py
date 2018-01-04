@@ -1220,25 +1220,25 @@ class TestFactoryGeneratorWikibase(WikidataTestCase):
     def test_searchitem_language(self):
         """Test -searchitem with custom language specified."""
         gf = pagegenerators.GeneratorFactory(site=self.site)
-        gf.handleArg('-searchitem:pl:abc')
+        gf.handleArg('-searchitem:id:awan')
         gf.handleArg('-limit:1')
         gen = gf.getCombinedGenerator()
         self.assertIsNotNone(gen)
-        # ABC
+        # Awan, (means cloud in Indonesian)
         page1 = next(gen)
-        self.assertEqual(page1.title(), 'Q287078')
+        self.assertEqual(page1.title(), 'Q8074')
 
         gf = pagegenerators.GeneratorFactory(site=self.site)
-        gf.handleArg('-searchitem:en:abc')
+        gf.handleArg('-searchitem:en:awan')
         gf.handleArg('-limit:2')
         gen = gf.getCombinedGenerator()
         self.assertIsNotNone(gen)
-        # American Broadcasting Company
+        # Awan, character in Book of Jubilees
         page1 = next(gen)
-        self.assertEqual(page1.title(), 'Q169889')
-        # Australian Broadcasting Corporation
+        self.assertEqual(page1.title(), 'Q9639242')
+        # Awan, surname
         page2 = next(gen)
-        self.assertEqual(page2.title(), 'Q781365')
+        self.assertEqual(page2.title(), 'Q4829787')
 
     def test_get_category_site(self):
         """Test the getCategory method."""
