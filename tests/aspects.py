@@ -33,6 +33,7 @@ import re
 import sys
 import time
 import warnings
+import vcr
 
 from contextlib import contextmanager
 
@@ -511,6 +512,8 @@ class CheckHostnameMixin(TestCaseBase):
             cls.sites = dict((k, v) for k, v in cls.sites.items()
                              if 'httpbin.org' not in v['hostname'])
 
+        vcr_used = issubclass(cls, VCRTestCase)
+
         for key, data in cls.sites.items():
             if 'hostname' not in data:
                 raise Exception('%s: hostname not defined for %s'
@@ -528,6 +531,12 @@ class CheckHostnameMixin(TestCaseBase):
                                             % (cls.__name__, hostname))
                 else:
                     continue
+
+            if vcr_used:
+                # If test uses vcrpy, then there is no need to check hostnames
+                # as all requests are mocked
+                cls._checked_hostnames[hostname] = True
+                continue
 
             e = None
             try:
@@ -1712,3 +1721,32 @@ class HttpbinTestCase(TestCase):
             return '{0}:{1}'.format(self.httpbin.host, self.httpbin.port)
         else:
             return 'httpbin.org'
+
+
+class VCRTestCase(TestCase):
+
+    """
+    Custom test case class, which allows doing dry tests using vcrpy.
+
+    vcrpy cassettes are recorded for all test methods in subclasses
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set up the test class.
+
+        Set up vcr cassette recording for all test methods
+        """
+        test_vcr = vcr.VCR(
+            cassette_library_dir='tests/cassettes',
+            record_mode='once',
+            path_transformer=lambda f: '{}_{}.yml'.format(cls.__name__, f)
+        )
+
+        functions = inspect.getmembers(cls, predicate=inspect.isfunction)
+        for name, function in functions:
+            if name.startswith('test') or name == 'setUp':
+                setattr(cls, name, test_vcr.use_cassette(getattr(cls, name)))
+
+        super(VCRTestCase, cls).setUpClass()
