@@ -25,6 +25,7 @@ from tests.aspects import (
     WikidataTestCase,
     DeprecationTestCase,
     DefaultWikibaseClientTestCase,
+    VCRTestCase
 )
 
 from tests.basepage_tests import (
@@ -1464,7 +1465,8 @@ class TestClaimSetValue(WikidataTestCase):
             quantity_claim.setTarget('foo')
 
 
-class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase):
+class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase,
+                              VCRTestCase):
 
     """Test behavior of ItemPage methods inherited from BasePage."""
 
