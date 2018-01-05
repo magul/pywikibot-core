@@ -1,0 +1,78 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept: ['*/*']
+      Accept-Encoding: ['gzip, deflate']
+      Connection: [keep-alive]
+      Content-Type: [application/x-www-form-urlencoded]
+      user-agent: ['wikibase_tests (wikidata:wikidata) Pywikibot/3.0-dev (g8909) requests/2.18.4
+          Python/3.5.2.final.0']
+    method: GET
+    uri: https://www.wikidata.org/w/api.php?action=query&meta=siteinfo%7Cuserinfo&format=json&siprop=namespaces%7Cnamespacealiases%7Cgeneral&maxlag=5&continue=&uiprop=blockinfo%7Chasmsg
+  response:
+    body:
+      string: !!binary |
+        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
+        fgcQChTP5BgAAA==
+    headers:
+      Accept-Ranges: [bytes]
+      Age: ['0']
+      Backend-Timing: [D=54804 t=1515399690137174]
+      Cache-control: ['private, must-revalidate, max-age=0']
+      Connection: [keep-alive]
+      Content-Disposition: [inline; filename="api-result.json"]
+      Content-Encoding: [gzip]
+      Content-Type: [application/json; charset=utf-8]
+      Date: ['Mon, 08 Jan 2018 08:21:30 GMT']
+      P3P: ['CP="This is not a P3P policy! See https://www.wikidata.org/wiki/Special:CentralAutoLogin/P3P
+          for more info."']
+      Server: [mw1225.eqiad.wmnet]
+      Strict-Transport-Security: [max-age=106384710; includeSubDomains; preload]
+      Vary: [Accept-Encoding]
+      Via: ['1.1 varnish-v4, 1.1 varnish-v4, 1.1 varnish-v4']
+      X-Analytics: [ns=-1;special=Badtitle;https=1;nocookies=1]
+      X-Cache: ['cp1054 pass, cp3041 pass, cp3040 pass']
+      X-Cache-Status: [pass]
+      X-Content-Type-Options: [nosniff]
+      X-Frame-Options: [DENY]
+      X-Powered-By: [HHVM/3.18.6-dev]
+      X-Varnish: ['57750806, 815558165, 1026685073']
+    status: {code: 200, message: OK}
+version: 1
