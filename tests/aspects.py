@@ -57,6 +57,8 @@ from tests.utils import (
     WarningSourceSkipContextManager, AssertAPIErrorContextManager,
 )
 
+import vcr
+
 try:
     import pytest_httpbin
     optional_pytest_httpbin_cls_decorator = pytest_httpbin.use_class_based_httpbin
@@ -707,6 +709,29 @@ class RequireUserMixin(TestCaseBase):
         return userpage
 
 
+class VCRMixin(TestCaseBase):
+
+    """Run dry tests using vcrpy to record and mock requests."""
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set up the test case.
+
+        Set up vcr cassette recording for all test methods
+        """
+        super(VCRMixin, cls).setUpClass()
+        test_vcr = vcr.VCR(
+            cassette_library_dir='tests/cassettes',
+            record_mode='once',
+            path_transformer=lambda f: '{0}_{1}.yml'.format(cls.__name__, f)
+        )
+        functions = inspect.getmembers(cls, predicate=inspect.isroutine)
+        for name, function in functions:
+            if name.startswith('test') or name in ['setUp', 'setUpClass']:
+                setattr(cls, name, test_vcr.use_cassette(function))
+
+
 class MetaTestCaseClass(type):
 
     """Test meta class."""
@@ -850,7 +875,9 @@ class MetaTestCaseClass(type):
         if 'cached' in dct and dct['cached']:
             bases = cls.add_base(bases, ForceCacheMixin)
 
-        if 'net' in dct and dct['net']:
+        if 'vcr' in dct and dct['vcr'] and 'LIVE_TESTS' not in os.environ:
+            bases = cls.add_base(bases, VCRMixin)
+        elif 'net' in dct and dct['net']:
             bases = cls.add_base(bases, CheckHostnameMixin)
         else:
             assert not hostnames, 'net must be True with hostnames defined'
