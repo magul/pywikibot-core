@@ -57,6 +57,8 @@ from tests.utils import (
     WarningSourceSkipContextManager, AssertAPIErrorContextManager,
 )
 
+import vcr_unittest
+
 try:
     import pytest_httpbin
     optional_pytest_httpbin_cls_decorator = pytest_httpbin.use_class_based_httpbin
@@ -707,6 +709,65 @@ class RequireUserMixin(TestCaseBase):
         return userpage
 
 
+class VCRMixin(vcr_unittest.VCRMixin):
+
+    """Run dry tests using vcrpy to record and mock requests."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up cassette recording for setUp."""
+        vcr = VCRMixin()._get_vcr()
+
+        func = getattr(cls, 'setUp')
+
+        def wrapped_setup(arg):
+            arg.vcr_enabled = False
+            with vcr.use_cassette(cls.__name__ + '.setUp.yaml'):
+                func(arg)
+            arg.vcr_enabled = True
+            vcr_unittest.VCRMixin.setUp(arg)
+        setattr(cls, 'setUp', wrapped_setup)
+
+        super(VCRMixin, cls).setUpClass()
+
+    def _get_vcr(self, **kwargs):
+        """Configure VCR."""
+        vcr = super(VCRMixin, self)._get_vcr(**kwargs)
+        vcr.record_mode = 'once'
+        vcr.before_record_request = self.before_record_request
+        vcr.before_record_response = self.before_record_response
+        return vcr
+
+    def _get_cassette_name(self):
+        """Get name of VCR cassette."""
+        if issubclass(self.__class__, DefaultSiteTestCase):
+            site_name = self.site.family.name + self.site.code
+            return '{0}.{1}_{2}.yaml'.format(self.__class__.__name__,
+                                             self._testMethodName,
+                                             site_name)
+        else:
+            return super(VCRMixin, self)._get_cassette_name()
+
+    def before_record_request(self, request):
+        """Remove headers containing sensitive data from request."""
+        # TODO: custom cookie processing if user=True
+        if 'Cookie' in request.headers:
+            del request.headers['Cookie']
+
+        return request
+
+    def before_record_response(self, response):
+        """Remove headers containing sensitive data from response."""
+        # TODO: custom cookie processing if user=True
+        for header in ['Set-Cookie', 'X-Client-IP']:
+            if header in response['headers']:
+                del response['headers'][header]
+            if header.lower() in response['headers']:
+                del response['headers'][header.lower()]
+
+        return response
+
+
 class MetaTestCaseClass(type):
 
     """Test meta class."""
@@ -850,7 +911,10 @@ class MetaTestCaseClass(type):
         if 'cached' in dct and dct['cached']:
             bases = cls.add_base(bases, ForceCacheMixin)
 
-        if 'net' in dct and dct['net']:
+        if 'vcr' in dct and dct['vcr'] and 'PYWIKIBOT_LIVE_TESTS' not in os.environ:
+            bases = cls.add_base(bases, VCRMixin)
+            del dct['net']
+        elif 'net' in dct and dct['net']:
             bases = cls.add_base(bases, CheckHostnameMixin)
         else:
             assert not hostnames, 'net must be True with hostnames defined'
