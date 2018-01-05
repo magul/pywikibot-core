@@ -1468,6 +1468,8 @@ class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase):
 
     """Test behavior of ItemPage methods inherited from BasePage."""
 
+    vcr = True
+
     def setUp(self):
         """Setup tests."""
         self._page = ItemPage(self.get_repo(), 'Q60')
@@ -1845,6 +1847,8 @@ class TestOwnClient(TestCase):
             'code': 'test',
         },
     }
+
+    vcr = True
 
     def test_own_client(self, key):
         """Test that a data repository family can be its own client."""
