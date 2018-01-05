@@ -57,6 +57,8 @@ from tests.utils import (
     WarningSourceSkipContextManager, AssertAPIErrorContextManager,
 )
 
+import vcr
+
 try:
     import pytest_httpbin
     optional_pytest_httpbin_cls_decorator = pytest_httpbin.use_class_based_httpbin
@@ -511,6 +513,8 @@ class CheckHostnameMixin(TestCaseBase):
             cls.sites = dict((k, v) for k, v in cls.sites.items()
                              if 'httpbin.org' not in v['hostname'])
 
+        vcr_used = issubclass(cls, VCRMixin)
+
         for key, data in cls.sites.items():
             if 'hostname' not in data:
                 raise Exception('%s: hostname not defined for %s'
@@ -528,6 +532,12 @@ class CheckHostnameMixin(TestCaseBase):
                                             % (cls.__name__, hostname))
                 else:
                     continue
+
+            if vcr_used:
+                # If test uses vcrpy, then there is no need to check hostnames
+                # as all requests are mocked
+                cls._checked_hostnames[hostname] = True
+                continue
 
             e = None
             try:
@@ -707,6 +717,29 @@ class RequireUserMixin(TestCaseBase):
         return userpage
 
 
+class VCRMixin(TestCaseBase):
+
+    """Run dry tests using vcrpy to record and mock requests."""
+
+    @classmethod
+    def setUpClass(cls):
+        """
+        Set up the test case.
+
+        Set up vcr cassette recording for all test methods
+        """
+        super(VCRMixin, cls).setUpClass()
+        test_vcr = vcr.VCR(
+            cassette_library_dir='tests/cassettes',
+            record_mode='once',
+            path_transformer=lambda f: '{0}_{1}.yml'.format(cls.__name__, f)
+        )
+        functions = inspect.getmembers(cls, predicate=inspect.isfunction)
+        for name, function in functions:
+            if name.startswith('test') or name == 'setUp':
+                setattr(cls, name, test_vcr.use_cassette(function))
+
+
 class MetaTestCaseClass(type):
 
     """Test meta class."""
@@ -862,6 +895,9 @@ class MetaTestCaseClass(type):
 
         if ('user' in dct and dct['user']) or ('sysop' in dct and dct['sysop']):
             bases = cls.add_base(bases, RequireUserMixin)
+
+        if 'vcr' in dct and dct['vcr']:
+            bases = cls.add_base(bases, VCRMixin)
 
         for test in tests:
             test_func = dct[test]
