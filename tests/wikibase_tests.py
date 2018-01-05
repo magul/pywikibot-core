@@ -1468,6 +1468,8 @@ class TestItemBasePageMethods(WikidataTestCase, BasePageMethodsTestBase):
 
     """Test behavior of ItemPage methods inherited from BasePage."""
 
+    vcr = True
+
     def setUp(self):
         """Setup tests."""
         self._page = ItemPage(self.get_repo(), 'Q60')
