@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Miscellaneous helper functions (not wiki-dependent)."""
 #
-# (C) Pywikibot team, 2008-2017
+# (C) Pywikibot team, 2008-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1746,7 +1746,7 @@ class ModuleDeprecationWrapper(types.ModuleType):
             warning_message = self._deprecated[attr][2]
             warn(warning_message.format(self._module.__name__, attr,
                                         self._deprecated[attr][0]),
-                 DeprecationWarning, 2)
+                 DeprecationWarning, 1)
             if self._deprecated[attr][1]:
                 return self._deprecated[attr][1]
             elif '.' in self._deprecated[attr][0]:
