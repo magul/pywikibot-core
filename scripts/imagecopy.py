@@ -63,6 +63,7 @@ from __future__ import absolute_import, unicode_literals
 import codecs
 import re
 import socket
+import requests
 import threading
 import webbrowser
 
@@ -77,13 +78,8 @@ from scripts import image
 
 if not PY2:
     import tkinter as Tkinter
-
-    from urllib.parse import urlencode
-    from urllib.request import urlopen
 else:
     import Tkinter
-
-    from urllib import urlencode, urlopen
 
 try:
     from pywikibot.userinterfaces.gui import Tkdialog
@@ -203,14 +199,15 @@ moveToCommonsTemplate = {
 }
 
 
-def pageTextPost(url, parameters):
+def pageTextPost(parameters):
     """Get data from commons helper page."""
     gotInfo = False
     while not gotInfo:
         try:
-            commonsHelperPage = urlopen(
-                "http://tools.wmflabs.org/commonshelper/index.php", parameters)
-            data = commonsHelperPage.read().decode('utf-8')
+            commonsHelperPage = requests.post(
+                'https://tools.wmflabs.org/commonshelper/index.php',
+                data=parameters)
+            data = commonsHelperPage.content.decode('utf-8')
             gotInfo = True
         except IOError:
             pywikibot.output(u'Got an IOError, let\'s try again')
@@ -246,10 +243,8 @@ class imageTransfer(threading.Thread):
                   'doit': 'Uitvoeren'
                   }
 
-        tosend = urlencode(tosend)
         pywikibot.output(tosend)
-        CH = pageTextPost('http://tools.wmflabs.org/commonshelper/index.php',
-                          tosend)
+        CH = pageTextPost(tosend)
         pywikibot.output('Got CH desc.')
 
         tablock = CH.split('<textarea ')[1].split('>')[0]
