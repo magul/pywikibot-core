@@ -36,7 +36,6 @@ else:
 # Here, it doesnt matter which pypi package was requested and installed.
 # Here, the name given to the module which will be imported is required.
 script_deps = {
-    'imagecopy': [TK_IMPORT],
     'imagecopy_self': [TK_IMPORT],
     'script_wui': ['crontab', 'lua'],
     # Note: package 'lunatic-python' provides module 'lua'
