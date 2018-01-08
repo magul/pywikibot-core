@@ -27,6 +27,8 @@ from pywikibot.tools import PY2
 
 if not PY2:
     import six
+else:
+    ResourceWarning = type(None)
 
 import pywikibot
 
@@ -255,19 +257,8 @@ class WarningSourceSkipContextManager(warnings.catch_warnings):
                     else:
                         skip_frames -= 1
 
-            # Avoid failures because cryptography is mentioning Python 2.6
-            # is outdated
-            if PYTHON_VERSION < (2, 7):
-                if (isinstance(warn_msg.category(), DeprecationWarning) and
-                        str(warn_msg.message) == PYTHON_26_CRYPTO_WARN):
-                    return
-
             # Ignore socket IO warnings (T183696)
-            _ResourceWarning = (RuntimeWarning
-                                if PYTHON_VERSION < (3, 2)
-                                else ResourceWarning)
-            if (PYTHON_VERSION >= (3, 2)
-                    and isinstance(warn_msg.category(), _ResourceWarning)
+            if (issubclass(warn_msg.category, ResourceWarning)
                     and 'unclosed <socket.socket' in str(warn_msg.message)
                     and warn_msg.filename.endswith('socket.py')):
                 return
