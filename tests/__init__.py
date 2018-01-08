@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Package tests."""
-#
-# (C) Pywikibot team, 2007-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, print_function, unicode_literals
 
 import functools

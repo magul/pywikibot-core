@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for exceptions."""
-#
-# (C) Pywikibot team, 2014-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

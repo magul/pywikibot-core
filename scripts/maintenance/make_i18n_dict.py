@@ -30,12 +30,6 @@ instantiating the bot. It also calls C{bot.run()} to create the dictionaries:
 
 >>> bot.to_json()
 """
-#
-# (C) xqt, 2013-2017
-# (C) Pywikibot team, 2013-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, print_function, unicode_literals
 
 import codecs

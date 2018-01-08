@@ -54,12 +54,6 @@ use the login information if it is present.
 To log out, throw away the *.lwp file that is created in the data
 subdirectory.
 """
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Pywikibot team, 2003-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from os.path import join

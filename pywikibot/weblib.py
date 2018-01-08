@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Functions for manipulating external links or querying third-party sites."""
-#
-# (C) Pywikibot team, 2013
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

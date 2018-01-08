@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 """Module containing plural rules of various languages."""
-#
-# (C) xqt, 2011-2017
-# (C) Pywikibot team, 2011-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

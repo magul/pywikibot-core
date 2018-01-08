@@ -53,14 +53,6 @@ This script understands various command-line arguments:
 -quiet            no corresponding pages are displayed.
 
 """
-#
-# (C) Maxim Razin, 2005
-# (C) Leonardo Gregianin, 2005-2008
-# (C) xqt, 2009-2014
-# (C) Pywikibot team, 2005-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

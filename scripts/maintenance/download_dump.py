@@ -13,12 +13,6 @@ This script supports the following command line parameters:
                     formatted as YYYYMMDD.
 
 """
-#
-# (C) Pywikibot team, 2017
-# (C) Yifei He, 2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, division, unicode_literals
 
 import binascii

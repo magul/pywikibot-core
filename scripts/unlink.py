@@ -20,11 +20,6 @@ Example:
         Removes links to the page [[Foo bar]] in articles and image
         descriptions.
 """
-#
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

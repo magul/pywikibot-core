@@ -42,14 +42,6 @@ Please fix these if you are capable and motivated:
 - if a file marked nowcommons is not present on Wikimedia Commons, the bot
   will exit.
 """
-#
-# (C) Wikipedian, 2006-2007
-# (C) Siebrand Mazeland, 2007-2008
-# (C) xqt, 2010-2017
-# (C) Pywikibot team, 2006-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import sys

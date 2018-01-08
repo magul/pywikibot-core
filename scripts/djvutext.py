@@ -27,11 +27,6 @@ The following parameters are supported:
     -always        don't bother asking to confirm any of the changes.
 
 """
-#
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import os.path

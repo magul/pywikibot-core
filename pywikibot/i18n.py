@@ -16,11 +16,6 @@ L{set_message_package} with a package name. The package must contain
 an __init__.py, and a message bundle called 'pywikibot' containing
 messages. See L{twntranslate} for more information on the messages.
 """
-#
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

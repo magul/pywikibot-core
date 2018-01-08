@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """Module to determine the pywikibot version (tag, revision and date)."""
-#
-# (C) Merlijn 'valhallasw' van Deen, 2007-2014
-# (C) xqt, 2010-2016
-# (C) Pywikibot team, 2007-2016
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Character based helper functions(not wiki-dependent)."""
-#
-# (C) Pywikibot team, 2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

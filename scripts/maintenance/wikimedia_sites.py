@@ -7,12 +7,6 @@ Usage:
     python pwb.py wikimedia_sites [ {<family>} ]
 
 """
-#
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

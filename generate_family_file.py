@@ -7,12 +7,6 @@ Hackish, etc. Regexps, yes. Sorry, jwz.
 """
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
-#
-# (C) Merlijn van Deen, 2010-2013
-# (C) Pywikibot team, 2010-2016
-#
-# Distributed under the terms of the MIT license
-#
 __version__ = '$Id$'
 #
 

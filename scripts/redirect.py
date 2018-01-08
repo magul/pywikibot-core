@@ -70,14 +70,6 @@ and arguments can be:
 -always        Don't prompt you for each replacement.
 
 """
-#
-# (C) Daniel Herding, 2004
-# (C) Purodha Blissenbach, 2009
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import datetime

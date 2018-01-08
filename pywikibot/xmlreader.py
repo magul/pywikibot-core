@@ -8,11 +8,6 @@ The XmlDump class reads a pages_current XML dump (like the ones offered on
 https://dumps.wikimedia.org/backup-index.html) and offers a generator over
 XmlEntry objects which can be used by other bots.
 """
-#
-# (C) Pywikibot team, 2005-2013
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

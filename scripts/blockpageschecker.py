@@ -46,14 +46,6 @@ Furthermore, the following command line parameters are supported:
     python pwb.py blockpageschecker -show -protectedpages:4
 
 """
-#
-# (C) Monobi a.k.a. Wikihermit, 2007
-# (C) Filnik, 2007-2011
-# (C) Nicolas Dumazet (NicDumZ), 2008-2009
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

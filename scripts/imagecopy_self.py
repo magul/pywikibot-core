@@ -30,24 +30,6 @@ This is a first test version and should be used with care.
 Use -nochecktemplate if you don't want to add the check template. Be sure to
 check it yourself.
 """
-#
-# Based on upload.py by:
-# (C) Rob W.W. Hooft, Andre Engels 2003-2007
-# (C) Wikipedian, Keichwa, Leogregianin, Rikwade, Misza13 2003-2007
-#
-# New bot by:
-# (C) Kyle/Orgullomoore, Siebrand Mazeland 2007
-#
-# Another rewrite by:
-# (C) Multichill 2008
-#
-# English Wikipedia specific bot by:
-# (C) Multichill 2010-2012
-#
-# (C) Pywikibot team, 2010-2018
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re
@@ -66,14 +48,17 @@ from pywikibot.tools import PY2
 from scripts import imagerecat, image
 
 if not PY2:
+    import tkinter as Tkinter
+
     from queue import Queue
 else:
+    import Tkinter
+
     from Queue import Queue
 
 try:
-    from pywikibot.userinterfaces.gui import Tkdialog, Tkinter
+    from pywikibot.userinterfaces.gui import Tkdialog
 except ImportError as _tk_error:
-    Tkinter = _tk_error
     Tkdialog = object
 
 NL = ''
@@ -691,10 +676,6 @@ class TkdialogICS(Tkdialog):
             categories
         """
         """Constructor."""
-        # Check if `Tkinter` wasn't imported
-        if isinstance(Tkinter, ImportError):
-            raise Tkinter
-
         self.root = Tkinter.Tk()
         # "%dx%d%+d%+d" % (width, height, xoffset, yoffset)
         # Always appear the same size and in the bottom-left corner

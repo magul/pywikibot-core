@@ -14,11 +14,6 @@ This script understands various command-line arguments:
 -botflag          Force botflag in case of edits with changes.
 
 """
-#
-# (C) Pywikibot team, 2009-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

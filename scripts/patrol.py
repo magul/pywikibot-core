@@ -40,11 +40,6 @@ Commandline parameters
 -versionchecktime  Check versionchecktime lapse in sec
 
 """
-#
-# (C) Pywikibot team, 2011-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import time

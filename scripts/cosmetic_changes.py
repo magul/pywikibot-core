@@ -25,12 +25,6 @@ The following parameters are supported:
 
 For further information see pywikibot/cosmetic_changes.py
 """
-#
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2006-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

@@ -76,12 +76,6 @@ Examples:
     not the new value.
 
 """
-#
-# (C) Multichill, Amir, 2013
-# (C) Pywikibot team, 2013-2017
-#
-# Distributed under the terms of MIT License.
-#
 from __future__ import absolute_import, unicode_literals
 
 import signal

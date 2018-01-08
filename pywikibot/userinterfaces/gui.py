@@ -6,14 +6,6 @@ Useful for editing the contents of an article.
 """
 from __future__ import absolute_import, unicode_literals
 
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Daniel Herding, 2004
-#     Wikiwichtel
-# (C) Pywikibot team, 2008-2014
-#
-# Distributed under the terms of the MIT license.
-#
 __version__ = '$Id$'
 #
 

@@ -54,12 +54,6 @@ Furthermore, the following command line parameters are supported:
         -summary:"Bot: Aggiungo template Categorizzare"
 """
 
-#
-# (C) Filnik, 2007-2010
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

@@ -33,11 +33,6 @@ namespace (using the -start) parameter, as that would consume too much
 bandwidth. Instead, use the -xml parameter, or use another way to generate
 a list of affected articles
 """
-#
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

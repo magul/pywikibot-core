@@ -13,12 +13,6 @@ PRE-REQUISITE : Need to install python-pycountry library.
 * Follow the instructions at: https://www.versioneye.com/python/pycountry/0.16
 * Install with pip: pip install pycountry
 """
-#
-# (C) Andre Engels, 2004
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

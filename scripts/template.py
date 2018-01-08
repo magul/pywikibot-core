@@ -102,14 +102,6 @@ user talk pages (namespace #3):
     python pwb.py template test1 test2 "space test" -subst -ns:3 -always
 
 """
-#
-# (C) Daniel Herding, 2004
-# (C) Rob W.W. Hooft, 2003-2005
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

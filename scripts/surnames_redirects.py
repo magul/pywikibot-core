@@ -15,11 +15,6 @@ Command-line arguments:
 
 Example: "python pwb.py surnames_redirects -start:B"
 """
-#
-# (C) Pywikibot team, 2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from difflib import SequenceMatcher

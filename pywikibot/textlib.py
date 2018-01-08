@@ -6,11 +6,6 @@ Unless otherwise noted, all functions take a unicode string as the argument
 and return a unicode string.
 
 """
-#
-# (C) Pywikibot team, 2008-2018
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

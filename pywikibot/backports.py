@@ -5,12 +5,6 @@ This module contains backports to support older Python versions.
 They contain the backported code originally developed for Python. It is
 therefore distributed under the PSF license.
 """
-#
-# (C) Python Software Foundation, 2001-2014
-# (C) with modifications from Pywikibot team, 2015
-#
-# Distributed under the terms of the PSF license.
-#
 
 from __future__ import absolute_import, unicode_literals
 

@@ -34,11 +34,6 @@ pdfinfo is needed for parsing pdf titles.
 -summary          Use a custom edit summary. Otherwise it uses the default
                   one from i18n/reflinks.py
 """
-# (C) Nicolas Dumazet (NicDumZ), 2008
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, division, unicode_literals
 
 import codecs
