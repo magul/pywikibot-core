@@ -5,11 +5,6 @@ Objects representing MediaWiki sites (wikis).
 This module also includes functions to load families, which are
 groups of wikis on the same topic in different languages.
 """
-#
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

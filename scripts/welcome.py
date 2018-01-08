@@ -150,18 +150,6 @@ or deleting.
 Some words, like "Administrator" or "Dio" (God in italian) or "Jimbo" aren't
 badwords at all but can be used for some bad-nickname.
 """
-#
-# (C) Alfio, 2005
-# (C) Kyle/Orgullomoore, 2006-2007
-# (C) Siebrand Mazeland, 2006-2009
-# (C) Filnik, 2007-2011
-# (C) Daniel Herding, 2007
-# (C) Alex Shih-Han Lin, 2009-2010
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

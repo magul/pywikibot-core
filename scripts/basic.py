@@ -24,11 +24,6 @@ The following parameters are supported:
 
 -summary:         Set the action summary message for the edit.
 """
-#
-# (C) Pywikibot team, 2006-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

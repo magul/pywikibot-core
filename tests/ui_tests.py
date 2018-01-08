@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the user interface."""
-#
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # NOTE FOR RUNNING WINDOWS UI TESTS
 #
 # Windows UI tests have to be run using the tests\ui_tests.bat helper script.

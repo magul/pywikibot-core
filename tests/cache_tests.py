@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """API Request cache tests."""
-#
-# (C) Pywikibot team, 2012-2014
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot.site import BaseSite

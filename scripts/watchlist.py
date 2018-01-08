@@ -15,12 +15,6 @@ Command line options:
     -new  -  Load watchlists for all wikis where accounts is setting in
              user-config.py
 """
-#
-# (C) Daniel Herding, 2005
-# (C) Pywikibot team, 2005-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import os

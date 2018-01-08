@@ -25,12 +25,6 @@ target site. If it is a normal page, it will offer to copy any of the images
 used on that page, or if the -interwiki argument is used, any of the images
 used on a page reachable via interwiki links.
 """
-#
-# (C) Andre Engels, 2004
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

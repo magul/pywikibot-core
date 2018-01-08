@@ -4,11 +4,6 @@ Tests for LoginManager classes.
 
 e.g. used to test password-file based login.
 """
-#
-# (C) Pywikibot team, 2012-2016
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from collections import defaultdict

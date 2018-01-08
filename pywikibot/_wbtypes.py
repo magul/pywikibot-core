@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Wikibase data type classes."""
-#
-# (C) Pywikibot team, 2013-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

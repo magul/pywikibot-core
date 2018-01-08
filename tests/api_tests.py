@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """API test module."""
-#
-# (C) Pywikibot team, 2007-2016
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import datetime

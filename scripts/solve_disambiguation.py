@@ -66,15 +66,6 @@ To complete a move of a page, one can use:
     python pwb.py solve_disambiguation -just -pos:New_Name Old_Name
 
 """
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Daniel Herding, 2004
-# (C) Andre Engels, 2003-2004
-# (C) WikiWichtel, 2004
-# (C) Pywikibot team, 2003-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

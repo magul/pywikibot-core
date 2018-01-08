@@ -5,12 +5,6 @@ User-interface related functions for building bots.
 Note: the script requires the Python IRC library
 http://python-irclib.sourceforge.net/
 """
-#
-# (C) Balasyum, 2008
-# (C) Pywikibot team, 2008-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

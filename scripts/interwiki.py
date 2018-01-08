@@ -333,15 +333,6 @@ pages on a language, run it with option "-start:!", and if it takes so long
 that you have to break it off, use "-continue" next time.
 
 """
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Daniel Herding, 2004
-# (C) Yuri Astrakhan, 2005-2006
-# (C) xqt, 2009-2017
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

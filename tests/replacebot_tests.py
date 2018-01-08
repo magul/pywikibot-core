@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Tests for the replace script and ReplaceRobot class."""
-#
-# (C) Pywikibot team, 2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

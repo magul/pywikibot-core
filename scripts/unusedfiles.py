@@ -11,14 +11,6 @@ Parameters:
                 n is the maximum number of articles to work on.
                 If not used, all pages are used.
 """
-#
-# (C) Leonardo Gregianin, 2007
-# (C) Filnik, 2008
-# (c) xqt, 2011-2016
-# (C) Pywikibot team, 2015-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

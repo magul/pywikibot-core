@@ -31,13 +31,6 @@ Furthermore, the following command line parameters are supported:
 
     python pwb.py lonelypages -enable:User:Bot/CheckBot -always
 """
-#
-# (C) Pietrodn, it.wiki 2006-2007
-# (C) Filnik, it.wiki 2007
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

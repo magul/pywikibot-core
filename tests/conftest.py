@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Used by pytest to do some preparation work before running tests."""
-#
-# (C) Pywikibot team, 2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import sys

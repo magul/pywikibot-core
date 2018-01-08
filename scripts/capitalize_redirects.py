@@ -20,12 +20,6 @@ Example:
 
     python pwb.py capitalize_redirects -start:B -always
 """
-#
-# (C) Yrithinnd, 2006
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # Originally derived from:
 #    http://en.wikipedia.org/wiki/User:Drinibot/CapitalizationRedirects
 #

@@ -26,11 +26,6 @@ In addition, these arguments can be used to restrict changes to some pages:
 
 &params;
 """
-#
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

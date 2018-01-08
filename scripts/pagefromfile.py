@@ -54,12 +54,6 @@ between the exisiting and new text. For example -appendtop:foo would add 'foo'
 between the parts. The \n (two separate characters) is replaced by the newline
 character.
 """
-#
-# (C) Andre Engels, 2004
-# (C) Pywikibot team, 2005-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

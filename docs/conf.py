@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Configuration file for Sphinx."""
-#
-# (C) Pywikibot team, 2015-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # Pywikibot documentation build configuration file, created by
 # sphinx-quickstart on Wed Nov  5 15:50:05 2014.
 #

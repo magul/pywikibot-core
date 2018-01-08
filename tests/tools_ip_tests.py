@@ -1,10 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """Test IP module/regex."""
-#
-# (C) Pywikibot team, 2012-2015
-#
-# Distributed under the terms of the MIT license.
 from __future__ import absolute_import, unicode_literals
 
 from distutils.version import StrictVersion

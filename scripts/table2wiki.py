@@ -36,12 +36,6 @@ KNOWN BUGS
 Broken HTML tables will most likely result in broken wiki tables!
 Please check every article you change.
 """
-#
-# (C) 2003 Thomas R. Koll, <tomk32@tomk32.de>
-# (C) Pywikibot team, 2003-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # Automatically ported from compat branch by compat2core.py script
 #
 from __future__ import absolute_import, unicode_literals

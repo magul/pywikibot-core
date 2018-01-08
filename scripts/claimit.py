@@ -46,12 +46,6 @@ Note that the ordering of the letters in the 'exists' argument does not matter,
 but 'p' must be included.
 
 """
-#
-# (C) Legoktm, 2013
-# (C) Pywikibot team, 2013-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

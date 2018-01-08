@@ -10,15 +10,6 @@ The following command line parameters are supported:
 -rollback         Rollback edits instead of reverting them.
                   Note that in rollback, no diff would be shown.
 """
-#
-# (C) Bryan Tong Minh, 2008
-# (C) Pywikibot team, 2008-2017
-#
-# Ported by Geoffrey "GEOFBOT" Mon - User:Sn1per
-# for Google Code-In 2013
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re
