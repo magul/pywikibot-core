@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 This script generates a family file from a given URL.
-
-Hackish, etc. Regexps, yes. Sorry, jwz.
 """
 from __future__ import (absolute_import, division,
                         print_function, unicode_literals)
