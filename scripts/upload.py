@@ -46,12 +46,6 @@ or URL to upload. The bot will then upload the image to the wiki.
 The script will ask for the location of an image(s), if not given as a
 parameter, and for a description.
 """
-#
-# (C) Rob W.W. Hooft, Andre Engels 2003-2004
-# (C) Pywikibot team, 2003-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import math

@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Logging functions."""
-#
-# (C) Pywikibot team, 2010-2016
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

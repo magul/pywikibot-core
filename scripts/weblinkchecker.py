@@ -97,12 +97,6 @@ Syntax examples:
     python pwb.py weblinkchecker -repeat
         Loads all wiki pages where dead links were found during a prior run
 """
-#
-# (C) Daniel Herding, 2005
-# (C) Pywikibot team, 2005-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

@@ -18,12 +18,6 @@ This script understands various command-line arguments:
 -touch            Do a null edit on every page which has a wikibase item.
 
 """
-#
-# (C) Multichill, 2014
-# (C) Pywikibot team, 2014-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from datetime import timedelta

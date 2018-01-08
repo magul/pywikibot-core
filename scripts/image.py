@@ -36,11 +36,6 @@ The image "Flag.svg" has been uploaded, making the old "Flag.jpg" obsolete:
     python pwb.py image Flag.jpg Flag.svg
 
 """
-#
-# (C) Pywikibot team, 2013-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import re

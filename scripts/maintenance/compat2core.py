@@ -25,12 +25,6 @@ to show warnings about deprecated methods:
 
     python pwb.py compat2core <scriptname> -warnonly
 """
-#
-# (C) xqt, 2014-2017
-# (C) Pywikibot team, 2014-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

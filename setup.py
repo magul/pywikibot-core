@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Installer script for Pywikibot 3.0 framework."""
-#
-# (C) Pywikibot team, 2009-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, print_function, unicode_literals
 
 import itertools

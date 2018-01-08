@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Family module for Wikivoyage."""
-#
-# (C) Pywikibot team, 2012-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # The new wikivoyage family that is hosted at wikimedia
 from __future__ import absolute_import, unicode_literals
 

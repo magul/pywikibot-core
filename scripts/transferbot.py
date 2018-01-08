@@ -34,12 +34,6 @@ Copy the template "Query service" from the Toolserver wiki to wikitech:
         -tofamily:wiktionary -tolang:ar -page:"Template:Query service"
 
 """
-#
-# (C) Merlijn van Deen, 2014
-# (C) Pywikibot team, 2015-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

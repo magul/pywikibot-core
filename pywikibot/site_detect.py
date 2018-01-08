@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Classes for detecting a MediaWiki site."""
-#
-# (C) Pywikibot team, 2010-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

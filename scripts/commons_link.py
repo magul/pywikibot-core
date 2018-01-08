@@ -22,12 +22,6 @@ and pagegenerator can be one of these:
 &params;
 
 """
-#
-# (C) Leonardo Gregianin, 2006
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 # Ported by Geoffrey "GEOFBOT" Mon for Google Code-In 2013
 # User:Sn1per
 #

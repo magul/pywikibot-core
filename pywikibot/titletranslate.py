@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
 """Title translate module."""
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Yuri Astrakhan, 2005
-# (C) Pywikibot team, 2003-2015
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

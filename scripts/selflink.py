@@ -10,11 +10,6 @@ These command line parameters can be used to specify which pages to work on:
 -always           Unlink always but don't prompt you for each replacement.
                   ATTENTION: Use this with care!
 """
-#
-# (C) Pywikibot team, 2006-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import pywikibot

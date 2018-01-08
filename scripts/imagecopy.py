@@ -45,19 +45,6 @@ See pagegenerators.py for more ways to get a list of images.
 By default the bot works on your home wiki (set in user-config)
 
 """
-# Based on upload.py by:
-# (C) Rob W.W. Hooft, Andre Engels 2003-2007
-# (C) Wikipedian, Keichwa, Leogregianin, Rikwade, Misza13 2003-2007
-#
-# New bot by:
-# (C) Kyle/Orgullomoore, Siebrand Mazeland 2007-2008
-#
-# Another rewrite by:
-# (C) Multichill 2008-2011
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import codecs

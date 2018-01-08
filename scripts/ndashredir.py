@@ -25,12 +25,6 @@ The following generators and filters are supported:
 
 &params;
 """
-#
-# (C) Bináris, 2012
-# (C) Pywikibot team, 2012-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

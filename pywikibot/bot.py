@@ -47,11 +47,6 @@ Additionally there is the L{AutomaticTWSummaryBot} which subclasses
 L{CurrentPageBot} and automatically defines the summary when C{put_current} is
 used.
 """
-#
-# (C) Pywikibot team, 2008-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'

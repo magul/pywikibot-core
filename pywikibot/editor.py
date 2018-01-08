@@ -3,12 +3,6 @@
 """Text editor class for your favourite editor."""
 from __future__ import absolute_import, unicode_literals
 
-#
-# (C) Gerrit Holl, 2004
-# (C) Pywikibot team, 2004-2017
-#
-# Distributed under the terms of the MIT license.
-#
 __version__ = '$Id$'
 #
 

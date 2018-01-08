@@ -86,13 +86,6 @@ Options (may be omitted):
   -page:PAGE      archive a single PAGE, default ns is a user talk page
   -salt:SALT      specify salt
 """
-#
-# (C) Misza13, 2006-2010
-# (C) xqt, 2009-2016
-# (C) Pywikibot team, 2007-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 import datetime

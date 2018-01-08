@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """Family module for Wiktionary."""
-#
-# (C) Pywikibot team, 2005-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 from pywikibot import family

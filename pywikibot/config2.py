@@ -31,12 +31,6 @@ build paths relative to base_dir:
  - datafilepath
  - shortpath
 """
-#
-# (C) Rob W.W. Hooft, 2003
-# (C) Pywikibot team, 2003-2017
-#
-# Distributed under the terms of the MIT license.
-#
 from __future__ import absolute_import, unicode_literals
 
 __version__ = '$Id$'
