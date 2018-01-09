@@ -749,6 +749,19 @@ class TestSiteGenerators(DefaultSiteTestCase):
             self.assertIsInstance(cat, pywikibot.Category)
             self.assertLessEqual(cat.title(withNamespace=False), "Hij")
 
+    def test_botusers(self):
+        """Test the site.botusers() method."""
+        mysite = self.get_site()
+        bu = list(mysite.botusers(total=10))
+        self.assertLessEqual(len(bu), 10)
+        for botuser in bu:
+            self.assertIsInstance(botuser, dict)
+            self.assertIn('name', botuser)
+            self.assertIn('userid', botuser)
+            self.assertIn('editcount', botuser)
+            self.assertIn('registration', botuser)
+            self.assertIn('bot', botuser['groups'])
+
     def test_allusers(self):
         """Test the site.allusers() method."""
         mysite = self.get_site()
@@ -759,6 +772,7 @@ class TestSiteGenerators(DefaultSiteTestCase):
             self.assertIn("name", user)
             self.assertIn("editcount", user)
             self.assertIn("registration", user)
+            self.assertIn('user', user['groups'])
 
     def test_allusers_with_start(self):
         """Test the site.allusers(start=..) method."""

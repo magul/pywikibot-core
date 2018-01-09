@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the User page."""
 #
-# (C) Pywikibot team, 2016
+# (C) Pywikibot team, 2016-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -36,6 +36,27 @@ class TestUserClass(TestCase):
         self.assertTrue(user.isEmailable())
         self.assertEqual(user.gender(), 'unknown')
         self.assertIn('userid', user.getprops())
+        self.assertEqual(user.getprops()['userid'], 287832)
+        self.assertEqual(user.pageid, 6927779)
+        self.assertEqual(user.getUserPage(),
+                         pywikibot.Page(self.site, 'Benutzer:Xqt'))
+        self.assertEqual(user.getUserPage(subpage='pwb'),
+                         pywikibot.Page(self.site, 'Benutzer:Xqt/pwb'))
+        self.assertEqual(user.getUserTalkPage(),
+                         pywikibot.Page(self.site, 'Benutzer Diskussion:Xqt'))
+        self.assertEqual(user.getUserTalkPage(subpage='pwb'),
+                         pywikibot.Page(self.site,
+                                        'Benutzer Diskussion:Xqt/pwb'))
+        self.assertTrue(user.is_thankable)
+        contribs = user.contributions(total=10)
+        self.assertEqual(len(list(contribs)), 10)
+        self.assertTrue(all(isinstance(contrib, tuple)
+                            for contrib in contribs))
+        self.assertTrue(all('user' in contrib
+                            and contrib['user'] == user.username
+                            for contrib in contribs))
+        self.assertIn('user', user.groups())
+        self.assertIn('edit', user.rights())
 
     def test_registered_user_without_timestamp(self):
         """Test registered user when registration timestamp is None."""
@@ -47,6 +68,7 @@ class TestUserClass(TestCase):
         self.assertGreater(user.editCount(), 0)
         self.assertEqual(user.gender(), 'male')
         self.assertIn('userid', user.getprops())
+        self.assertTrue(user.is_thankable)
 
     def test_female_user(self):
         """Test female user."""
@@ -56,6 +78,7 @@ class TestUserClass(TestCase):
         self.assertGreater(user.editCount(), 0)
         self.assertEqual(user.gender(), 'female')
         self.assertIn('userid', user.getprops())
+        self.assertTrue(user.is_thankable)
 
     def test_anonymous_user(self):
         """Test registered user."""
@@ -69,6 +92,7 @@ class TestUserClass(TestCase):
         self.assertFalse(user.isEmailable())
         self.assertEqual(user.gender(), 'unknown')
         self.assertIn('invalid', user.getprops())
+        self.assertFalse(user.is_thankable)
 
     def test_unregistered_user(self):
         """Test unregistered user."""
@@ -82,6 +106,7 @@ class TestUserClass(TestCase):
         self.assertFalse(user.isEmailable())
         self.assertEqual(user.gender(), 'unknown')
         self.assertIn('missing', user.getprops())
+        self.assertFalse(user.is_thankable)
 
     def test_invalid_user(self):
         """Test invalid user."""
@@ -95,6 +120,13 @@ class TestUserClass(TestCase):
         self.assertFalse(user.isEmailable())
         self.assertEqual(user.gender(), 'unknown')
         self.assertIn('invalid', user.getprops())
+        self.assertFalse(user.is_thankable)
+
+    def test_bot_user(self):
+        """Test bot user."""
+        user = User(self.site, 'Xqbot')
+        self.assertIn('bot', user.groups())
+        self.assertFalse(user.is_thankable)
 
 
 if __name__ == '__main__':  # pragma: no cover

@@ -12,7 +12,7 @@ This module also includes objects:
 
 """
 #
-# (C) Pywikibot team, 2008-2017
+# (C) Pywikibot team, 2008-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -3529,6 +3529,8 @@ class User(Page):
         """
         if self.isAnonymous():
             return False
+        if not self.isRegistered():
+            return False
         if 'bot' in self.groups():
             return False
 
@@ -4923,10 +4925,10 @@ class Claim(Property):
         """Set the rank of the Claim."""
         self.rank = rank
 
-    def changeRank(self, rank):
+    def changeRank(self, rank, **kwargs):
         """Change the rank of the Claim and save."""
         self.rank = rank
-        return self.repo.save_claim(self)
+        return self.repo.save_claim(self, **kwargs)
 
     def changeSnakType(self, value=None, **kwargs):
         """

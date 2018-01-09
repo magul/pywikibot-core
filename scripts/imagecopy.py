@@ -54,7 +54,7 @@ By default the bot works on your home wiki (set in user-config)
 #
 # Another rewrite by:
 # (C) Multichill 2008-2011
-# (C) Pywikibot team, 2007-2017
+# (C) Pywikibot team, 2007-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -62,32 +62,25 @@ from __future__ import absolute_import, unicode_literals
 
 import codecs
 import re
-import socket
 import threading
 import webbrowser
 
 import pywikibot
 
+from requests.exceptions import RequestException
+
 from pywikibot import pagegenerators, config, i18n
 
+from pywikibot.comms.http import fetch
+
 from pywikibot.specialbots import UploadRobot
-from pywikibot.tools import PY2
 
 from scripts import image
 
-if not PY2:
-    import tkinter as Tkinter
-
-    from urllib.parse import urlencode
-    from urllib.request import urlopen
-else:
-    import Tkinter
-
-    from urllib import urlencode, urlopen
-
 try:
-    from pywikibot.userinterfaces.gui import Tkdialog
+    from pywikibot.userinterfaces.gui import Tkdialog, Tkinter
 except ImportError as _tk_error:
+    Tkinter = _tk_error
     Tkdialog = object
 
 NL = ''
@@ -204,18 +197,27 @@ moveToCommonsTemplate = {
 
 
 def pageTextPost(url, parameters):
-    """Get data from commons helper page."""
+    """
+    Get data from commons helper page.
+
+    @param url: This parameter is not used here, we keep it here to avoid user
+                scripts from breaking.
+    @param parameters: Data that will be submitted to CommonsHelper.
+    @type parameters: dict
+    @return: A CommonHelper description message.
+    @rtype: str
+    """
     gotInfo = False
     while not gotInfo:
         try:
-            commonsHelperPage = urlopen(
-                "http://tools.wmflabs.org/commonshelper/index.php", parameters)
-            data = commonsHelperPage.read().decode('utf-8')
+            commonsHelperPage = fetch(
+                'https://tools.wmflabs.org/commonshelper/',
+                method='POST',
+                data=parameters)
+            data = commonsHelperPage.data.content.decode('utf-8')
             gotInfo = True
-        except IOError:
-            pywikibot.output(u'Got an IOError, let\'s try again')
-        except socket.timeout:
-            pywikibot.output(u'Got a timeout, let\'s try again')
+        except RequestException:
+            pywikibot.output("Got a RequestException, let's try again")
     return data
 
 
@@ -246,7 +248,6 @@ class imageTransfer(threading.Thread):
                   'doit': 'Uitvoeren'
                   }
 
-        tosend = urlencode(tosend)
         pywikibot.output(tosend)
         CH = pageTextPost('http://tools.wmflabs.org/commonshelper/index.php',
                           tosend)
@@ -383,6 +384,10 @@ class TkdialogIC(Tkdialog):
     def __init__(self, image_title, content, uploader, url, templates,
                  commonsconflict=0):
         """Constructor."""
+        # Check if `Tkinter` wasn't imported
+        if isinstance(Tkinter, ImportError):
+            raise Tkinter
+
         super(TkdialogIC, self).__init__()
         self.root = Tkinter.Tk()
         # "%dx%d%+d%+d" % (width, height, xoffset, yoffset)

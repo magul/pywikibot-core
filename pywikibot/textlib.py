@@ -7,7 +7,7 @@ and return a unicode string.
 
 """
 #
-# (C) Pywikibot team, 2008-2017
+# (C) Pywikibot team, 2008-2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -1164,13 +1164,16 @@ def removeCategoryLinksAndSeparator(text, site=None, marker='', separator=''):
         return removeCategoryLinks(text, site, marker)
 
 
-def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None):
+def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None,
+                           add_only=False):
     """
     Replace old category with new one and return the modified text.
 
     @param oldtext: Content of the old category
     @param oldcat: pywikibot.Category object of the old category
     @param newcat: pywikibot.Category object of the new category
+    @param add_only: If add_only is True, the old category won't
+        be replaced and the category given will be added after it.
     @return: the modified text
     @rtype: unicode
     """
@@ -1193,22 +1196,26 @@ def replaceCategoryInPlace(oldtext, oldcat, newcat, site=None):
     categoryRN = re.compile(
         r'^[^\S\n]*\[\[\s*(%s)\s*:\s*%s\s*((?:\|[^]]+)?\]\])[^\S\n]*\n'
         % (catNamespace, title), re.I | re.M)
+    exceptions = ['nowiki', 'comment', 'math', 'pre', 'source']
     if newcat is None:
         # First go through and try the more restrictive regex that removes
         # an entire line, if the category is the only thing on that line (this
         # prevents blank lines left over in category lists following a removal.)
         text = replaceExcept(oldtext, categoryRN, '',
-                             ['nowiki', 'comment', 'math', 'pre', 'source'],
-                             site=site)
+                             exceptions, site=site)
         text = replaceExcept(text, categoryR, '',
-                             ['nowiki', 'comment', 'math', 'pre', 'source'],
-                             site=site)
+                             exceptions, site=site)
+    elif add_only:
+        text = replaceExcept(
+            oldtext, categoryR,
+            '{0}\n{1}'.format(oldcat.title(asLink=True, allowInterwiki=False),
+                              newcat.title(asLink=True, allowInterwiki=False)),
+            exceptions, site=site)
     else:
         text = replaceExcept(oldtext, categoryR,
                              '[[%s:%s\\2' % (site.namespace(14),
                                              newcat.title(withNamespace=False)),
-                             ['nowiki', 'comment', 'math', 'pre', 'source'],
-                             site=site)
+                             exceptions, site=site)
     return text
 
 
