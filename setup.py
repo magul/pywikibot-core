@@ -29,7 +29,7 @@ versions_required_message = """
 Pywikibot not available on:
 %s
 
-Pywikibot is only supported under Python 2.6.5+, 2.7.2+ or 3.3+
+Pywikibot is only supported under Python 2.6.5+, 2.7.2+ or 3.4+
 """
 
 
@@ -73,13 +73,6 @@ if PY2:
         'MySQL': ['oursql'],
         'unicode7': ['unicodedata2>=7.0.0-2'],
     })
-elif PYTHON_VERSION[:2] == (3, 3):
-    # requests[security] requires cryptography, but cryptography 2.0+ does not
-    # support Python 3.3; T178241
-    extra_deps['security'].append('cryptography<2.0')
-    # PyOpenSSL is required by requests[security] but has dropped support for
-    # Python 3.3 since version 17.5.0 (2017-11-30); T181912
-    extra_deps['security'].append('PyOpenSSL<17.5.0')
 
 script_deps = {
     'flickrripper.py': ['Pillow<3.5.0' if PY26 else 'Pillow'],
@@ -95,12 +88,8 @@ script_deps = {
 # and will be first packaged for Fedora Core 21.
 # flickrapi 1.4.x does not run on Python 3, and setuptools can only
 # select flickrapi 2.x for Python 3 installs.
-# flickrapi 2.3.1 dropped support for Python 3.3.
-if PYTHON_VERSION[:2] == (3, 3):
-    script_deps['flickrripper.py'].append('flickrapi<2.3.1')
-else:
-    script_deps['flickrripper.py'].append(
-        'flickrapi>=1.4.5,<2' if PY26 else 'flickrapi')
+script_deps['flickrripper.py'].append(
+    'flickrapi>=1.4.5,<2' if PY26 else 'flickrapi')
 
 # lunatic-python is only available for Linux
 if sys.platform.startswith('linux'):
@@ -266,7 +255,6 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.3',
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
