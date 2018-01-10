@@ -32,12 +32,13 @@ from warnings import warn
 PYTHON_VERSION = sys.version_info[:3]
 PY2 = (PYTHON_VERSION[0] == 2)
 PY26 = (PYTHON_VERSION < (2, 7))
+SUPPORT = 'supported under Python 2.7.2+ or 3.4+'
 
 versions_required_message = """
 Pywikibot not available on:
-%s
+{version}
 
-Pywikibot is only supported under Python 2.6.5+, 2.7.2+ or 3.3+
+Pywikibot is only {supported}.
 """
 
 
@@ -50,7 +51,8 @@ def python_is_supported():
 
 
 if not python_is_supported():
-    print(versions_required_message % sys.version)
+    print(versions_required_message.format(version=sys.version,
+                                           supported=SUPPORT))
     sys.exit(1)
 
 pwb = None
@@ -200,6 +202,12 @@ except RuntimeError as err:
 
 def main():
     """Command line entry point."""
+    if PY2 or not PY2 and PYTHON_VERSION < (3, 4):
+        warn('\nPywikibot support for Python release {version} will be '
+             'dropped soon.\nPywikibot will be {supported} further.\n'
+             .format(version=sys.version, supported=SUPPORT),
+             PendingDeprecationWarning )
+
     global filename
     if filename:
         file_package = None
