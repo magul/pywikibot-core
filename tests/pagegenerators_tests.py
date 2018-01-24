@@ -1177,6 +1177,18 @@ class TestFactoryGenerator(DefaultSiteTestCase):
         self.assertIsNotNone(gen2)
         self.assertEqual(list(gen1), list(gen2))
 
+    def test_linter_generator_ns_multi(self):
+        """Test random generator with multiple namespaces."""
+        gf = pagegenerators.GeneratorFactory(site=self.site)
+        gf.handleArg('-ns:1')
+        gf.handleArg('-limit:3')
+        gf.handleArg('-linter:obsolete-tag')
+        gen = gf.getCombinedGenerator()
+        self.assertIsNotNone(gen)
+        pages = list(gen)
+        self.assertPagesInNamespaces(pages, set([1, ]))
+        self.assertEqual(len(pages), 3)
+
 
 class TestFactoryGeneratorWikibase(WikidataTestCase):
 
