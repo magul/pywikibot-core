@@ -160,7 +160,7 @@ except ImportError as e:
 
 if not requests:
     raise ImportError("Python module 'requests' is required.\n"
-                      "Try running 'pip install requests'.")
+                      "Try running 'pip install \"requests>=2.9\"'.")
 
 del requests
 
