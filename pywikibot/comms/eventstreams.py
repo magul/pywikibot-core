@@ -9,7 +9,7 @@ This module requires sseclient to be installed:
 """
 #
 # (C) xqt, 2017
-# (C) Pywikibot team, 2017
+# (C) Pywikibot team, 2018
 #
 # Distributed under the terms of the MIT license.
 #
@@ -17,7 +17,9 @@ from __future__ import absolute_import, unicode_literals
 
 import json
 import socket
+from distutils.version import LooseVersion as LV
 
+import requests
 from requests.packages.urllib3.exceptions import ProtocolError
 from requests.packages.urllib3.response import httplib
 
@@ -28,6 +30,11 @@ except ImportError as e:
 
 from pywikibot import config, debug, Site, warning
 from pywikibot.tools import StringTypes
+
+if LV(requests.__version__) < LV('2.9'):
+    raise ImportError('requests >= 2.9 is required for EventStreams;\n'
+                      "install it with 'pip install \"requests>=2.9\"'\n")
+    
 
 _logger = 'pywikibot.eventstreams'
 
